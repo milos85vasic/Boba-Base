@@ -247,11 +247,11 @@
 <h1
 id="scriptsownership_precondition.sh-ownership-startup-precondition"><code>scripts/ownership_precondition.sh</code>
 — Ownership Startup Precondition</h1>
-<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
-2026-08-25T19:28:28Z <strong>Purpose:</strong> Operator guide for the
+<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
+2026-08-26T15:15:25Z <strong>Purpose:</strong> Operator guide for the
 startup check that refuses to start the system when a declared location
 cannot produce operator-owned files. <strong>Last verified:</strong>
-2026-08-25</p>
+2026-08-26</p>
 <hr />
 <h2 id="overview">Overview</h2>
 <p><code>scripts/ownership_precondition.sh</code> answers exactly one
@@ -560,10 +560,24 @@ Each offending location is named individually.</td>
 </table>
 <p><strong><code>2</code> is not a pass, and it is not a failure of the
 system either.</strong> It means the check asserted <em>nothing</em>:
-the scope file was missing, unparseable, or empty; <strong>the scope
-declared a path the fence refuses</strong> (see <em>The declared-path
-fence</em> below); no python3 with PyYAML was available; or the caller
-passed an unusable argument. Reporting “could not run” as success is the
+the scope file was missing, unparseable, or empty; <strong>a declared
+entry resolved to no usable location</strong> (a <code>${VAR}</code>
+with no <code>:-</code> default that expanded to nothing, a missing
+<code>path:</code> key, a path that silently expanded into a
+<em>different</em> one, or a spelling outside the documented
+<code>${VAR}</code> / <code>${VAR:-default}</code> grammar — a nested
+<code>${A:-${B}}</code>, <code>${}</code>, <code>${1}</code>, an
+unterminated <code>${VAR</code> — which would otherwise leave an
+unresolved marker in the path; see the same section in <a
+href="ownership_repair.md"><code>ownership_repair.md</code></a>);
+<strong>the scope declared a path the fence refuses</strong> (see
+<em>The declared-path fence</em> below); no python3 with PyYAML was
+available; or the caller passed an unusable argument. When the scope
+reader is the one that refused, <strong>its own message is replayed
+verbatim</strong> in the <code>CANNOT-RUN</code> report: it is the only
+layer that still knows <em>which</em> entry failed and <em>why</em>, and
+a cause line that named only the file-level causes would state a cause
+that was never established. Reporting “could not run” as success is the
 §11.4.201(6) blind-instrument failure — a blind instrument and a clean
 system return the same quiet zero — so this script refuses to conflate
 them. The <code>CANNOT-RUN</code> report always names the cause and ends
@@ -630,8 +644,38 @@ path components. The shipped default <code>/mnt/DATA</code> has exactly
 has 2 components and clears F2, which is why F3 is separately
 load-bearing.</td>
 </tr>
+<tr>
+<td><strong>F4</strong></td>
+<td>Never the container runtime’s own storage — the <em>computed</em>
+tree <code>${XDG_DATA_HOME:-$HOME/.local/share}/containers</code>.
+<code>/home/&lt;user&gt;</code> clears F2 and is deliberately not
+denylisted (<code>/home/&lt;user&gt;/Downloads</code> is an ordinary
+download root), so without F4 a declared root at or above the rootless
+image store is accepted by shape, and those files are owned by mapped
+subuids <strong>by design</strong>. A degenerate computed value —
+relative, or shallower than the F2 floor because <code>HOME</code> was
+unset — is discarded rather than used, so the rule can never broaden
+into a top-level prefix.</td>
+</tr>
 </tbody>
 </table>
+<p><strong>F4’s honest limit:</strong> it resolves the default graphroot
+and an <code>XDG_DATA_HOME</code>-relocated one, because both are pure
+string operations. It does <strong>not</strong> read
+<code>storage.conf</code> or <code>CONTAINERS_STORAGE_CONF</code> —
+doing so would make the fence depend on filesystem state at check time,
+the very raceable property F0 exists to avoid. A host that has moved its
+graphroot is not covered by F4.</p>
+<p><strong>F0’s honest limit:</strong> the fence judges the
+<em>spelling</em>; the kernel resolves the path. An existing symlink in
+a <strong>non-final</strong> component of a declared path is invisible
+to F0, and the walk (or the probe) lands under the link’s target —
+measured, with no race required. A symlinked <strong>final</strong>
+component <em>is</em> contained. What bounds the intermediate case is
+not the fence but who can write those components: they sit above the
+declared root, outside every container bind mount, and an actor able to
+write there can edit the untracked <code>.env</code> that supplies the
+root anyway. Tracked as BOB-159.</p>
 <p><code>/run</code>, <code>/home</code>, <code>/media</code>,
 <code>/mnt</code>, <code>/opt</code>, <code>/srv</code> and
 <code>/tmp</code> are <strong>deliberately not</strong> denylisted: this

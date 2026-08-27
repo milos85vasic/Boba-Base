@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>mutation-kill-matrix</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">mutation-kill-matrix</h1>
+</header>
+<h1 id="bob-102-round-13-mutation-kill-matrix">BOB-102 round-13 —
+mutation kill matrix</h1>
+<p>Every mutation was applied to the REAL analyzer, its application
+PROVEN by an md5 delta plus the changed line, the full 197-assertion
+harness run against it, and the analyzer restored from a pristine copy
+afterwards — with the restore verified by md5 (§11.4.84 zero residue). A
+mutation whose md5 did not move is reported as NOT-APPLIED rather than
+as a survivor.</p>
+<p>Analyzer under test: md5 b45d9647a42cccae205f56886690d74c</p>
+<h2 id="round-12-survivors-all-three-now-killed">Round-12 SURVIVORS —
+all three now killed</h2>
+<pre><code>MUT-1-widen-MUX_ANY        md5=b7175701 KILLED    by: r11-mux-exclusivity-fuzz 
+MUT-4-ruleD-drop-newline   md5=b99995b2 KILLED    by: r13-ruleD-newline 
+MUT-5-delete-group-poison  md5=d67eebe3 KILLED    by: r13-bypass-no-prefix r13-poison-label r13-poison-no-prefix </code></pre>
+<h2 id="round-12-do-not-regress-all-four-still-killed">Round-12
+DO-NOT-REGRESS — all four still killed</h2>
+<pre><code>MUT-2-immediate-next-line  md5=72f623df KILLED    by: gin-split-comment-gap gomux-split-blank-gap gomux-split-comment-gap r13-eng-split-comment 
+MUT-3-disable-RULE-S       md5=a677abf3 KILLED    by: fastapi-trace-authed gomux-method-funcresult 
+MUT-8-first-brace-wins     md5=28aa31f6 KILLED    by: gomux-body-functype gomux-body-typedecl r13-case-functype r13-ruleD-newline r13-semi-functype 
+MUT-7-demote-ws-refusal    md5=a3cb6089 KILLED    by: gomux-ws-selector r11-before-dot-label r11-ws-label</code></pre>
+<h2
+id="round-12-expected-survivor-still-survives-still-honestly-unpinned">Round-12
+EXPECTED SURVIVOR — still survives, still honestly UNPINNED</h2>
+<pre><code>MUT-6-drop-dead-dotted-term md5=cec2d94e SURVIVED  by: (none)
+
+The `MUX_DOTTED_OWNER` term in `_named` is dead by preemption — the dotted
+refusal above it returns on `.search()`, truthy for every line `.findall()`
+would count — so it is semantically unreachable and NO fixture can pin it.
+Kept as correct arithmetic for a future reordering, labelled UNPINNED
+in-source. Its survival is the expected verdict, not a gap.</code></pre>
+<h2 id="round-13-new-each-killed-by-its-own-fixture-diagonal">Round-13
+NEW — each killed by its own fixture (diagonal)</h2>
+<pre><code>M13-1-engine-rigid-spelling md5=8ea6c0be KILLED    by: r13-eng-ws-around r13-eng-ws-paren 
+M13-2-drop-engine-split    md5=c0864e05 KILLED    by: r13-eng-alias-split r13-eng-both-split r13-eng-split-comment r13-eng-split-newline 
+M13-3-drop-alias-resolution md5=c0903f06 KILLED    by: r13-eng-alias-split r13-eng-alias-two r13-eng-dot-import r13-eng-dot-import-label 
+M13-4-drop-dot-import-refusal md5=8c9171d0 KILLED    by: r13-eng-dot-import r13-eng-dot-import-label 
+M13-5-drop-unmod-split     md5=4f0d1fc5 KILLED    by: r13-unmod-Any r13-unmod-Handle r13-unmod-Match r13-unmod-NoMethod r13-unmod-NoRoute r13-unmod-Static r13-unmod-StaticFile r13-unmod-StaticFileFS r13-unmod-StaticFS r13-unmod-ws 
+M13-6-ruleD-drop-colon     md5=4b5b2ac3 KILLED    by: r13-case-functype 
+M13-7-drop-float-discriminator md5=ae5040d0 KILLED    by: r13-float-literal 
+M13-8-poison-dot-line-only md5=58f4b6ee KILLED    by: r13-bypass-no-prefix 
+M13-9-drop-dropped-label   md5=07480834 KILLED    by: r13-poison-label 
+M13-10-crash-exits-1       md5=1c18cc97 KILLED    by: r13-crash-is-error </code></pre>
+<h2
+id="note-on-m13-4-a-fail-bluff-found-in-this-rounds-own-fixture">Note on
+M13-4 — a FAIL-bluff found in this round’s OWN fixture</h2>
+<p><code>M13-4-drop-dot-import-refusal</code> SURVIVED the first
+battery. The mutation made the engine-regex builder raise a
+<code>TypeError</code>; Python exits <strong>1</strong> on an unhandled
+exception, and 1 is this analyzer’s FAIL code, so the fixture’s
+<code>expected=1</code> was satisfied by a crash. The fixture could not
+tell “refused correctly” from “the analyzer is in pieces” — a §11.4.1
+FAIL-bluff living in the test, not the code.</p>
+<p>Both halves are fixed: the analyzer now traps and exits
+<strong>2</strong> (the wrapper’s ERROR class, never mistaken for a
+verdict about a route), and the fixture gained a label assertion.
+<code>r13-crash-is-error</code> pins the new behaviour with an injected
+crash on a scratch copy plus an uninjected control needle.</p>
+</body>
+</html>

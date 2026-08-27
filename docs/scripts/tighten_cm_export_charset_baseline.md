@@ -1,7 +1,7 @@
 # tighten_cm_export_charset_baseline.sh — the CM-EXPORT-CHARSET-VALID producer
 
-**Revision:** 1
-**Last modified:** 2026-08-26T10:14:00Z
+**Revision:** 2
+**Last modified:** 2026-08-26T13:07:00Z
 **Authority:** §11.4.135 (monotone ratchet) · §11.4.249 (producer ≠ gate) · §11.4.240(B) (capability, not instruction) · §11.4.18 (script documentation)
 **Companion:** [`check_cm_export_charset_valid.md`](check_cm_export_charset_valid.md) — the gate this script feeds
 
@@ -17,8 +17,11 @@ So the write capability lives here, in a script that is explicitly invoked by a
 human and never runs during a build. The gate contains no line that could call it
 and no line that could write the baseline.
 
-The two share **one** oracle (`lib/cm_export_charset_scan.py`), so the number this
-script records and the number the gate later enforces cannot diverge.
+The two share **one** oracle (`lib/cm_export_charset_scan.py`) and **one** baseline
+reader (`lib/cm_export_charset_baseline_read.sh`), so neither the number this script
+records nor the rule for what counts as a valid threshold can diverge from what the
+gate later enforces. The shared reader exists because the round-1 BLOCKING was that
+same parse rule written twice and fixed once.
 
 ## Usage
 
@@ -55,6 +58,9 @@ changed baseline, re-run the gate.
 |---|---|
 | live count **above** stored baseline | That is a raise. The ratchet is monotone decrease (§11.4.135): a regression is fixed in the corpus, never accommodated by moving the bar. |
 | stored baseline unparseable (`08`, `010`, `x`) | Refuses to overwrite a threshold it cannot first read. Leading zeros are the sharp case — bash reads them as octal and *errors*, and `if` swallows the error as false, so before this was fixed the guards fell through and the script wrote `baseline=9` while printing "lowered 08 -> 9" (a raise, mislabelled). |
+| stored baseline over 18 digits | Same class one ring out: the no-leading-zero rule accepts a 20-digit value and bash arithmetic wraps it mod 2⁶⁴, so `18446744073709551619` silently became 3. A number this script cannot faithfully evaluate is one it refuses to act on. |
+| more than one `baseline=` line | An ambiguous threshold is an unresolvable signal, not something to resolve by picking the last matching line. |
+| baseline path is a symlink | Refuses rather than silently replacing it with a regular file. A symlink can be re-pointed outside the tree, where later raises leave no diff — and quietly "healing" one would destroy whatever the operator meant by it. |
 | baseline path is not a regular file | `mv` onto a directory succeeds by depositing the temp file *inside* it, leaving nothing at the path — while the script would report `ADOPTED` with rc 0. A success report for a write that did not happen is forbidden (§11.4.6). |
 | post-write read-back disagrees | A zero exit from the writer proves bytes moved, never that they arrived at the intended path (§11.4.200). The value is read back and must match. |
 | `--adopt` when a baseline exists | Blocks the careless raise. See "What the refusals do not do". |
@@ -67,7 +73,8 @@ changed baseline, re-run the gate.
 They raise the *cost* of a raise; they do not make one impossible. Delete the
 baseline and re-run `--adopt`, or edit the number by hand, and you have a higher
 bar. The `--adopt`-when-present refusal blocks the careless route, not the
-determined one.
+determined one. The **symlink** route is the exception — that one is refused
+outright, because it is the only route that goes trace-free after a single diff.
 
 The actual defence is that **every one of those routes leaves a diff in a tracked
 file** for a reviewer to see (§11.4.142). Which means the defence exists only once
@@ -87,4 +94,5 @@ earlier version broke it.
 - `scripts/pre_build/check_cm_export_charset_valid.sh` — the gate (read-only over the baseline)
 - `scripts/pre_build/lib/cm_export_charset_scan.py` — the shared oracle
 - `tests/pre_build/test_cm_export_charset_valid.sh` — §1.1 paired mutations covering both scripts
+- `scripts/pre_build/lib/cm_export_charset_baseline_read.sh` — the shared read-only validator
 - BOB-182 — the ratchet that did not ratchet

@@ -1,0 +1,29 @@
+BOB-212 RED — .gitignore silent-swallow of credential-named source files
+repo: /run/media/milosvasic/DATA4TB/Projects/boba
+mode: guard (assert swallow is LOUD)
+
+-- control needle (§11.4.201(7)(b)): harness can see a visible new file --
+  [ok]     non-credential-named sibling IS visible in git status — harness proven seeing
+
+-- A1: is the credential-named source file visible to the commit path? --
+  ..       file is INVISIBLE to git status; blocking rule: .gitignore:31:*credentials*	qBitTorrent-go/internal/jackettapi/credentials_failclosed_test.go
+-- A2: does a swallow-guard exist and refuse loudly, naming rule + file? --
+  ..       no swallow-guard at /run/media/milosvasic/DATA4TB/Projects/boba/scripts/pre_build/check_gitignore_swallow.sh
+
+-- A3: does ANY signal distinguish 'swallowed' from 'never authored'? --
+  ..       git status is BYTE-IDENTICAL with and without the file:
+  ..         world A (file authored)   -> 330ceb52074cdbbe
+  ..         world B (file never made) -> 330ceb52074cdbbe
+
+-- ACCEPTANCE (BOB-212): commits normally OR loud refusal — never silence --
+  [RED]    NEITHER limb holds: the file is invisible AND nothing refuses loudly.
+  [RED]      swallowed by: .gitignore:31:*credentials*	qBitTorrent-go/internal/jackettapi/credentials_failclosed_test.go
+  [RED]      an author who writes this file gets NO indication it did not land.
+  [RED]    FALSE-NULL CONFIRMED (§11.4.201(6)): 'file swallowed' and 'no file authored'
+  [RED]      are indistinguishable to the commit path. A blind instrument and a clean
+  [RED]      tree return the identical quiet zero.
+
+-- GOLDEN-FALSE (§11.4.201(1)/§11.4.10): real secrets MUST stay ignored --
+  [ok]     all 15 secret-bearing shapes remain ignored
+
+RESULT: FAIL (exit 1) — the swallow is SILENT. BOB-212 acceptance not met.

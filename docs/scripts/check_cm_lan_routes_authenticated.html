@@ -246,9 +246,9 @@
 </header>
 <h1
 id="check_cm_lan_routes_authenticated.sh">check_cm_lan_routes_authenticated.sh</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-08-26T00:00:00Z <strong>Review round:</strong> 2 (independent Fable
-review, §11.4.209 → §11.4.134) <strong>Gate:</strong>
+<p><strong>Revision:</strong> 10 <strong>Last modified:</strong>
+2026-08-27T01:32:30Z <strong>Review round:</strong> 13 (independent
+Fable review, §11.4.209 → §11.4.134) <strong>Gate:</strong>
 <code>CM-LAN-ROUTES-AUTHENTICATED</code> <strong>Authority:</strong>
 operator decision BOB-102 (2026-08-26) · §11.4.135 · §11.4.201</p>
 <h2 id="overview">Overview</h2>
@@ -331,17 +331,23 @@ authoritative source, per framework:</p>
 <tbody>
 <tr>
 <td><code>fastapi</code></td>
-<td>the module parses with <code>ast</code> and a
-<code>Depends(&lt;marker&gt;)</code> genuinely reaches the route — as a
-handler parameter default, as the decorator’s
-<code>dependencies=[...]</code>, or via its
+<td>the decorator verb is one of
+GET/POST/PUT/DELETE/PATCH/HEAD/OPTIONS/<strong>TRACE</strong> (checked
+against the installed FastAPI source, not from memory), the module
+parses with <code>ast</code>, and a <code>Depends(&lt;marker&gt;)</code>
+genuinely reaches the route — as a handler parameter default, as the
+decorator’s <code>dependencies=[...]</code>, or via its
 <code>APIRouter(dependencies=[...])</code>.</td>
 </tr>
 <tr>
 <td><code>gin</code></td>
-<td>an auth marker is actually installed with <code>.Use(...)</code> on
-the owning engine or route group. Group prefixes are resolved so the
-reported path is the real one.</td>
+<td>an auth marker is installed with <code>.Use(...)</code> on that
+<strong>exact</strong> owner, or inherited down the
+<code>Group(...)</code> chain. gin’s <strong>registration-order</strong>
+semantics are honoured: a route registered <em>before</em>
+<code>.Use</code> on its owner is <strong>not</strong> covered by it,
+and a group inherits only what its parent carried at
+<code>Group()</code> time.</td>
 </tr>
 <tr>
 <td><code>gomux</code></td>
@@ -358,9 +364,93 @@ second, bare mux as protected just because a <em>different</em> mux in
 the same file is wrapped — a <strong>false attribution of
 safety</strong>, which is categorically worse than failing to see a
 route at all. This gate resolves the wrap for the exact mux variable a
-route was registered on, following one level of assignment indirection,
+route was registered on, following assignment indirection to a fixpoint,
 and treats an unresolvable wrap as <strong>unwrapped</strong> (fail
 closed).</p>
+<blockquote>
+<p><strong>The fixpoint’s own boundary, stated (round 7).</strong>
+Revision 6 described this resolution as fail-closed and stopped there.
+That is true of the direction it was describing — a carrier the pass
+<em>misses</em> only shrinks the name set, which can move a verdict
+toward UNWRAPPED and never toward WRAPPED — and <strong>false of the
+other direction</strong>, which was not recorded. The propagation is
+purely lexical: any assignment whose right-hand side <em>mentions</em> a
+carrier name adopts its left-hand side, with no model of what that
+expression returns. So <code>stats := describe(mux)</code> followed by
+<code>return WithAuth(stats)</code> credits <code>mux</code> (measured
+<code>auth_wired=true</code>) although nothing wrapping <code>mux</code>
+was ever returned. This is an <strong>over-approximation, and
+over-approximating the carrier set is fail-open.</strong> It is kept
+deliberately — the alternative is a Go return-value model, a second
+parser with its own failure modes standing between this gate and the one
+question it answers — and it is bounded by two rules that do hold: only
+<em>function-level</em> returns count, and both ends of the name match
+are anchored, so neither a closure’s return nor a same-prefix or
+field-qualified name can carry a credit. It is now owned in
+<code>_carriers</code>, in the skip table, and pinned by the
+<code>gomux-carrier-over-approximates</code> fixture, so narrowing it
+later is a deliberate change rather than drift. It is carried as an
+<strong>honest open gap</strong> (§11.4.118), not as a solved
+problem.</p>
+</blockquote>
+<p>Only <strong>function-level</strong> returns count, and they are read
+from a projection of the source in which comments and <em>every</em>
+literal have been blanked by a single stateful pass over Go’s lexical
+modes — <code>code</code>, <code>//</code> line comment,
+<code>/* */</code> block comment, backtick raw string, <code>"</code>
+interpreted string, <code>'</code> rune — with the mode carried
+<strong>across line boundaries</strong>, because a block comment and a
+raw string both span lines. Three shapes that must never prove
+authentication, and do not:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// </span><span class="al">TODO</span><span class="co">: return WithAuth(mux) once BOB-197 lands   &lt;- a comment is a CARRIER</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> mux                                        <span class="co">//    (§11.4.201(7)(a))</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>makeAuthed <span class="op">:=</span> <span class="kw">func</span><span class="op">()</span> http<span class="op">.</span>Handler <span class="op">{</span> <span class="cf">return</span> WithAuth<span class="op">(</span>mux<span class="op">)</span> <span class="op">}</span>  <span class="co">// closure return</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> mux                                                  <span class="co">// belongs to the closure</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> usage <span class="op">=</span> <span class="st">`the authenticated variant would</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="st">  return WithAuth(mux)          &lt;- a MULTI-LINE raw string is a CARRIER too</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="st">`</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="cf">return</span> mux</span></code></pre></div>
+<p>All three are reported UNAUTHENTICATED. Handler closures passed to
+<code>HandleFunc</code> — the ordinary shape in this repo’s own router —
+are unaffected, because only <code>return</code>s inside a closure
+<em>body</em> are excluded, not the enclosing function’s.</p>
+<p>The mode that wins is the one whose opener comes
+<strong>first</strong>: a <code>/*</code> written inside a
+<code>//</code> comment is comment text (it does not open a block
+comment, and must not blank the real code below it — that would be a
+§11.4.201(1) FAIL-bluff, and a gate that cries wolf gets bypassed); a
+backtick inside a comment does not open a raw string; <code>//</code>
+and <code>/*</code> inside a raw string are string content; escapes
+apply inside <code>"</code> and <code>'</code> but <strong>not</strong>
+inside a raw string, where a trailing <code>\</code> is a literal
+backslash.</p>
+<p>One rule spans both Go extractors: <strong>a construct counts only
+when its code skeleton survives in the literal-free projection.</strong>
+The <code>code</code> projection keeps interpreted-string literals,
+because every route regex reads its path out of a <code>"..."</code> —
+so scanning <code>code</code> for a <em>call</em> would let a literal
+carry the call. A single log line reading
+<code>log.Println("hint: r.Use(middleware.AuthMW())")</code> would
+otherwise mark every route on <code>r</code> as covered by middleware
+that does not exist. The registration call, the engine declaration and
+the <code>.Use</code> are therefore read from the literal-free
+projection; only the <strong>path text</strong> is read from the
+literal. The same rule runs in the other direction: a doc string that
+merely <em>mentions</em> <code>.Any(</code> must not mint a refusal, or
+the gate cries wolf and gets bypassed (§11.4.201(1)). A route path
+written as a raw string is not resolvable by those regexes, so it
+surfaces as an unmodelled registration — refused, never silently dropped
+from the scan.</p>
+<p>A construct that cannot be lexed to a close — an unterminated
+<code>/*</code> or backtick at end of file, or an unterminated
+<code>"</code>/<code>'</code> at end of line, none of which is valid Go
+— is <strong>refused</strong> with its <code>file:line</code>, never
+silently swallowed. The pre-round-4 engine failed <em>open</em> here: an
+unterminated <code>/*</code> matched no <code>/\*.*?\*/</code> span, so
+a fake wrap inside it survived and proved the wrap. Fail closed is the
+rule on exactly the input the engine cannot lex (§11.4.252).</p>
 <p>Every refusal prints the route, its <code>file:line</code>, how the
 verdict was reached, and whether the method is mutating — so a false
 positive is diagnosable in one step rather than by re-deriving the
@@ -373,12 +463,149 @@ and to <strong>fail closed</strong> on any it does not model:</p>
 <ul>
 <li>FastAPI <code>add_api_route</code> / <code>add_route</code> /
 <code>.mount</code> / <code>.websocket</code></li>
+<li>FastAPI <code>@router.api_route(...)</code> — its path <em>is</em> a
+literal, but its method set comes from a <code>methods=[...]</code>
+keyword this model does not read, so the route cannot be resolved to a
+method (round 5)</li>
+<li>FastAPI <code>@router.route("/p", methods=[...])</code> — a real
+registration decorator (<code>routing.py:1317</code> in the installed
+FastAPI, 102 lines <em>above</em> the <code>api_route</code> round 5
+found in the same file). It calls <code>add_route()</code>, which builds
+a plain starlette <code>Route</code> that FastAPI’s dependency injection
+never runs on, so a <code>Depends(marker)</code> can never reach it. It
+is refused permanently rather than modelled (round 6)</li>
+<li>a FastAPI registration reached through a declared router but
+<strong>not</strong> through a <code>@router.verb("/literal")</code>
+decorator on a function — an immediate call
+(<code>router.post("/p")(fn)</code>), a decorator on a
+<strong>class</strong>, or a bound-method alias
+(<code>reg = router.post</code> then <code>@reg("/p")</code>). All three
+registered live routes and all three were silently dropped before round
+6. The rule is keyed on the <strong>owner being a declared
+router</strong>, not on the verb name: <code>.get</code> is both an HTTP
+verb and the most common method name in Python, so an unqualified rule
+would fire on <code>d.get(k)</code> and every HTTP-client call in the
+tree (round 6)</li>
+<li>a FastAPI <strong>router bound more than once</strong> in a module —
+which router object a decorator on that name refers to is not statically
+decidable, so neither its prefix nor its router-level dependencies can
+be attributed to any particular route (round 6)</li>
+<li>a registration whose <strong>receiver is separated from its member
+by whitespace or a newline</strong>, in EITHER Go extractor —
+<code>r.</code> then <code>POST("/p", h)</code> on the next line,
+<code>open.</code> then <code>HandleFunc("/p", h)</code>,
+<code>r.  POST("/p", h)</code>, <code>mux . Handle("/p", h)</code>. Go
+permits arbitrary whitespace on either side of a selector dot and
+inserts no semicolon after a trailing one, so every spelling is legal
+and the split-at-newline form is <strong>gofmt-stable</strong> (verified
+with <code>gofmt -e</code>). Round 6 refused this for gin only; the
+gomux twin silently dropped the route until round 11 fixed the primitive
+for both (round 11)</li>
+<li>a <strong>router-group declaration</strong> whose parent is
+separated from <code>.Group(</code> the same way (<code>g := r.</code>
+then <code>Group("/admin")</code>). This one is refused rather than
+merely dropped because it corrupts the route <strong>path</strong>:
+every registration on that group loses its prefix, so
+<code>POST /admin/wipe</code> resolves as <code>POST /wipe</code> and an
+exemption written for a genuinely public <code>POST /wipe</code> matches
+it (round 11)</li>
+<li>a <strong>gomux registration on a dotted receiver</strong>
+(<code>s.mux.HandleFunc("/p", h)</code>), whose wrap cannot be followed
+— the round-5 gin defect living in the third extractor, found by round
+6’s credit audit (round 6)</li>
+<li>a FastAPI route registered on a <strong>dotted or computed</strong>
+router expression (<code>@&lt;expr&gt;.&lt;attr&gt;.post("/p")</code>),
+whose prefix and router-level dependencies cannot be resolved statically
+(round 5)</li>
+<li>a <strong>gin registration sharing a line with another
+statement</strong> — e.g.
+<code>g := r.Group("/api/v1"); g.POST("/wipe", h)</code> or
+<code>r.POST("/p", h); r.Use(authMW())</code>. gin middleware is
+order-dependent and this resolver’s ordering model is line-granular, so
+on a multi-statement line neither the route’s coverage nor a same-line
+<code>.Group()</code>/<code>.Use()</code> ordering is decidable.
+Detected on the comment-and-literal-blanked projection, so a
+<code>;</code> inside a path literal (legal — matrix parameters) or
+inside a trailing <code>//</code> comment never mints a refusal (round
+5)</li>
+<li>a gin route registered on a receiver reached through a <strong>field
+or selector</strong> (<code>s.router.POST("/p", h)</code>), whose
+middleware chain cannot be followed — attributing it to a same-named
+local engine or group would falsely mark it authenticated (round 5)</li>
 <li>gin <code>.Any</code> / <code>.Match</code> / <code>.Handle</code> /
 <code>.Static*</code> / <code>.NoRoute</code> /
 <code>.NoMethod</code></li>
 <li>a multi-line or computed (non-literal) path expression in any
 framework</li>
 <li>registration on the global <code>http.DefaultServeMux</code></li>
+<li>a <strong>gomux receiver this model cannot name</strong> — a call
+result, an index expression or any other computed receiver
+(<code>newServeMux().HandleFunc(...)</code>,
+<code>s.buildMux().HandleFunc(...)</code>,
+<code>muxes[0].HandleFunc(...)</code>). <strong>Known over-refusal
+(round 8, documented round 11):</strong> a plain <em>call</em> to a
+method named <code>Handle</code> on such a receiver —
+<code>getHandler().Handle(w, r)</code> — is statically indistinguishable
+from a registration and is refused too. This is not a new class: the
+shipped dotted-receiver rule already refuses the twin
+<code>x.y.Handle(w, r)</code> on the same reasoning, and gin’s catch-all
+over-refuses identically. A dotted handler <em>argument</em>
+(<code>d.Health.HandleHealth</code>) is untouched, because the member
+must be followed by <code>(</code> to count and an argument is followed
+by <code>,</code> or <code>)</code>. See <a
+href="#false-positives-are-failures-too">False positives are failures
+too</a></li>
+<li>more than one gin engine <strong>declaration site</strong> in a
+single file (cross-engine handler and middleware sharing is not
+modelled). Counted per site rather than per name since round 6: two
+functions each declaring <code>r := gin.New()</code> previously
+collapsed into one entry, so the refusal never fired and one function’s
+<code>.Use</code> credited the other function’s route</li>
+<li>a FastAPI guard alias that is <strong>not</strong> a single
+module-level binding — one assigned twice, or assigned inside a
+conditional (<code>if os.getenv("DISABLE_AUTH")</code>), since which
+dependency it carries at runtime is not statically decidable and
+trusting it would be a fail-<strong>open</strong> read. <em>Known limit,
+recorded where its symptom appears (round 7):</em> the alias maps are
+keyed on the module <strong>basename</strong>, so <code>a/util.py</code>
+and <code>b/util.py</code> collide into one entry. The collision is
+<strong>measured fail-closed</strong> — the merged entry trips this very
+rule and is refused with a finding, so no credit crosses a package
+boundary — but that is incidental rather than designed, and it means a
+correct alias can be refused because an unrelated package has a
+same-named module. Until round 7 this note lived only in the round-6
+evidence file, which is not where a reader hitting the refusal will
+look</li>
+<li>a <strong>gin group name bound more than once</strong> in a file, or
+bound by a declaration this model cannot resolve
+(<code>g := s.pub.Group("/public")</code> — a parent reached through a
+selector, or a prefix that is not a string literal). <code>groups</code>
+was keyed on the name and scoped to the file, so a name the modelled
+pattern could not see was invisibly re-bound and the later registration
+inherited the earlier binding’s <strong>prefix and its
+coverage</strong>: measured
+<code>POST /admin/wipe auth_wired=true</code>, findings 0, exit 0 on a
+route that is neither at that path nor authenticated. Counted per
+<strong>declaration site</strong> now, the same rule already applied to
+gin engines and FastAPI routers (round 7)</li>
+<li>a <strong>gomux registration on a receiver reached through a
+selector</strong>, in every spelling. The check keyed on an enumerated
+list of characters an expression may end with, and <code>}</code> was
+not in it, so <code>Server{}.mux.HandleFunc("/p", h)</code> matched
+neither that check nor the bare-owner path and was <strong>silently
+dropped</strong>. It now keys on the receiver being reached through a
+dot, which is the condition that was actually load-bearing (round
+7)</li>
+<li>a <strong>FastAPI registration reached through an imported
+router</strong> — <code>from .routers import router</code> then
+<code>router.post("/wipe")(wipe)</code> in the importing module. The
+rule’s owner test asked whether <em>this</em> module declared the
+router, so the whole rule was one <code>import</code> away from being
+bypassed and the mutating route vanished (findings 0, exit 0). The owner
+is now resolved transitively through the import graph, and still has to
+resolve to a router some module declared — the qualification that keeps
+<code>d.get(k)</code> and every HTTP-client call out of it (round
+7)</li>
 </ul>
 <p>Each is reported as an <code>UNMODELLED REGISTRATION IDIOM</code> and
 <strong>fails the gate</strong>. It is never silently skipped. A guard
@@ -387,6 +614,159 @@ whose stated purpose is catching tomorrow’s drift must not answer
 part of the instrument). Note that the zero-routes FALSE-NULL check
 cannot catch this case, because the service still resolves its
 <em>other</em> routes and returns a confident, wrong count.</p>
+<p><strong>How that claim is kept honest.</strong> Defects kept reaching
+this gate in which a <code>continue</code> stepped over a route with
+<em>no</em> finding — the claim above was documented before it was
+earned. The analyzer’s module docstring therefore enumerates
+<strong>every skip in every extractor</strong> and gives each one of
+three verdicts: <code>REFUSES</code> (emits a finding, gate fails),
+<code>FILTER</code> (proven not to be a registration — no route to
+lose), or <code>DROPS</code> (the defect class). The enumeration lives
+in the source so a reviewer can check it against the code rather than
+take this paragraph on faith (§11.4.250 — fix the primitive, not the
+third door).</p>
+<blockquote>
+<p><strong>Retraction (round 6, §11.4.118).</strong> Revision 5 of this
+guide asserted that “the <code>DROPS</code> column is empty, and a
+future entry in it is a release blocker.” <strong>That claim is
+withdrawn.</strong> It was never earnable by inspection — <em>absence of
+evidence of looking is not evidence of absence</em> — and three
+consecutive reviews falsified it by attacking a surface the previous
+round had not attacked; round 6 found four dropped FastAPI idioms in
+minutes, and a further four false-credit leaks, purely by looking
+somewhere new. The claim was also actively harmful: it promoted every
+idiom anyone might discover later into a standing release blocker, which
+is a promise this gate cannot keep and which penalises exactly the
+discovery that keeps it honest.</p>
+<p>What this gate claims instead is narrower and checkable:</p>
+<ul>
+<li><strong>the enumerated set</strong> — the skips listed in the
+analyzer docstring are the ones actually exercised, each with a fixture
+in the meta-test, and every <code>REFUSES</code> verdict pinned by a
+fixture that dies when the refusal is removed. Round 7 found that claim
+two rows short of true: <strong>no fixture contained a
+<code>*_test.go</code> at all</strong>, so the test-file
+<code>FILTER</code> in <em>both</em> Go extractors was unexercised in
+either direction. <code>gin-test-file-skipped</code> and
+<code>gomux-test-file-skipped</code> close it — each carries an
+unauthenticated mutating route inside a test file, and each turns red
+the moment the filter stops filtering. That last part was
+<em>measured</em>, not assumed: writing this retraction raised the
+question, so every refusal was deleted one at a time in a scratch copy
+and the harness re-run. Six survived — <code>websocket_route</code>, gin
+<code>.Match</code>, gin <code>.NoRoute</code>,
+<code>http.DefaultServeMux</code>, an unknown service kind, and an
+exemption missing its <code>path</code>. All six are now pinned, and
+each new pin was itself checked to fail under the deletion;</li>
+<li><strong>the method</strong> — those surfaces were derived by reading
+the <em>installed</em> framework source (§11.4.201, never memory), by
+walking the constructs this engine uses to mark a route protected
+against the credit rule, and by reproducing each candidate against the
+shipped analyzer before calling it a defect (§11.4.199). A stated method
+over an enumerated set — round 7 corrected the earlier wording
+(“auditing <em>every</em> construct”), which was the same completeness
+assertion this retraction withdraws, moved one column over;</li>
+<li><strong>the honest gap</strong> — an idiom outside that set is
+<strong>un-surveyed, not proven absent</strong>. A newly-found one is a
+tracked coverage gap to be closed with a fixture and a coverage-escape
+note (§11.4.238), <em>not</em> a broken promise.</li>
+</ul>
+<p>The <code>DROPS</code> column stays, and stays filled in honestly.
+Only the completeness assertion is gone.</p>
+</blockquote>
+<p><strong>The credit-bearing primitive (round 6, corrected round
+7).</strong> Round 5 fixed one dotted-receiver leak because that was the
+one reported. Round 6’s review named the real rule: a
+<strong>credit</strong> — anything that marks a route protected — must
+never be attributed across a scope boundary the resolver cannot see.
+That rule was then walked across the credit-bearing constructs this
+engine uses, and four leaked. Each was a <em>false attribution of
+safety</em>, which this gate treats as categorically worse than a missed
+route: the gate does not merely fail to see the route, it asserts the
+route is protected.</p>
+<blockquote>
+<p><strong>Retraction, second column (round 7, §11.4.118).</strong>
+Revision 6 retracted the <code>DROPS</code>-completeness claim and then
+wrote a fresh absolute one column over: <em>“every construct able to
+mark a route protected was audited; the four that leaked are
+pinned.”</em> <strong>That claim is withdrawn too.</strong> Round 7
+falsified it twice, in two constructs the same audit had recorded as
+<em>“measured fail-closed”</em> — a gin group name re-bound by an
+unresolvable declaration, and a <code>http.NewServeMux()</code>
+declaration reached through a selector. Both returned
+<code>auth_wired=true</code>, findings 0, exit 0 on an unauthenticated
+mutating route. “Audited” is a record of where somebody
+<strong>looked</strong>; inspection cannot convert that into “there are
+no others”, and this engine had to learn the same lesson a second time
+in the neighbouring column. What is claimed for the credit side is now
+exactly what is claimed for the drop side — an <strong>enumerated
+set</strong>, a <strong>stated method</strong>, and an <strong>honest
+gap</strong> — and each per-construct verdict in the analyzer is a
+<strong>dated measurement</strong>: “fail-closed” means <em>measured
+fail-closed on the shapes tried</em>, never <em>cannot leak</em>. A
+credit construct found later is a tracked coverage escape (§11.4.238),
+not a broken promise.</p>
+</blockquote>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>leak</th>
+<th>shape</th>
+<th>pre-fix verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gin <code>.Use</code> on a dotted receiver</td>
+<td><code>s.router.Use(auth)</code> credited a local
+<code>router</code></td>
+<td>mutating route <code>auth_wired=true</code>, exit 0</td>
+</tr>
+<tr>
+<td>gomux dotted registration</td>
+<td><code>s.mux.HandleFunc(...)</code> inherited a local mux’s wrap</td>
+<td>mutating route <code>auth_wired=true</code>, exit 0</td>
+</tr>
+<tr>
+<td>two gin engines sharing a name</td>
+<td>two functions’ <code>r := gin.New()</code> collapsed to one
+entry</td>
+<td>one function’s <code>.Use</code> credited the other’s route</td>
+</tr>
+<tr>
+<td>re-assigned FastAPI router</td>
+<td>a later <code>APIRouter(dependencies=[…])</code> back-credited
+earlier routes</td>
+<td>route on the <em>unguarded</em> router
+<code>auth_wired=true</code></td>
+</tr>
+<tr>
+<td>gin group name re-bound (round 7)</td>
+<td><code>g := r.Group("/admin")</code> in one function,
+<code>g := s.pub.Group("/public")</code> in another</td>
+<td><code>POST /admin/wipe auth_wired=true</code>, exit 0 — wrong path
+<em>and</em> falsely safe</td>
+</tr>
+<tr>
+<td>gomux mux declared through a selector (round 7)</td>
+<td><code>s.mux = http.NewServeMux()</code> declared a bare-name mux
+that does not exist</td>
+<td>mutating route on a <em>different</em> local <code>mux</code>
+<code>auth_wired=true</code>, exit 0</td>
+</tr>
+<tr>
+<td>FastAPI router reached by import (round 7)</td>
+<td><code>from .routers import router</code> then
+<code>router.post("/wipe")(wipe)</code></td>
+<td>the mutating route vanished entirely — findings 0, exit 0</td>
+</tr>
+</tbody>
+</table>
 <p>To ship a route in an unmodelled form, either re-express it in a
 modelled one or extend the analyzer to model it — and add a fixture so
 it stays guarded.</p>
@@ -403,6 +783,14 @@ exemption entry requires:</p>
 </ul>
 <p>The gate refuses an entry missing either, so a blanket skip is
 impossible.</p>
+<p>The same discipline applies to the policy’s own emptiness (round 5):
+a policy declaring <strong>zero services</strong> is refused, because an
+empty declaration list and a system with no LAN listener return the
+identical quiet PASS (§11.4.201(6) FALSE-NULL) — deleting the
+declarations must not be a way to turn the gate green. A listener that
+is genuinely not LAN-reachable is declared with
+<code>lan_bound: false</code>, which remains a tested, accepted scoping
+statement.</p>
 <p><code>known-gap</code> entries are <strong>real holes carried
 honestly</strong>, not endorsements. The gate prints their count loudly
 on every run. They are expected to shrink and never grow
@@ -453,11 +841,438 @@ build failure, and a gate that cries wolf gets bypassed.</li>
 <li><strong>Malformed policy.</strong> Unparseable YAML exits
 <code>2</code> (ERROR) with the real cause, never <code>1</code> with a
 misattributed “routes do not demand authentication”.</li>
+<li><strong>Dormant markers.</strong> <code>qbittorrent-proxy-go</code>
+currently declares <code>auth_markers: []</code>, so every gin route
+rides an exemption. The per-owner and registration-order logic above is
+therefore inert for it today and arms itself the moment a gin auth
+marker is introduced — which is precisely when it starts to matter.</li>
 <li><strong>Method-scoped keys.</strong> Exemptions are keyed on
 <code>(service, method, path)</code>, so a path exempted for
 <code>GET</code> is <strong>not</strong> exempted when it later gains a
 <code>POST</code>.</li>
 </ul>
+<h2
+id="round-9-what-changed-and-why-independent-review-remediation">Round 9
+— what changed and why (independent review remediation)</h2>
+<p>Round 8 returned NO-GO on the gomux extractor. All three findings
+were real and are closed here; each is pinned by a fixture that fails
+against the pre-fix engine (§11.4.115(F)).</p>
+<p><strong>BLOCKING — a mutating route was SILENTLY DROPPED.</strong>
+gin refuses a receiver it cannot resolve because <code>GIN_VERB</code>
+is a receiver-agnostic catch-all. gomux had no equivalent: round 7
+widened only the <em>dotted</em> spelling, so a receiver that was
+neither a bare identifier nor a dotted selector matched nothing and the
+skeleton filter stepped over the line with no finding. Measured:
+<code>newServeMux().HandleFunc("/wipe", h)</code> beside a healthy
+<code>mux.HandleFunc("/ok", h)</code> produced
+<code>exit 0 / routes 1 / findings 0</code> with <code>/wipe</code>
+<strong>absent from the inventory</strong> — the gate reported PASS over
+a wide-open LAN mutating route.
+<code>s.buildMux().HandleFunc(...)</code> and
+<code>muxes[0].HandleFunc(...)</code> dropped the same way. The
+§11.4.201(6) BLIND net could not catch it: that net fires when a file
+yields <em>zero</em> routes, and the healthy sibling kept the file
+non-empty — <strong>a drop hides behind a healthy neighbour.</strong>
+Fixed by <code>MUX_CALL</code>, the catch-all gomux lacked, compared
+<em>by count</em> against the receivers this model can name. Counting
+rather than testing “is any receiver nameable” is what makes a line
+holding both a nameable and an unnameable registration refuse instead of
+half-registering. The invariant: <strong>a
+<code>.HandleFunc(</code>/<code>.Handle(</code> call site this resolver
+cannot attribute must REFUSE, never skip</strong> (§11.4.252).</p>
+<blockquote>
+<p><strong>Round 9 stated that invariant as an absolute the code did not
+honour, and round 10 falsified it.</strong> <code>MUX_CALL</code>
+requires the dot and the member on ONE line, so <code>open.</code> +
+newline + <code>HandleFunc("/wipe", h)</code> — legal,
+<strong>gofmt-stable</strong> Go — matched <em>nothing</em>: not the
+naming regexes, not the catch-all counter, not the refusal. Both counts
+were zero, <code>_sites &gt; _named</code> was false, and the line fell
+through to the very skip the invariant forbids. An invariant a resolver
+cannot honour is not a guarantee, it is a claim; round 11 fixed the
+<strong>primitive</strong> so the sentence is true, rather than
+re-stating the sentence. The bound it carries today, stated so the next
+reader can check it rather than trust it. <strong>A Go registration can
+legally split in exactly one place — at the selector dot</strong> — and
+that was established with <code>gofmt -e</code>, not assumed: splitting
+before the <code>(</code> is rejected by the parser
+(<code>open.HandleFunc</code> + newline + <code>("/w", h)</code> does
+not compile, because Go inserts a semicolon after the identifier), and
+splitting <em>inside</em> the member name yields two unrelated
+statements rather than a registration. Every dot-split spelling is
+therefore covered — same-line whitespace on either side of the dot, a
+block comment in the gap, a newline, and any number of blank or
+<code>//</code>-comment lines before the member. The neighbouring
+spellings were measured too and are refused under their own correct
+labels: a receiver expression split across lines (<code>s.</code> +
+newline + <code>buildMux().HandleFunc(</code>) is refused as an
+unnameable receiver, and arguments moved to the next line are refused as
+a non-literal path. A method <em>value</em> that is not a registration
+at all (<code>_ = mux.Handle</code>) is correctly <strong>not</strong>
+refused — checked, because a fix that starts firing on that would be the
+§11.4.201(1) false positive this section is about.</p>
+</blockquote>
+<p><strong>IMPORTANT — a false refusal on idiomatic Go.</strong>
+<code>FUNC_LIT = \bfunc\s*\(</code> also matches a <em>method’s receiver
+clause</em>, so <code>_closure_spans</code> treated an entire method
+body as a <code>func(){}</code> literal and
+<code>_function_level_returns</code> discarded the method’s own
+<code>return WithAuth(mux)</code>. Byte-identical bodies gave opposite
+verdicts: the free-function spelling exited 0,
+<code>func (s *Server) Build()</code> exited 1 claiming the mux was
+“returned WITHOUT an auth marker”. Method-scoped mux construction is
+idiomatic Go, and a gate that cries wolf on an idiom gets bypassed —
+which is how the silent-drop class above comes back. The discriminator
+keys on what <em>follows</em> the first balanced paren group: a method
+continues with its name then <code>(</code>, a literal with
+<code>{</code> or a result type. Genuine closures nested inside a method
+are still closures, pinned separately.</p>
+<p><strong>MINOR — an unpinned cycle guard.</strong> The
+<code>fastapi-import-cycle</code> fixture builds a cycle in the import
+graph but never places a verb attribute on a cyclically imported name,
+so <code>_router_key</code> never recursed into it and deleting the
+seen-set guard left the fixture green. The new fixture puts
+<code>api.post(...)</code> on a name whose import chain cycles, so the
+pristine engine terminates and exits 0 while the guard-less mutant
+raises <code>RecursionError</code> — a crash rather than a verdict,
+which is a §11.4.1 FAIL-bluff.</p>
+<p><strong>Correction carried from the review, and one the review got
+wrong.</strong> The skip table’s row “line has no mux-registration
+skeleton … FILTER no route to lose” was false by the table’s own
+taxonomy — the construct <em>dropped</em> a route, it did not filter a
+non-route — and is rewritten to what is measured. Separately, the review
+recorded the surviving mutation on the gin <code>len(sites) == 1</code>
+credit filter as <em>redundant</em> with
+<code>unresolvable_groups</code>; <strong>that reading is
+wrong.</strong> <code>GIN_GROUP</code> carries no leading lookbehind
+while <code>GIN_GROUP_DECL</code> carries one, so a dotted assignment
+target (<code>s.g = r.Group("/safe")</code>) reaches
+<code>group_sites</code> and never <code>decl_sites</code>; the “bound N
+times” refusal is keyed on <code>decl_sites</code>, so it never fires.
+With the filter removed the route resolves as <code>/safe/wipe</code>
+instead of <code>/wipe</code>, an operator exemption written for the
+auth’d <code>/safe</code> group matches it, and <strong>the gate goes
+fully green — exit 0, zero findings — over an unauthenticated mutating
+LAN route.</strong> The filter is load-bearing, was merely unpinned, and
+now has its own fixture.</p>
+<p><strong>Live posture unchanged.</strong> All 13 registrations under
+the gomux root are nameable receivers, so the real tree still resolves
+74 routes across 3 services with 23 honest gaps and the
+<code>--json</code> inventory is byte-identical to round 8.</p>
+<h2 id="round-11-closing-the-round-10-no-go">Round 11 — closing the
+round-10 NO-GO</h2>
+<p>Round 10 returned NO-GO with 1 BLOCKING, 2 IMPORTANT, 1 MINOR and 2
+NITs. All six are closed here. Two of them were <strong>one primitive
+wearing two faces</strong>, and the audit that followed found more doors
+than the report did.</p>
+<p><strong>BLOCKING — the gomux twin of a gin fix made five rounds
+earlier.</strong> A Go selector may be separated from its member by
+arbitrary whitespace, including a newline. Round 6 met this in gin and
+fixed <strong>gin only</strong>; every gomux regex still required
+dot-and-member on one line, so <code>open.</code> + newline +
+<code>HandleFunc("/wipe", h)</code> matched <em>nothing</em> — not the
+naming regexes, not the round-9 catch-all counter, not the refusal — and
+the line fell through to the skip. Beside a healthy wrapped sibling:
+<code>exit 0 / routes 1 / findings 0 / unmodelled 0</code>,
+<code>/wipe</code> absent. <code>gofmt</code> returns that file
+<strong>byte-identical</strong>, so a formatter will not save you. Fixed
+by extracting the primitive into a shared factory
+(<code>_selector_head</code> / <code>_ws_selector</code> /
+<code>_selector_is_split</code>) that both extractors call, so the two
+halves can no longer drift apart.</p>
+<p><strong>IMPORTANT — the same primitive on one line</strong>, in
+<em>both</em> extractors: <code>open.  HandleFunc(</code>,
+<code>r.  POST(</code>, <code>mux . Handle(</code>. The gin case was the
+worst of the pair — with <code>r.Use(AuthMW())</code> above it and one
+healthy sibling route the gate returned a clean
+<code>exit 0 / zero findings</code> over an unauthenticated mutating LAN
+route. <strong>The decision, since the round asked for it explicitly:
+refuse, never resolve.</strong> Refusing is what the shipped gin code
+already did for the newline half, so refusing the whitespace half makes
+one primitive behave one way; resolving would mean widening the
+<em>credit-granting</em> regexes — the ones carrying the
+<code>(?&lt;![\w.])</code> carrier lookbehinds and the mutual
+exclusivity the <code>_sites</code>/<code>_named</code> arithmetic rests
+on — and re-proving all of it, for spellings that do not survive
+<code>gofmt</code> anyway. Only new, separately-labelled
+<em>detectors</em> were added; nothing that grants credit moved.</p>
+<p><strong>The door the report did not open.</strong> The same primitive
+also reaches <code>.Use(</code>, <code>gin.Default()</code>,
+<code>http.NewServeMux()</code> and <code>.Group(</code>.
+<code>.Group(</code> had to be fixed because it corrupts the route
+<strong>path</strong>: a split <code>.Group("/admin")</code> makes
+<code>POST /admin/wipe</code> resolve as <code>POST /wipe</code>, and an
+exemption written for a genuinely public <code>POST /wipe</code> matches
+it — <code>exit 0</code>, zero findings, over an unauthenticated
+<code>/admin/wipe</code>.</p>
+<blockquote>
+<p><strong>This paragraph used to claim the other three “merely drop the
+credit … loud and fail-closed”. For <code>gin.Default()</code> that was
+FALSE, and round 12 found it. See <a
+href="#round-13--the-inverted-primitive">Round 13</a> — an engine
+declaration carries no credit to drop, so its absence disarms a refusal
+instead.</strong></p>
+</blockquote>
+<p><strong>IMPORTANT — a func TYPE owns no body brace.</strong>
+<code>FUNC_LIT</code> matches <code>func(</code>, which in Go introduces
+a <em>type</em> at least as often as a <em>literal</em>, and a type has
+no body — so <code>text.find("{", j)</code> walked forward and anchored
+the span on whoever owned the next brace. Round 9 point-fixed one shape
+(the method receiver); round 10 reported two more; the audit found
+<strong>eleven</strong>, including four <em>body</em> positions
+(<code>var mw func(...)</code>, <code>type MW func(...)</code>,
+<code>make(chan func(int))</code>,
+<code>struct{ F func(int) int }</code>) that hijack the brace of a
+following <code>if</code>/<code>for</code> block and hide a real
+<code>return WithAuth(mux)</code> inside it — and two
+<em>receiverless</em> shapes, so the defect never needed a method at
+all. Fixed by two rules that provably do not subsume each other:
+<strong>RULE S</strong>, nothing before a block’s own body brace is a
+literal, and <strong>RULE D</strong>, a depth-0 <code>)</code>
+<code>]</code> <code>}</code> <code>,</code> <code>;</code>
+<code>=</code> or newline between a parameter list and the candidate
+<code>{</code> proves that brace belongs to someone else. RULE D alone
+cannot settle <code>func routes() func(int) int {</code>, because
+<code>func(int) int { return 0 }</code> <strong>is</strong> a legal
+literal (verified with <code>gofmt -e</code>); RULE S alone cannot see
+any body shape. Each <strong>rule</strong> is pinned by its own fixture
+and killed by its own mutation — but round 12 (NIT-2) found that
+sentence being read as covering the <strong>shapes</strong> too, and
+three of them (free-function func-RESULT,
+<code>make(chan func(int))</code>,
+<code>struct{ F func(int) int }</code>) had no fixture at all. All three
+probed correct; round 13 pins them so the sentence is true of both
+readings. The prose above also said “<strong>eleven</strong>” over a
+list of ten — the method receiver clause, the shape round 9 fixed, was
+narrated but never enumerated. It is now listed, and the count and the
+list agree.</p>
+<p><strong>MINOR — an unpinned belt, labelled rather than
+deleted.</strong> The <code>MUX_DOTTED_OWNER</code> term in
+<code>_named</code> is dead by preemption: the dotted refusal above it
+returns on <code>.search()</code>, which is truthy for every line
+<code>.findall()</code> would count. Verified independently, and the
+deletion mutation survives the whole matrix — it is <em>semantically
+unreachable</em>, so no fixture can pin it. It is kept as correct
+arithmetic for a future reordering and recorded in-source as
+UNPINNED.</p>
+<p>The mutual exclusivity it rests on was re-measured over 20,000
+adversarial lines with a control needle proving the instrument was
+seeing — but round 12 found that measurement was a <strong>session
+artefact</strong>: the in-source note cited “the harness’s
+<code>r11-mux-exclusivity-fuzz</code> needle”, <code>grep -c fuzz</code>
+on the harness returned <strong>0</strong>, and the mutation that widens
+<code>MUX_ANY</code> (precisely the credit-side widening the <em>refuse,
+never resolve</em> decision exists to prevent) survived all 156
+assertions. Round 13 lands the needle for real: 25,000 generated lines
+from a 34-atom grammar, asserting <code>named &lt;= sites</code>, with
+<strong>two</strong> control needles — the lookbehind-stripped regex and
+the refused widening itself — both required to report violations before
+the shipped zero is accepted as evidence (§11.4.201(7)(b)).</p>
+<p><strong>Two things this round found that round 10 did not
+report.</strong> The first cut of the BLOCKING fix still dropped a split
+with a <strong>comment or blank line in the gap</strong> — legal Go,
+same shape, one gap wider — because it looked only at the immediately
+following line; the scan now walks forward to the first line carrying
+code. The second is a fixture defect: two of this round’s own new
+IMPORTANT-2 fixtures carried a <em>second</em>, unguarded
+<code>return WithAuth(mux)</code> at function level, so they passed with
+or without the fix and pinned nothing. The mutation that survived is
+what exposed them — the md5 delta proved the mutation had applied, so
+the fault could only be the fixture. Both were rewritten so the only
+wrap-proving return sits inside the hijacked block, and the mutation
+then killed them.</p>
+<h2 id="round-13-the-inverted-primitive">Round 13 — the inverted
+primitive</h2>
+<p>Round 12 returned NO-GO with 1 BLOCKING, 2 IMPORTANT, 4 MINORs and 2
+NITs, and its reviewer wrote eight mutations the author had not —
+<strong>four survived</strong>. All nine findings are closed here.</p>
+<h3
+id="blocking-silence-is-safe-for-a-credit-carrier-and-unsafe-for-a-refusal-armer">BLOCKING
+— silence is safe for a credit-carrier and unsafe for a
+refusal-armer</h3>
+<p>Round 11’s honest-scope note claimed <code>.Use(</code>,
+<code>gin.Default()</code> and <code>http.NewServeMux()</code> alike
+“each <strong>drop the credit</strong> and are therefore fail-closed and
+loud”. Re-measured one construct at a time, that is true of two of the
+three and <strong>false of the engine declaration</strong> — and the
+audit that wrote the sentence never ran the case.</p>
+<p>An engine declaration <strong>carries no credit to drop</strong>.
+<code>GIN_ENGINE</code> feeds only the <code>len(engines) &gt; 1</code>
+refusal and the “bound N times” refusal; <code>GIN_USE</code> grants
+credit <em>independently</em>, file-scoped, keyed on the bare name. So
+making the declaration invisible drops nothing — it <strong>disarms the
+refusal</strong> that is the load-bearing precondition for file-scoped
+crediting, which is exactly the property the shipped
+<code>gin-one-engine-two-funcs</code> fixture pins.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> buildOps<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    r <span class="op">:=</span> gin<span class="op">.</span>New<span class="op">()</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    r<span class="op">.</span>Use<span class="op">(</span>AuthMW<span class="op">())</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    r<span class="op">.</span>GET<span class="op">(</span><span class="st">&quot;/ok&quot;</span><span class="op">,</span> api<span class="op">.</span>OK<span class="op">)</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    r <span class="op">:=</span> gin<span class="op">.</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        Default<span class="op">()</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    r<span class="op">.</span>POST<span class="op">(</span><span class="st">&quot;/wipe&quot;</span><span class="op">,</span> api<span class="op">.</span>WipeHandler<span class="op">)</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    r<span class="op">.</span>Run<span class="op">(</span><span class="st">&quot;:7187&quot;</span><span class="op">)</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p><code>gofmt</code> returns that file <strong>byte-identical</strong>.
+<code>main()</code>’s engine is a fresh <code>gin.Default()</code>
+carrying no middleware; the round-12 gate reported
+<code>POST /wipe auth_wired: true</code>, resolution <em>“owner ‘r’
+carries .Use(marker) at or above this line”</em>,
+<code>findings: []</code>, <strong>exit 0</strong>. Spelled normally,
+the very same file raises
+<code>2 gin engine declarations in one file (r)</code> and exits 1 —
+that control is what proves the spelling is the cause.</p>
+<p><strong>So the primitive is not “a selector can split at a
+dot.”</strong> It is:</p>
+<blockquote>
+<p>A construct whose <strong>absence drops a credit</strong> degrades
+fail-closed and loud. A construct whose <strong>absence disarms a
+refusal</strong> degrades fail-open and silent.</p>
+</blockquote>
+<p>The fix <strong>arms</strong>, it does not refuse separately: an
+engine <em>site</em> feeds two refusal counters and grants nothing, so
+widening its detector can only make the gate refuse more, never mint a
+false PASS. The split spelling therefore becomes byte-for-byte the
+normal spelling instead of growing a second finding class.</p>
+<h3 id="the-sweep-and-what-it-found">The sweep, and what it found</h3>
+<p>Round 12 named the search: <em>the remaining constructs whose absence
+disarms a refusal</em>. Every refusal-arming construct in both Go
+extractors was probed — nine constructs, on the whitespace axis, the
+newline-split axis and the naming axis. <strong>Two more doors were
+open</strong>, and both are closed here:</p>
+<ul>
+<li><strong>the aliased import.</strong> <code>import g "…/gin"</code>
+binds the package to <code>g</code>, so a hard-coded <code>gin.</code>
+selector is blind to it: <code>r := g.Default()</code> beside a
+<code>.Use</code>-carrying sibling engine came back
+<code>auth_wired: true</code>, exit 0, gofmt-<strong>stable</strong>.
+The local package name is now resolved from the file’s own import block.
+<code>import . "…/gin"</code> leaves no selector at all and is
+refused.</li>
+<li><strong>the nine <code>GIN_UNMODELLED</code> members</strong>
+(<code>.Any</code> <code>.Match</code> <code>.Handle</code>
+<code>.Static</code> <code>.StaticFile</code> <code>.StaticFS</code>
+<code>.StaticFileFS</code> <code>.NoRoute</code>
+<code>.NoMethod</code>). These are <em>pure</em> refusal-armers — none
+ever resolves into a route — so a split spelling armed nothing and the
+route vanished from the inventory entirely. Measured on all nine, every
+one gofmt-stable.</li>
+</ul>
+<p>Five constructs measured <strong>closed</strong> (the round-11
+detectors already catch them): <code>GIN_DOTTED_OWNER</code>,
+<code>MUX_DOTTED_OWNER</code>, the
+<code>MUX_CALL</code>/<code>MUX_ANY</code> counter, the
+<code>http.DefaultServeMux</code> rule, and the
+<code>;</code>/multi-statement rule. FastAPI is whitespace-immune by
+construction — it is parsed with <code>ast</code>.</p>
+<p>The full matrix, the <code>gofmt</code> verdict per spelling and the
+false-positive controls are captured under
+<code>docs/qa/BOB-102/round-13/</code>:</p>
+<ul>
+<li><a
+href="../qa/BOB-102/round-13/door-sweep.md"><code>door-sweep.md</code></a>
+— the nine refusal-arming constructs, the three axes, and every
+control</li>
+<li><a
+href="../qa/BOB-102/round-13/gofmt-measurements.txt"><code>gofmt-measurements.txt</code></a>
+— <code>gofmt -e</code> legality and byte-stability for all 88 probed
+spellings</li>
+<li><a
+href="../qa/BOB-102/round-13/mutation-kill-matrix.md"><code>mutation-kill-matrix.md</code></a>
+— 18 mutations, each md5-proven applied, with the restore
+md5-verified</li>
+<li><a href="../qa/BOB-102/round-13/MANIFEST"><code>MANIFEST</code></a>
+— the reviewed-bytes custody record, and the finding that <strong>all
+four of this gate’s executable artifacts are untracked in git</strong>,
+which is why no round-over-round diff on this item has ever been
+checkable</li>
+</ul>
+<h3 id="important-a-citation-to-a-needle-that-did-not-exist">IMPORTANT —
+a citation to a needle that did not exist</h3>
+<p>The analyzer cited “the harness’s
+<code>r11-mux-exclusivity-fuzz</code> needle” for the
+<code>named &lt;= sites</code> invariant. <code>grep -c fuzz</code> on
+the harness returned <strong>0</strong>, and the mutation widening
+<code>MUX_ANY</code> survived all 156 assertions. The invariant is true;
+nothing shipped was pinning it. The needle is now real — see the
+corrected MINOR paragraph in round 11 above.</p>
+<h3
+id="important-the-.group-poison-was-unpinned-bypassable-and-unexplained">IMPORTANT
+— the <code>.Group(</code> poison was unpinned, bypassable, and
+unexplained</h3>
+<p>Three separate defects in one mechanism:</p>
+<ul>
+<li><strong>unpinned.</strong> Deleting the poison loop survived all 156
+assertions. It is now pinned by a fixture pairing the refused
+declaration with a <em>resolvable same-named group in a sibling
+function</em> — which is what makes the difference observable, since
+unpoisoned the route inherits that group’s prefix <strong>and</strong>
+its credit.</li>
+<li><strong>bypassable.</strong> A Go assignment may break after its
+<code>:=</code>, putting the target one line <em>above</em> the trailing
+dot the refusal fires on. <code>GO_ASSIGN_TARGET</code> read only the
+dot line, so the refusal fired and the poison missed: the gate exited 1
+while the inventory reported
+<code>POST /safe/wipe auth_wired: true</code>. The walk-back is one step
+and gated on the previous code line ending in an assignment operator;
+over-poisoning is the fail-closed direction.</li>
+<li><strong>unexplained.</strong> A poisoned name resolves at an
+<em>unprefixed</em> path with no inherited middleware, and the route
+said only “no <code>.Use(marker)</code> covers owner ‘g’” — true, and
+silent about the load-bearing half. The resolution string now states
+that the prefix was dropped and why. <strong>Measured correction to the
+report:</strong> the “collateral” (a poisoned name stripping another
+function’s resolvable same-name group) is <strong>not</strong> new to
+the poison — the ordinary spelling <code>g := q.Group("/other")</code>
+behaves identically, because a name bound twice in a file is refused by
+the shipped <code>decl_sites</code> rule. The defect was the missing
+label, not the scoping.</li>
+</ul>
+<h3 id="minor-a-trailing-dot-is-not-always-a-selector-dot">MINOR — a
+trailing dot is not always a selector dot</h3>
+<p><code>x := 3.</code> is a <strong>float literal</strong>, and Go’s
+semicolon insertion ends the statement after it, so the next line cannot
+be the far half of a selector. The forward walk refused it — a false
+refusal on legal, gofmt-stable Go, and by round 9’s own doctrine a gate
+that cries wolf gets bypassed. The discriminator is exact rather than
+heuristic: a Go identifier may never <em>begin</em> with a digit, so a
+<code>\w</code> run ending at the dot whose first character is a digit
+cannot be a selector operand. <code>x2.</code> and <code>foo[3].</code>
+stay selectors; <code>3.</code> and <code>1_000.</code> are numbers.</p>
+<h3 id="minor-rule-ds-newline-escape-and-a-twelfth-shape">MINOR — RULE
+D’s newline escape, and a twelfth shape</h3>
+<p>The newline escape was load-bearing and unpinned: both shipped body
+fixtures were rescued by an interposed <code>mux := …</code> line whose
+<code>=</code> escaped for them. The new fixture places the func
+<em>type</em> directly before the <code>if</code> whose brace it would
+hijack, with the only wrap-proving return inside it.</p>
+<p>And <code>:</code> joins the escape set. A depth-0 colon separates a
+<strong>clause head</strong> from what follows it, so a <code>{</code>
+after one is never the body of a <code>func(</code> inside that head —
+<code>case func(int) int: if d.On { return WithAuth(mux) }</code>
+anchored a phantom body on the <code>if</code> brace and refused legal
+Go. <code>:=</code> was already escaping on its <code>=</code>, so
+nothing previously resolvable was widened.</p>
+<h3 id="minor-cleanup-that-survives-sigkill">MINOR — cleanup that
+survives SIGKILL</h3>
+<p><code>trap cleanup EXIT</code> cannot run under <code>SIGKILL</code>;
+a run killed by the tool-call ceiling leaked 32 GB of
+<code>lanauth-meta-*</code>. The harness now sweeps stale trees at
+<strong>start</strong>, age-gated at 120 minutes and excluding the
+current <code>$TMPROOT</code> by name, so a concurrently running harness
+can never have its live directory reaped. Sweep failures are swallowed:
+housekeeping must never fail the gate.</p>
+<h3 id="verified-correct-and-left-alone">Verified correct and left
+alone</h3>
+<p>The reviewer’s four killed mutations all stay killed:
+forward-walk-over-blanks, RULE S, the ws/split refusal ordering (held by
+its own label fixture), and the <code>_body_brace</code> rewrite.
+<code>MUX_DOTTED_OWNER</code>’s dead term still survives its deletion
+mutation and keeps its honest <strong>UNPINNED</strong> label — it is
+semantically unreachable, so no fixture can pin it.</p>
 <h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
 <p>This gate asserts <strong>static route wiring</strong>: that each
 LAN-reachable route is attached to an auth mechanism. It does

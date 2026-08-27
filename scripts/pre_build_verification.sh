@@ -1062,6 +1062,39 @@ BASH_TEST_SELF_RECURSIVE=(
 # mtime and manufactured false export staleness for the other two). Keep this
 # array — it is the ratchet; adding a name is allowed only as tracked debt.
 BASH_TEST_QUARANTINE=()
+# EXPECTED-RED declarations (BOB-221; §11.4.115/§11.4.135/§11.4.224/§11.4.248).
+# DISTINCT FROM QUARANTINE, and deliberately so: quarantine EXCLUDES a suite
+# (never run, verdict never observed — a false null waiting to happen), while a
+# DECLARED RED is still RUN and its exit code is still checked. The declaration
+# only changes what this gate CONCLUDES from an observed failure, and it is
+# honoured solely while it is corroborated by the suite's own in-source marker,
+# still backed by an OPEN tracked item, and still actually failing.
+#
+# ROWS KEY ON THE REPO-RELATIVE PATH, NEVER A BASENAME (round-2 remediation):
+# this glob spans THREE directories, so a basename does not identify a file.
+# Keying on one let a single reviewed row silence every same-basename suite in
+# the tree — measured RAN=2 FAILED=0 HONOURED=2 for one row and two files.
+# The post-loop sweep below then proves every row was actually EVALUATED this
+# run: a row whose suite was deleted/renamed/quarantined is never judged, so
+# it can neither stale out nor XPASS out and would rot silently while staying
+# armed. See scripts/lib/expected_red.sh + docs/scripts/expected_red.md.
+if [[ -r "${PROJECT_ROOT}/scripts/lib/expected_red.sh" ]]; then
+    # shellcheck source=scripts/lib/expected_red.sh
+    . "${PROJECT_ROOT}/scripts/lib/expected_red.sh"
+else
+    # FAIL-CLOSED (§11.4.252): a missing mechanism must never become a silent
+    # licence. The stub declares NOTHING, so every failure blocks exactly as it
+    # did before BOB-221 — and the absence is reported loudly rather than
+    # inferred from a quiet green (§11.4.201(6)).
+    fail "CM-BASH-UNIT-TESTS-EXECUTED: scripts/lib/expected_red.sh is MISSING — the EXPECTED-RED declaration mechanism cannot load; no declaration is honoured"
+    BASH_TEST_EXPECTED_RED=()
+    expected_red_verdict() { echo "UNDECLARED"; }
+    expected_red_note_append() { :; }
+    expected_red_unmatched_rows() { :; }
+    declare -gA _EXPECTED_RED_SEEN=()
+fi
+BASH_TEST_XRED_HONOURED=0
+BASH_TEST_STALE_NOTE=""
 BASH_TEST_RAN=0; BASH_TEST_FAILED=0; BASH_TEST_QUARANTINED=0
 BASH_TEST_FAILURES=()
 # --- NO-TRACE corpus snapshot (§11.4.84 working-tree quiescence) ---
@@ -1207,11 +1240,64 @@ for _bt in "${PROJECT_ROOT}"/tests/unit/test_*.sh "${PROJECT_ROOT}"/tests/pre_bu
         continue
     fi
     BASH_TEST_RAN=$((BASH_TEST_RAN + 1))
-    if ! BOBA_PREBUILD_NESTED=1 timeout 300 bash "${_bt}" >/dev/null 2>&1; then
-        BASH_TEST_FAILED=$((BASH_TEST_FAILED + 1))
-        BASH_TEST_FAILURES+=("${_btname}")
-    fi
+    # Capture the exit CODE, not merely pass/fail. The EXPECTED-RED contract
+    # honours exit 1 (the RED verdict) and NOTHING else: an abort (exit 3, the
+    # sibling convention for "instrument blind"), a timeout (124) or a crash is
+    # not a verdict, and swallowing one as "the expected red" would turn a blind
+    # instrument green (§11.4.201(6)).
+    _btrc=0
+    BOBA_PREBUILD_NESTED=1 timeout 300 bash "${_bt}" >/dev/null 2>&1 || _btrc=$?
+    # Record the repo-relative path of every suite whose verdict is actually
+    # EVALUATED. The post-loop sweep reads this to prove each table row was
+    # judged; it is written HERE, in the main shell, because the verdict call
+    # below runs inside a command substitution and anything it assigned would
+    # die with that subshell.
+    _EXPECTED_RED_SEEN["${_bt#"${PROJECT_ROOT}/"}"]=1
+    # The BASENAME is deliberately NOT passed: rows key on the repo-relative
+    # path, so a basename never reaches the declaration decision.
+    _btxr="$(expected_red_verdict "${_bt}" "${_btrc}")"
+    case "${_btxr}" in
+        HONOURED)
+            # Declared, corroborated by the file's own marker, item still OPEN,
+            # and the declared RED verdict observed: an intended failure.
+            BASH_TEST_XRED_HONOURED=$((BASH_TEST_XRED_HONOURED + 1))
+            ;;
+        BLOCK:*)
+            # A declaration that rotted (item closed), disagreed (marker
+            # mismatch/absent), unexpectedly PASSED (strict-xfail), or could not
+            # be resolved at all. Every one of these BLOCKS, carrying its reason.
+            BASH_TEST_FAILED=$((BASH_TEST_FAILED + 1))
+            BASH_TEST_FAILURES+=("${_btname} — ${_btxr#BLOCK:}")
+            expected_red_note_append "${_btname}" "${_btxr#BLOCK:}"
+            ;;
+        *)
+            # UNDECLARED — the pre-existing rule, byte-for-byte unchanged. This
+            # branch is the load-bearing one (§11.4.201(1)): a mechanism that
+            # quietly let an undeclared failure through would be a worse defect
+            # than the false refusal it was built to fix.
+            if [[ "${_btrc}" -ne 0 ]]; then
+                BASH_TEST_FAILED=$((BASH_TEST_FAILED + 1))
+                BASH_TEST_FAILURES+=("${_btname}")
+            fi
+            ;;
+    esac
 done
+# --- the declaration TABLE's own freshness contract (§11.4.226) -----------
+# Every row must have been EVALUATED above. A row naming a suite that was
+# deleted, renamed, quarantined, is self-recursive, or is simply misspelled is
+# never judged at all: the item-closed check and the XPASS ratchet only run
+# when the suite runs, so such a row can never self-clear. It rots silently
+# and stays ARMED. Malformed rows (a bare basename, extra fields, a bad item
+# id) never match a path either, and land here for the same reason.
+# Emits NOTHING for an empty table, so the empty-table path is byte-identical
+# to the pre-BOB-221 rule.
+while IFS= read -r _xrow; do
+    [[ -n "${_xrow}" ]] || continue
+    BASH_TEST_FAILED=$((BASH_TEST_FAILED + 1))
+    BASH_TEST_FAILURES+=("expected-red table — ${_xrow}")
+    expected_red_note_append "expected-red table" "${_xrow}"
+done < <(expected_red_unmatched_rows)
+# END-INVARIANT-30-SUITE-LOOP
 fi
 if [[ -n "${BOBA_PREBUILD_NESTED:-}" ]]; then
     : # nested: neither pass nor fail counted, already reported as SKIP above
@@ -1219,7 +1305,7 @@ elif [[ "${BASH_TEST_RAN}" -eq 0 ]]; then
     # §11.4.201(6): a zero here is a FALSE-NULL (blind glob), never "all clean".
     fail "CM-BASH-UNIT-TESTS-EXECUTED: no tests/unit/test_*.sh, tests/pre_build/test_*.sh or tests/hooks/test_*.sh were executed — the glob is blind"
 elif [[ "${BASH_TEST_FAILED}" -gt 0 ]]; then
-    fail "CM-BASH-UNIT-TESTS-EXECUTED: ${BASH_TEST_FAILED}/${BASH_TEST_RAN} bash unit/pre_build test(s) FAILED"
+    fail "CM-BASH-UNIT-TESTS-EXECUTED: ${BASH_TEST_FAILED}/${BASH_TEST_RAN} bash unit/pre_build test(s) FAILED${BASH_TEST_STALE_NOTE}"
     for _f in "${BASH_TEST_FAILURES[@]}"; do
         echo "        - ${_f}" >&2
     done
@@ -1260,9 +1346,9 @@ else
         # blindness honestly instead of claiming a clean result (§11.4.6);
         # non-blocking per §11.4.234 — a coarse-granularity filesystem is a host
         # property, not a defect in this tree.
-        pass "CM-BASH-UNIT-TESTS-EXECUTED: ${BASH_TEST_RAN} bash unit/pre_build test(s) green (${BASH_TEST_QUARANTINED} quarantined); no-trace DEGRADED — control needle unproven on this filesystem, result not trusted"
+        pass "CM-BASH-UNIT-TESTS-EXECUTED: ${BASH_TEST_RAN} bash unit/pre_build test(s) green (${BASH_TEST_QUARANTINED} quarantined, ${BASH_TEST_XRED_HONOURED} expected-red); no-trace DEGRADED — control needle unproven on this filesystem, result not trusted"
     else
-        pass "CM-BASH-UNIT-TESTS-EXECUTED: ${BASH_TEST_RAN} bash unit/pre_build test(s) green (${BASH_TEST_QUARANTINED} quarantined), no-trace verified across ${#BASH_TEST_TRACE_CORPUS[@]} tracked paths (needle proven)"
+        pass "CM-BASH-UNIT-TESTS-EXECUTED: ${BASH_TEST_RAN} bash unit/pre_build test(s) green (${BASH_TEST_QUARANTINED} quarantined, ${BASH_TEST_XRED_HONOURED} expected-red), no-trace verified across ${#BASH_TEST_TRACE_CORPUS[@]} tracked paths (needle proven)"
     fi
 fi
 [[ -n "${BASH_TEST_TRACE_MARKER}" ]] && rm -f "${BASH_TEST_TRACE_MARKER}"

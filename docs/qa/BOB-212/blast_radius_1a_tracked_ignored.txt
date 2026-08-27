@@ -1,0 +1,201 @@
+BOB-212 / TASK 1a — TRACKED files that survive ONLY by being tracked
+Generated: 2026-08-26T19:55:02Z   HEAD: a3e1141777914f3d71d62a6cd32a4c79c7f43842
+
+INSTRUMENT: git check-ignore --no-index over all 2795 tracked paths.
+CONTROL NEEDLES (§11.4.201(7)(b)) — run BEFORE any zero was reported:
+  needle A  frontend/e2e/credentials.spec.ts -> .gitignore:31:*credentials*  (exit 0, MATCH)
+  needle B  README.md                        -> no output (exit 1, NO MATCH)
+  NOTE: check-ignore exit 1 means NO PATH MATCHED, not instrument failure.
+        Both instruments below were cross-checked and AGREE exactly.
+
+RAW: 157 tracked paths matched SOME rule. 154 of those matched a NEGATION (!...)
+     = explicitly re-included = SAFE BY RULE. Reporting 157 as blast radius would
+     be a §11.4.201(1) false positive. The real count is 3.
+
+=== THE 3 TRACKED-AND-ACTUALLY-IGNORED PATHS ===
+1. frontend/e2e/credentials.spec.ts               .gitignore:31:*credentials*
+   109-line Playwright e2e spec. HAZARD — the one BOB-204 found.
+2. tests/security/test_jackett_autoconfig_secrets.py   .gitignore:51:*secrets*
+   113-line Python security/penetration test. HAZARD — NOT named in the item.
+   Asserts no credential value reaches HTTP body / tracebacks / logs. Losing a
+   SECURITY test silently is worse than losing an ordinary one.
+3. submodules/jackett                             .gitignore:260:submodules/jackett/
+   mode 160000 GITLINK. NOT a hazard: the .gitignore comment documents this entry
+   as deliberately INERT for git (it exists to steer CodeGraph, §11.4.79); git
+   tracks submodule pointers via .gitmodules regardless of ignore rules.
+
+=== 154 SAFE-BY-RULE, split by negation KIND (the §11.4.251 fragility measure) ===
+  124  !docs/qa/**/*.log                 GLOB negation      robust
+   13  !<explicit per-file path>         PER-FILE negation  FRAGILE (hand-maintained)
+        the 13 hand-maintained credential-family entries, .gitignore lines
+        34,35,38,39,40,41,44,45,46,47,48,49,50
+   17  other per-file/dir negations elsewhere in the file
+
+=== MECHANIC THAT MATTERS FOR THE FIX ===
+The allowlisted DIRECTORY (.gitignore:43 !frontend/src/app/jackett/credentials/)
+re-includes the DIRECTORY ONLY. A NEW file inside it is still swallowed:
+  frontend/src/app/jackett/credentials/credentials.guard.ts    -> :31:*credentials* SWALLOWED
+  frontend/src/app/jackett/credentials/credentials.resolver.spec.ts -> :31 SWALLOWED
+  frontend/src/app/jackett/credentials/credential-list.component.ts -> clean (no rule)
+  frontend/src/app/jackett/credentials/foo.ts                  -> clean (no rule)
+*credentials* has no slash, so it is BASENAME-scoped: a file is swallowed iff its
+OWN NAME contains the word. The dir negation buys nothing for new files.
+
+=== FULL RAW SWEEP (all 157 rows: rule -> path) ===
+.codegraph/.gitignore:5:!.gitignore                                    .codegraph/.gitignore
+.gitignore:152:!config/merge-service/data-model.yaml                   config/merge-service/data-model.yaml
+.gitignore:153:!config/merge-service/hooks.yaml                        config/merge-service/hooks.yaml
+.gitignore:154:!config/merge-service/log_event.sh                      config/merge-service/log_event.sh
+.gitignore:163:!tmp/README.md                                          tmp/README.md
+.gitignore:172:!.specify/README.md                                     .specify/README.md
+.gitignore:177:!.specify/extensions.yml                                .specify/extensions.yml
+.gitignore:178:!.specify/feature.json                                  .specify/feature.json
+.gitignore:179:!.specify/init-options.json                             .specify/init-options.json
+.gitignore:180:!.specify/integration.json                              .specify/integration.json
+.gitignore:216:!releases/.gitkeep                                      releases/.gitkeep
+.gitignore:217:!releases/README.md                                     releases/README.md
+.gitignore:238:!.claude/settings.json                                  .claude/settings.json
+.gitignore:260:submodules/jackett/                                     submodules/jackett
+.gitignore:269:!docs/features/Status.docx                              docs/features/Status.docx
+.gitignore:26:!.env.example                                            .env.example
+.gitignore:26:!.env.example                                            qBitTorrent-go/.env.example
+.gitignore:270:!docs/features/Status_Summary.docx                      docs/features/Status_Summary.docx
+.gitignore:31:*credentials*                                            frontend/e2e/credentials.spec.ts
+.gitignore:34:!qBitTorrent-go/internal/db/repos/credentials.go         qBitTorrent-go/internal/db/repos/credentials.go
+.gitignore:35:!qBitTorrent-go/internal/db/repos/credentials_test.go    qBitTorrent-go/internal/db/repos/credentials_test.go
+.gitignore:38:!docs/guides/tracker-credentials.md                      docs/guides/tracker-credentials.md
+.gitignore:39:!challenges/scripts/credentials_wired_challenge.sh       challenges/scripts/credentials_wired_challenge.sh
+.gitignore:40:!qBitTorrent-go/internal/jackettapi/credentials.go       qBitTorrent-go/internal/jackettapi/credentials.go
+.gitignore:41:!qBitTorrent-go/internal/jackettapi/credentials_test.go  qBitTorrent-go/internal/jackettapi/credentials_test.go
+.gitignore:44:!frontend/src/app/jackett/credentials/credential-edit-dialog.component.ts frontend/src/app/jackett/credentials/credential-edit-dialog.component.ts
+.gitignore:45:!frontend/src/app/jackett/credentials/credentials.component.html frontend/src/app/jackett/credentials/credentials.component.html
+.gitignore:46:!frontend/src/app/jackett/credentials/credentials.component.scss frontend/src/app/jackett/credentials/credentials.component.scss
+.gitignore:47:!frontend/src/app/jackett/credentials/credentials.component.spec.ts frontend/src/app/jackett/credentials/credentials.component.spec.ts
+.gitignore:48:!frontend/src/app/jackett/credentials/credentials.component.ts frontend/src/app/jackett/credentials/credentials.component.ts
+.gitignore:49:!frontend/src/app/jackett/credentials/credentials.service.spec.ts frontend/src/app/jackett/credentials/credentials.service.spec.ts
+.gitignore:50:!frontend/src/app/jackett/credentials/credentials.service.ts frontend/src/app/jackett/credentials/credentials.service.ts
+.gitignore:51:*secrets*                                                tests/security/test_jackett_autoconfig_secrets.py
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/2026-08-19-full-system-retest/challenges.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/2026-08-19-full-system-retest/challenges_meta.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/2026-08-19-full-system-retest/e2e.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/2026-08-19-full-system-retest/e2e_meta.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/2026-08-19-full-system-retest/go_tests.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/2026-08-19-full-system-retest/go_tests_meta.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/2026-08-19-full-system-retest/integration.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/2026-08-19-full-system-retest/stress.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/2026-08-19-full-system-retest/stress_meta.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/2026-08-19-full-unit-sweep/pytest_output.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/2026-08-19-post-audit-retest/bash_syntax.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/2026-08-19-post-audit-retest/go/race_sweep.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/2026-08-19-post-audit-retest/go_service_race.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/2026-08-19-post-audit-retest/merge_service_unit_full.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/2026-08-19-post-audit-retest/merge_service_unit.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/2026-08-19-post-fix-verify/go/race_sweep_final.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/2026-08-19-post-fix-verify/merge_service_sweep_final.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/2026-08-19-post-fix-verify/merge_service_unit_full.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-072-073/challenge_green.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-072-073/challenge_red.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-072-073/diff_after.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-072-073/diff_before.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-072-073/validate_after.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-072-073/validate_before.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-075/concurrency_evidence/after_fix/instance_A_winner.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-075/concurrency_evidence/after_fix/instance_B_rejected.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-075/concurrency_evidence/before_fix/instance_A.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-075/concurrency_evidence/before_fix/instance_B.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-075/concurrency_evidence/mkdir_fallback/instance_A_winner.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-075/concurrency_evidence/mkdir_fallback/instance_B_rejected.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-075/concurrency_evidence/mutation_test/instance_A.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-075/concurrency_evidence/mutation_test/instance_B.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-075/concurrency_evidence/signal_handling/victim.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-089/GREEN_all_three.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-089/RED_reload_python_stub.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-092/closure_run_20260821.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-093/live_search_smoke.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-096/bob096_run_verbose.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-096/full_chaos_suite.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-096/GREEN_after_restore.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-096/new_chaos_scenarios.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-096/race_detector_3x.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-096/RED_phantom_mutation.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-112/wrk_evidence.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-112/wrk_mutation_baseline.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-116/challenge_pass.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-116/challenge_polarity_forced_fail.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-116/const033_challenge_pass.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-116/journalctl_20-40_to_20-52.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-116/lid_and_session_events.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-116/oomctl_snapshot.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-116/psi_readings.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-116/ps_LRSS_snapshot.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-120/closure_via_bob126_root_cause.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-120/journalctl_23-42_to_23-46.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-120/qbittorrent_proxy_socketserver_traces.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-120/timer_fire_history.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-123/incident-4-forensics.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/evidence/gdm_compositor_events.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/evidence/gdm_worker_3976.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/evidence/kernel_events.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/evidence/kernel_oom_scan.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/evidence/kill_moment.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/evidence/oomd_journal.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/evidence/oom_extended.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/evidence/oom_pressure_scan.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/evidence/power_states.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/evidence/pre_kill_15_27_50s.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/evidence/pre_kill_15s_window.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/evidence/signals_at_kill.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/evidence/stop_terminate_paths.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/evidence/systemd_pid1_prekill.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/evidence/user1000_grepped.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/evidence/user1000_only.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/evidence/user1000_service_journal.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/evidence/user_scope_events_head.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/evidence/user_service_lifecycle.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/incident-5-forensics.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-124/journal_inc5.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-129/after.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-129/before.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-136/acceptance_abc_20260821.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-136/invariant49_wiring_20260821.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-137/soak_driver.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-137/soak_probe.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-158/runtime_both_interpreters.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-166/evidence_absence_measurement_20260821.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-166/runtime_guard_refuses_evidence.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-166/validate-10-unmigrated-2026-08-25.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-166/validate-after.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-166/validate-before.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-169/pdf_mojibake_correction_20260821.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-172/fix_evidence_20260822.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-172/rutracker_search_403_20260821.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-183/runtime_served_bundle_evidence.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/BOB-190/documented_command_now_runs.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/pre_build_resource_pressure/20260818T211053Z.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/session-2026-08-16/boba-svc-health.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/session-2026-08-16/boba-svc-status.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/session-2026-08-16/challenges-all.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/session-2026-08-16/ci-quick.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/session-2026-08-16/container-status.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/session-2026-08-16/pre-build-verification.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/session-2026-08-16/ruff-check.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/session-2026-08-16/run-all-tests.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/task-bob083-fix/live_search_freeleech_output.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/task-e2e-journey/dashboard_curl_meta.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/task-e2e-journey/download_response.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/task-e2e-journey/qbit_add_response.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/task-e2e-journey/qbit_cleanup.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/task-e2e-journey/qbit_torrent_info.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/task-e2e-journey/search_iptorrents_only_raw.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/task-e2e-journey/search_response_raw.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/task-rebuild-verify/container_status.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/task-rebuild-verify/cookie_state_post_recreate.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/task-rebuild-verify/endpoint_health.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/task-rebuild-verify/start_sh_recreate.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/task-rebuild-verify/wrk_healthz_evidence.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/task-review-457cca4-a7e55f9-minor-fixes/minor-1.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/task-review-457cca4-a7e55f9-minor-fixes/minor-2.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/task-review-457cca4-a7e55f9-minor-fixes/minor-3.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/task-review-457cca4-a7e55f9-minor-fixes/minor-4.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/task-review-457cca4-a7e55f9-minor-fixes/minor-5.log
+.gitignore:66:!docs/qa/**/*.log                                        docs/qa/task-review-457cca4-a7e55f9-minor-fixes/minor-6.log

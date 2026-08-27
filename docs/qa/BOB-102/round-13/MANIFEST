@@ -1,0 +1,68 @@
+# BOB-102 ROUND-13 EVIDENCE CUSTODY
+# Purpose: §11.4.83 / §11.4.226 evidence custody for the BOB-102 review chain.
+#   Round 12 found that specs/002-user-owned-downloads/evidence/ holds only
+#   round-6 and round-7 artifacts — rounds 8..11 have none anywhere, and the
+#   20,000-line fuzz, the md5-delta incident and the gofmt measurements were
+#   all cited with no captured artifact behind them.
+#
+# MATERIAL FINDING, recorded here because it is the deeper cause (§11.4.215):
+#   ALL FOUR executable/config artifacts of this gate are UNTRACKED in git —
+#     scripts/pre_build/lan_route_auth_analyzer.py
+#     scripts/pre_build/check_cm_lan_routes_authenticated.sh
+#     tests/pre_build/test_check_cm_lan_routes_authenticated.sh
+#     config/lan_route_auth_policy.yaml
+#   Only the guide (docs/scripts/check_cm_lan_routes_authenticated.md) is
+#   tracked. `git show <HEAD>:<path>` returns "exists on disk, but not in
+#   <rev>" for every one. That is why no round-over-round diff on this item has
+#   ever been checkable, and it is the same shape the sibling BOB-195 chain hit.
+#   This round was told not to commit, so the tracking is NOT fixed here — it is
+#   reported, and the reviewed bytes are landed below so at least the round-12
+#   baseline exists somewhere checkable.
+#
+# Captured (UTC): 2026-08-27T01:38:38Z
+# Session HEAD:   a3e1141777914f3d71d62a6cd32a4c79c7f43842
+
+## reviewed-bytes/ — the EXACT bytes round 12 reviewed, pre-edit
+
+MD5                               PATH                                          LINES
+768a9d9c2cdd7f96e5cff81db8e56078  reviewed-bytes/check_cm_lan_routes_authenticated.sh    167
+4a3e723942df3f3c8f09169cbac33a23  reviewed-bytes/lan_route_auth_analyzer.py      2207
+d6e29d08bd0379337e0791ad735a33a0  reviewed-bytes/test_check_cm_lan_routes_authenticated.sh   2641
+
+  The analyzer and the wrapper are byte copies taken before the first round-13
+  edit. The harness copy is a RECONSTRUCTION — its pre-edit bytes were not
+  snapshotted before the first edit, so it was rebuilt by reversing the two
+  round-13 insertions and then PROVEN identical by md5 against the baseline
+  measured at session start (d6e29d08bd0379337e0791ad735a33a0). It is offered as
+  hash-verified, not as an unbroken chain of custody; the distinction is stated
+  rather than glossed (§11.4.6).
+
+## AFTER round-13 remediation
+
+MD5                               PATH                                          LINES  DELTA
+b45d9647a42cccae205f56886690d74c  scripts/pre_build/lan_route_auth_analyzer.py   2506  +319/-20
+e6c5c76b33f25315ef466ac00d2493a8  scripts/pre_build/check_cm_lan_routes_authenticated.sh    176  +11/-2
+7d6e9b529cffd3ab7478a5e089e721be  tests/pre_build/test_check_cm_lan_routes_authenticated.sh   3260  +619/-0
+
+## Other artifacts in this directory
+
+  door-sweep.md            the exhaustive tenth-door sweep: 9 refusal-arming
+                           constructs probed on 3 axes, 2 doors found open, 5
+                           measured closed, plus every false-positive control.
+  gofmt-measurements.txt   `gofmt -e` legality and byte-stability for all 88
+                           probed spellings — the "gofmt-STABLE" claims made in
+                           the analyzer comments and the guide, captured.
+  mutation-kill-matrix.md  18 mutations, each md5-proven applied, run against
+                           the full harness, with the restore md5-verified.
+
+## Harness
+
+  round 12:  PASS=156 FAIL=0 exit 0
+  round 13:  PASS=197 FAIL=0 exit 0   (+41 assertions)
+
+## Real-tree posture — UNCHANGED by this round
+
+  74 LAN-reachable routes across 3 services, 23 known-gap exemptions, exit 0
+  --json md5 ecd4b31c2f40c87ed321a00c43cacb26 (identical to the round-12
+  baseline: every round-13 change is a spelling widening on the REFUSAL side,
+  and the real tree contains none of the widened spellings)

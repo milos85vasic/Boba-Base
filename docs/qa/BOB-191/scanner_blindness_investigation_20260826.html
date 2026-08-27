@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>scanner_blindness_investigation_20260826</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">scanner_blindness_investigation_20260826</h1>
+</header>
+<h1
+id="bob-191-fail-open-scanner-blindness-to-go-measured-investigation">BOB-191
+— Fail-open scanner blindness to Go: measured investigation</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-26T00:00:00Z <strong>Status:</strong> investigation complete —
+INVESTIGATION ONLY, no source modified <strong>Label:</strong>
+(T11/002-user-owned-downloads - milos85vasic - ? - xhigh)
+<strong>Scope:</strong> BOB-191 (false null / Go), BOB-189 (false match
+/ SSRF guards), BOB-192 (6 ratcheted findings)
+<strong>Authority:</strong> §11.4.201(1)(6)(7)(b), §11.4.6,
+§11.4.224(E), §11.4.245, §11.4.252</p>
+<hr />
+<h2 id="what-the-scanner-is-and-where-it-runs">1. What the scanner is,
+and where it runs</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Path</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Invariant 39 (caller)</td>
+<td><code>scripts/pre_build_verification.sh:1481-1544</code></td>
+<td>Iterates
+<code>DANGER_ROOTS=(download-proxy/src plugins scripts qBitTorrent-go frontend/src)</code>,
+calls the gate once per root. ADVISORY / non-blocking.</td>
+</tr>
+<tr>
+<td>Gate (the scanner)</td>
+<td><code>constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh</code>
+(813 lines)</td>
+<td>Enumerates source files, applies analysers, emits PASS/FAIL.</td>
+</tr>
+</tbody>
+</table>
+<p><code>scripts/pre_build/check_cm_no_fail_open_skip.sh</code> does
+<strong>not</strong> exist on any branch
+(<code>git log --all --diff-filter=A</code> returns empty); it exists
+only in the uncommitted worktree
+<code>.claude/worktrees/agent-a5cb87da3e518c991/</code>. The scanner in
+force today is the gate above. <em>(Control needle: the same
+<code>grep -rl</code> found <code>CM-PLUGIN-COUNT</code> in three files,
+so the instrument was not blind when it returned zero.)</em></p>
+<h2 id="exactly-what-it-parses-vs.-what-it-skips-with-the-lines">2.
+Exactly what it parses vs. what it skips — with the lines</h2>
+<p><strong>Enumeration
+(<code>cm_dangerous_combination_fail_closed.sh:243</code>)</strong></p>
+<pre><code>exts=&quot;${DANGEROUS_COMBO_EXT:-py go rs c cc cpp h hpp java cs js ts jsx tsx php rb}&quot;</code></pre>
+<p><code>go</code> <strong>is</strong> in the list. <code>.go</code>
+files <strong>are</strong> enumerated. This is <em>not</em> a scope
+hole.</p>
+<p><strong>Analysis — the complete analyser set:</strong></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Analyser</th>
+<th>Location</th>
+<th>Applies to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>(A1/A2/C) Python <code>ast</code> — swallow / silent-default /
+<code>contextlib.suppress</code></td>
+<td><code>:537</code> —
+<code>case "$f" in *.py) py_files+=("$f") ;;</code></td>
+<td><strong><code>.py</code> only</strong>, by explicit extension
+test</td>
+</tr>
+<tr>
+<td>(A) <code>catch (...) { }</code> empty-body text scan</td>
+<td><code>:772</code> —
+<code>grep -nE 'catch[[:space:]]*\([^)]*\)[[:space:]]*\{'</code></td>
+<td>every file, but keyed on the literal token <code>catch</code></td>
+</tr>
+<tr>
+<td>(B) credential <code>= x \|\| "literal"</code> /
+<code>or "literal"</code></td>
+<td><code>:794</code></td>
+<td>every file, but keyed on <code>\|\|</code>/<code>or</code> + quoted
+literal</td>
+</tr>
+</tbody>
+</table>
+<p>The decisive line is <code>:537</code>: the structural analyser is
+gated on <code>*.py</code>. Every non-Python file falls to the two text
+matchers at <code>:766-804</code>. <strong>Go has no <code>catch</code>
+keyword and no <code>||</code>-as-nil-coalescing idiom, so neither
+matcher can fire on Go by construction.</strong> The blindness is a
+<em>matcher-coverage</em> hole, not a scope hole.</p>
+<h2 id="control-needle-both-arms-11.4.2017b">3. Control needle — both
+arms (§11.4.201(7)(b))</h2>
+<p>Needles planted on <strong>copies in scratch</strong>, never in the
+repo. Run through the identical path
+(<code>bash &lt;gate&gt; --root &lt;dir&gt;</code>).</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Arm</th>
+<th>Planted</th>
+<th>Gate rc</th>
+<th>Verdict</th>
+<th>Finding lines</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python (<code>except Exception: pass</code>,
+<code>except: return None</code>)</td>
+<td>2</td>
+<td><strong>1</strong></td>
+<td>FAIL</td>
+<td><strong>2 — SEEN</strong></td>
+</tr>
+<tr>
+<td>TypeScript (<code>catch (e) { }</code>)</td>
+<td>1</td>
+<td><strong>1</strong></td>
+<td>FAIL</td>
+<td><strong>1 — SEEN</strong></td>
+</tr>
+<tr>
+<td>Java (<code>catch (Exception e) { }</code>)</td>
+<td>1</td>
+<td><strong>1</strong></td>
+<td>FAIL</td>
+<td><strong>1 — SEEN</strong></td>
+</tr>
+<tr>
+<td><strong>Go</strong> (empty <code>if err != nil {}</code>,
+<code>_ =</code>, <code>, _ :=</code>, bare <code>recover()</code>,
+comment-only err block, credential-to-literal)</td>
+<td><strong>6</strong></td>
+<td><strong>0</strong></td>
+<td><strong>PASS</strong></td>
+<td><strong>0 — NOT SEEN</strong></td>
+</tr>
+<tr>
+<td>Rust (<code>let _ =</code>, <code>Err(_) =&gt; {}</code>)</td>
+<td>2</td>
+<td>0</td>
+<td>PASS</td>
+<td>0 — NOT SEEN</td>
+</tr>
+<tr>
+<td>Ruby (<code>rescue StandardError</code> + comment)</td>
+<td>1</td>
+<td>0</td>
+<td>PASS</td>
+<td>0 — NOT SEEN</td>
+</tr>
+<tr>
+<td>C (ignored return, empty <code>if (...) {}</code>)</td>
+<td>2</td>
+<td>0</td>
+<td>PASS</td>
+<td>0 — NOT SEEN</td>
+</tr>
+</tbody>
+</table>
+<p>The Go needle is <strong>genuinely valid Go</strong>, not a strawman:
+<code>go build ./...</code> rc=0, <code>go vet ./...</code> rc=0,
+<code>gofmt -e</code> reports no syntax errors (go1.26.2). Note that
+<code>go vet</code> is silent on these shapes too — this class needs a
+dedicated arm.</p>
+<h3 id="a.-the-discriminator-matcher-hole-vs-scope-hole">3a. The
+discriminator: matcher-hole vs scope-hole</h3>
+<p>Same bytes, only the extension changed:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Enumerated?</th>
+<th>Gate output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>needle.zig</code> (ext <strong>not</strong> in list)</td>
+<td>no</td>
+<td><code>⏭ SKIP — topology_unsupported: no source files under scan</code></td>
+</tr>
+<tr>
+<td><code>needle.go</code> (ext <strong>is</strong> in list)</td>
+<td>yes</td>
+<td><code>✅ PASS — no ... anti-patterns found</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>This is the core defect.</strong> The gate already owns an
+honest-blindness mechanism — <code>SKIP — topology_unsupported</code> —
+and it works. Go routes <em>around</em> that mechanism by being
+enumerated: it is counted as scanned, produces zero, and prints a green
+PASS. A scope hole announces itself; this matcher hole does not. The
+matcher hole is the <strong>worse</strong> of the two defects for
+exactly that reason.</p>
+<h2
+id="quantified-unscanned-go-surface-with-exclusions-stated-11.4.224e">4.
+Quantified unscanned Go surface — with exclusions stated
+(§11.4.224(E))</h2>
+<p><strong>Exclusion list applied (the scanner’s own
+<code>DANGEROUS_COMBO_EXCLUDE</code> default, nothing added):</strong>
+<code>.git node_modules vendor .venv __pycache__ scripts/gates out build dist</code></p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Measure</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.go</code> under <code>qBitTorrent-go/</code>,
+<strong>no</strong> exclusions</td>
+<td><strong>106</strong></td>
+</tr>
+<tr>
+<td><code>.go</code> under <code>qBitTorrent-go/</code>,
+<strong>with</strong> the scanner’s prune list</td>
+<td><strong>106</strong></td>
+</tr>
+<tr>
+<td>Total Go LOC in that set</td>
+<td><strong>20,389</strong></td>
+</tr>
+<tr>
+<td>Production (non-<code>_test.go</code>) files / LOC</td>
+<td><strong>52 / 6,858</strong></td>
+</tr>
+<tr>
+<td><code>_test.go</code> files</td>
+<td>54</td>
+</tr>
+</tbody>
+</table>
+<p><strong>A == B (106 == 106).</strong>
+<code>find qBitTorrent-go -type d -name vendor</code> returns empty —
+there is no vendored Go tree, so the exclusion list removes nothing and
+no unstated exclusion could have manufactured a clean number.</p>
+<p><strong>Blind vs analysable inside invariant 39’s own
+roots:</strong></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Root</th>
+<th>Blind-extension files (go/rs/rb/c/h)</th>
+<th>Analysable files (py/ts/tsx/js/jsx)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>download-proxy/src</code></td>
+<td>0</td>
+<td>22</td>
+</tr>
+<tr>
+<td><code>plugins</code></td>
+<td>0</td>
+<td>69</td>
+</tr>
+<tr>
+<td><code>scripts</code></td>
+<td>0</td>
+<td>5</td>
+</tr>
+<tr>
+<td><strong><code>qBitTorrent-go</code></strong></td>
+<td><strong>106</strong></td>
+<td><strong>0</strong></td>
+</tr>
+<tr>
+<td><code>frontend/src</code></td>
+<td>0</td>
+<td>66</td>
+</tr>
+</tbody>
+</table>
+<p><code>qBitTorrent-go</code> is <strong>100% blind</strong>: every
+file it contains is of an extension no analyser covers. Its PASS is a
+pure false null. Invariant 39 nonetheless counts it toward
+<code>DANGER_SCANNED</code> and, when all roots pass, prints <em>“no
+fail-open anti-pattern across 5 first-party source root(s)”</em> — the
+blind root is presented as one of five clean ones.</p>
+<h3 id="a.-a-second-distinct-hole-at-the-caller-layer">4a. A second,
+distinct hole at the caller layer</h3>
+<p><code>cmd/boba-ctl/</code> — <strong>4 <code>.go</code> files, 947
+LOC</strong> — is <strong>absent from <code>DANGER_ROOTS</code>
+entirely</strong>. That <em>is</em> a scope hole (§11.4.224(E)),
+separate from the matcher hole, and it covers the container
+orchestrator: a shell-exec + mutation surface, i.e. a textbook §11.4.252
+dangerous combination. Not scanned even in principle.</p>
+<h2
+id="real-fail-open-constructs-in-lan-facing-go-leads-read-as-lines">5.
+Real fail-open constructs in LAN-facing Go — leads read as lines</h2>
+<p>Probe was itself needle-validated (it saw the planted needle; it
+stayed clean on a negative-control file with a correctly-propagated
+error). <strong>Its honest limit:</strong> it matches only bare
+<code>if err != nil {</code> openers, not
+<code>if err := f(); err != nil {</code>.</p>
+<p><strong>No</strong> empty <code>if err != nil {}</code> blocks exist
+in production Go — that shape is genuinely absent. The real findings are
+discarded-error shapes in the credential path:</p>
+<h3
+id="f1-qbittorrent-gointernaljackettapicredentials.go234-253-credential-delete-most-serious">F1
+— <code>qBitTorrent-go/internal/jackettapi/credentials.go:234-253</code>
+(credential DELETE) — most serious</h3>
+<pre><code>234   if err := d.Repo.Delete(name); err != nil {   // checked, fails closed ✅
+239   // 2) .env delete (best-effort — DB is canonical at this point).
+240   _ = envfile.Delete(d.EnvPath, []string{ name+&quot;_USERNAME&quot;, name+&quot;_PASSWORD&quot;, name+&quot;_COOKIES&quot; })
+246   // 3) Jackett-side delete (best-effort).
+249       _ = d.Jackett.DeleteIndexer(id)
+253   w.WriteHeader(http.StatusNoContent)          // unconditional success</code></pre>
+<p>If the <code>.env</code> delete fails, the plaintext credential
+variables (named here, values never read — §11.4.10) <strong>remain on
+disk</strong>, and the API answers <strong>204 No Content</strong>: the
+caller is told the credential is gone while the secret persists.
+Likewise a failed <code>DeleteIndexer</code> leaves Jackett configured
+against a deleted credential. “Best-effort” is a comment, not a
+mechanism; the 204 asserts a state transition the code never verified.
+Capabilities combined: credential-access + mutation + irreversible +
+external-side-effect — four, where §11.4.252 requires ≥ 2.</p>
+<h3
+id="f2-credentials.go166-176-credential-upsert-compensating-rollback">F2
+— <code>credentials.go:166-176</code> (credential UPSERT compensating
+rollback)</h3>
+<pre><code>166   if err := envfile.Upsert(d.EnvPath, envKV); err != nil {
+167       // Compensating rollback.
+169       _ = d.Repo.Delete(body.Name)
+171       _ = d.Repo.Upsert(prior.Name, prior.Kind, ...)
+174       writeJSONError(w, 500, &quot;env_write_failed_db_rolled_back&quot;, err.Error())</code></pre>
+<p>The error code <strong>asserts</strong> <code>db_rolled_back</code>,
+but the rollback’s own error is discarded. If the rollback also failed,
+the API still reports it succeeded — a §11.4 bluff at the API-response
+layer and a §11.4.253 compensation-without-verification.</p>
+<h3 id="f3-benign-stated-so-it-is-not-inflated">F3 — benign, stated so
+it is not inflated</h3>
+<p><code>client.go:140,153</code> <code>_ = resp.Body.Close()</code>,
+<code>credentials.go:274</code> / <code>openapi.go:35</code> /
+<code>runs.go:112</code> <code>_ = json...Encode/Write</code>,
+<code>runs.go:43</code> <code>_ = json.Unmarshal</code>,
+<code>autoconfig.go:229</code> <code>_ = deps.Client.WarmUp()</code> —
+idiomatic Go cleanup / already-committed response writes.
+<strong>Not</strong> findings; listed so the count is honest in both
+directions.</p>
+<h3 id="f4-the-fail-closed-control-golden-false-material">F4 — the
+fail-CLOSED control (golden-FALSE material)</h3>
+<p><code>qBitTorrent-go/internal/jackettapi/auth_middleware.go:45-66</code>
+is a correct fail-closed guard: non-GET/HEAD/OPTIONS requires the
+header, compared with <code>subtle.ConstantTimeCompare</code>, else 401
++ return. It matches BOB-203’s measurement that 7189 writes are
+401-gated. <strong>Any future Go arm must not flag this.</strong></p>
+<h2 id="bob-189s-mirror-independently-confirmed">6. BOB-189’s mirror —
+independently confirmed</h2>
+<p><code>download-proxy/src/api/routes.py:1122</code>
+<code>_is_safe_fetch_url(url) -&gt; bool</code> is a textbook
+fail-<strong>closed</strong> SSRF guard (rejects non-http(s), missing
+host, DNS failure, and any
+loopback/RFC-1918/link-local/<code>169.254.169.254</code>/multicast
+address). Its <strong>only</strong> call site, <code>:1476</code>, reads
+<code>if not _is_safe_fetch_url(url):</code> → refuse.</p>
+<p>The scanner flags <code>:1143</code>, <code>:1155</code>,
+<code>:1166</code> — every one a <code>return False</code> that
+<em>is</em> the refusal — under shape (A2) <em>“silent default
+return”</em>. Acting on the finding means making an SSRF guard stop
+returning <code>False</code>. Confirmed, not taken on report: <strong>a
+gate that instructs you to delete a security control.</strong></p>
+<h2 id="verdict-one-design-problem-two-remediations">7. Verdict — one
+design problem, two remediations</h2>
+<p><strong>One primitive defect, two symptoms</strong> (§11.4.250 /
+§11.4.245):</p>
+<blockquote>
+<p>The scanner classifies by <strong>local syntactic shape</strong> and
+never consults the <strong>semantic role</strong> of the construct —
+neither what the caller does with the value, nor what error-handling
+idiom the language actually uses.</p>
+</blockquote>
+<ul>
+<li>BOB-189 = shape matched without the <strong>caller’s</strong>
+context → false MATCH.</li>
+<li>BOB-191 = a shape from a <strong>different language family</strong>
+searched for → false NULL.</li>
+</ul>
+<p>The gate’s own header already concedes the primitive: <em>“PROVING
+that a code path genuinely COMBINES &gt;= 2 dangerous capabilities …
+requires real data-flow / control-flow analysis this gate CANNOT
+honestly claim,”</em> and calls itself <em>“the LITERAL, NAMED,
+structurally-precise HALF.”</em> The two bugs are the two edges where
+that half fails. What is missing is not the acknowledgement — it is the
+<strong>propagation of that acknowledgement into per-language
+honesty</strong>.</p>
+<p>Load-bearing prediction: <strong>bolting a naive Go regex arm on will
+immediately manufacture BOB-189-class false positives in Go</strong> —
+<code>if err != nil { return false }</code> inside a Go validator is
+fail-<em>closed</em> and would be flagged. Fixing BOB-191 as layer N+1
+without addressing the primitive reproduces BOB-189 in a new language
+(§11.4.250: the tower is the diagnostic).</p>
+<p>They should stay <strong>separate tracker items</strong> (§11.4.214 —
+different fixes, and merging hides one behind the other), but be
+<strong>designed together</strong>.</p>
+<h2
+id="remediation-direction-not-implemented-not-authorised-this-session">8.
+Remediation direction (not implemented — not authorised this
+session)</h2>
+<ol type="1">
+<li><strong>Analyser registry with an UNANALYSED verdict (the single
+structural fix).</strong> Map extension → analyser. A file whose
+extension has <strong>no registered analyser</strong> is reported
+<code>UNANALYSED</code>, never silently passed; a root with zero
+analysable files SKIPs with reason instead of PASSing. Then
+<code>qBitTorrent-go</code> reads <em>“106 files UNANALYSED — no Go
+analyser”</em> rather than green. This alone converts BOB-191’s false
+null into an honest §11.4.6 gap, is language-agnostic, and also covers
+rust/ruby/C measured blind above. <strong>Do this before any Go
+arm.</strong></li>
+<li><strong>Go arm, call-site-aware from day one</strong>
+(<code>go/ast</code> via <code>gofmt</code>-grade parsing, or adopt
+<code>errcheck</code>/<code>staticcheck</code> SA-checks rather than
+hand-rolling regex): empty/comment-only <code>if err != nil {}</code>,
+<code>_ = &lt;err-returning call&gt;</code> on dangerous-capability
+calls, <code>, _ :=</code> discards, <code>recover()</code> without
+re-panic. Ship with <code>auth_middleware.go:45-66</code> as a
+<strong>golden-FALSE fixture</strong> (§1.1) so the
+fail-closed/fail-open discrimination is falsifiable from the start.</li>
+<li><strong>BOB-189:</strong> make shape (A2) call-site-aware — a
+<code>return False</code> whose call sites are all refusal-shaped
+(<code>if not f(...)</code>) is fail-closed. Add
+<code>_is_safe_fetch_url</code> as the golden-FALSE fixture, as
+BOB-189’s acceptance requires.</li>
+<li><strong>Close the caller-layer scope hole:</strong> add
+<code>cmd/boba-ctl</code> to <code>DANGER_ROOTS</code>, or replace the
+hand-maintained root list with a declared inclusion manifest (§11.4.251
+— no hand-maintained gate list).</li>
+<li><strong>BOB-192 note:</strong> its 6 ratcheted findings and
+BOB-189’s 6 false matches are <em>different sets</em>; per the
+reviewer’s MINOR-1 a count baseline absorbs a one-out-one-in swap, so
+track the finding <strong>set</strong>, not the count — especially while
+items 1-3 change what the scanner can see.</li>
+</ol>
+<h2 id="anti-bluff-provenance">9. Anti-bluff provenance</h2>
+<ul>
+<li>Every reported zero carries a class-matched needle proving the path
+can see (§11.4.201(7)(b)); the Go zero is reported as
+<strong>blindness</strong>, never as clean.</li>
+<li>The <code>grep</code> that found no <code>NO-FAIL-OPEN</code> gate
+was needle-checked against a known-present token before its zero was
+believed.</li>
+<li><strong>Own instrument bug caught and corrected:</strong> a first
+pass extracted the verdict with <code>grep -oE 'PASS|FAIL|SKIP'</code>,
+which matched <code>FAIL</code> inside the gate’s own name
+<code>...FAIL-CLOSED</code> and mislabelled three PASSes. Re-run keyed
+on the exit code and the <code>✅/❌/⏭</code> line. Recorded rather than
+quietly fixed (§11.4.201(9)).</li>
+<li>Counts are leads; §5 findings are read lines with file:line.</li>
+<li>No repo file modified; all needles on copies under the session
+scratchpad.</li>
+<li>Credentials referenced by variable NAME only, never by value
+(§11.4.10).</li>
+</ul>
+</body>
+</html>

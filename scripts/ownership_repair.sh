@@ -960,7 +960,38 @@ for idx in "${ORDER[@]}"; do
     fi
     # The filter IS the scope fence: only items under a declared path are ever
     # named, so an out-of-scope item cannot be reached even by accident (FR-005).
-    find_args+=(\( ! -uid "${OP_UID}" -o ! -gid "${OP_GID}" \) -printf '%U\t%G\t%m\t%p\0')
+    #
+    # ---- THE AGREED PROPERTY IS uid, NOT uid+gid (BOB-207, §11.4.250) --------
+    # This predicate selects on uid ALONE, and that is deliberate. "Correct
+    # ownership" is defined ONCE for this feature, and it is defined as uid:
+    #
+    #   * data-model E4 (Ownership Probe Result) models the property with
+    #     `probe_uid` / `expected_uid` and the verdict enum
+    #     `ok|wrong-owner|unwritable|absent`. There is no gid field and no gid
+    #     verdict.
+    #   * contracts/startup-precondition.md P1 says to "compare against the
+    #     operator's uid"; its refusal example reads "owned by uid 100999,
+    #     expected 1000".
+    #   * FR-001 / FR-002 / FR-003 / FR-010b all phrase it as "owned by the
+    #     account". No functional requirement mentions gid.
+    #   * Operationally, owner-class permission bits are selected by uid match,
+    #     so FR-003 (rename / move / delete with no elevation) holds whatever
+    #     the gid is.
+    #
+    # This predicate previously read `\( ! -uid ... -o ! -gid ... \)`, which
+    # made THIS FILE the only place in the feature that meant uid+gid, while
+    # probe_location() and all ~8 uid comparisons in ownership_precondition.sh
+    # meant uid. The startup precondition could therefore certify a location
+    # that this walk simultaneously reported as broken (BOB-207) — one primitive
+    # carrying two definitions, which is the §11.4.250 defect, not two bugs.
+    #
+    # The chown below still WRITES "${OP_UID}:${OP_GID}" — one syscall, and it
+    # gives a genuinely-broken 100999:100999 item a resolvable group. What
+    # changed is only which items are SELECTED: an item the operator already
+    # owns is left alone, so a deliberate shared-group or setgid arrangement is
+    # no longer silently dismantled by a repair that was never asked to.
+    # -------------------------------------------------------------------------
+    find_args+=(! -uid "${OP_UID}" -printf '%U\t%G\t%m\t%p\0')
 
     : > "${TMP_ITEMS}"
     : > "${TMP_ERR}"

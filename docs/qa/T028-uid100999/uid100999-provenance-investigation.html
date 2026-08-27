@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>uid100999-provenance-investigation</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">uid100999-provenance-investigation</h1>
+</header>
+<h1
+id="t028-forensic-investigation-51-items-at-uid-100999-vs-0-discovered">T028
+— Forensic investigation: 51 items at uid 100999 vs 0 discovered</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-26T11:20:00Z <strong>Scope:</strong> read-only forensic
+investigation of the contradiction five T028 review rounds recorded as
+UNKNOWN. No source was changed; <code>ownership_repair.sh</code> was
+never invoked; nothing was chowned. <strong>Label:</strong>
+(T11/002-user-owned-downloads - milos85vasic - ? - xhigh)</p>
+<hr />
+<h2 id="the-provenance-record-verbatim">1. The provenance record,
+verbatim</h2>
+<p><code>config/owned_paths.yaml</code>, PROVENANCE block (current
+revision):</p>
+<pre><code># ── PROVENANCE (measured 2026-08-21, research.md R6) ────────────────────────
+#
+#   download root  : owned by uid 100999, renders as UNKNOWN:UNKNOWN
+#                    6458 items at uid 1000, 1 at 100999
+#   config/        : 51 items at uid 100999
+#   config/boba.db : mode 600, owner does not resolve -&gt; ...</code></pre>
+<p>Its cited source,
+<code>specs/002-user-owned-downloads/research.md</code> §R6,
+verbatim:</p>
+<pre><code>## R6. Scope is wider than downloads
+
+**Evidence**:
+
+config/            : 51 items owned by uid 100999
+config/boba.db     : UNKNOWN:UNKNOWN, mode 600
+tmp/               : uid 1000 (already correct)
+download root      : uid 100999 (the root itself)
+downloads content  : 6458 items at uid 1000, 1 at 100999</code></pre>
+<p><strong>Stated scope:</strong> the literal path <code>config/</code>,
+repo-relative. <strong>Stated date:</strong> 2026-08-21. Landed in
+<code>6fe921b</code> (2026-08-21 15:49:31 +0200) and
+<code>66effba</code> (2026-08-21 16:06:12 +0200).</p>
+<p><strong>FINDING — the 51 has no recorded derivation.</strong> R1 and
+R2 of the same document paste the exact commands and their outputs
+(<code>podman run …</code>, <code>stat -c '%u (%U)'</code>). R6 pastes a
+results table and <strong>no command</strong>. Machine-checked: an
+<code>awk</code> extraction of the R6 block scanned for <code>^$</code>,
+<code>find</code>, <code>stat</code>, <code>awk</code>,
+<code>sort</code> and returned <code>NO COMMAND RECORDED IN R6</code>.
+The figure therefore cannot be re-derived, re-scoped, or audited from
+the record.</p>
+<hr />
+<h2 id="present-day-measurement-2026-08-26">2. Present-day measurement
+(2026-08-26)</h2>
+<p>Instrument: <code>find &lt;path&gt; -printf '%U\n'</code>, stderr
+redirected to a file and printed.</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Location</th>
+<th>entries walked</th>
+<th>uid 1000</th>
+<th>uid 100999</th>
+<th>stderr</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>config/</code></td>
+<td>264</td>
+<td>264</td>
+<td><strong>0</strong></td>
+<td>empty</td>
+</tr>
+<tr>
+<td><code>/run/media/milosvasic/DATA4TB/Downloads</code> (declared
+download root)</td>
+<td>7681</td>
+<td>7681</td>
+<td><strong>0</strong></td>
+<td>empty</td>
+</tr>
+</tbody>
+</table>
+<p><code>config</code> itself:
+<code>uid=1000 (milosvasic) gid=1000 mode=755</code>. Download root
+itself: <code>uid=1000 (milosvasic) gid=1000 mode=777</code>.</p>
+<h3 id="control-needle-11.4.2017b">2.1 Control needle
+(§11.4.201(7)(b))</h3>
+<p>A zero from a blind instrument and a zero from a clean tree are
+identical, so the instrument was proven able to see <strong>the exact
+target uid</strong> before the zero was reported. Same binary, same
+predicate, same <code>-printf '%U\n'</code>:</p>
+<pre><code>$ find &quot;$(podman info --format &#39;{{.Store.GraphRoot}}&#39;)&quot; -printf &#39;%U\n&#39; | sort | uniq -c | sort -rn
+1239359 1000
+    486 100998
+    408 100069
+    135 100005
+     35 100999      &lt;-- the target uid, seen
+     26 100502
+     ...</code></pre>
+<p>The instrument resolves 16 distinct uids including <strong>35 items
+at uid 100999</strong>. It is not blind, and specifically not blind to
+100999.</p>
+<p><strong>Honest limit of the needle (§11.4.6).</strong> The needle ran
+on <code>/home</code> (btrfs, subvol <code>@home</code>); the targets
+are on <code>/run/media/milosvasic/DATA4TB</code> (btrfs,
+<code>/dev/nvme0n1p1</code>) — different mounts. An unprivileged user
+cannot create a uid-100999 file on the target mount, so no needle was
+placed there. The filesystem-level false-null is nevertheless refuted
+independently: <code>findmnt</code> confirms both targets are
+<strong>btrfs</strong>, a POSIX filesystem that stores and returns real
+owner uids (unlike exFAT/NTFS/vfat, which would report the mounting user
+unconditionally and make every reading structurally meaningless).</p>
+<hr />
+<h2 id="the-journal-verbatim-both-real-runs">3. The journal, verbatim —
+both real runs</h2>
+<p><strong>Run 1 — 2026-08-21T17:01:55+02:00</strong>
+(<code>journalctl --user -u boba-stack.service</code>):</p>
+<pre><code>[ownership-repair] operator 1000:1000; scope /run/media/milosvasic/DATA4TB/Projects/boba/config/owned_paths.yaml (3 declared locations)
+[ownership-repair] 1/3 config/boba.db: 0/0 items need repair
+[ownership-repair] 2/3 /run/media/milosvasic/DATA4TB/Downloads: 0/0 items need repair
+[ownership-repair] 3/3 config: 0/0 items need repair
+[ownership-repair] complete: 0 item(s) repaired; record logs/ownership/repair-changes.ndjson; marker logs/ownership/repair-marker.json</code></pre>
+<p>A second invocation the same day short-circuited on the marker:
+<code>2026-08-21T17:20:37 [ownership-repair] already complete for this scope (marker: …) — nothing to do</code>.</p>
+<p><strong>Run 2 — 2026-08-25T20:52:21+02:00</strong>:</p>
+<pre><code>[ownership-repair] operator 1000:1000; scope /run/media/milosvasic/DATA4TB/Projects/boba/config/owned_paths.yaml (6 declared locations)
+[ownership-repair] 1/6 /run/media/milosvasic/DATA4TB/Projects/boba/config/boba.db: 0/0 items need repair
+[ownership-repair] 2/6 /run/media/milosvasic/DATA4TB/Projects/boba/.env: 0/0 items need repair
+[ownership-repair] 3/6 /run/media/milosvasic/DATA4TB/Downloads: 0/0 items need repair
+[ownership-repair] 4/6 /run/media/milosvasic/DATA4TB/Projects/boba/config: 0/0 items need repair
+[ownership-repair] 5/6 /run/media/milosvasic/DATA4TB/Projects/boba/tmp: 0/0 items need repair
+[ownership-repair] 6/6 /run/media/milosvasic/DATA4TB/Projects/boba/download-proxy: 0/0 items need repair
+[ownership-repair] complete: 0 item(s) repaired; no change record (nothing was changed); marker logs/ownership/repair-marker.json</code></pre>
+<p><code>logs/ownership/</code> holds only
+<code>repair-marker.json</code> (mode 600) — no change record ever
+written, consistent with <code>items_changed: 0</code>:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;completed_at&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-08-25T18:52:21Z&quot;</span><span class="fu">,</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;scope_fingerprint&quot;</span><span class="fu">:</span> <span class="st">&quot;c41619d212648a692bca539c1b3836d136b5c5c54058dacc0f81680c70120c3b&quot;</span><span class="fu">,</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;items_changed&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;record_file&quot;</span><span class="fu">:</span> <span class="kw">null</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<hr />
+<h2 id="timeline">4. Timeline</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>When</th>
+<th>Event</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-08-21 15:49 / 16:06</td>
+<td>provenance written — <strong>51 recorded</strong></td>
+<td><code>6fe921b</code>, <code>66effba</code></td>
+</tr>
+<tr>
+<td>2026-08-21 16:40:41</td>
+<td><strong><code>PUID=0</code> lands</strong></td>
+<td><code>c344ab0</code></td>
+</tr>
+<tr>
+<td>2026-08-21 17:01:53</td>
+<td><code>boba-stack.service</code> starts</td>
+<td>journal</td>
+</tr>
+<tr>
+<td>2026-08-21 17:01:55</td>
+<td>run 1 — <code>3/3 config: 0/0</code></td>
+<td>journal</td>
+</tr>
+<tr>
+<td>2026-08-21 17:01:56</td>
+<td>search plugins installed</td>
+<td>journal</td>
+</tr>
+<tr>
+<td>2026-08-21 18:04:24–33</td>
+<td>42 <code>__pycache__/*.pyc</code> written, uid 1000</td>
+<td>filesystem</td>
+</tr>
+<tr>
+<td>2026-08-25 20:52:21</td>
+<td>run 2 — 6/6 at <code>0/0</code></td>
+<td>journal</td>
+</tr>
+<tr>
+<td>2026-08-26</td>
+<td>this investigation — 0 at 100999</td>
+<td>above</td>
+</tr>
+</tbody>
+</table>
+<p>The 51 ceased to exist within the <strong>55 minutes</strong> between
+the measurement and run 1’s walk — a window that contains the
+<code>PUID=0</code> commit.</p>
+<hr />
+<h2 id="hypotheses-adjudicated">5. Hypotheses, adjudicated</h2>
+<h3 id="h2-scope-mismatch-refuted">H2 — scope mismatch —
+<strong>REFUTED</strong></h3>
+<p><code>git show 66effba:config/owned_paths.yaml</code> (the revision
+live at run 1) declares exactly three paths, the second being
+<code>- path: "config"</code> — the same literal path the provenance
+measured. Run 1 walked it and printed <code>3/3 config: 0/0</code>.</p>
+<h3 id="h3-the-walk-is-blind-11.4.2016-false-null-refuted">H3 — the walk
+is blind (§11.4.201(6) FALSE-NULL) — <strong>REFUTED</strong></h3>
+<p>Four independent checks:</p>
+<ol type="1">
+<li><strong>Predicate is sound.</strong>
+<code>scripts/ownership_repair.sh:963</code> builds
+<code>find … \( ! -uid "${OP_UID}" -o ! -gid "${OP_GID}" \) -printf '%U\t%G\t%m\t%p\0'</code>
+— it matches anything whose uid <strong>or</strong> gid differs from the
+operator’s. Lines 967–978 capture find’s stderr and treat a non-zero
+find status as a real condition rather than converting it into a silent
+zero.</li>
+<li><strong>Relative-path resolution is not a trap here.</strong> The
+script’s header records that an earlier revision passed relative
+declared paths to <code>find</code> verbatim, resolving them against the
+caller’s cwd — and run 1’s label printed the <em>relative</em>
+<code>config</code>, so this revision was the affected one. It does not
+matter: <code>systemctl --user cat boba-stack.service</code> gives
+<code>WorkingDirectory=/run/media/milosvasic/DATA4TB/Projects/boba</code>,
+so relative <code>config</code> resolved to the project’s own
+<code>config/</code> — the measured path.</li>
+<li><strong>Run 1’s downloads leg carried no path ambiguity at
+all</strong> (absolute <code>/run/media/…/Downloads</code>) and also
+returned <code>0/0</code>, against an R6 claim of a 100999-owned root
+plus one content item.</li>
+<li><strong>No permission wall and no unreadable filesystem</strong> —
+today’s walks returned empty stderr on btrfs, and the control needle
+sees 100999.</li>
+</ol>
+<h3
+id="h4-the-provenance-is-wrong-not-proven-false-but-unreproducible">H4 —
+the provenance is wrong — <strong>NOT PROVEN FALSE, BUT
+UNREPRODUCIBLE</strong></h3>
+<p>R6 records no command (§1). The 51 cannot be re-derived from the
+record. This is a genuine defect in the provenance’s evidentiary quality
+and is stated as such — but it is <strong>not</strong> a demonstration
+that the number was false, and this document does not claim one.</p>
+<h3
+id="h1-the-51-are-historical-holds-with-the-mechanism-partly-established">H1
+— the 51 are historical — <strong>HOLDS</strong>, with the mechanism
+partly established</h3>
+<p>The decisive measurement distinguishes a <strong>rewrite</strong>
+(content replaced → mtime resets) from a <strong>chown</strong>
+(ownership changes → mtime preserved):</p>
+<pre><code>config/ entries whose mtime PREDATES the 2026-08-21 16:06 measurement
+  count:                      140
+  of those, uid 1000 today:   140
+  of those, uid != 1000:        0</code></pre>
+<p>Those 140 include files only the qBittorrent container writes, with
+untouched mtimes from long before <code>PUID=0</code>:</p>
+<pre><code>1000 2026-04-27 config/qBittorrent/categories.json
+1000 2026-04-27 config/qBittorrent/rss/feeds.json
+1000 2026-04-27 config/qBittorrent/watched_folders.json
+1000 2026-04-29 config/qBittorrent/rss/storage.lock
+1000 2026-08-08 config/qBittorrent/GeoDB/dbip-country-lite.mmdb
+1000 2026-08-13 config/qBittorrent/logs/qbittorrent.log.bak</code></pre>
+<p>Content untouched, ownership now the operator’s ⇒ <strong>ownership
+changed without a rewrite</strong>, i.e. a <code>chown</code>, not
+regeneration under <code>PUID=0</code>.</p>
+<p><strong>It was not the repair, and not project tooling:</strong></p>
+<ul>
+<li>both runs report <code>0 item(s) repaired</code>; the marker records
+<code>items_changed: 0</code>, <code>record_file: null</code>; no change
+record exists on disk;</li>
+<li><code>grep -n chown start.sh setup.sh install.sh install-plugin.sh stop.sh</code>
+→ <strong>no matches</strong>; <code>grep -rn chown scripts/*.sh</code>
+outside <code>ownership_repair.sh</code> returns only two prose
+comments.</li>
+</ul>
+<p><strong>Agent and exact time of the chown:
+<code>UNKNOWN:</code></strong> — see §6.</p>
+<hr />
+<h2
+id="why-the-chown-cannot-be-dated-an-instrument-limitation-stated">6.
+Why the chown cannot be dated — an instrument limitation, stated</h2>
+<p>A <code>chown</code> moves <strong>ctime</strong> while preserving
+mtime, so ctime is the natural instrument for dating it. It is
+unavailable here: a later bulk metadata event overwrote every ctime in
+the tree.</p>
+<pre><code>ctime day histogram, config/            ctime minute histogram, config/
+    256 2026-08-25                          246 20:52
+      8 2026-08-26                            5 20:53</code></pre>
+<p>246 of 264 entries carry ctime <strong>2026-08-25 20:52:18</strong>,
+many sharing the nanosecond <code>.1112049470</code>, while their mtimes
+still span 2026-03-09 → 2026-08-26. A search for any ctime inside the
+2026-08-21 16:00–17:02 disappearance window returns <strong>0
+entries</strong> — not because no chown happened then, but because
+nothing that old survives in ctime.</p>
+<p><strong>Cause of the 20:52:18 bulk event:
+<code>UNKNOWN:</code>.</strong> It coincides to the second with the
+ownership precondition’s start
+(<code>20:52:18 Ownership precondition: scope …</code>). The obvious
+candidate — podman’s recursive SELinux relabel — is <strong>refuted by
+measurement</strong>: <code>docker-compose.yml</code> mounts
+<code>./config:/config</code> at lines 48, 165, 247 and 307 with
+<strong>no <code>:Z</code> or <code>:z</code> suffix</strong> on any of
+them. No mechanism was established, and none is asserted.</p>
+<hr />
+<h2 id="verdict">7. Verdict</h2>
+<p><strong>H1 holds as to outcome; H2 and H3 are refuted; H4 is
+confirmed only in the narrow sense that the figure is unreproducible
+from the record.</strong></p>
+<p>Established as fact:</p>
+<ol type="1">
+<li>There are <strong>no uid-100999 items today</strong> in
+<code>config/</code> (0 of 264) or in the declared download root (0 of
+7681), measured with a control-needled instrument on an
+ownership-persisting filesystem with no permission wall.</li>
+<li>The repair <strong>never chowned anything</strong> in either real
+run, and no project script contains a <code>chown</code> outside
+it.</li>
+<li>The wrongly-owned items were removed by a <strong>chown, not a
+rewrite</strong> — 140 pre-measurement files retain their original
+mtimes and are uid 1000.</li>
+<li>That chown happened <strong>before 2026-08-21T17:01:55</strong>,
+bounded by run 1’s own walk.</li>
+<li>The provenance’s <code>51</code> carries <strong>no command</strong>
+and cannot be re-derived.</li>
+</ol>
+<p>Left honestly open:</p>
+<ul>
+<li><code>UNKNOWN:</code> — <strong>who</strong> performed the chown and
+<strong>exactly when</strong> inside the 16:06→17:01:55 window. R6
+itself notes the operator had been “reassigning ownership by hand”,
+which is the only remaining candidate known to this investigation, but
+no captured evidence names an agent, and none is asserted.</li>
+<li><code>UNKNOWN:</code> — what caused the 2026-08-25 20:52:18 bulk
+ctime event.</li>
+</ul>
+<h3 id="what-would-settle-the-remainder">What would settle the
+remainder</h3>
+<ul>
+<li>Shell history for uid 1000 covering 2026-08-21 16:06–17:02
+(<code>~/.bash_history</code> carries no timestamps unless
+<code>HISTTIMEFORMAT</code> was set; <code>~/.zsh_history</code>
+does).</li>
+<li>A btrfs snapshot or backup of the tree predating 2026-08-21 17:01:55
+— its owner uids would confirm or refute the 51 directly, at its stated
+scope.</li>
+<li>An audit rule
+(<code>auditctl -a always,exit -F arch=b64 -S chown,fchownat</code>)
+would date future events; it cannot recover this one.</li>
+<li>Operator recollection (§11.4.66) — the cheapest path, and the only
+one likely to name the agent.</li>
+</ul>
+</body>
+</html>

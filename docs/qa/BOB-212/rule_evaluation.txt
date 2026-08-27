@@ -1,0 +1,86 @@
+BOB-212 / TASK 2 — FIX-DIRECTION EVALUATION, MEASURED NOT ARGUED
+================================================================
+
+METHOD. A scratch git tree, the candidate rule-set written as its .gitignore,
+then two populations pushed through `git check-ignore --no-index`:
+  POP-SOURCE  10 source-shaped paths that SHOULD be committable
+              (8 real paths measured in Task 1 + 2 realistic new-file shapes)
+  POP-SECRET  15 secret-bearing paths that MUST stay ignored
+A rule-set is acceptable only if it swallows 0 of POP-SOURCE and leaks 0 of POP-SECRET.
+
+  rule-set                                        swallows   leaks
+  ----------------------------------------------  --------   -----
+  BASELINE (today, full 316-line .gitignore)          10        0
+  (a)  narrowed deny, EXACTLY as the item words it     0        3
+  (a-repaired) = (a) with those 3 leaks plugged        1        1
+  (b)  deny-all unchanged + a loud gate                0        0   [changes nothing git accepts]
+
+WHY (a) AS WORDED FAILS — the three leaks, named:
+  1. download-proxy/qbittorrent_creds.json
+     THIS FILE EXISTS IN THE TREE TODAY. Shape-inspected (keys only, never
+     values): JSON keys = [password, username], both string. Genuinely
+     credential-bearing. `*credentials*.json` does NOT match it, because the
+     filename says "creds", not "credentials". The item's own wording leaks a
+     real credential file sitting in the working tree right now. Not hypothetical.
+  2. my_password.txt      — (a) drops *_password* entirely.
+  3. service_credentials  — EXTENSIONLESS. Every extension-scoped pattern
+     (*credentials*.json|yaml|yml|txt|enc) misses it by construction.
+
+WHY (a-repaired) STILL FAILS — the trap, stated precisely:
+  Re-adding *creds*.json + *_password* plugs leaks 1 and 2, but re-introduces a
+  swallow (set_password.py) — and leak 3 survives. Covering an EXTENSIONLESS
+  credential file requires a bare `*credentials*`, which IS the deny-all we
+  started from. Therefore:
+
+    An extension-scoped deny cannot cover extensionless secret files without
+    collapsing back into the very deny-all glob it was meant to replace.
+
+  I therefore CANNOT prove that (a) contains no secret-bearing shape. Under the
+  §11.4.10-vs-§11.4.201(1) tension that settles it: a fix that leaks a real
+  secret to close a false-null is strictly worse than the defect.
+
+RECOMMENDATION: (b) — keep the deny-all EXACTLY as it is, add a loud gate.
+
+  WHAT (b) NEWLY ALLOWS INTO GIT: nothing. Zero. Not one pattern changes, so the
+  set of paths git will accept is byte-for-byte identical to today's. The proof
+  obligation "name what it newly allows and prove that set holds no secret" is
+  discharged trivially, because the set is EMPTY. That is the whole argument for
+  (b), and it is the strongest available: it closes the false-null at zero leak
+  risk, which no variant of (a) can claim.
+
+  (b) also fixes the CLASS, not the instances. Every future credential-named
+  source file is covered with no hand edit — which is the point, since the
+  hand-maintained allowlist IS the mechanism that produced the defect
+  (§11.4.251 / §11.4.205: a list that must be edited in lockstep with the tree,
+  whose failure mode when you forget is silent).
+
+SHAPE THE GATE MUST HAVE (so it does not become the next false positive):
+  FIRE on:        untracked
+                + matched by a NON-NEGATED ignore rule
+                + under a first-party source root
+                + SOURCE extension: .go .py .ts .tsx .sh .bash .md .html .scss .rs
+  DO NOT FIRE on: .json .yaml .yml .txt .enc .key .pem .p12 .jks .env
+                  Note the symmetry: that exclusion set is EXACTLY the extension
+                  list candidate (a) wanted to deny — the data extensions that
+                  actually carry secrets. qbittorrent_creds.json is .json, so the
+                  gate correctly stays silent and the file correctly stays ignored.
+  PLUS a docs/qa/** limb regardless of extension, or FINDING 3 of Task 1b
+                  (loginctl_user_state.txt, a .txt) stays silently lost.
+  The gate needs its own golden-TRUE + golden-FALSE-with-carrier fixtures
+  (§11.4.201(3)) or it simply becomes the next blind instrument.
+
+RESIDUE (b) DOES NOT FIX — needs separate handling, by rule not by accident:
+  * frontend/e2e/credentials.spec.ts and
+    tests/security/test_jackett_autoconfig_secrets.py
+    stay tracked-but-ignored. A gate over UNTRACKED files cannot see them.
+    Item acceptance criterion (4) ("safe by rule, not by the accident of being
+    tracked") therefore needs either an allowlist entry each, or a second gate
+    limb checking TRACKED files against non-negated rules.
+  * docs/guides/tracker-credentials.{html,pdf} become LOUD under (b) — the
+    correct outcome: the author is then told to add the allowlist entries.
+
+BASELINE CAVEAT, STATED HONESTLY (§11.4.6):
+  A first run evaluated BASELINE using only .gitignore lines 23-61 and reported
+  a leak of cookies_rutracker.txt. That was an artifact of my slicing — the real
+  rule lives at line 302. Re-run against the FULL 316-line file, BASELINE leaks 0.
+  The baseline has no leak. The defect is purely the 10 swallows.

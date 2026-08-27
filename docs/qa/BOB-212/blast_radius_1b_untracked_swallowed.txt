@@ -1,0 +1,501 @@
+BOB-212 / TASK 1b — UNTRACKED files ALREADY silently swallowed
+Generated: 2026-08-26T19:55:46Z   HEAD: a3e1141777914f3d71d62a6cd32a4c79c7f43842
+
+INSTRUMENT: git ls-files -o -i --exclude-standard  (ignored AND untracked).
+CONTROL NEEDLES (§11.4.201(7)(b)):
+  needle   planted .bob212_needle/credentials_NEEDLE_probe.ts -> LISTED (proven seeing)
+  neg-ctl  planted .bob212_needle/plain_probe.ts               -> ABSENT (0 hits, correct)
+  both probe files were removed immediately after.
+POPULATION: 60217 ignored+untracked entries. 5 of those are COLLAPSED DIRECTORY
+  entries (trailing /) under .claude/worktrees/ and were NOT counted as one file each.
+
+=== STATED SOURCE-vs-ARTIFACT RULE (reproducible; deliberately conservative) ===
+A path is an ARTIFACT (and therefore NOT lost work) if ANY holds:
+  R1  it is a collapsed directory entry (ends in /)
+  R2  any non-final path SEGMENT is in:
+      node_modules __pycache__ .venv venv env .worktrees worktrees .ruff_cache
+      .pytest_cache .mypy_cache .hypothesis .vite .angular .output .wxt htmlcov
+      coverage dist site mutants prof bin logs downloads incomplete volumes tmp .git
+  R3  the path starts with one of:
+      qa-results/ artifacts/ scratchpad/ releases/ .playwright-mcp/ .codegraph/
+      .superpowers/ .remember/ .opencode/ .claude/ config/qBittorrent/ config/jackett/
+      submodules/jackett/ config/download-proxy/src/ .specify/extensions/superspec/
+      .evidence/ .docs_chain/
+Everything else is NON-ARTIFACT and was inspected by hand.
+RESULT: 59797 classified ARTIFACT; 420 NON-ARTIFACT remained.
+
+SELF-AUDIT OF THE FILTER (§11.4.201(7)(b)): the first pass filtered on a SOURCE-
+EXTENSION set that omitted .pdf, and that omission HID a real finding
+(tracker-credentials.pdf). The sweep was re-run with NO extension filter at all,
+over all 420 non-artifact paths. The numbers below are from the re-run.
+
+=== THE ANSWER: 5 non-artifact files swallowed by the CREDENTIAL/SECRET family ===
+    (.gitignore lines 31,32,51,52,58,59,60,61)
+
+FINDING 1 + 2 — §11.4.65 EXPORT TWINS OF A TRACKED DOC  [NOT NAMED IN THE ITEM]
+  docs/guides/tracker-credentials.html   20846 B   .gitignore:31:*credentials*
+  docs/guides/tracker-credentials.pdf    44674 B   .gitignore:31:*credentials*
+  The .md IS tracked (allowlisted at .gitignore:38). Its mandated .html/.pdf export
+  twins are NOT — the hand-maintained allowlist has one entry for the .md and nobody
+  thought of the exports. Both files exist on disk (regenerated 2026-08-25 21:39)
+  and are untracked. This is a LIVE §11.4.65 sync violation caused by the glob.
+  (.docx is also untracked but that is the deliberate *.docx rule at line 266.)
+
+FINDING 3 — QA EVIDENCE SWALLOWED BY *_user*  [NOT NAMED IN THE ITEM]
+  docs/qa/BOB-124/evidence/loginctl_user_state.txt   275 B   .gitignore:60:*_user*
+  In the SAME evidence directory, 16 sibling files ARE tracked, including
+  user1000_grepped.log / user_scope_events_head.log / user_service_lifecycle.log —
+  all of which also contain _user, and all of which are saved by the
+  !docs/qa/**/*.log negation at line 66. loginctl_user_state.txt is lost purely
+  because its extension is .txt and the negation only covers *.log.
+  §11.4.83 requires QA evidence to be committed. This one silently was not.
+
+FINDING 4 — source-shaped, provenance UNKNOWN (deliberately NOT called lost work)
+  set_password.py   1008 B   .gitignore:52:*_password*   mtime 2026-04-16
+  A real python script (uses requests, sets the qBittorrent WebUI password).
+  It is source-shaped and swallowed, but I have NO evidence it was ever intended
+  to be tracked. Calling it lost work would be a §11.4.201(1) FAIL-bluff.
+  Recorded as UNKNOWN: pending an operator/author call.
+
+NON-FINDING 5 — the glob doing its job correctly (the positive control)
+  download-proxy/qbittorrent_creds.json   42 B   .gitignore:32:*creds*
+  Inspected by SHAPE ONLY (keys, never values): JSON keys = [password, username],
+  both string. Genuinely credential-bearing. CORRECTLY ignored. This file is the
+  single most important object in the whole item — see rule_evaluation.txt.
+
+=== EVERY OTHER non-artifact ignored+untracked file, by rule (completeness) ===
+  341  *.docx (line 266)            deliberate, documented
+   39  extension/.gitignore tests/**/.evidence/   deliberate
+    8  .evidence/ (line 3)          deliberate
+    4  .vscode/ (line 87)           deliberate
+    3  *.log (line 64)              deliberate
+    2  *.env (line 27)              SECRETS — correct
+    2  .specify/* (line 171)        deliberate (workflows/ is generated)
+    2  config/merge-service/* (151) deliberate
+    2  qa-results/ (273)            deliberate
+    2  toPdfViaTempFile* (316)      deliberate export scratch
+    1 each: .coverage .env.* PLUGIN_STATUS.md cmd/boba-ctl/boba-ctl config/boba.db
+            config/boba.db-shm config/boba.db-wal coverage.xml
+            qBitTorrent-go/qbittorrent-proxy qBitTorrent-go/webui-bridge — all deliberate
+
+=== RAW: all 420 non-artifact ignored+untracked paths ===
+  .coverage
+  .env
+  .env.bak.1787741008
+  .specify/workflows/speckit/workflow.yml
+  .specify/workflows/workflow-registry.json
+  AGENTS.docx
+  CHANGELOG.docx
+  CLAUDE.docx
+  CONSTITUTION.docx
+  CONTRIBUTING.docx
+  PLUGIN_STATUS.docx
+  PLUGIN_STATUS.md
+  QWEN.docx
+  README.docx
+  challenges/extension/.evidence/decrypt_and_send.json
+  challenges/extension/.evidence/detect_and_forward.json
+  challenges/extension/.evidence/live_detect_send.json
+  challenges/extension/.evidence/offline_queue_recovery.json
+  challenges/extension/.evidence/options_config.json
+  challenges/extension/.evidence/popup_journey.json
+  challenges/extension/.evidence/search_buttons_live.json
+  challenges/extension/.evidence/tab_group_batch.json
+  cmd/boba-ctl/boba-ctl
+  config/.env
+  config/boba.db
+  config/boba.db-shm
+  config/boba.db-wal
+  config/merge-service/scheduling.json
+  config/merge-service/theme.json
+  coverage.xml
+  docs/AGENT_GUARDRAILS.docx
+  docs/API_Summary.docx
+  docs/Architecture_Summary.docx
+  docs/BOBA_DATABASE.docx
+  docs/CODEGRAPH.docx
+  docs/COMPLETION_STATUS.docx
+  docs/CONCURRENCY.docx
+  docs/CONSTITUTION_ADDENDUM_QUALITY.docx
+  docs/CONTINUATION.docx
+  docs/COVERAGE_BASELINE.docx
+  docs/CROSS_APP_THEME_PLAN.docx
+  docs/CodeGraph_Summary.docx
+  docs/DATA_MODEL.docx
+  docs/DEAD_TRACKERS_EXPLAINED.docx
+  docs/DESIGN_SYSTEM.docx
+  docs/DOWNLOAD_FIX.docx
+  docs/Demos_Summary.docx
+  docs/FAQ.docx
+  docs/Fixed.docx
+  docs/Fixed_Summary.docx
+  docs/GOVERNANCE_AUDIT_2026-08-07.docx
+  docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.docx
+  docs/HOST_POWER_MANAGEMENT.docx
+  docs/Issues.docx
+  docs/Issues_Summary.docx
+  docs/JACKETT_INTEGRATION.docx
+  docs/MAGNET_LINKS.docx
+  docs/MERGE_SEARCH_DIAGNOSTICS.docx
+  docs/MULTITRACK.docx
+  docs/Migration_Summary.docx
+  docs/OBSERVABILITY.docx
+  docs/OUT_OF_SANDBOX.docx
+  docs/PERFORMANCE.docx
+  docs/PLUGINS.docx
+  docs/PLUGIN_AUDIT.docx
+  docs/PLUGIN_TROUBLESHOOTING.docx
+  docs/PORTING-FROM-LAVA.docx
+  docs/QA_DISCOVERY_LEDGER.docx
+  docs/QUALITY_STACK.docx
+  docs/README.docx
+  docs/RELEASE_READINESS_20260616.docx
+  docs/RELEASE_TORRENT_UPLOAD_FIX.docx
+  docs/REMAINING_WORK_PLAN.docx
+  docs/SCANNING.docx
+  docs/SECURITY.docx
+  docs/SESSION_REPORT_2026-04-19.docx
+  docs/SYSTEMATIC_DEBUGGING_2026-04-19.docx
+  docs/Scripts_Summary.docx
+  docs/Superpowers_Summary.docx
+  docs/TESTING.docx
+  docs/TEST_RESULTS.docx
+  docs/TEST_SUITE_GUIDE.docx
+  docs/TOKENS_AND_KEYS.docx
+  docs/TRACKER_AUTH_TESTING.docx
+  docs/USER_MANUAL.docx
+  docs/browser_extension/ARCHITECTURE.docx
+  docs/browser_extension/CHANGELOG.docx
+  docs/browser_extension/DEVELOPMENT.docx
+  docs/browser_extension/IMPLEMENTATION_PLAN.docx
+  docs/browser_extension/INSTALL.docx
+  docs/browser_extension/RELEASE_READINESS.docx
+  docs/browser_extension/STORE_LISTING.docx
+  docs/browser_extension/Status.docx
+  docs/browser_extension/Status_Summary.docx
+  docs/browser_extension/USER_GUIDE.docx
+  docs/browser_extension/_analysis/01-guides-and-plan.docx
+  docs/browser_extension/_analysis/02-research-dimensions.docx
+  docs/browser_extension/_analysis/03-diagrams.docx
+  docs/browser_extension/_analysis/04-src-foundation.docx
+  docs/browser_extension/_analysis/05-src-features.docx
+  docs/browser_extension/_analysis/06-tests.docx
+  docs/browser_extension/_plan/A-backend-contract.docx
+  docs/browser_extension/_plan/B-helixqa.docx
+  docs/browser_extension/_plan/C-traceability-matrix.docx
+  docs/browser_extension/_plan/D-test-strategy.docx
+  docs/browser_extension/_plan/F-adopt-vs-rewrite.docx
+  docs/browser_extension/coverage_ledger.docx
+  docs/codegraph/Status.docx
+  docs/codegraph/Status_Summary.docx
+  docs/demos/2026-04-27-boba-jackett-dod-sweep.docx
+  docs/demos/2026-04-27-boba-jackett-static-smoke.docx
+  docs/guides/container-death-triage.docx
+  docs/guides/file-ownership.docx
+  docs/guides/forced-logout-flight-recorder.docx
+  docs/guides/tracker-credentials.docx
+  docs/guides/tracker-credentials.html
+  docs/guides/tracker-credentials.pdf
+  docs/history/BOB-079-attributed-auto-commit-history.docx
+  docs/incidents/2026-04-27-perceived-host-suspension-investigation.docx
+  docs/incidents/2026-08-07-const033-poweroff-signal-triage.docx
+  docs/incidents/2026-08-18-3rd-forced-logout.docx
+  docs/incidents/2026-08-18-auto-committer-BOB-068-investigation.docx
+  docs/incidents/2026-08-18-perceived-forced-logout-2nd.docx
+  docs/incidents/2026-08-19-4th-forced-logout.docx
+  docs/incidents/2026-08-19-5th-forced-logout.docx
+  docs/incidents/2026-08-19-6th-forced-logout.docx
+  docs/incidents/2026-08-19-anchor-block-integrity-176-findings-triage.docx
+  docs/incidents/2026-08-19-anti-bluff-correction-option4-rootless-container.docx
+  docs/incidents/2026-08-19-sudo-audit-rules-for-operator.docx
+  docs/incidents/2026-08-21-bob131-container-death-triage.docx
+  docs/issues/001-dashboard-issues-fixed.docx
+  docs/issues/fixed/BUGFIXES.docx
+  docs/issues/sse-streaming-issues.docx
+  docs/manual-qa/2026-08-18-session-manual-qa-checklist.docx
+  docs/migration/Migration_Python_Codebase_To_Go.docx
+  docs/migration/PARITY_GAPS.docx
+  docs/plans/2026-08-19-bob126-gates.docx
+  docs/proposals/external-watchdog-for-forced-logout-architectural-gap.docx
+  docs/proposals/subagent-worktree-isolation.docx
+  docs/qa/2026-08-18-task68-bob108-export-revision-fix/evidence.docx
+  docs/qa/BOB-008/operator_runbook.docx
+  docs/qa/BOB-060/EVIDENCE.docx
+  docs/qa/BOB-061-062/EVIDENCE.docx
+  docs/qa/BOB-063/evidence.docx
+  docs/qa/BOB-066/evidence.docx
+  docs/qa/BOB-075/concurrency_evidence/README.docx
+  docs/qa/BOB-075/concurrency_evidence/after_fix/final_codegraph_status.docx
+  docs/qa/BOB-075/concurrency_evidence/after_fix/original_codegraph_status.docx
+  docs/qa/BOB-075/concurrency_evidence/before_fix/final_codegraph_status_CORRUPTED.docx
+  docs/qa/BOB-075/concurrency_evidence/before_fix/original_codegraph_status.docx
+  docs/qa/BOB-075/concurrency_evidence/mkdir_fallback/final_codegraph_status.docx
+  docs/qa/BOB-075/concurrency_evidence/mkdir_fallback/original_codegraph_status.docx
+  docs/qa/BOB-075/concurrency_evidence/mutation_test/final_codegraph_status_CORRUPTED.docx
+  docs/qa/BOB-075/concurrency_evidence/mutation_test/original_codegraph_status.docx
+  docs/qa/BOB-075/concurrency_evidence/signal_handling/original_codegraph_status.docx
+  docs/qa/BOB-076/closure-evidence.docx
+  docs/qa/BOB-084/closure-evidence.docx
+  docs/qa/BOB-086/MANIFEST.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-001.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-002.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-003.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-004.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-005.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-006.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-007.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-011.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-012.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-013.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-014.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-015.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-016.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-017.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-018.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-019.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-020.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-021.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-022.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-023.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-024.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-025.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-026.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-027.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-028.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-029.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-030.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-031.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-032.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-033.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-034.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-035.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-036.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-037.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-038.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-039.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-040.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-041.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-042.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-043.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-044.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-045.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-046.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-047.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-048.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-049.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-050.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-051.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-052.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-053.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-054.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-055.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-056.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-057.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-058.docx
+  docs/qa/BOB-086/backfill_evidence/BOB-059.docx
+  docs/qa/BOB-087/seam-coverage-measurement.docx
+  docs/qa/BOB-089/README.docx
+  docs/qa/BOB-091/CLOSURE.docx
+  docs/qa/BOB-091/closure-evidence.docx
+  docs/qa/BOB-093/redos_timing.docx
+  docs/qa/BOB-094/MANIFEST.docx
+  docs/qa/BOB-095/MANIFEST.docx
+  docs/qa/BOB-096/README.docx
+  docs/qa/BOB-111/EVIDENCE.docx
+  docs/qa/BOB-112/summary.docx
+  docs/qa/BOB-117/closure-evidence.docx
+  docs/qa/BOB-124/deep-forensics.docx
+  docs/qa/BOB-124/evidence/loginctl_user_state.txt
+  docs/qa/BOB-133/recovery.docx
+  docs/qa/BOB-136/closure-evidence.docx
+  docs/qa/BOB-137/forensics.docx
+  docs/qa/BOB-138/closure-evidence.docx
+  docs/qa/BOB-139/closure-evidence.docx
+  docs/qa/BOB-140/closure-evidence.docx
+  docs/qa/BOB-141/progress.docx
+  docs/qa/BOB-142/closure-evidence.docx
+  docs/qa/BOB-161/review_round1_NOGO.docx
+  docs/qa/BOB-161/review_round2_NOGO.docx
+  docs/qa/BOB-164/README.docx
+  docs/qa/BOB-166/fix-design-notes.docx
+  docs/qa/BOB-168/decision_missing_vs_skip.docx
+  docs/qa/BOB-168/premise_correction_20260822.docx
+  docs/qa/BOB-168/round3_guard_residue_fix.docx
+  docs/qa/BOB-168/runner_behaviour_20260821.docx
+  docs/qa/BOB-168/runtime_confirmation_20260822.docx
+  docs/qa/BOB-169/fix_evidence.docx
+  docs/qa/BOB-169/root_cause_proven_20260821.docx
+  docs/qa/BOB-169/round4_GO.docx
+  docs/qa/BOB-174/DESIGN_DECISION.docx
+  docs/qa/BOB-174/EVIDENCE.docx
+  docs/qa/BOB-252-failopen/review_round1_NOGO.docx
+  docs/qa/SESSION_RESUME_20260822.docx
+  docs/qa/bobalink-2026-06-10-session11/README.docx
+  docs/qa/bobalink-2026-06-11-session11/README.docx
+  docs/qa/buttons-2026-06-14/README.docx
+  docs/qa/constitution-draft-20260615/docs-features-status-rule.docx
+  docs/qa/coverage-escape-tmux-oomd-20260812/RESUMPTION.docx
+  docs/qa/coverage-escape-tmux-oomd-20260812/audit.docx
+  docs/qa/e2e-live-20260606/README.docx
+  docs/qa/fail-open-triage-20260820/triage.docx
+  docs/qa/final-system-proof-20260617/results.docx
+  docs/qa/nnmclub-login-diagnosis-20260616.docx
+  docs/qa/recording-readiness-20260615/inventory.docx
+  docs/qa/recordings-20260615/boba-cli-verdict.docx
+  docs/qa/recordings-20260615/boba-extension-verdict.docx
+  docs/qa/recordings-20260615/boba-web-feature-tour-verdict.docx
+  docs/qa/recordings-20260615/boba-web-search-flow-verdict.docx
+  docs/qa/rw08-latency-diagnosis-20260616.docx
+  docs/qa/search-fix-verify-20260616/results.docx
+  docs/qa/search-flow-audit-20260615/findings.docx
+  docs/qa/search-flow-audit-20260615/fixes-frontend.docx
+  docs/qa/search-flow-audit-20260615/fixes-go.docx
+  docs/qa/search-flow-audit-20260615/fixes-python.docx
+  docs/qa/session-close-2026-08-19/evidence.docx
+  docs/qa/task-54/RED-GREEN-transcript.docx
+  docs/qa/task-54/post-fix-behavior.docx
+  docs/qa/task-54/pre-fix-behavior.docx
+  docs/qa/task-80/README.docx
+  docs/qa/task-85-watchdog-phase1/audit.docx
+  docs/qa/task-bob076-116-relabel/evidence.docx
+  docs/qa/task-bob083-fix/README.docx
+  docs/qa/task-e2e-journey/summary.docx
+  docs/qa/task-rebuild-verify/summary.docx
+  docs/qa/task-review-457cca4-a7e55f9-minor-fixes/README.docx
+  docs/qa/task-review-457cca4-a7e55f9-nit-fixes/minor-6-bash-version-guard.docx
+  docs/qa/task-review-457cca4-a7e55f9-nit-fixes/verdict.docx
+  docs/qa/task-round2-minor-obs-fixes/minor-obs-3-red-green-mutation-transcript.docx
+  docs/research/bob015_plugin_degenerate_input_audit/REPORT.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/README.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/docs/api-reference.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/docs/developer-guide.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/docs/installation-guide.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/docs/technical-specification.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/docs/user-guide.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/implementation-plan.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/plan.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_cross_verification.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_dim01.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_dim02.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_dim03.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_dim04.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_dim05.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_dim06.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_dim07.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_dim08.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_dim09.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_dim10.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_dim11.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_dim12.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_dimensions.docx
+  docs/research/browser_extension/Browser Torrent Extension Guide/research/boba_extension_insight.docx
+  docs/research/dead_tracker_recheck_20260616/findings.docx
+  docs/research/gamestorrents_slow_upstream_20260616/findings.docx
+  docs/research/jackett_update/README.docx
+  docs/research/kickass_403_20260616/findings.docx
+  docs/research/tracker_discovery_20260616/findings.docx
+  docs/scripts/anchor-block-integrity-check.docx
+  docs/scripts/bob131_container_death_triage.docx
+  docs/scripts/capture-workable-items-db-delta.docx
+  docs/scripts/check-brief-inputs.docx
+  docs/scripts/check_cm_closure_seam_binds.docx
+  docs/scripts/check_cm_export_charset_valid.docx
+  docs/scripts/check_cm_go_toolchain_matches_builder.docx
+  docs/scripts/check_cm_healthcheck_covers_served_ports.docx
+  docs/scripts/check_cm_killpg_pgid_guard.docx
+  docs/scripts/check_cm_lan_routes_authenticated.docx
+  docs/scripts/check_cm_runtime_deps_parity.docx
+  docs/scripts/check_cm_test_mock_pid_explicit_int.docx
+  docs/scripts/check_cm_test_mock_pid_patched_when_real_pid.docx
+  docs/scripts/check_cm_workable_items_binary_fresh.docx
+  docs/scripts/ci-ext.docx
+  docs/scripts/codegraph-gitignore-honor-challenge.docx
+  docs/scripts/codegraph_validate.docx
+  docs/scripts/commit-push-all.docx
+  docs/scripts/compute-badges.docx
+  docs/scripts/credential_leak_audit.docx
+  docs/scripts/durable-run.docx
+  docs/scripts/extract-tracker-cookies.docx
+  docs/scripts/flight-recorder.docx
+  docs/scripts/helixqa-jackett-fake.docx
+  docs/scripts/install-resource-pressure-timer.docx
+  docs/scripts/jackett-cookie-login-hardening.docx
+  docs/scripts/load-tracker-cookies.docx
+  docs/scripts/nnmclub-cookie-harvest.docx
+  docs/scripts/nnmclub-cookie-refresh.docx
+  docs/scripts/ownership_precondition.docx
+  docs/scripts/ownership_repair.docx
+  docs/scripts/regenerate-continuation-exports.docx
+  docs/scripts/tighten_cm_export_charset_baseline.docx
+  docs/scripts/tunnel-keepalive.docx
+  docs/scripts/unattributed-commit-guard.docx
+  docs/scripts/update_readme_doc_links.docx
+  docs/superpowers/plans/2026-04-17-realtime-streaming-plan.docx
+  docs/superpowers/plans/2026-04-19-completion-initiative.docx
+  docs/superpowers/plans/2026-04-22-python-to-go-migration.docx
+  docs/superpowers/plans/2026-04-26-jackett-autoconfig-clean-rebuild.docx
+  docs/superpowers/plans/2026-04-27-jackett-management-ui-and-system-db.docx
+  docs/superpowers/specs/2026-04-26-jackett-autoconfig-clean-rebuild-design.docx
+  docs/superpowers/specs/2026-04-27-jackett-management-ui-and-system-db-design.docx
+  docs/systemd/UNITS.docx
+  docs/testing/ddos_resilience.docx
+  docs/testing/scaling.docx
+  docs/testing/test_type_matrix.docx
+  docs/testing/ux_accessibility.docx
+  download-proxy/diagnostics/stall_dumps.log
+  download-proxy/qbittorrent_creds.json
+  extension/tests/chaos/.evidence/boba_resilience_backoff_ordering.json
+  extension/tests/chaos/.evidence/boba_resilience_classify_4xx.json
+  extension/tests/chaos/.evidence/boba_resilience_classify_5xx_vs_4xx.json
+  extension/tests/chaos/.evidence/boba_resilience_classify_malformed_body.json
+  extension/tests/chaos/.evidence/boba_resilience_exhaustion_503.json
+  extension/tests/chaos/.evidence/boba_resilience_exhaustion_network.json
+  extension/tests/chaos/.evidence/boba_resilience_timeout_retry.json
+  extension/tests/chaos/.evidence/boba_resilience_transient_503.json
+  extension/tests/chaos/.evidence/boba_resilience_transient_network.json
+  extension/tests/chaos/.evidence/queue_flaky_conservation.json
+  extension/tests/chaos/.evidence/queue_persistence_corruption.json
+  extension/tests/chaos/.evidence/queue_send_failure_hard.json
+  extension/tests/chaos/.evidence/queue_send_failure_soft.json
+  extension/tests/chaos/.evidence/queue_state_corruption.json
+  extension/tests/perf/.evidence/crypto_roundtrip.json
+  extension/tests/perf/.evidence/infohash_compute_10000_pieces.json
+  extension/tests/perf/.evidence/magnet_parse_throughput_1000_links.json
+  extension/tests/perf/.evidence/orchestrator_junkflood_scaling.json
+  extension/tests/perf/.evidence/scaling_oracle_self_validation.json
+  extension/tests/perf/.evidence/scanner_full_scan_1000_anchors.json
+  extension/tests/stress/.evidence/client_flood_fifo.json
+  extension/tests/stress/.evidence/client_limiter_engaged.json
+  extension/tests/stress/.evidence/orchestrator_boundaries.json
+  extension/tests/stress/.evidence/orchestrator_concurrent.json
+  extension/tests/stress/.evidence/orchestrator_cross_scanner_dedup.json
+  extension/tests/stress/.evidence/orchestrator_hostile_only_real.json
+  extension/tests/stress/.evidence/orchestrator_subquadratic_scaling.json
+  extension/tests/stress/.evidence/orchestrator_sustained_load.json
+  extension/tests/stress/.evidence/queue_boundaries.json
+  extension/tests/stress/.evidence/queue_concurrent_enqueue.json
+  extension/tests/stress/.evidence/queue_concurrent_interleave.json
+  extension/tests/stress/.evidence/queue_sustained_flush.json
+  extension/tests/stress/.evidence/queue_sustained_load.json
+  extension/tests/stress/.evidence/ratelimit_burst.json
+  extension/tests/stress/.evidence/ratelimit_concurrent.json
+  extension/tests/stress/.evidence/ratelimit_refill.json
+  extension/tests/stress/.evidence/tabgroup_flaky_chaos.json
+  extension/tests/stress/.evidence/tabgroup_large_batch.json
+  extension/tests/stress/.evidence/tabgroup_subquadratic_scaling.json
+  frontend/.vscode/extensions.json
+  frontend/.vscode/launch.json
+  frontend/.vscode/mcp.json
+  frontend/.vscode/tasks.json
+  qBitTorrent-go/qa-results/go_magnet_stress/local/concurrent_latency.json
+  qBitTorrent-go/qa-results/go_magnet_stress/local/latency.json
+  qBitTorrent-go/qbittorrent-proxy
+  qBitTorrent-go/webui-bridge
+  scripts/README.docx
+  scripts/system-slice-watchdog/README.docx
+  set_password.py
+  specs/002-user-owned-downloads/evidence/T014-recreate.log
+  specs/002-user-owned-downloads/evidence/baseline-start.log
+  toPdfViaTempFile2966821-0.html
+  toPdfViaTempFile2966821-1.pdf

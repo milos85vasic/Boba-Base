@@ -1,10 +1,10 @@
 # `scripts/ownership_repair.sh` — Ownership Repair
 
-**Revision:** 3
-**Last modified:** 2026-08-25T00:00:00Z
+**Revision:** 7
+**Last modified:** 2026-08-27T00:00:00Z
 **Purpose:** Operator guide for the tool that brings pre-existing content back
 under the ownership of the person who started the system.
-**Last verified:** 2026-08-21
+**Last verified:** 2026-08-27
 
 ---
 
@@ -13,6 +13,26 @@ under the ownership of the person who started the system.
 `scripts/ownership_repair.sh` walks every location declared in
 `config/owned_paths.yaml` and `chown`s every item that is **not** owned by the
 operator back to the operator's `uid:gid`.
+
+**"Owned by the operator" means the `uid` matches — nothing else.** The walk
+selects on `uid` alone, and an item the operator already owns is left
+untouched even if its *group* differs. That is the feature's single definition
+of the property: data-model E4 models the ownership probe with
+`probe_uid`/`expected_uid` and no gid field,
+`contracts/startup-precondition.md` compares against "the operator's uid", and
+FR-001/FR-002/FR-003/FR-010b all say "owned by the account". Operationally it
+is sufficient because owner-class permission bits are selected by `uid` match,
+so renaming, moving and deleting (FR-003) work whatever the group is.
+
+The `chown` it performs still **writes** `uid:gid` — one syscall, and it gives
+a genuinely-broken `100999:100999` item a resolvable group. Until BOB-207 the
+walk also *selected* on gid, which made this script the only place in the
+feature that meant `uid+gid` while the startup precondition meant `uid`: the
+precondition could certify a location this walk simultaneously reported as
+broken. Narrowing the selection settled that, and has a second effect worth
+knowing — a deliberate shared-group or `setgid` arrangement on content you
+already own is no longer silently rewritten by a repair that was never asked
+to touch it.
 
 It exists because of a measured state, not a hypothetical one: on 2026-08-21
 the download root contained an item owned by uid `100999` and `config/`
@@ -175,7 +195,7 @@ gates and test suites run the script without touching a runtime.
 |---|---|
 | `0` | Every in-scope item is operator-owned — repaired now, or already correct. The marker is written. |
 | `1` | At least one item could not be repaired. Each is named individually. **No marker is written**, so the next run retries the whole declared scope. |
-| `2` | Could not run: the scope is missing/unparseable, **the scope declares zero locations**, **the scope declares a path this repair must never walk** (see *The declared-path fence* below), the fingerprint cannot be computed, the state directory cannot be created, or the change record cannot be opened for append. Nothing was touched. |
+| `2` | Could not run: the scope is missing/unparseable, **the scope declares zero locations**, **a declared entry resolved to no usable location** (see *Why an empty scope is `2` and not `0`* below), **the scope declares a path this repair must never walk** (see *The declared-path fence* below), the fingerprint cannot be computed, the state directory cannot be created, or the change record cannot be opened for append. Nothing was touched. |
 
 ### Why an empty scope is `2` and not `0`
 
@@ -200,6 +220,115 @@ paths:
 All three now exit `2`. `scripts/ownership_precondition.sh` has always refused
 them the same way; the two consumers of one scope file now agree.
 
+#### …and so does a scope that only *partly* vanishes (Revision 4)
+
+The rule above covered the case where **every** entry vanished. Measured
+2026-08-26, its partial sibling did not: a two-entry scope whose first entry was
+`${UNSET_VAR}` announced `(1 declared locations)`, walked only the survivor,
+exited `0` and wrote the marker. One **declared** location had silently
+disappeared, and no consumer could tell that scope from an honest one-entry one.
+
+Since Revision 4 the scope reader itself refuses, so all three consumers
+(`ownership_repair.sh`, `ownership_precondition.sh` and the pre-build gate)
+inherit one rule rather than three crosschecks that could disagree. Two shapes
+are refused:
+
+```yaml
+paths:
+  - path: "${UNSET_VAR}"          # expands to nothing — no ':-' default supplied
+  - path: "/srv/media/downloads"  # …and this one is NOT quietly repaired alone
+```
+```yaml
+paths:
+  - path: "/srv/${UNSET_VAR}/downloads"   # expands to /srv/downloads —
+                                          # a DIFFERENT path than declared
+```
+
+The second shape is the sharper one: the path stays non-empty, so the fence's
+depth floor cannot catch it, and the repair chowned a tree the scope never named.
+
+**The whole run is refused, not just the offending entry.** The completion
+marker's fingerprint claims *every* declared location and `start.sh` reads it as
+"already repaired", so a partial walk that exited `0` would latch the miss on
+every later start. It is also the decision the declared-path fence already
+takes for a refused entry — one question, one answer.
+
+`${VAR:-default}` — including the explicit `${VAR:-}` — is you *stating* what
+empty means and is never refused. That is the shipped scope's first entry
+(`${QBITTORRENT_DATA_DIR:-/mnt/DATA}`), so a rule that swallowed it would refuse
+the live configuration. The refusal names the entry, the raw spelling and the
+variable:
+
+```
+ownership: 1 declared entry in config/owned_paths.yaml resolved to no usable location:
+ownership:   entry 1 — path: '${QBITTORRENT_DATA_DIR}' — it expanded to an empty path:
+             ${QBITTORRENT_DATA_DIR} is unset or empty and the entry supplies no ':-' default
+ownership: remedy: give the entry a default (${VAR:-/path}), set the variable, or remove
+             the entry. `optional: true` does not cover this — it says the path may be
+             ABSENT, not that the DECLARATION may be.
+```
+
+Note the last line: `optional: true` declares that the path may be missing from
+the filesystem. It does not license a declaration that denotes nothing.
+
+#### Two interpolation forms are supported — any other `${…}` spelling is refused
+
+A declared path may interpolate `${VAR}` and `${VAR:-default}` (the explicit
+`${VAR:-}` included). **Those two forms are the whole of what is
+interpolated**, and any *other* `${…}` spelling is refused rather than
+substituted, because the substitution would otherwise leave a marker in the
+walked path:
+
+| spelling | why it is refused |
+|---|---|
+| `${A:-${B}}` — one form nested inside another's default | the default stops at the **inner** `}`, so that `}` closes the outer form and the trailing one is stranded. Measured: with both unset the path came out as the literal `…/${B}/leaf`; with `A` set, as the corrupted `…//tmp/x}/leaf`. Neither is what you declared. |
+| `${}`, `${1}`, an unterminated `${VAR` | the substitution cannot consume them at all, so the `${` survives into the path the walk would use. |
+
+This is judged on the **declared spelling only** — never on a variable's
+*value*. A value that happens to contain `${`, or a directory whose name
+contains a literal `}`, is yours to choose and still resolves normally; both are
+pinned as golden-FALSE cases in the suite so the rule can never grow into them.
+
+**A bare `$NAME` is not interpolation — it is a literal path component.**
+Only `${` openers are judged, so `path: /data/$USER/downloads` is neither
+expanded nor refused: it denotes a directory whose name really is the six
+characters `$USER`. Measured 2026-08-26 — a non-optional entry of that shape
+fails honestly when the directory is absent (`declared path does not exist and
+is not optional`, exit `1`), but an `optional: true` one logs `absent, declared
+optional — skipped` and exits **`0`**, which is the same optional-escape the
+refusals above exist to close, one grammar step away. The skip line prints the
+literal path, so it is visible in the log rather than silent. Unless you really
+do mean a `$`-named directory, read a bare `$` in a declared path as a typo for
+`${…}` — write `${USER}` or `${USER:-default}`.
+
+Refusing a bare `$` in code would be **wrong**, and is deliberately not done:
+`$`-named directories are real and in use. A Windows-formatted download disk
+carries a literal `$RECYCLE.BIN`, and such an entry is walked normally today
+(measured on a real directory of that name: `0/0 items need repair`, exit `0`).
+A rule that refused it would be a §11.4.201(1) false-positive refusal against a
+working configuration — which this project treats as exactly as serious as a
+false pass, and which the nine golden-FALSE assertions in the suite exist to
+prevent this rule from growing into.
+
+The refusal matters most for an `optional: true` entry. Without this rule a
+non-optional entry of either shape still failed honestly (`does not exist`,
+exit `1`), but an optional one logged `absent, declared optional — skipped`,
+exited **`0`** and wrote the completion marker — a corrupted path that read as a
+successful run while repairing nothing, and latched that miss on every later
+start. The message names the entry and the spelling:
+
+```
+ownership: 1 declared entry in config/owned_paths.yaml resolved to no usable location:
+ownership:   entry 1 — path: '/srv/${A:-${B}}/leaf' — the entry's spelling was not fully
+             resolved: ${A:-${B} nests one `${...}` inside another's default, which the
+             documented ${VAR} / ${VAR:-default} grammar does not cover — the inner `}`
+             closes the outer form and the remainder is left stranded, so the walked path
+             would not be the declared one
+```
+
+The remedy is the same as for any unresolved entry: give it a default, set the
+variable, or split the nesting into a single `${VAR:-default}`.
+
 ### The declared-path fence
 
 The walk only ever names items *under* a declared path — but until Revision 3
@@ -214,6 +343,7 @@ A declared path is now checked before anything is walked:
 |---|---|
 | repo-relative (`config`, `.env`, `tmp`) | after `..`/`.`/`//` are resolved it must still be **inside the project root** |
 | absolute (`/mnt/DATA`, `${QBITTORRENT_DATA_DIR}`) | at least **2 path components**, and never a system tree (`/bin /boot /dev /etc /lib /lib32 /lib64 /libx32 /proc /root /sbin /sys /usr /var`) nor anything under one |
+| absolute, *computed* deny (Revision 4) | never the container runtime's own storage — `${XDG_DATA_HOME:-$HOME/.local/share}/containers` — whose files are owned by mapped subuids **by design** |
 
 The floor is 2 because the shipped default `/mnt/DATA` has exactly 2 — it is
 the depth the shipped configuration forces, not a number picked by taste. The
@@ -232,6 +362,28 @@ an absolute path outside the project with enough depth is exactly what a
 download root is, so it is accepted. It also does not require the path to be
 operator-owned, because a root-owned mount point with operator-owned content
 beneath it is the ordinary state of a removable disk.
+
+The container-storage deny exists because `/home/<user>` clears the floor and is
+deliberately not denylisted, so without it a declared root at or above the
+rootless image store would be accepted by shape — and the `podman unshare`
+fallback would rewrite the storage the rootless runtime depends on. Its own
+limit: it resolves the default and `XDG_DATA_HOME`-relocated graphroot (pure
+string operations), and **not** one relocated in `storage.conf` or via
+`CONTAINERS_STORAGE_CONF`, because reading those would make the fence depend on
+filesystem state at check time. A degenerate computed value (relative, or too
+shallow because `HOME` was unset) is discarded rather than used, so the deny can
+never broaden into a top-level prefix.
+
+**And it judges the spelling, not the resolved path.** Normalisation is lexical
+— deliberately, so it cannot be raced and can judge a path that does not exist
+yet — so an existing symlink in a **non-final** component of a declared path is
+invisible to it, and the walk names items under the link's target. Measured, and
+with no race required. A symlinked **final** component *is* contained (`find`'s
+default `-P` does not descend it, and the trailing slash that would defeat that
+is stripped). What bounds the intermediate case is who can write those
+components: they sit above the declared root, outside every container bind
+mount, and an actor able to write there can edit the untracked `.env` that
+supplies the root anyway — so no capability is gained. Tracked as BOB-159.
 
 If you see `REFUSED <path> — …`, fix `config/owned_paths.yaml` or the
 environment variable it reads; the message names the resolved path and the rule.

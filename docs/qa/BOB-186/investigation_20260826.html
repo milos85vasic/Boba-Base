@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>investigation_20260826</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">investigation_20260826</h1>
+</header>
+<h1
+id="bob-186-investigation-workable-items-diff-partial-read-false-null">BOB-186
+— Investigation: <code>workable-items diff</code> partial-read
+false-null</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-26T18:40:00Z <strong>Scope:</strong> Investigation only. No
+source changed, no tracker DB or Markdown mutated.
+<strong>Label:</strong> (T11/002-user-owned-downloads - milos85vasic - ?
+- xhigh)</p>
+<h2 id="verdict-summary">Verdict summary</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Question</th>
+<th>Answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Does <code>diff</code> still false-green on a partial read?</td>
+<td><strong>NO</strong> — fixed in constitution <code>5979128</code>
+(2026-08-25 21:06), live in both shipped binaries</td>
+</tr>
+<tr>
+<td>Is the DB↔︎Markdown pair actually in sync right now?</td>
+<td><strong>NO</strong> — 8 real divergences, independently
+confirmed</td>
+</tr>
+<tr>
+<td>Would committing the DB now commit a false green?</td>
+<td><strong>NO</strong> — the gate correctly refuses; it would commit a
+<em>known-red</em> divergence</td>
+</tr>
+</tbody>
+</table>
+<h2 id="reproduction-measured-counts">1. Reproduction — measured
+counts</h2>
+<p>Real corpus, gate-resolved binary
+(<code>constitution/scripts/workable-items/bin/workable-items</code>):</p>
+<pre><code>$ workable-items diff --db docs/workable_items.db --issues docs/Issues.md --fixed docs/Fixed.md
+~ BOB-159 body differs (md=3366 bytes db=4917 bytes)
+~ BOB-197 status: md=&quot;Queued&quot; db=&quot;In progress&quot;
+~ BOB-197 body differs (md=2460 bytes db=4091 bytes)
+~ BOB-198 body differs (md=2253 bytes db=3600 bytes)
+~ BOB-199 body differs (md=3221 bytes db=6382 bytes)
+- BOB-200 present in DB, absent in Markdown
+- BOB-201 present in DB, absent in Markdown
+- BOB-202 present in DB, absent in Markdown
+diff: 8 difference(s) (compared 198 Markdown item(s) against 201 DB item(s); read docs/Issues.md, docs/Fixed.md)
+EXIT=1</code></pre>
+<p>The BOB-186 shape (<code>--issues</code> without
+<code>--fixed</code>) no longer green-lights:</p>
+<pre><code>$ workable-items diff --db docs/workable_items.db --issues docs/Issues.md
+diff: refusing to report a DB-vs-Markdown verdict that would silently exclude part of
+the DB — the supplied Markdown path(s) do not account for 122 item(s) located in Fixed
+(supply --fixed). ...
+EXIT=1</code></pre>
+<p>With the opt-in <code>--partial-scope</code>, the verdict is
+scope-limited and never says “in sync”:</p>
+<pre><code>diff: PARTIAL SCOPE — 8 difference(s) within the tracker(s) compared (compared 76
+Markdown item(s); read .../Issues.md), and 122 of 201 DB item(s) were NOT compared:
+122 in Fixed (no --fixed supplied).
+EXIT=1</code></pre>
+<h2 id="root-cause-pre-fix-sync.go-commit-5979128">2. Root cause
+(pre-fix <code>sync.go</code>, commit <code>5979128^</code>)</h2>
+<p>Two independently-reasonable pieces combined into a false-null.</p>
+<p><strong>(a) Scope narrowing — pre-fix lines 852–863</strong>, the
+reverse “absent in Markdown” pass:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _<span class="op">,</span> d <span class="op">:=</span> <span class="kw">range</span> dbItems <span class="op">{</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> d<span class="op">.</span>CurrentLocation <span class="op">==</span> <span class="st">&quot;Issues&quot;</span> <span class="op">&amp;&amp;</span> <span class="op">*</span>issuesPath <span class="op">==</span> <span class="st">&quot;&quot;</span> <span class="op">{</span> <span class="cf">continue</span> <span class="op">}</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> d<span class="op">.</span>CurrentLocation <span class="op">==</span> <span class="st">&quot;Fixed&quot;</span>  <span class="op">&amp;&amp;</span> <span class="op">*</span>fixedPath  <span class="op">==</span> <span class="st">&quot;&quot;</span> <span class="op">{</span> <span class="cf">continue</span> <span class="op">}</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">!</span>parsedSeen<span class="op">[</span>itemKey<span class="op">(</span>d<span class="op">)]</span> <span class="op">{</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        fmt<span class="op">.</span>Printf<span class="op">(</span><span class="st">&quot;- %s present in DB, absent in Markdown</span><span class="ch">\n</span><span class="st">&quot;</span><span class="op">,</span> d<span class="op">.</span>AtmID<span class="op">)</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        differences<span class="op">++</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Its own comment states the intent: skip rows whose tracker the caller
+never supplied, “missing-in-Fixed lines would be their own class of
+false positive”. Correct as a false-positive guard — but the
+<code>continue</code> also removes those rows from
+<code>differences</code> entirely, and nothing compensated.</p>
+<p><strong>(b) Scope-unaware verdict — pre-fix lines
+894–897:</strong></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> differences <span class="op">==</span> <span class="dv">0</span> <span class="op">{</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    fmt<span class="op">.</span>Printf<span class="op">(</span><span class="st">&quot;diff: DB and Markdown are in sync (compared %d Markdown item(s) &quot;</span><span class="op">+</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;against %d DB item(s); read %s)</span><span class="ch">\n</span><span class="st">&quot;</span><span class="op">,</span> <span class="bu">len</span><span class="op">(</span>parsed<span class="op">),</span> <span class="bu">len</span><span class="op">(</span>dbItems<span class="op">),</span> read<span class="op">)</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> exitOK</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>It prints <code>len(parsed)</code> (77 — only what was parsed) and
+<code>len(dbItems)</code> (184 — the whole DB), then decides purely on
+<code>differences</code>. <strong>The verdict printed both mismatched
+numbers and never compared them.</strong> A partially blind instrument
+returned the identical quiet green a genuinely-synced corpus returns —
+§11.4.201(6) FALSE-NULL.</p>
+<p>Root cause in one line: <em>a false-positive guard silently narrowed
+comparison SCOPE while the verdict logic remained scope-unaware — no
+invariant tied covered-scope to verdict.</em> The §11.4.201(1) fix
+created its §11.4.201(6) mirror image.</p>
+<h2 id="the-fix-live">3. The fix (live)</h2>
+<p><code>5979128</code> adds a scope-accounting guard (post-fix
+<code>sync.go:813–867</code>) keyed on <strong>measured DB
+content</strong>, not on flag presence, and makes the verdict SHAPE a
+function of the measured unaccounted set
+(<code>sync.go:1007–1032</code>). Comment at <code>sync.go:1007</code>
+is attributed verbatim to <code>BOB-186</code>. Regression guard:
+<code>sync_diff_partial_scope_test.go</code>, 9 tests including
+<code>TestDiffCmd_IssuesOnlyDoesNotClaimSyncWhileFixedRowsUncompared</code>,
+<code>TestDiffCmd_PartialScopeOptInNeverClaimsSync</code>,
+<code>TestDiffCmd_IssuesOnlyIsCompleteWhenDBHasNoFixedRows</code> (the
+false-positive guard).</p>
+<p>Both shipped binaries carry it:</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Binary</th>
+<th>mtime</th>
+<th>sha256 (head)</th>
+<th>guard string</th>
+<th><code>PARTIAL SCOPE</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>constitution/scripts/workable-items/bin/workable-items</code>
+(gate-resolved first)</td>
+<td>Aug 25 21:50</td>
+<td><code>298c3e66…</code></td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>constitution/scripts/workable-items/workable-items</code></td>
+<td>Aug 25 20:37</td>
+<td><code>e5412ffd…</code></td>
+<td>1</td>
+<td>2</td>
+</tr>
+</tbody>
+</table>
+<p>Grep control needle: known-present
+<code>"DB and Markdown are in sync"</code> → 1 hit; negative control
+<code>ZZZ_NOT_PRESENT_NEEDLE_20260826</code> → 0 hits, exit 1.
+Instrument proven seeing.</p>
+<h2 id="control-needles-11.4.2017b">4. Control needles
+(§11.4.201(7)(b))</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Needle</th>
+<th>Method</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Negative control</strong> (false-positive guard)</td>
+<td>regenerate MD from the COPY DB, diff</td>
+<td><code>in sync (compared 201 … against 201 …)</code>, exit 0 —
+instrument is not stuck-on-FAIL, and 201-vs-201 is the
+counts-account-for-each-other property</td>
+</tr>
+<tr>
+<td><strong>Needle A</strong> — Issues leg</td>
+<td>flip <code>BOB-008</code> status in the clean copy</td>
+<td>detected:
+<code>~ BOB-008 status: md="In progress" db="Operator-blocked"</code>,
+exit 1</td>
+</tr>
+<tr>
+<td><strong>Needle B</strong> — Fixed leg (class-matched to
+BOB-186)</td>
+<td>delete <code>BOB-067</code> from the clean Fixed copy</td>
+<td>detected: <code>- BOB-067 present in DB, absent in Markdown</code>
+(200 vs 201), exit 1 — the Fixed leg is genuinely READ, not merely
+“accounted for”</td>
+</tr>
+</tbody>
+</table>
+<p>Each needle byte-verified applied before the run (before/after grep
+counts differed).</p>
+<h2 id="independent-enumeration-of-the-current-divergence">5.
+Independent enumeration of the current divergence</h2>
+<p>Not trusting the tool — <code>sqlite3</code> + <code>grep</code> on
+the real files:</p>
+<pre><code>db_issues=79  md_issues=76
+-- in DB, NOT in Issues.md --   BOB-200  BOB-201  BOB-202
+-- in Issues.md, NOT in DB --   (none)
+db_fixed=122  md_fixed=122      (both directions empty)</code></pre>
+<p><code>BOB-197</code> independently confirmed:
+<code>docs/Issues.md:1466</code> reads <code>**Status:** Queued</code>;
+DB <code>items.status</code> = <code>In progress</code>.</p>
+<p>Body sizes independently confirmed larger in DB for all four
+<code>~ body differs</code> items (e.g. BOB-159 md-section 3267 B vs DB
+<code>length(body_md)</code> 4905 B).</p>
+<p><strong>Direction of drift:</strong> the DB is AHEAD;
+<code>docs/Issues.md</code> is stale. Regenerating from the DB produces
+a 193 436 B Issues.md vs the committed 175 630 B.
+<code>docs/Fixed.md</code> is fully current (item-wise byte-identical;
+the only delta is the §11.4.44 header, Rev 32 on disk vs Rev 24
+stored).</p>
+<h2 id="blast-radius-for-the-imminent-commit">6. Blast radius for the
+imminent commit</h2>
+<ul>
+<li>Worktree state: <code>M docs/workable_items.db</code>
+<strong>only</strong>. <code>Issues.md</code> / <code>Fixed.md</code>
+are clean at <code>d7cf05d</code>. So this is a
+DB-moved-ahead-of-Markdown state, not a race.</li>
+<li><code>core.hooksPath</code> is UNSET (§11.4.234(B)) — automatic git
+hooks do NOT gate the commit.</li>
+<li><code>scripts/commit-push-all.sh:378,386</code> calls
+<code>_docs_sync_seam_check</code> unconditionally, which delegates to
+<code>scripts/hooks/docs-sync-commit-seam.sh</code>. Its CHECK 2 runs
+<code>diff --issues --fixed</code> and is <strong>not</strong> behind
+<code>BOBA_SYNC_SKIP_CI</code> (that flag gates only CHECK 4, line 327).
+CHECK 2 will FAIL → the commit is REFUSED.</li>
+<li><code>scripts/pre_build_verification.sh:585</code> invariant 17 also
+passes both paths → <code>fail</code>.</li>
+<li><strong>Residual risk:</strong> a raw <code>git commit</code>
+bypasses all of it, because hooks are disconnected.</li>
+</ul>
+<h2 id="remediation-direction-not-applied">7. Remediation direction (NOT
+applied)</h2>
+<ul>
+<li><strong>BOB-186 itself is already fixed</strong> in code, binary,
+and test. Its tracker row is still <code>Status: Queued</code> in
+<code>Issues</code>. Remediation = close the item citing
+<code>5979128</code> + <code>sync_diff_partial_scope_test.go</code>; no
+code work is owed.</li>
+<li><strong>The current divergence</strong> is a separate, live
+condition. Verified safe on copies: in-place <code>sync db-to-md</code>
+bumps Issues Rev 75→76 (monotone, §11.4.44 respected), leaves Fixed at
+32 (content unchanged), and yields <code>in sync (201 vs 201)</code>.
+Regenerating to a <em>new</em> path instead would regress the headers to
+the DB-stored 34/24 — use in-place.</li>
+<li>Choose the authoritative side first: DB-is-right →
+<code>sync db-to-md</code>; Markdown-is-right →
+<code>sync md-to-db</code>. Given BOB-200/201/202 exist only in the DB,
+DB-is-right is indicated.</li>
+</ul>
+<h2 id="honest-gaps">8. Honest gaps</h2>
+<ul>
+<li><code>UNKNOWN:</code> whether the two shipped binaries are
+byte-for-byte reproducible from current HEAD source — not rebuilt (no
+<code>.venv</code>/build run authorised here). Both were proven to carry
+the guard and to behave identically on the real corpus, which is the
+property that matters for this defect.</li>
+<li>No claim is made about defect classes <code>diff</code> does not
+compare (revision headers, summary docs,
+<code>Issues_Summary.md</code>/<code>Fixed_Summary.md</code>); CHECK 3
+of the commit seam and invariant 18 cover adjacent ground and were not
+exercised here.</li>
+</ul>
+<h2 id="files-read-no-writes-outside-this-directory">Files read (no
+writes outside this directory)</h2>
+<p><code>constitution/scripts/workable-items/cmd/workable-items/sync.go</code>,
+<code>.../sync_diff_partial_scope_test.go</code>,
+<code>scripts/pre_build_verification.sh</code>,
+<code>scripts/hooks/docs-sync-commit-seam.sh</code>,
+<code>scripts/commit-push-all.sh</code>,
+<code>docs/workable_items.db</code> (read-only),
+<code>docs/Issues.md</code>, <code>docs/Fixed.md</code>.</p>
+<p>Post-run integrity check — real artifacts untouched:</p>
+<pre><code>ad8157f877a25f586d425e12b3ac596d383a794f900dcc5d3174f416b238894e  docs/workable_items.db
+a8657a4280bc72f85fae59849acb33990a97500e353c1bc0c41807c9b9b8b3d2  docs/Issues.md
+9354fe29b4d56f01969ba1642a3f8620a37466cc347e206a6870def2e8f57331  docs/Fixed.md</code></pre>
+</body>
+</html>

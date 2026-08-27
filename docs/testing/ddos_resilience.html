@@ -245,8 +245,8 @@
 <h1 class="title">ddos_resilience</h1>
 </header>
 <h1 id="ddos-resilience-testing">DDoS Resilience Testing</h1>
-<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
-2026-08-26T00:00:00Z</p>
+<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
+2026-08-26T12:00:00Z</p>
 <p>Documents
 <code>challenges/scripts/ddos_resilience_challenge.sh</code> — the
 DDoS-class testing scaffold added by <strong>BOB-074</strong> to close a
@@ -395,8 +395,11 @@ boba-jackett cold-start finding below. Both are comfortably inside
 <code>run_all_challenges.sh</code>’s 180s per-script timeout.</p>
 <p>The challenge never targets anything but <code>127.0.0.1</code>,
 never issues a destructive command, and its <code>--self-validate</code>
-mode exercises two THROWAWAY local <code>python3</code> HTTP servers —
-never the real boba stack.</p>
+mode exercises six THROWAWAY local <code>python3</code> HTTP servers —
+never the real boba stack. (Two when this line was written; the
+rate-limit detector added three in BOB-114 and the sibling detector one
+in BOB-163, the last serving all nine of its cases from one process via
+distinct paths.)</p>
 <h2 id="redgreen-polarity-11.4.115">RED/GREEN polarity (§11.4.115)</h2>
 <p>The <strong>rate-limiting</strong> assertion is the one with real,
 meaningful polarity today (the crash-resistance and cross-endpoint
@@ -405,20 +408,29 @@ see “Findings” for what they actually caught).</p>
 <ul>
 <li><strong><code>RED_MODE=1</code></strong> (reproduce the defect):
 asserts the <strong>absence</strong> of any 429 response under the
-heaviest tier. This currently <code>PASS</code>es for all three
-endpoints — proving the challenge correctly reproduces boba’s real,
-current, verified state: <strong>no rate-limit middleware, no
-<code>slowapi</code>-style Python limiter, no throttle in either Go
-service, and no nginx/reverse-proxy layer exists anywhere in the
-stack</strong> (grepped 2026-08-18 across
-<code>download-proxy/src/</code>, <code>qBitTorrent-go/internal/</code>,
-and <code>docker-compose.yml</code>).</li>
-<li><strong><code>RED_MODE=0</code></strong> (default, GREEN guard): the
-<strong>same</strong> absence-of-429 observation is honestly
-<code>SKIP</code>ped (reason <code>extension_absent</code>) rather than
-bluffed as a <code>PASS</code> or unfairly marked <code>FAIL</code> —
-§11.4.6 forbids inventing a threshold nothing in the codebase
-enforces.</li>
+heaviest tier. <strong>State as of 2026-08-26 (measured, not
+assumed):</strong> it now <code>PASS</code>es on <code>:7185</code> and
+<code>:7189</code> only, and <strong><code>FAIL</code>s on
+<code>merge_search :7187</code></strong> — that endpoint enforces a
+limiter (<code>x-ratelimit-limit: 120</code>, 32–33 × 429 at c=50), and
+the detector’s own truth table maps <code>engaged</code> +
+<code>RED_MODE=1</code> → <code>FAIL</code>. That FAIL is the designed
+polarity flip, not a regression: RED reproduces a defect that no longer
+exists on <code>:7187</code>. <em>(Superseded: through 2026-08-18 this
+read “<code>PASS</code>es for all three endpoints … no rate-limit
+middleware, no <code>slowapi</code>-style Python limiter, no throttle in
+either Go service, and no nginx/reverse-proxy layer exists anywhere in
+the stack”, grepped across <code>download-proxy/src/</code>,
+<code>qBitTorrent-go/internal/</code> and
+<code>docker-compose.yml</code>. True when written; false
+now.)</em></li>
+<li><strong><code>RED_MODE=0</code></strong> (default, GREEN guard):
+where a limiter <strong>is</strong> present the 429s are asserted and
+<code>PASS</code> (<code>:7187</code> today); where it is absent the
+same absence-of-429 observation is honestly <code>SKIP</code>ped (reason
+<code>extension_absent</code>) rather than bluffed as a
+<code>PASS</code> or unfairly marked <code>FAIL</code> — §11.4.6 forbids
+inventing a threshold nothing in the codebase enforces.</li>
 </ul>
 <p><strong>Real polarity going forward:</strong> the day a rate limiter
 is configured for any of the three endpoints, <code>RED_MODE=0</code>
@@ -655,12 +667,93 @@ on every one of them, so a detector that merely checks for a non-empty
 header passes them all. Only a real parse separates them — which is what
 the M1 mutation below flips.</p>
 <p>The <strong>decision</strong> is fixture-covered too, not just the
-classification: <code>sibling_isolation_report</code> is driven through
-all three polarities — all-responsive (<code>rc=0</code>), one-degraded
-(<code>rc=1</code>), and <strong>empty log</strong> (<code>rc=1</code>,
-fail-closed: zero observations is not evidence of isolation, the
-§11.4.201(6) false-null where a blind probe and a healthy stack return
-the same quiet zero).</p>
+classification: <code>sibling_isolation_report</code> takes an
+<code>&lt;expected-count&gt;</code> — how many sibling probes were
+LAUNCHED — and may report “isolation held” only when it parsed an
+observation for <strong>every</strong> probe it fired. It is driven
+through nine polarities:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Decision fixture</th>
+<th>Log shape</th>
+<th>Expect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>all-responsive</code></td>
+<td>3 real responsive observations</td>
+<td><code>rc=0</code></td>
+</tr>
+<tr>
+<td><code>one-degraded</code></td>
+<td>5 observations, 2 of them degraded</td>
+<td><code>rc=1</code></td>
+</tr>
+<tr>
+<td><code>empty-log</code></td>
+<td>0 bytes</td>
+<td><code>rc=1</code>, <code>NO SIBLING OBSERVATIONS</code></td>
+</tr>
+<tr>
+<td><code>blank-line</code></td>
+<td>1 byte, one empty line</td>
+<td><code>rc=1</code>, <code>NO SIBLING OBSERVATIONS</code></td>
+</tr>
+<tr>
+<td><code>whitespace-only</code></td>
+<td>6 bytes, no parseable field</td>
+<td><code>rc=1</code>, <code>NO SIBLING OBSERVATIONS</code></td>
+</tr>
+<tr>
+<td><code>torn-degraded</code></td>
+<td>one degraded observation, trailing newline lost</td>
+<td><code>rc=1</code>, and it must name the sibling
+<code>DEGRADED</code></td>
+</tr>
+<tr>
+<td><code>torn-mixed</code></td>
+<td>one responsive + one torn degraded</td>
+<td><code>rc=1</code>, and it must name the sibling
+<code>DEGRADED</code></td>
+</tr>
+<tr>
+<td><code>partial</code></td>
+<td>1 observation where 2 probes fired</td>
+<td><code>rc=1</code>, <code>INCOMPLETE SIBLING OBSERVATIONS</code></td>
+</tr>
+<tr>
+<td><code>complete-2of2</code></td>
+<td>2 observations, 2 probes</td>
+<td><code>rc=0</code> — the false-positive guard</td>
+</tr>
+</tbody>
+</table>
+<p>The last row is load-bearing: a count contract that refuses a
+<em>complete</em> log would be the §11.4.201(1) false-positive refusal,
+as forbidden as a false pass. The two torn rows assert
+<code>DEGRADED</code> rather than the count message on purpose — that is
+what proves the torn observation was <strong>parsed</strong> (via the
+<code>|| [ -n "$sname" ]</code> guard) rather than merely
+counted-missing; without the guard they would still return
+<code>rc=1</code>, but for the wrong reason.</p>
+<p>Why this is wider than a zero-byte check (§11.4.201(6)): a log can be
+non-empty and still carry fewer parsed observations than probes
+launched. A blank or whitespace-only log has bytes and no observations;
+a complete observation whose trailing newline was lost is
+<strong>silently dropped</strong> by <code>while read</code>, so the one
+sibling that <em>was</em> degraded vanishes and the run reads “isolation
+held”; and a partial log — one probe subshell died before appending —
+reads “proven” on half the evidence. None is reachable from this file’s
+own writers under POSIX append semantics, so the contract is defence in
+depth against a future writer, a full disk or a killed subshell — never
+a claim that the current writers tear.</p>
 <h4 id="mutation-evidence-2026-08-26">Mutation evidence
 (2026-08-26)</h4>
 <table>
@@ -682,20 +775,20 @@ the same quiet zero).</p>
 any non-empty value</td>
 <td>the parse degrades to a presence check</td>
 <td>all four carrier fixtures flip to <code>responsive</code> →
-<strong>FAIL</strong> (6 assertions)</td>
+<strong>FAIL</strong> (7 assertions at 32/32)</td>
 </tr>
 <tr>
 <td><strong>M2</strong> — the decision seam reverted to the pre-fix
 <code>^2</code>-only rule</td>
 <td>classifier intact but unconsulted</td>
 <td><code>decision 'all-responsive'</code> flips to <code>rc=1</code> →
-<strong>FAIL</strong> (3 assertions)</td>
+<strong>FAIL</strong> (4 assertions at 32/32)</td>
 </tr>
 <tr>
 <td><strong>M3</strong> — drop the 429 branch entirely</td>
 <td>every 429 is degraded</td>
 <td>both well-formed-429 fixtures flip to <code>degraded</code> →
-<strong>FAIL</strong> (5 assertions)</td>
+<strong>FAIL</strong> (7 assertions at 32/32)</td>
 </tr>
 <tr>
 <td><strong>M-DATE</strong> (reviewer-authored, §11.4.194(6)(d)) —
@@ -710,8 +803,9 @@ detector; now:
 <td><strong>M-SEAM</strong> (reviewer-authored) — delete the live call
 site, inline <code>isolation_bad=0</code></td>
 <td>live verdict bypasses the oracle</td>
-<td><strong>undetected, 16/16 green</strong> — see “Residual risks”
-below</td>
+<td><strong>undetected — suite fully green at every size it has been
+measured: 16/16 when first demonstrated, 22/22 after round-2 hardening,
+32/32 as of 2026-08-26</strong> — see “Residual risks” below</td>
 </tr>
 </tbody>
 </table>
@@ -735,8 +829,8 @@ load”</em>, never <em>“the sibling is fully functional”</em>.</li>
 the one <code>sibling_isolation_report</code> call — inlining a
 different rule, or hardcoding <code>isolation_bad=0</code> — is not
 detected by any test (measured: M-SEAM above left the unit test fully
-green — 16/16 when first demonstrated, 22/22 after the review-round
-hardening). Guarding it needs the real
+green at every size measured: 16/16, then 22/22, then 32/32 on
+2026-08-26). Guarding it needs the real
 <code>:7185</code>/<code>:7187</code>/<code>:7189</code> topology under
 real load, which no localhost fixture can own. A grep-gate asserting the
 call site “looks right” is <strong>not</strong> the closure — that is
@@ -974,10 +1068,16 @@ process itself never died.</p>
 <h2 id="how-to-interpret-a-fail">How to interpret a
 <code>FAIL</code></h2>
 <ul>
-<li>If <strong>only</strong> the rate-limiting assertion is
-<code>SKIP</code> (not <code>FAIL</code>) for all three endpoints, that
-is the expected, honest, currently-committed state — it reflects the
-real absence of rate limiting, not a broken challenge.</li>
+<li>The expected rate-limiting result as of <strong>2026-08-26</strong>
+is <strong><code>PASS</code> on <code>merge_search :7187</code>,
+<code>SKIP</code> on <code>:7185</code> and <code>:7189</code></strong>
+— <code>:7187</code> enforces a limiter, the other two do not, and a
+<code>SKIP</code> there reflects that real absence rather than a broken
+challenge. <em>(Superseded: this previously read “<code>SKIP</code> for
+all three endpoints … the currently-committed state”, which was true
+only while no endpoint enforced a limiter.)</em> A <code>SKIP</code> on
+<code>:7187</code> would now be a <strong>regression signal</strong> —
+its limiter stopped firing.</li>
 <li>If <code>boba_jackett</code>’s crash-resistance assertion
 <code>FAIL</code>s occasionally, that is the tracked, real, cold-start
 amplification finding above — not the challenge itself being flaky.
@@ -1000,23 +1100,28 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/ddos_resilience_challenge.sh</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># RED mode — reproduce the &quot;no rate limiting configured&quot; defect state</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># explicitly (should PASS today; will start FAILing once a rate limiter is</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># wired and later stripped).</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="va">RED_MODE</span><span class="op">=</span>1 <span class="fu">bash</span> challenges/scripts/ddos_resilience_challenge.sh</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Self-validation — prove the crash-resistance detector distinguishes a</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co"># genuinely broken (golden-bad) backend from a genuinely healthy</span></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co"># (golden-good) one, using throwaway local fixtures only.</span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/ddos_resilience_challenge.sh <span class="at">--self-validate</span></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="co"># --healthz — BOB-112 regression guard (added task #74): a bounded 2-thread</span></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co"># x 20-connection x 5s wrk load (falls back to a curl-loop probe if wrk is</span></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co"># not installed) against boba-jackett&#39;s :7189/healthz, asserting the</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="co"># client-observed timeout rate + throughput + server-side cache-refresh</span></span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="co"># count all stay within thresholds calibrated against the real RED/GREEN</span></span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co"># evidence in docs/qa/BOB-112/summary.md. FAILs if the TTL cache is ever</span></span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co"># removed or bypassed again.</span></span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/ddos_resilience_challenge.sh <span class="at">--healthz</span></span></code></pre></div>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># explicitly. As of 2026-08-26 this PASSes on :7185 and :7189 and FAILs on</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># merge_search :7187, because RED starts FAILing for an endpoint the moment a</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co"># limiter is WIRED there (the defect it reproduces is fixed) — it does not</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co"># require the limiter to be stripped again.</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="va">RED_MODE</span><span class="op">=</span>1 <span class="fu">bash</span> challenges/scripts/ddos_resilience_challenge.sh</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Self-validation — prove all THREE detectors distinguish their golden-good</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co"># from their golden-bad fixtures: crash resistance, rate limiting (including</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="co"># the advertises-but-never-enforces carrier), and sibling responsiveness</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="co"># (including four 429s that DO carry a Retry-After whose value is not</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co"># well-formed, both polarities of the isolation decision, and its</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a><span class="co"># fail-closed count contract). Throwaway local fixtures only.</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/ddos_resilience_challenge.sh <span class="at">--self-validate</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co"># --healthz — BOB-112 regression guard (added task #74): a bounded 2-thread</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co"># x 20-connection x 5s wrk load (falls back to a curl-loop probe if wrk is</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="co"># not installed) against boba-jackett&#39;s :7189/healthz, asserting the</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co"># client-observed timeout rate + throughput + server-side cache-refresh</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="co"># count all stay within thresholds calibrated against the real RED/GREEN</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="co"># evidence in docs/qa/BOB-112/summary.md. FAILs if the TTL cache is ever</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="co"># removed or bypassed again.</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/ddos_resilience_challenge.sh <span class="at">--healthz</span></span></code></pre></div>
 <p>Exit codes: <code>0</code> = all <code>PASS</code> (honest
 <code>SKIP</code>s allowed), <code>1</code> = one or more real
 <code>FAIL</code>, <code>2</code> = invocation error (curl itself is

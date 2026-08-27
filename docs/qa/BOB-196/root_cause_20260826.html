@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>root_cause_20260826</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">root_cause_20260826</h1>
+</header>
+<h1
+id="bob-196-check_cm_plugin_count.sh-runtime-root-cause-investigation-only">BOB-196
+— check_cm_plugin_count.sh runtime root cause (investigation only)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-26T20:34:50Z <strong>Description:</strong> Measured root cause
+of the CM-PLUGIN-COUNT pre-build gate’s runtime, with the prior item
+text corrected on three points. Investigation only — no source was
+modified. <strong>Authority:</strong> §11.4.6 (no-guessing), §11.4.50
+(repeat measurement), §11.4.102 (systematic debugging),
+§11.4.201(6)(7)(12) (instrument honesty, control needle, xtrace footgun)
+<strong>Scope:</strong>
+<code>scripts/pre_build/check_cm_plugin_count.sh</code> runtime ONLY.
+Nothing here questions the gate’s verdicts — it PASSED
+(<code>8 documented count(s) match their derivation</code>) on all 12
+runs recorded below.</p>
+<h2 id="measured-wall-clock-with-spread-and-load-context">1. Measured
+wall-clock, with spread and load context</h2>
+<p>The host was running five other agents throughout; load is recorded
+per run because the runtime turned out to be load-dependent (§4).</p>
+<table>
+<thead>
+<tr>
+<th>Run</th>
+<th>nice</th>
+<th style="text-align: right;">wall (s)</th>
+<th style="text-align: right;">1-min load</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>-n 19</td>
+<td style="text-align: right;">29.394</td>
+<td style="text-align: right;">4.60</td>
+</tr>
+<tr>
+<td>2</td>
+<td>-n 19</td>
+<td style="text-align: right;">21.734</td>
+<td style="text-align: right;">5.26</td>
+</tr>
+<tr>
+<td>3</td>
+<td>-n 19</td>
+<td style="text-align: right;">26.667</td>
+<td style="text-align: right;">5.60</td>
+</tr>
+<tr>
+<td>4</td>
+<td>-n 19</td>
+<td style="text-align: right;">28.895</td>
+<td style="text-align: right;">6.73</td>
+</tr>
+<tr>
+<td>5</td>
+<td>none</td>
+<td style="text-align: right;">21.729</td>
+<td style="text-align: right;">5.89</td>
+</tr>
+<tr>
+<td>6</td>
+<td>none</td>
+<td style="text-align: right;">24.191</td>
+<td style="text-align: right;">6.21</td>
+</tr>
+<tr>
+<td>7</td>
+<td>none</td>
+<td style="text-align: right;">41.048</td>
+<td style="text-align: right;">9.63</td>
+</tr>
+</tbody>
+</table>
+<p>Spread 21.73 s – 41.05 s, median ≈ 26.7 s. <code>nice -n 19</code>
+and un-niced runs interleave (21.73/24.19 un-niced vs 21.73/26.67 niced)
+— under this contention <code>nice</code> produced <strong>no separable
+effect</strong>; host load dominates. Both were measured, and both are
+reported, because a timing claim from only the niced set would not be
+transferable to the un-niced gate run inside
+<code>pre_build_verification.sh</code>.</p>
+<p><strong>Correction to the item’s headline.</strong> The item states
+“189 SECONDS”. That figure is not reproducible as a constant — but it is
+not wrong either, and it is not stale. The gate is fork-bound, so its
+runtime is a function of host load (§4):</p>
+<table>
+<thead>
+<tr>
+<th>load</th>
+<th style="text-align: right;">5.26</th>
+<th style="text-align: right;">6.73</th>
+<th style="text-align: right;">9.63</th>
+<th style="text-align: right;">17.06</th>
+<th style="text-align: right;">29.77</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>wall (s)</td>
+<td style="text-align: right;">21.7</td>
+<td style="text-align: right;">28.9</td>
+<td style="text-align: right;">41.0</td>
+<td style="text-align: right;">47.3</td>
+<td style="text-align: right;">77.4</td>
+</tr>
+</tbody>
+</table>
+<p>189 s is the same gate at a heavier load point. The honest statement
+is a <strong>range governed by contention</strong>, not a single number:
+~22 s on a quiet host, ~77 s measured at load 29.8.</p>
+<h2 id="root-cause-proven-not-reasoned">2. Root cause — proven, not
+reasoned</h2>
+<p>A copy of the gate (<code>probe.sh</code>, differing from the tracked
+file by exactly one injected line) was traced with
+<code>PS4='+T:${EPOCHREALTIME}:${LINENO}:'</code> written to <strong>fd
+9 via <code>BASH_XTRACEFD</code></strong>, not stderr — the
+§11.4.201(12) countermeasure, since the gate redirects its own streams.
+Total attributed 90.508 s against a 90.490 s wall (xtrace-inflated run):
+full accounting.</p>
+<p><strong>Instrument offset, disclosed.</strong> Trace line numbers are
+<strong>+1</strong> relative to the tracked file, because the injected
+instrumentation line sits at 109. A separate control experiment
+(<code>lineno_control.sh</code>) proved bash itself introduces
+<strong>no</strong> offset — pipeline elements inside a command
+substitution trace at their own assignment line. The table below is
+already corrected to original line numbers. Without that control this
+investigation would have cited line 285
+(<code>if [[ "$nmark" -gt 1 ]]</code>, a pure builtin) as a 34-second
+cost centre — a fabricated finding.</p>
+<table>
+<colgroup>
+<col style="width: 19%" />
+<col style="width: 30%" />
+<col style="width: 32%" />
+<col style="width: 17%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: right;">seconds</th>
+<th style="text-align: right;">trace events</th>
+<th style="text-align: right;">original line</th>
+<th>source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">34.280</td>
+<td style="text-align: right;">11110</td>
+<td style="text-align: right;"><strong>284</strong></td>
+<td><code>nmark="$(printf '%s' "$line" \| grep -oE '&lt;!--…CM-PLUGIN-COUNT:' \| wc -l \| tr -d ' ' \|\| true)"</code></td>
+</tr>
+<tr>
+<td style="text-align: right;">20.227</td>
+<td style="text-align: right;">5559</td>
+<td style="text-align: right;"><strong>289</strong></td>
+<td><code>metric="$(printf '%s' "$line" \| sed -n '…CM-PLUGIN-COUNT…')"</code></td>
+</tr>
+<tr>
+<td style="text-align: right;">19.341</td>
+<td style="text-align: right;">5559</td>
+<td style="text-align: right;"><strong>311</strong></td>
+<td><code>stated="$(printf '%s' "$line" \| sed -n '…managed plugins…')"</code></td>
+</tr>
+<tr>
+<td style="text-align: right;">5.705</td>
+<td style="text-align: right;">3712</td>
+<td style="text-align: right;">278</td>
+<td><code>while IFS= read -r line; do</code> (marker loop)</td>
+</tr>
+<tr>
+<td style="text-align: right;">5.228</td>
+<td style="text-align: right;">3712</td>
+<td style="text-align: right;">310</td>
+<td><code>while IFS= read -r line; do</code> (legacy loop)</td>
+</tr>
+<tr>
+<td style="text-align: right;">4.642</td>
+<td style="text-align: right;">1853</td>
+<td style="text-align: right;">285</td>
+<td><code>if [[ "$nmark" -gt 1 ]]; then</code></td>
+</tr>
+</tbody>
+</table>
+<p>Six lines = 89.42 s of 90.51 s (<strong>98.8 %</strong>). Phase
+split:</p>
+<ul>
+<li>lines &lt; 270 — <strong>needle + array counts + <code>find</code> +
+engines derivation: 0.702 s</strong></li>
+<li>lines ≥ 270 — <strong>document parsing loops: 89.806 s (99.2
+%)</strong></li>
+</ul>
+<p><strong>The gate spends 0.7 s doing the job it exists for and ~90 s
+parsing prose.</strong></p>
+<h3
+id="process-spawns-measured-and-the-items-arithmetic-corrected">Process
+spawns — measured, and the item’s arithmetic corrected</h3>
+<p>16,808 depth-2+ (forked) commands were traced. That decomposes
+exactly:</p>
+<ul>
+<li>line 284: <code>printf</code>, <code>grep</code>, <code>wc</code>,
+<code>tr</code>, <code>true</code> = <strong>5</strong> forks/line</li>
+<li>line 289: <code>printf</code>, <code>sed</code> = <strong>2</strong>
+forks/line</li>
+<li>line 311: <code>printf</code>, <code>sed</code> = <strong>2</strong>
+forks/line</li>
+</ul>
+<p>= <strong>9 forks per governed line × 1853 lines = 16,677</strong>,
+plus 131 in the derivation phase = 16,808. Exact match.</p>
+<p>The item states “~6 [per iteration] … so ~11,118 process spawns”.
+That undercounts: it omits the <code>|| true</code> fork on line 284 and
+omits the <strong>entire legacy loop</strong> (line 310–311), which
+re-reads all three documents a second time. Corrected figure:
+<strong>~16,700 forks driven by the document loops</strong>.</p>
+<h2 id="what-the-gate-actually-walks-vs.-what-the-title-says">3. What
+the gate actually walks vs. what the title says</h2>
+<p>The item’s title — “runs for over a minute on ~69 files” — attributes
+the cost to the wrong file set. 69 is the <code>recursive</code> metric
+(<code>plugins/**/*.py</code>), and deriving it is one <code>find</code>
+inside the 0.702 s derivation phase. <strong>The 69 files are not the
+cost.</strong></p>
+<p>What the expensive loops actually walk is the three governed
+documents, every line:</p>
+<table>
+<thead>
+<tr>
+<th>document</th>
+<th style="text-align: right;">lines</th>
+<th style="text-align: right;">CM-PLUGIN-COUNT markers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CLAUDE.md</td>
+<td style="text-align: right;">494</td>
+<td style="text-align: right;">5</td>
+</tr>
+<tr>
+<td>AGENTS.md</td>
+<td style="text-align: right;">689</td>
+<td style="text-align: right;"><strong>0</strong></td>
+</tr>
+<tr>
+<td>docs/features/Status.md</td>
+<td style="text-align: right;">670</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr>
+<td><strong>total</strong></td>
+<td style="text-align: right;"><strong>1853</strong></td>
+<td style="text-align: right;"><strong>8</strong></td>
+</tr>
+</tbody>
+</table>
+<p>1853 lines are read twice (once per loop) to locate 8 marker lines —
+a 232:1 ratio. <strong>AGENTS.md contributes 37 % of the scanned volume
+and zero checkable claims.</strong></p>
+<p>Is that a correctness problem? Checked and <strong>no</strong>:
+AGENTS.md carries no unmarked plugin-count claims either, so nothing
+there is silently unguarded. That absence was control-needled — the same
+pattern on the same path against CLAUDE.md returns its three known
+claims (<code>**43 search-plugin engines**</code>,
+<code>**43 distinct engine modules**</code>,
+<code>**12 bootstrap plugins**</code>), so the zero is real absence, not
+a blind instrument. A negative control returned 0 as expected.
+AGENTS.md’s presence in <code>GOVERNED_DOCS</code> is therefore
+<strong>pure cost, not a latent gap</strong> — it is correct to keep it
+governed (a future claim added there must be caught), just expensive to
+scan this way.</p>
+<p><strong>Worktree hypothesis re-confirmed dead
+(independently).</strong> <code>find</code> is at line 224 and is scoped
+to <code>PLUGINS_DIR="$ROOT/plugins"</code> (line 187). Agent worktrees
+under <code>.claude/</code> are outside that walk entirely. The BOB-194
+refutation holds; nobody should re-walk it.</p>
+<h2 id="why-it-is-load-sensitive">4. Why it is load-sensitive</h2>
+<p>The cost is ~16,700 <code>fork</code>+<code>exec</code> pairs, not
+computation. Process creation contends for the same CPUs as the other
+agents, so wall-clock scales with load (table in §1) while the
+derivation phase — which does real work on 69 files — stays flat. This
+is the signature that distinguishes a fork-bound loop from an
+algorithmic problem, and it is why a single sample would have been
+meaningless here.</p>
+<h2 id="controlled-test-of-the-remediation-direction">5. Controlled test
+of the remediation direction</h2>
+<p>Identical derivation inputs (<code>plugins/</code> copied,
+<code>install-plugin.sh</code>, <code>setup.sh</code>,
+<code>README.md</code> verbatim), governed documents reduced to
+<strong>only their marker-bearing lines</strong> (1853 → 8). This is the
+pre-filter the item proposes, measured without modifying any source
+file.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">full root</th>
+<th style="text-align: right;">marker-only root</th>
+<th style="text-align: right;">ratio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>paired run 1 (load 29.77)</td>
+<td style="text-align: right;">77.355 s</td>
+<td style="text-align: right;">0.749 s</td>
+<td style="text-align: right;"><strong>103.3×</strong></td>
+</tr>
+<tr>
+<td>paired run 2 (load 17.06)</td>
+<td style="text-align: right;">47.323 s</td>
+<td style="text-align: right;">0.711 s</td>
+<td style="text-align: right;"><strong>66.5×</strong></td>
+</tr>
+<tr>
+<td>standalone (load 36–38)</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">1.354–2.154 s</td>
+<td style="text-align: right;">—</td>
+</tr>
+</tbody>
+</table>
+<p>Verdict <strong>identical in every case</strong>:
+<code>PASS: CM-PLUGIN-COUNT — 8 documented count(s) match their derivation</code>.
+The marker-only runtime is also essentially load-independent (0.71 s at
+load 29.8), confirming §4.</p>
+<h2
+id="remediation-direction-not-implemented-implementation-not-authorised">6.
+Remediation direction (NOT implemented — implementation not
+authorised)</h2>
+<p>The item’s candidate fix is <strong>confirmed sound by the
+measurement above</strong>: pre-filter each governed document with one
+<code>grep</code> for <code>CM-PLUGIN-COUNT:</code> before entering the
+marker loop, and apply the same treatment to the legacy loop’s
+<code>managed plugins</code> shape, leaving the per-line parsing body —
+including the deliberately-chosen <code>-oE | wc -l</code> form —
+byte-for-byte unchanged.</p>
+<p>Three constraints any implementation must respect, from this
+investigation:</p>
+<ol type="1">
+<li><strong>Keep the <code>-oE | wc -l</code> form.</strong> The in-code
+comment at 279–283 records that <code>grep -coE</code> returns 3 at top
+level but 1 inside a <code>set -euo pipefail</code> subshell on this
+host (ugrep 7.8.4) — the §11.4.201(12) footgun. That correctness fix is
+right; only its <em>per-line application</em> is the cost. A pre-filter
+does not touch it.</li>
+<li><strong>The legacy loop must be pre-filtered too</strong>, or
+roughly a quarter of the cost survives — it is 19.34 s of the 90 s and
+the item’s analysis omits it entirely.</li>
+<li><strong>The multi-marker-per-line FAIL path (284–288) must keep
+biting.</strong> A pre-filter that selects marker lines preserves it (a
+two-marker line still matches). A pre-filter that instead
+<em>extracted</em> the marker would destroy it, re-opening the
+§11.4.201(6) false-null the comment at 50–54 was written to close. The
+existing paired mutation in
+<code>tests/pre_build/test_check_cm_plugin_count.sh</code> is the check
+that this survived.</li>
+</ol>
+<p>Expected result on a quiet host: ~22 s → well under 1 s, verdict
+unchanged.</p>
+<h2 id="wiring-the-gate-is-on-the-critical-path">7. Wiring — the gate is
+on the critical path</h2>
+<ul>
+<li><code>scripts/commit-push-all.sh:229</code> — stage 3/6 runs
+<code>pre_build_verification.sh</code> (skippable only via the recorded
+<code>BOBA_SYNC_SKIP_CI=1</code> deferral, §11.4.234)</li>
+<li><code>scripts/pre_build_verification.sh:1741</code> — invariant
+<strong>46</strong>, labelled <code>[46/52]</code>,
+<strong>BLOCKING</strong></li>
+<li><code>tests/pre_build/test_check_cm_plugin_count.sh</code> — §1.1
+paired-mutation meta-test</li>
+</ul>
+<p>So with no skip flag it runs on every
+<code>commit-push-all.sh</code>. Its cost is paid in full at T042.</p>
+<h2 id="honest-boundaries-11.4.6">8. Honest boundaries (§11.4.6)</h2>
+<ul>
+<li>Timings are from a contended host (5 concurrent agents, load
+4.6–38). Absolute numbers do not transfer to a quiet host; the
+<em>ratios</em> in §5 were measured paired at identical load and
+do.</li>
+<li>The xtrace run is inflated (90.5 s vs ~26 s un-traced). It is used
+for <strong>relative attribution and fork counting</strong>, both of
+which the un-traced paired A/B in §5 independently corroborates.</li>
+<li><code>UNKNOWN:</code> the exact load at which the item’s 189 s was
+originally measured — that run’s load was not recorded, so 189 s is
+explained as a load point but not reproduced.</li>
+<li>Side note, out of scope and <strong>not</strong> verified:
+<code>pre_build_verification.sh</code> labels this <code>[46/52]</code>,
+and a comment above it claims “46 labels … contiguous 1..46” while
+warning that a second label syntax exists. Counting only the
+<code>echo "[N/M]"</code> form yields 43 distinct labels against a
+denominator of 52. The true invariant count requires counting both
+forms, which was not done here. It is neither 50 nor confirmed to be
+52.</li>
+</ul>
+</body>
+</html>

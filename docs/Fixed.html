@@ -177,8 +177,8 @@
 </head>
 <body>
 <h1 id="fixed-closed-workable-items">Fixed — Closed Workable Items</h1>
-<p><strong>Revision:</strong> 32 <strong>Last modified:</strong>
-2026-08-25T20:29:07Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 34 <strong>Last modified:</strong>
+2026-08-26T19:24:10Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Closed items
 only. Open items live in <a
 href="Issues.md"><code>Issues.md</code></a>.</p>
@@ -2810,5 +2810,166 @@ decided explicitly, not left to whoever hits it next. Discovered
 out-of-band by the fail-open triage agent, so per §11.4.238 this also
 owes a coverage-escape note: no automated check asserts the documented
 test invocation actually runs.</p>
+<h2
+id="bob-186-workable-items-diff-reports-in-sync-on-a-partial-read-77-markdown-items-compared-against-184-db-items-exit-0">BOB-186
+— workable-items diff reports “in sync” on a partial read: 77 Markdown
+items compared against 184 DB items, exit 0</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong>
+docs/qa/BOB-186/investigation_20260826.md</p>
+<p>workable-items diff returned exit 0 and the verdict “DB and Markdown
+are in sync” on a PARTIAL read: invoked with –issues but without –fixed
+it compared 77 Markdown items against 184 DB items and called that in
+sync, printing both mismatched counts in its own output while 107 DB
+items were never compared against anything. Measured 2026-08-25: (A) no
+markdown paths -&gt; correctly REFUSES exit 1; (B) –db-only -&gt;
+honest, “no Markdown compared”; (C) –issues alone -&gt; exit 0, “in sync
+(compared 77 Markdown item(s) against 184 DB item(s))”. The 11.4.201(6)
+false-null: a partially blind instrument returned the same quiet green a
+genuinely-synced corpus returns.</p>
+<p>IMPACT — CORRECTED 2026-08-25, my original filing OVERSTATED this. I
+wrote that CHECK 2 of the 11.4.106(F) commit seam was exposed. It was
+NOT. scripts/hooks/docs-sync-commit-seam.sh:277 passes BOTH –issues and
+–fixed, and a repo-wide sweep found NO executable caller that breaks:
+the two real callers (that seam and pre_build_verification.sh:549) both
+pass both paths; the single-path hits are prose evidence files plus a
+static-scan test fixture. So the defect was real and latent, never live
+in this project. The corrected claim is: any FUTURE single-path caller
+would have been silently mis-told.</p>
+<p>PROVENANCE, twice corrected. A subagent first attributed the
+false-null to the no-paths form, which actually refuses correctly; the
+conductor re-measured and relocated it to the partial read. Then the
+fixing agent corrected the conductor on impact. Both corrections are
+recorded so neither wrong version propagates.</p>
+<p>FIXED (uncommitted, constitution submodule, fetched to upstream tip
+7f16739 before edit per 11.4.26). Design: refuse by default
+(11.4.201(4)); the narrow per-tracker comparison PRESERVED behind an
+explicit –partial-scope rather than deleted (deleting an existing
+documented capability would be an 11.4.122 silent removal), mirroring
+how –db-only preserved the no-Markdown shape. Keyed on MEASURED DB
+content, never on flag presence — a DB with zero Fixed rows IS fully
+accounted for by –issues alone and still passes, so flag-keying would
+have traded the false-null for an 11.4.201(1) false-positive refusal.
+Resulting property: “in sync” is reachable only when the two printed
+counts account for each other. RED 4 fail/5 pass -&gt; GREEN 9/9; paired
+1.1 mutation is the fixs own revert, killing exactly the 4
+defect-guarding tests while the 5 preservation tests stay green. Case C
+now refuses naming “107 item(s) located in Fixed (supply –fixed)”, the
+107 confirmed against an independent sqlite3 count (107 Fixed + 78
+Issues = 185). Incidentally closed an 11.4.238 gap: case As refusal had
+no test anywhere; TestDiffCmd_NoPathsStillRefuses now guards it.</p>
+<p>OPEN: –partial-scope is the agents naming choice, not an operator
+decision, and renaming is cheap now and expensive after other consumers
+adopt it. Other consumers of this shared submodule were not swept.</p>
+<p>CLOSED 2026-08-26. Already fixed 2026-08-25 21:06 by constitution
+commit 5979128 (“fix(workable-items): diff claimed ‘in sync’ while 107
+DB rows went uncompared”) - only this tracker row was stale; no code
+work was owed.</p>
+<p>ROOT CAUSE, proven from pre-fix source (11.4.6 - fact, not
+inference): two individually-reasonable pieces of sync.go. (a)
+sync.go:852-863, the reverse “absent in Markdown” pass, carried
+<code>if d.CurrentLocation == "Fixed" &amp;&amp; *fixedPath == "" { continue }</code>
+- its own comment declares the intent, suppress false positives for
+trackers the caller never supplied, correct in isolation - but the
+continue ALSO dropped those rows out of <code>differences</code>, and
+nothing compensated. (b) sync.go:894-897, the verdict, printed
+len(parsed) and len(dbItems) - the two MISMATCHED numbers - then decided
+purely on <code>differences</code>. THE VERDICT PRINTED BOTH NUMBERS AND
+NEVER COMPARED THEM. In one line: an 11.4.201(1) false-positive guard
+silently narrowed comparison SCOPE while the verdict stayed
+scope-unaware, so the fix for a false positive created its 11.4.201(6)
+mirror image.</p>
+<p>CLOSED ON BEHAVIOURAL EVIDENCE, not on reading the commit (11.4.226
+evidence-class-at-closure): the shipped binary now REFUSES a
+partial-scope verdict instead of reporting “in sync” - “refusing to
+report a DB-vs-Markdown verdict that would silently exclude part of the
+DB - the supplied Markdown path(s) do not account for 122 item(s)
+located in Fixed (supply –fixed)”, exit 1; with opt-in –partial-scope it
+reports “PARTIAL SCOPE - N difference(s) … 122 of 201 DB item(s) were
+NOT compared”, exit 1. The phrase “in sync” is structurally unreachable
+on a partial read. Regression suite sync_diff_partial_scope_test.go (9
+tests) landed with the fix.</p>
+<p>INSTRUMENT VALIDATED BOTH WAYS (11.4.201(7)(b)): negative control -
+regenerating Markdown from a copy DB yields “in sync (201 against 201)”
+exit 0, so the checker is not stuck-on-FAIL. Needle A (flip BOB-008
+status, Issues leg) detected exit 1. Needle B (delete BOB-067 on the
+FIXED leg - the exact leg this defect was blind to) detected as “present
+in DB, absent in Markdown” (200 vs 201), exit 1. Each needle
+byte-verified applied before running.</p>
+<p>HONEST GAP (11.4.6): UNKNOWN whether the shipped binaries are
+byte-reproducible from HEAD source - they were not rebuilt. Both were
+proven to carry the guard and behave identically on the real corpus,
+which is the behavioural evidence this closure rests on. No claim is
+made about classes <code>diff</code> does not compare (revision headers,
+*_Summary.md).</p>
+<h2
+id="bob-206-probe_location-may-return-ok-on-a-uid-flattening-filesystem-that-cannot-express-ownership-at-all-and-the-download-root-is-such-a-mount">BOB-206
+— probe_location() may return ok on a uid-flattening filesystem that
+cannot express ownership at all — and the download root IS such a
+mount</h2>
+<p><strong>Status:</strong> Obsolete (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong>
+docs/qa/BOB-206/dismissal_evidence_20260826.md
+<strong>Severity:</strong> critical <strong>Obsolete-Details:</strong>
+Since: 2026-08-26; Reason: not-reproducible; Superseding-item: BOB-207
+(the real defect underneath), BOB-208, BOB-209, BOB-210, BOB-211;
+Triple-check evidence:
+docs/qa/BOB-206/dismissal_evidence_20260826.md</p>
+<p>STATUS: UNCONFIRMED — surfaced by the T041 review-scope preflight
+(docs/qa/T041/review_scope_map_20260826.md), which stated it as “factor
+6 is unguarded as far as I could tell”. That hedge is preserved
+deliberately per §11.4.6: this item exists to DRIVE the verification,
+and MUST NOT be cited as a confirmed defect until a runtime probe
+settles it either way.</p>
+<p>WHAT (the hypothesis to test): probe_location()‘s verdict is a
+product of &gt;=7 independent terms — the §11.4.194(1) multi-factor
+shape where ANY degenerate term triggers the failure and verifying one
+while assuming the rest is the exact forbidden gap. Factor 6 is the
+filesystem’s ability to EXPRESS per-file ownership. On a uid-flattening
+filesystem (vfat / exfat / ntfs mounted with a uid= option) every file
+reports the MOUNT’s uid regardless of what any chown did or did not do.
+If probe_location() reads that uid and concludes ownership is correct,
+it returns ’ok’ on a filesystem structurally incapable of holding the
+property being probed — a §11.4.201(6) FALSE-NULL at the feature’s own
+core: the probe and a genuinely-correct filesystem return the identical
+quiet success.</p>
+<p>WHY CRITICAL RATHER THAN THEORETICAL: the download root is a
+HOST-SPECIFIC MOUNT. Whether this fires is a property of the operator’s
+actual mount table, not of our source — so it cannot be settled by
+reading code alone, and a green probe on the developer’s ext4/btrfs
+proves nothing about an operator whose media lives on exfat or ntfs.
+This is precisely the class §11.4.108 layer-3 exists for.</p>
+<p>ADJACENT UNGUARDED TERMS the same preflight surfaced (verify together
+— they share the tri-state): the precondition has FOUR refusal triggers,
+of which R4 is itself a THREE-WAY product (measured-rootless AND
+non-root user-spec AND mounts-a-declared-location) that the source
+states has no second line of defence; R3 and R4 both consume
+detect_rootless()’s tri-state whose DOCKER branch the source itself
+admits is documented-not-measured.</p>
+<p>VERIFICATION PLAN (§11.4.115 RED-first, §11.4.262 machine evidence):
+(1) enumerate the real mount table and record which declared locations
+sit on uid-flattening filesystems — that measurement alone may confirm
+or dismiss the whole item; (2) construct a loopback vfat/exfat image
+mounted with a uid= option, point a declared location at it, run
+probe_location() and capture the verdict — if it returns ok, that IS the
+RED; (3) fix by detecting the filesystem’s ownership-expressiveness and
+refusing-with-reason rather than reporting ok (§11.4.252 fail-closed: a
+probe that cannot resolve its condition refuses and says so, never
+passes); (4) golden-FALSE fixture on ext4/btrfs proving the new guard
+does NOT refuse a healthy location (§11.4.201(1) — a false-positive
+refusal here would break every normal operator).</p>
+<p>BLAST RADIUS: this is the ownership feature’s own correctness core —
+the subject of spec 002-user-owned-downloads. A false ok here means the
+feature reports success while the operator still has to chown by hand,
+which is the ORIGINAL reported problem the spec exists to solve.</p>
+<p>DISCOVERY CHANNEL (§11.4.238): found by an agent mapping the T041
+review scope, NOT by the automated QA regime — a coverage escape in its
+own right. The escape audit owed: no existing check exercises a
+uid-flattening filesystem, so no automated surface could have caught
+it.</p>
+<p>NOTE ON THIS RECORD: the first write of this description was
+corrupted by shell backtick expansion (three terms silently emptied).
+This is the repaired text; the corruption is recorded here rather than
+quietly overwritten, per §11.4.6.</p>
 </body>
 </html>

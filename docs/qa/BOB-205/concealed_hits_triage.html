@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>concealed_hits_triage</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">concealed_hits_triage</h1>
+</header>
+<h1
+id="bob-205-triage-of-the-four-concealed-11.4.252-fail-open-hits">BOB-205
+— Triage of the four concealed §11.4.252 fail-open hits</h1>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Revision</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Created</td>
+<td>2026-08-26T00:00:00Z</td>
+</tr>
+<tr>
+<td>Last modified</td>
+<td>2026-08-26T00:00:00Z</td>
+</tr>
+<tr>
+<td>Status</td>
+<td>active</td>
+</tr>
+<tr>
+<td>Status summary</td>
+<td>Triage verdict for the 4 hits the
+CM-DANGEROUS-COMBINATION-FAIL-CLOSED gate detects but never sees (repo
+root + tools/ absent from DANGER_ROOTS). Verdict: 4/4 FALSE POSITIVE for
+§11.4.252. Two REAL defects found elsewhere in the same file, invisible
+to this gate.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="instrument-provenance">Instrument + provenance</h2>
+<ul>
+<li>Gate:
+<code>constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh</code></li>
+<li>sha256 <strong>before</strong> use:
+<code>099d412b39ea8d72e345365fd7954e6edfdf430b3672ec7bceaf0f00f56282a5</code></li>
+<li>sha256 <strong>after</strong> use:
+<code>099d412b39ea8d72e345365fd7954e6edfdf430b3672ec7bceaf0f00f56282a5</code></li>
+<li><strong>UNCHANGED</strong> — BOB-195 r7 did not move the gate during
+this run. Gate was run UNMODIFIED, against scratch copies. No production
+source was edited.</li>
+</ul>
+<h3
+id="control-needle-11.4.2017b-instrument-proven-in-both-directions">Control
+needle (§11.4.201(7)(b)) — instrument proven in BOTH directions</h3>
+<p>Isolated control arm (<code>scratchpad/bob205_triage/ctrl/</code>,
+fresh dir — the shared <code>scratchpad/needle/</code> already held
+another session’s fixtures and was NOT used):</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Fixture</th>
+<th>Shape</th>
+<th>Expected</th>
+<th>Observed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>needle_positive.py</code></td>
+<td><code>except Exception: pass</code></td>
+<td>FIRE</td>
+<td><strong>FIRED</strong> (1 hit, line 4)</td>
+</tr>
+<tr>
+<td><code>negctrl_clean.py</code></td>
+<td><code>except ... : log(); raise</code></td>
+<td>SILENT</td>
+<td><strong>SILENT</strong> (0 hits)</td>
+</tr>
+</tbody>
+</table>
+<p>Instrument can see through this exact path, and is not a blanket
+flagger. Therefore the ARM-2 result below is evidence, not a null.</p>
+<h3 id="arm-2-the-four-hits-reproduced-verbatim">ARM 2 — the four hits,
+reproduced verbatim</h3>
+<p>All four report the <strong>same</strong> detector class — shape
+<strong>(A2) SILENT DEFAULT</strong> (“exception handler returns a
+trivial literal with no re-raise/log”). None is (A1) <code>pass</code>;
+none is (C) <code>contextlib.suppress</code>.</p>
+<pre><code>webui-bridge.py:295
+tools/plugin_update_automation.py:189
+tools/plugin_update_automation.py:198
+tools/plugin_update_automation.py:215
+→ 4 fail-open anti-pattern hit(s) found (§11.4.252), rc=1</code></pre>
+<p>That every hit is A2 is the load-bearing structural fact: A2 is
+precisely the shape whose documented sibling false positive (BOB-189) is
+<em>“a <code>return False</code> inside a validator IS the
+refusal.”</em> The gate classifies by local syntactic shape and never
+consults the caller — by its own honest scope note it does not attempt
+to prove the ≥2-capability combination §11.4.252 actually requires.</p>
+<hr />
+<h2 id="hit-1-webui-bridge.py295-false-positive">Hit 1 —
+<code>webui-bridge.py:295</code> — <strong>FALSE POSITIVE</strong></h2>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dv">280</span>     <span class="kw">def</span> _is_root_liveness_probe(<span class="va">self</span>):</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>...</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="dv">293</span>         <span class="cf">try</span>:</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="dv">294</span>             parsed <span class="op">=</span> urllib.parse.urlparse(<span class="va">self</span>.path)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="dv">295</span>         <span class="cf">except</span> <span class="pp">Exception</span>:</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="dv">296</span>             <span class="cf">return</span> <span class="va">False</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="dv">297</span>         <span class="cf">if</span> parsed.path <span class="op">!=</span> <span class="st">&quot;/&quot;</span>:</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="dv">298</span>             <span class="cf">return</span> <span class="va">False</span></span></code></pre></div>
+<p><strong>Call site (the discriminator):</strong></p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="dv">427</span>         <span class="cf">except</span> urllib.error.URLError <span class="im">as</span> e:</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="dv">435</span>             <span class="cf">if</span> <span class="va">self</span>._is_root_liveness_probe():</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="dv">436</span>                 <span class="va">self</span>._send_root_liveness(e.reason)      <span class="co"># lenient: HTTP 200</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="dv">437</span>             <span class="cf">else</span>:</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="dv">438</span>                 <span class="va">self</span>.send_error(<span class="dv">502</span>, ...)                <span class="co"># strict: HTTP 502</span></span></code></pre></div>
+<p><code>False</code> selects the <strong>502</strong> branch. The
+<code>except</code> therefore <em>denies</em> the lenient path on an
+unparseable request path. The refusal direction is
+<strong>fail-CLOSED</strong> — flagging it inverts the meaning, exactly
+the BOB-189 shape.</p>
+<p><strong>Capabilities combined: ZERO of the six.</strong>
+<code>_is_root_liveness_probe</code> is a pure classifier over
+<code>self.path</code> and <code>self.command</code>: no mutation, no
+credential access, no external call, no exec, nothing irreversible.
+§11.4.252 binds paths combining ≥2. This hit fails the capability test
+<em>and</em> the direction test.</p>
+<p>Note the two remaining <code>return False</code> lines at 298/300 are
+the identical predicate-refusal shape and are not flagged only because
+they sit outside a handler — confirming the flag tracks syntax position,
+not semantics.</p>
+<h2 id="hit-2-toolsplugin_update_automation.py189-false-positive">Hit 2
+— <code>tools/plugin_update_automation.py:189</code> — <strong>FALSE
+POSITIVE</strong></h2>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="dv">183</span>     <span class="kw">def</span> _download_url(<span class="va">self</span>, url: <span class="bu">str</span>, timeout: <span class="bu">int</span> <span class="op">=</span> <span class="dv">30</span>) <span class="op">-&gt;</span> <span class="bu">str</span> <span class="op">|</span> <span class="va">None</span>:</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="dv">185</span>         <span class="cf">try</span>:</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="dv">186</span>             req <span class="op">=</span> Request(url, headers<span class="op">=</span>{<span class="st">&quot;User-Agent&quot;</span>: <span class="st">&quot;Mozilla/5.0&quot;</span>})</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="dv">187</span>             <span class="cf">with</span> urlopen(req, timeout<span class="op">=</span>timeout) <span class="im">as</span> response:</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="dv">188</span>                 <span class="cf">return</span> response.read().decode(<span class="st">&quot;utf-8&quot;</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="dv">189</span>         <span class="cf">except</span> (URLError, HTTPError):</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="dv">190</span>             <span class="cf">return</span> <span class="va">None</span></span></code></pre></div>
+<p><strong>Call site:</strong></p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="dv">108</span>                 upstream_content <span class="op">=</span> <span class="va">self</span>._download_url(url)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="dv">110</span>                 <span class="cf">if</span> upstream_content <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="dv">111</span>                     print_warning(<span class="ss">f&quot;</span><span class="sc">{</span>plugin_name<span class="sc">}</span><span class="ss">: Could not fetch upstream&quot;</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="dv">112</span>                     <span class="cf">continue</span></span></code></pre></div>
+<p><code>None</code> is an <strong>explicitly handled</strong> refusal:
+the operator is warned and the plugin is <strong>skipped</strong> — no
+write occurs. The handler is also <strong>bounded</strong> to
+<code>(URLError, HTTPError)</code>, a declared tolerance; anything else
+propagates to the outer <code>except Exception</code> at :134 which
+prints an error. Fail-closed, twice over.</p>
+<h2
+id="hit-3-toolsplugin_update_automation.py198-false-positive-for-11.4.252-separate-minor-defect-noted">Hit
+3 — <code>tools/plugin_update_automation.py:198</code> — <strong>FALSE
+POSITIVE for §11.4.252</strong> (separate minor defect noted)</h2>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="dv">192</span>     <span class="kw">def</span> _extract_version(<span class="va">self</span>, filepath: <span class="bu">str</span>) <span class="op">-&gt;</span> <span class="bu">str</span>:</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="dv">194</span>         <span class="cf">try</span>:</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="dv">195</span>             <span class="cf">with</span> <span class="bu">open</span>(filepath, encoding<span class="op">=</span><span class="st">&quot;utf-8&quot;</span>) <span class="im">as</span> f:</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="dv">196</span>                 content <span class="op">=</span> f.read()</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="dv">197</span>             <span class="cf">return</span> <span class="va">self</span>._extract_version_from_content(content)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="dv">198</span>         <span class="cf">except</span>:</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="dv">199</span>             <span class="cf">return</span> <span class="st">&quot;unknown&quot;</span></span></code></pre></div>
+<p><code>local_version</code> flows ONLY into the human print at :120
+and the report dict at :125. The update decision is made at :116 by
+<strong>hash comparison</strong>
+(<code>local_hash != upstream_hash</code>), and <code>main()</code> at
+:250 branches on <code>update["status"]</code> — never on a version
+string. <code>"unknown"</code> therefore gates nothing: no capability is
+combined on this path, and no fail-open exists.</p>
+<p><strong>Separate real (minor) defect, NOT §11.4.252:</strong> the
+handler is a <strong>bare <code>except:</code></strong>, which catches
+<code>BaseException</code> — so a <code>KeyboardInterrupt</code> landing
+inside <code>_extract_version</code> during a <code>--check</code> sweep
+over 14 upstream URLs is swallowed and the loop continues to the next
+plugin. Operator-visible symptom: Ctrl-C appears not to work.
+Code-quality/signal-handling class, not fail-open.</p>
+<h2 id="hit-4-toolsplugin_update_automation.py215-false-positive">Hit 4
+— <code>tools/plugin_update_automation.py:215</code> — <strong>FALSE
+POSITIVE</strong></h2>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="dv">210</span>     <span class="kw">def</span> _validate_plugin(<span class="va">self</span>, content: <span class="bu">str</span>) <span class="op">-&gt;</span> <span class="bu">bool</span>:</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="dv">212</span>         <span class="cf">try</span>:</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="dv">213</span>             <span class="bu">compile</span>(content, <span class="st">&quot;&lt;string&gt;&quot;</span>, <span class="st">&quot;exec&quot;</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="dv">214</span>             <span class="cf">return</span> <span class="va">True</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="dv">215</span>         <span class="cf">except</span> <span class="pp">SyntaxError</span>:</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="dv">216</span>             <span class="cf">return</span> <span class="va">False</span></span></code></pre></div>
+<p><strong>Call site:</strong></p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="dv">150</span>         <span class="cf">try</span>:</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="dv">151</span>             <span class="cf">if</span> <span class="kw">not</span> <span class="va">self</span>._validate_plugin(upstream_content):</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="dv">152</span>                 result[<span class="st">&quot;status&quot;</span>] <span class="op">=</span> <span class="st">&quot;failed&quot;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="dv">153</span>                 result[<span class="st">&quot;error&quot;</span>] <span class="op">=</span> <span class="st">&quot;Validation failed&quot;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="dv">154</span>                 <span class="cf">return</span> result          <span class="co"># ← returns BEFORE the write at :165</span></span></code></pre></div>
+<p>This <code>return False</code> <strong>is the refusal</strong>. It
+aborts the update before the <code>open(local_path, "w")</code> at :165.
+The handler is bounded to <code>SyntaxError</code>. The canonical
+BOB-189 false positive.</p>
+<hr />
+<h2 id="findings-this-gate-cannot-see-unanticipated">Findings this gate
+CANNOT see (unanticipated)</h2>
+<h3
+id="real-a-update_plugin-is-a-genuine-11.4.252-dangerous-combination-unflagged">REAL-A
+— <code>update_plugin</code> is a genuine §11.4.252 dangerous
+combination, unflagged</h3>
+<p><code>update_plugin</code> (:139–176) combines <strong>three</strong>
+capabilities:</p>
+<ul>
+<li><strong>untrusted input</strong> — <code>upstream_content</code>
+fetched over the network from <code>UPSTREAM_SOURCES</code> (:67–82): 14
+URLs across <strong>four</strong> GitHub repos, three of which are
+third-party personal repos, not the official <code>qbittorrent</code>
+org (<code>LightDestory/...</code>,
+<code>MadeOfMagicAndWires/...</code>).</li>
+<li><strong>mutation</strong> — written to
+<code>plugins/&lt;name&gt;.py</code> (:165–166).</li>
+<li><strong>deferred code-exec</strong> — those files are the
+qBittorrent nova3 search-plugin engines; <code>install-plugin.sh</code>
+copies them into <code>config/qBittorrent/nova3/engines/</code>, where
+qBittorrent <strong>executes</strong> them.</li>
+</ul>
+<p>The only gate on that path is <code>_validate_plugin</code> →
+<code>compile(content, "&lt;string&gt;", "exec")</code>, a
+<strong>syntax</strong> check. It proves the bytes parse as Python; it
+proves nothing about what they do. There is no signature check, no
+pinned commit/tag, no content hash allowlist, no diff review. A changed
+or compromised upstream yields arbitrary Python written to a path that
+later executes.</p>
+<p>The gate does not flag this because it only detects
+swallowed-exception shapes. <strong>Net: in this file the gate produced
+3 false positives and missed the one real dangerous combination</strong>
+— the §11.4.201 both-directions failure in one file.</p>
+<h3
+id="real-b-documented-rollback-does-not-exist-a-failed-write-leaves-a-truncated-plugin">REAL-B
+— documented rollback does not exist; a failed write leaves a truncated
+plugin</h3>
+<p><code>tools/README.md</code> states: <em>“The script validates each
+downloaded plugin with <code>python3 -m py_compile</code> before
+installing it … <strong>If validation fails the backup is
+restored.</strong>”</em> Both halves are false against the code:</p>
+<ul>
+<li>Validation is in-process <code>compile()</code> (:213), not
+<code>py_compile</code>.</li>
+<li><strong>No restore path exists.</strong> <code>shutil.copy2</code>
+appears exactly once, at :227, copying <em>forward</em> (source →
+backup). Grep proven seeing (<code>shutil</code> import :22,
+<code>backup</code> at :90/:162/:218–228); reverse-direction copy: zero
+occurrences.</li>
+</ul>
+<p>Consequence: :165 opens with mode <code>"w"</code>, which
+<strong>truncates immediately</strong>. A failure mid-write (disk full,
+interrupt, decode error) leaves the plugin file truncated; the handler
+at :171–174 records <code>status="failed"</code> and prints
+<code>"Update failed"</code> — and the backup created at :162 is never
+restored.</p>
+<p><strong>User-observable harm:</strong> the operator is told the
+update <strong>failed</strong>, and concludes the previous plugin is
+intact — while a <strong>truncated, non-importable</strong> plugin sits
+at <code>plugins/&lt;name&gt;.py</code>. The next
+<code>./install-plugin.sh</code> copies that corrupt file into the
+engines directory and the search engine silently stops working. The
+<code>.bak</code> needed to recover exists but the tool never mentions
+or uses it. README also claims JSON reports go to stdout; :274 writes
+them to <code>args.output</code> (default
+<code>plugin_update_report.json</code>).</p>
+<p>Severity: <strong>Low-to-Medium</strong>, bounded by REACHABILITY —
+see Q2: this script is invoked by nothing; it only runs when an operator
+types it by hand.</p>
+<hr />
+<h2
+id="exposure-fact-for-webui-bridge.py-severity-established-not-assumed">Exposure
+fact for webui-bridge.py severity (established, not assumed)</h2>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="dv">447</span>     server <span class="op">=</span> ThreadingHTTPServer((<span class="st">&quot;&quot;</span>, BRIDGE_PORT), WebUIBridgeHandler)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="dv">74</span>  BRIDGE_PORT <span class="op">=</span> <span class="bu">int</span>(os.environ.get(<span class="st">&quot;BRIDGE_PORT&quot;</span>, <span class="st">&quot;7188&quot;</span>))</span></code></pre></div>
+<p><code>("", PORT)</code> is <code>INADDR_ANY</code> — the bridge
+listens on <strong>all interfaces</strong>, not loopback. So :7188 is
+<strong>LAN-reachable</strong> (internet-reachable only if the operator
+forwards the port). It is neither localhost-only nor internet-exposed by
+default.</p>
+<p>This raises the stakes for any <em>genuine</em> fail-open in this
+file — but Hit 1 is not one: it is a pure classifier whose refusal
+selects the stricter branch. No severity is assigned because no real
+defect was found at :295.</p>
+<h2 id="answers">Answers</h2>
+<p><strong>Q1 — one root cause or three?</strong> Three hits,
+<strong>one primitive</strong>, but the primitive is in the DETECTOR,
+not the code (§11.4.250). All three tools/ hits — and the webui-bridge
+one — are the identical <strong>A2 “silent default return”</strong>
+shape, and in every case the returned literal is the function’s
+<em>designed refusal value</em> consumed by a caller that checks it. The
+tools/ code has no shared fail-open primitive; what is shared is the
+gate’s inability to read the call site. Fixing “three instances” in the
+code would mean damaging three correct refusals.</p>
+<p><strong>Q2 — is <code>tools/</code> first-party production, or
+dev-only?</strong> <strong>Dev-only. It should be fenced out of the
+gate’s scope — DECLARED, per §11.4.224(E), never silently.</strong>
+Evidence: <code>tools/</code> contains exactly <strong>2</strong>
+tracked files (<code>README.md</code>,
+<code>plugin_update_automation.py</code>); neither is gitignored
+(<code>git check-ignore</code> rc=1 for both). The script is invoked by
+<strong>nothing</strong> — a control-needle-proven repo grep (91 hits
+for the known-present needle <code>install-plugin.sh</code>, 0 for the
+negative control) finds <code>plugin_update_automation</code> referenced
+only by its own README, its own docstring, and the BOB-205 note in
+<code>docs/Issues.md</code>; zero hits across
+<code>*.sh</code>/<code>*.yml</code>/<code>*.yaml</code>/<code>*.py</code>/<code>Makefile</code>
+outside <code>tools/</code>. Its own README self-declares:
+<em>“Standalone developer scripts that do <strong>not</strong> run
+inside a container and are not invoked by the normal start/stop
+flow.”</em> Last functional commit <code>01c69f9</code> 2026-04-12; only
+later touch was the repo-wide CI sweep <code>4e855e0</code> 2026-04-23.
+Recommended exclusion class: <strong>non-shipping developer
+utility</strong> — it ships in no container, no image, no runtime path.
+Caveat: it is first-party, so §11.4.224(E) requires the exclusion carry
+a tracked §11.4.197 item, and REAL-A/REAL-B above should be tracked
+regardless of scope, since an operator running <code>--update</code> by
+hand still executes them.</p>
+<p><strong>Q3 — is <code>webui-bridge.py</code> live or
+superseded?</strong> <strong>LIVE — decisively.</strong> 142 tracked
+files reference <code>webui-bridge</code>, including
+<code>config/served_ports.yaml</code> and
+<code>challenges/security/credential_leak_audit.sh</code>.
+<code>download-proxy</code> actively probes it:
+<code>bridge_health()</code> exists at
+<code>download-proxy/src/api/__init__.py:198</code>, matching the
+docstring at :283–285. Its most recent commit is a real functional fix —
+<code>6e3da73 fix(bridge): target host-reachable qBittorrent (:7186)</code>,
+2026-06-14, the newest of 12 commits. Critically,
+<code>config/served_ports.yaml</code> :66–69 records that the Go
+<code>webui-bridge</code> is <em>a separate binary the
+<code>qbittorrent-proxy-go</code> container never starts</em>, so
+<strong>nothing else binds 7188</strong>: the Python file is the only
+thing that actually serves the port in the default deployment. It is not
+superseded, so §11.4.124 does not apply and no removal question arises.
+Its absence from <code>DANGER_ROOTS</code> is a real scope gap — a live,
+LAN-bound HTTP service handling request paths, outbound calls, and
+environment credentials should be IN scope even though its one current
+hit is a false positive.</p>
+</body>
+</html>

@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>BOB-102-round6-remediation</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">BOB-102-round6-remediation</h1>
+</header>
+<h1
+id="bob-102-round-6-remediation-of-the-cm-lan-routes-authenticated-gate">BOB-102
+— round-6 remediation of the CM-LAN-ROUTES-AUTHENTICATED gate</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-26T16:26:57Z <strong>Author label:</strong>
+<code>(T11/002-user-owned-downloads - milos85vasic - ? - xhigh)</code>
+<strong>Round-5 verdict remediated:</strong> NO-GO — 2 IMPORTANT / 4
+MINOR / 3 NIT <strong>Artifacts:</strong>
+<code>scripts/pre_build/lan_route_auth_analyzer.py</code>,
+<code>tests/pre_build/test_check_cm_lan_routes_authenticated.sh</code>,
+<code>docs/scripts/check_cm_lan_routes_authenticated.md</code> (+
+.html/.pdf/.docx twins)</p>
+<h2 id="the-primitive-this-round-fixed-was-a-claim-not-a-regex">0 — The
+primitive this round fixed was a CLAIM, not a regex</h2>
+<p>Findings expanded 1 → 1 → 9 across rounds 3–5 because each review
+attacked a surface the previous one had not. Per §11.4.250 the recurring
+shape named the defective primitive, and it was not in any regex: the
+shipped docstring and guide asserted <strong>“the DROPS column is empty;
+any future entry in this column is a release blocker.”</strong> That is
+unearnable by inspection (§11.4.118 — absence of evidence of looking is
+not evidence of absence) and it promoted every not-yet-discovered idiom
+into a standing release blocker.</p>
+<p><strong>The claim is RETRACTED</strong> in both the analyzer
+docstring and the guide, and replaced with the enumerated-set / method /
+honest-gap form. The DROPS column stays and stays filled in honestly;
+only the completeness assertion is gone.</p>
+<h2 id="reproduced-before-fixed-11.4.199-then-fixed">1 — Reproduced
+before fixed (§11.4.199), then fixed</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>defect</th>
+<th>pre-fix measurement</th>
+<th>closure</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F1</td>
+<td>gin <code>.Use</code> on a dotted receiver credits a same-named
+local engine</td>
+<td>mutating route <code>auth_wired=true</code>, findings 0,
+<strong>exit 0</strong></td>
+<td><code>(?&lt;![\w.])</code> on GIN_USE</td>
+</tr>
+<tr>
+<td>F2a</td>
+<td><code>router.post("/p")(fn)</code> immediate call</td>
+<td>route vanished, <strong>exit 0</strong></td>
+<td>router-attribute rule</td>
+</tr>
+<tr>
+<td>F2b</td>
+<td><code>@router.route("/p", methods=[...])</code></td>
+<td>route vanished, <strong>exit 0</strong></td>
+<td><code>route</code> added to refused decos</td>
+</tr>
+<tr>
+<td>F2c</td>
+<td><code>@router.post("/p")</code> on a <strong>ClassDef</strong></td>
+<td>route vanished, <strong>exit 0</strong></td>
+<td>router-attribute rule</td>
+</tr>
+<tr>
+<td>F2d</td>
+<td><code>reg = router.post</code> then <code>@reg("/p")</code></td>
+<td>route vanished, <strong>exit 0</strong></td>
+<td>router-attribute rule</td>
+</tr>
+<tr>
+<td>A1</td>
+<td>gomux dotted receiver inherits a local mux’s wrap</td>
+<td>mutating route <code>auth_wired=true</code>, <strong>exit
+0</strong></td>
+<td>MUX_DOTTED_OWNER refusal</td>
+</tr>
+<tr>
+<td>A2</td>
+<td>two gin engines sharing a name across functions</td>
+<td>both routes <code>auth_wired=true</code>, <strong>exit
+0</strong></td>
+<td>engines keyed per declaration SITE</td>
+</tr>
+<tr>
+<td>A3</td>
+<td>re-assigned FastAPI router back-credits earlier routes</td>
+<td>unguarded route <code>auth_wired=true</code>, <strong>exit
+0</strong></td>
+<td>refuse a router bound &gt;once</td>
+</tr>
+<tr>
+<td>F4</td>
+<td>gin selector split across lines (<code>r.</code> /
+<code>POST(</code>)</td>
+<td>route dropped, <strong>exit 0</strong></td>
+<td>selector-continuation refusal</td>
+</tr>
+</tbody>
+</table>
+<p>F2b was verified against the <strong>installed</strong> FastAPI
+(<code>routing.py:1317</code>, 102 lines above the
+<code>api_route</code> round 5 cited). <code>route</code> calls
+<code>add_route()</code> → a plain starlette Route that dependency
+injection never runs on, so <code>Depends</code> can never reach it; it
+is refused permanently, never modelled.</p>
+<p><strong>A1–A3 were found by this round’s own credit audit, not by the
+review.</strong></p>
+<h2 id="credit-bearing-construct-audit-all-three-extractors">2 —
+Credit-bearing-construct audit, all three extractors</h2>
+<p>Rule applied: <em>a credit must never be attributed across a scope
+boundary the resolver cannot see.</em></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>extractor</th>
+<th>construct</th>
+<th>verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gin</td>
+<td><code>GIN_USE</code></td>
+<td><strong>LEAK — fixed</strong> (F1)</td>
+</tr>
+<tr>
+<td>gin</td>
+<td><code>engines</code> (multi-engine refusal)</td>
+<td><strong>LEAK — fixed</strong> (A2)</td>
+</tr>
+<tr>
+<td>gin</td>
+<td><code>GIN_GROUP</code> dotted</td>
+<td>measured <strong>fail-closed</strong> — no fix</td>
+</tr>
+<tr>
+<td>gin</td>
+<td><code>GIN_ENGINE</code></td>
+<td>refusal-side only</td>
+</tr>
+<tr>
+<td>gomux</td>
+<td><code>MUX_ROUTE</code> owner</td>
+<td><strong>LEAK — fixed</strong> (A1)</td>
+</tr>
+<tr>
+<td>gomux</td>
+<td><code>MUX_DECL</code> dotted</td>
+<td>measured <strong>fail-closed</strong> — no fix</td>
+</tr>
+<tr>
+<td>gomux</td>
+<td><code>_carriers</code> / GO_ASSIGN</td>
+<td>lhs anchored bare → fail-closed</td>
+</tr>
+<tr>
+<td>fastapi</td>
+<td><code>router_authed</code></td>
+<td><strong>LEAK — fixed</strong> (A3)</td>
+</tr>
+<tr>
+<td>fastapi</td>
+<td><code>guard_aliases</code></td>
+<td>hardened earlier; module-name collision measured
+<strong>fail-closed</strong> (refused with a finding)</td>
+</tr>
+<tr>
+<td>fastapi</td>
+<td>handler/decorator <code>dependencies</code></td>
+<td>node-local, no aliasing surface</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-reviewers-f2-remedy-shape-was-narrowed-and-why">3 — The
+reviewer’s F2 remedy shape was NARROWED, and why</h2>
+<p>The suggested rule (“refuse any Call whose <code>func.attr</code> ∈
+HTTP_METHODS ∪ {route} outside modelled decorator position”)
+<strong>could not ship as written</strong>: <code>.get</code> is both an
+HTTP verb and the most common method name in Python, so it fires on
+<code>d.get(k)</code>, <code>os.environ.get(k)</code>,
+<code>requests.post(...)</code> — the §11.4.201(1) false-positive
+machine. The shipped rule additionally requires the <strong>owner to be
+a router the module declared</strong>.
+<code>fastapi-verbnames-not-routers</code> is the fixture that holds it
+to that, and it dies under mutation <strong>G1</strong> (owner
+qualification removed).</p>
+<h2 id="the-pin-sweep-measuring-my-own-replacement-claim">4 — The pin
+sweep: measuring my own replacement claim</h2>
+<p>The retraction asserts “every REFUSES verdict is pinned by a fixture
+that dies when the refusal is removed.” Rather than assert it, it was
+<strong>measured</strong> by deleting each refusal in a scratch copy.
+<strong>Six survived</strong> — <code>websocket_route</code>, gin
+<code>.Match</code>, gin <code>.NoRoute</code>,
+<code>http.DefaultServeMux</code>, unknown service kind, exemption
+missing <code>path</code>. All six are now pinned and each pin
+re-verified to die under the deletion. The DefaultServeMux fixture
+initially <strong>could not fail</strong> (the route resolved
+unauthenticated either way); an exemption was added so the refusal is
+the only thing that can make it exit 1.</p>
+<h2 id="mutation-matrix-all-against-byte-verified-scratch-copies">5 —
+§1.1 mutation matrix (all against byte-verified scratch copies)</h2>
+<p>Kill direction — every new rule is load-bearing:</p>
+<pre><code>N5 drop websocket from refused set    KILLED  fastapi-websocket-refused   &lt;- the round-5 SURVIVOR
+M1 drop route from refused set        KILLED  fastapi-route-deco
+M2 GIN_USE lookbehind removed         KILLED  gin-dotted-use-false-safe
+M3 MUX_ROUTE lookbehind removed       SURVIVED - PROVEN EQUIVALENT MUTANT (see below)
+M4 remove gomux dotted refusal        KILLED  gomux-dotted-recv-false-safe
+M3+M4 combined                        KILLED  gomux-dotted-recv-false-safe
+M5 gin engines back to by-NAME        KILLED  gin-two-engines-same-name
+M6 remove selector-continuation       KILLED  gin-selector-continuation
+M7 remove router re-assign refusal    KILLED  fastapi-router-reassign
+M8 remove router-attribute rule       KILLED  x3 (immediate-call, classdef, bound-alias)
+P1..P6 the six formerly-unpinned refusals   ALL NOW KILLED by their new fixtures</code></pre>
+<p><strong>M3 is an equivalent mutant, not a gap</strong>:
+MUX_DOTTED_OWNER refuses and <code>continue</code>s before MUX_ROUTE is
+consulted, so the lookbehind is unreachable defence. The pair is
+load-bearing as a unit — M3+M4 together is killed.</p>
+<p>False-positive direction (§11.4.201(1)) — every guard is
+RED-capable:</p>
+<pre><code>G1 router-attr: drop owner qualification   KILLED  fastapi-verbnames-not-routers
+G2 GIN_USE: kill all credit                KILLED  gin-bare-use-still-credits (+7)
+G3 MUX dotted: over-broad                  KILLED  gomux-bare-recv-still-credits (+11)
+G4 continuation: fire on any trailing dot  KILLED  gin-continuation-not-a-route (sole killer)
+G5 engines: refuse on ONE site             KILLED  gin-one-engine-two-funcs (+7)
+G6 router re-assign: fire always           KILLED  fastapi-router-level-deps-ok (+4)</code></pre>
+<h2 id="minors-nits">6 — MINORs / NITs</h2>
+<ul>
+<li><strong>F5</strong> digest recipe — the docstring now carries the
+<strong>exact commands</strong> that regenerate both the 106 and the 19,
+and pins the scan list itself (19 paths = 8 .py + 11 .go, sha256 head
+<code>c7a793a0021c3804</code>).</li>
+<li><strong>F6</strong> the multi-statement refusal’s boundary is now
+<strong>owned</strong> in-source (it is deliberately wider than its
+motivating defect; a single registration whose <code>;</code> sits in a
+closure body is refused conservatively) and pinned by
+<code>gin-semicolon-in-closure-body</code> so narrowing it later is
+deliberate.</li>
+<li><strong>F7</strong> refusals now print a <strong>per-decorator
+reason</strong> (<code>_DECO_REFUSAL_REASON</code>) instead of
+“websocket routes are not modelled” for
+<code>api_route</code>/<code>route</code>.</li>
+<li><strong>F8</strong> the dotted-receiver check moved
+<strong>above</strong> the non-literal-path check, so a
+<code>}</code>-preceded dotted receiver is refused under the truthful
+label.</li>
+<li><strong>F9</strong>
+<code>for owner, raw in MUX_ROUTE.findall(ln)</code> →
+<code>mux_path</code>; the shadow of the file-lines <code>raw</code> is
+gone.</li>
+</ul>
+<h2 id="do-not-regress-all-re-run-this-round">7 — Do-not-regress (all
+re-run this round)</h2>
+<pre><code>harness                 93 passed, 0 failed   (was 63; +30 fixtures) x3 deterministic,
+                        verdict-stream sha 2794ed7597175549 identical across all three runs
+real tree               74 routes / 3 services / 23 known-gaps / PASS, exit 0, stderr 0 bytes
+real tree --json md5    ecd4b31c2f40c87ed321a00c43cacb26  (UNCHANGED - byte-identical)
+go lexical census       106 files, 0 lex gaps, 0 odd separators, class-matched needles seeing
+py_compile              CLEAN (no SyntaxWarning)
+bash -n                 CLEAN (gate + harness)
+residue gate            scanned 272 file(s); 0 hit(s); 1 audited waiver(s); exit 0
+                        (the waiver is check_cm_export_charset_valid.sh:46 - a SIBLING&#39;s)
+PDF twin                0 mojibake; needles § x23, — x50 present; retraction text present
+guide twins             .html/.pdf/.docx all regenerated, mtimes &gt;= .md</code></pre>
+<p><strong>The digest did not move</strong>, as predicted by a
+pre-change exposure scan (zero multi-engine gin files, zero selector
+continuations, zero dotted mux receivers, zero router attributes outside
+decorator position in the real policy roots) whose own detectors were
+control-needle-proven before the zeros were trusted.</p>
+<h2 id="not-closed-honestly-open">8 — Not closed / honestly open</h2>
+<ul>
+<li><strong>The gate still asserts static WIRING, never runtime
+ARMING.</strong> <code>BOBA_API_TOKEN</code> is unset by default, so
+statically-protected routes are open on a default deploy. Tracked as
+<strong>BOB-197</strong> (boot-time invariant, §11.4.254). Unchanged by
+this round and not claimed covered.</li>
+<li><strong>fastapi module-basename collision</strong> across packages
+is measured fail-closed today (the guard-alias multi-binding rule
+catches it) but that is incidental rather than designed. Recorded, not
+fixed.</li>
+<li><strong>The enumerated set is a sample, not a proof.</strong> That
+is the point of §0: an idiom outside it is un-surveyed, not proven
+absent.</li>
+<li><code>pre_build_verification.sh</code> was NOT run — T042 owns
+it.</li>
+</ul>
+</body>
+</html>

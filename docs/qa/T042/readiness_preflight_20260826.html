@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>readiness_preflight_20260826</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">readiness_preflight_20260826</h1>
+</header>
+<h1 id="t042-readiness-preflight-will-the-52-invariant-gate-pass">T042
+readiness preflight — will the 52-invariant gate pass?</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-26T20:40:00Z</p>
+<h2 id="tree-state-read-anchors-11.4.6">Tree state read (anchors,
+§11.4.6)</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>anchor</th>
+<th>value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HEAD</td>
+<td><code>a3e1141777914f3d71d62a6cd32a4c79c7f43842</code> (unchanged
+across the whole session)</td>
+</tr>
+<tr>
+<td>branch</td>
+<td><code>002-user-owned-downloads</code></td>
+</tr>
+<tr>
+<td>untracked (<code>-uall</code>)</td>
+<td>42 at start → 43 at end (concurrent writer added one)</td>
+</tr>
+<tr>
+<td>modified</td>
+<td>43</td>
+</tr>
+<tr>
+<td>driver</td>
+<td><code>scripts/pre_build_verification.sh</code>, 1969 lines</td>
+</tr>
+</tbody>
+</table>
+<p><code>scripts/commit-push-all.sh</code> was <strong>NOT</strong> run.
+<code>scripts/pre_build_verification.sh</code> was <strong>NOT</strong>
+run in full. Every result below comes from executing an individual
+invariant or its delegated gate script in isolation,
+<code>nice -n 19</code>.</p>
+<h2 id="invariant-map">Invariant map</h2>
+<p>52 = <strong>43 bracket-form <code>[N/52]</code></strong> + <strong>9
+<code>run_const_gate "N/52"</code> invocations</strong> (33–38, 40, 42,
+43). <code>grep -c run_const_gate</code> returns 12/13 — the extra hits
+are the function definition (L1325) and three comment lines (L1312,
+L1721, L1725). Union is 1..52 with no gap and no duplicate.</p>
+<p>Control needles (§11.4.201(7)(b), same instrument + same path):
+<code>[N/99]</code> → 0 (instrument discriminates),
+<code>invariant</code> → 103 (instrument sees).</p>
+<h3 id="blocking-vs-advisory">Blocking vs advisory</h3>
+<p>Exit logic is <code>FAIL_COUNT&gt;0 → exit 1</code>. There is
+<strong>no</strong> coverage/PENDING layer. Only a <code>fail()</code>
+call blocks. Four invariants are structurally incapable of blocking
+because their failure branch is a bare
+<code>echo "  WARN: ..."</code>:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>gate</th>
+<th>why it cannot block</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>26</td>
+<td>CM-BADGE-FRESHNESS-CHECK</td>
+<td><code>echo "  WARN: ..."</code> on non-zero exit</td>
+</tr>
+<tr>
+<td>39</td>
+<td>CM-DANGEROUS-COMBINATION-FAIL-CLOSED</td>
+<td><code>echo "  WARN: ... (ADVISORY, non-blocking)"</code></td>
+</tr>
+<tr>
+<td>40</td>
+<td>CM-ORACLE-STRATEGY-NAMED-AND-INDEPENDENT</td>
+<td><code>run_const_gate ... advisory</code></td>
+</tr>
+<tr>
+<td>41</td>
+<td>CM-OPENDESIGN-UI-SYSTEM</td>
+<td><code>echo "  WARN: ... (ADVISORY, non-blocking)"</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="git-index-status-consumers">Git index / status consumers</h3>
+<p>The driver barely uses git porcelain. <code>git status</code> appears
+only in <strong>comments</strong> explaining why it is <em>not</em> used
+(L1080-1082: it is structurally blind to the mtime-only defect class).
+The real enumerators are:</p>
+<ul>
+<li><strong><code>git ls-files</code></strong> (tracked-only) —
+invariant 30’s no-trace corpus, invariant 49.</li>
+<li><strong><code>find</code> / shell glob</strong> (filesystem,
+<strong>sees untracked</strong>) — invariant 16
+(<code>find PROJECT_ROOT -maxdepth 1 -name '*.md'</code> +
+<code>find docs/ scripts/ -name '*.md'</code>), invariant 30
+(<code>"$PROJECT_ROOT"/tests/{unit,pre_build,hooks}/test_*.sh</code>),
+and the delegated scanners.</li>
+</ul>
+<p><strong>Load-bearing ordering fact:</strong>
+<code>commit-push-all.sh</code> runs the long gate at <strong>stage
+3/6</strong>, and <code>git add -A</code> only at <strong>stage
+5</strong>. So at gate time every new file is still untracked — which
+means the <code>git ls-files</code> invariants cannot see them and only
+the <code>find</code>/glob invariants can. That is exactly where both
+new-file failures land.</p>
+<h3 id="hand-maintained-lists-found">Hand-maintained lists found</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>list</th>
+<th>location</th>
+<th>risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DANGER_ROOTS</code> (5)</td>
+<td>driver L1511</td>
+<td>BOB-205/214 — misses repo root, <code>tools/</code>,
+<code>cmd/</code></td>
+</tr>
+<tr>
+<td><code>exts</code> (16, <strong>no <code>sh</code></strong>)</td>
+<td><code>cm_dangerous_combination_fail_closed.sh</code> L457</td>
+<td>BOB-213</td>
+</tr>
+<tr>
+<td><code>BASH_TEST_SELF_RECURSIVE</code> (2)</td>
+<td>driver L1054</td>
+<td>recursion guard</td>
+</tr>
+<tr>
+<td><code>BASH_TEST_QUARANTINE</code> (0)</td>
+<td>driver L1064</td>
+<td>ratchet, currently empty</td>
+</tr>
+<tr>
+<td>inv-30 test glob (3 dirs)</td>
+<td>driver L1196</td>
+<td><strong>omits <code>tests/security/</code></strong></td>
+</tr>
+<tr>
+<td><code>.docs_chain/contexts</code> (2)</td>
+<td><code>.docs_chain/contexts/</code></td>
+<td>narrow scope</td>
+</tr>
+<tr>
+<td>excludes (9)</td>
+<td>scanner L458</td>
+<td>prune list</td>
+</tr>
+</tbody>
+</table>
+<h2
+id="verdict-the-gate-fails.-three-blocking-invariants-in-driver-order.">Verdict:
+the gate FAILS. Three blocking invariants, in driver order.</h2>
+<h3
+id="cm-markdown-export-sync-6-violations-reproduced-3-identical">[16/52]
+CM-MARKDOWN-EXPORT-SYNC — 6 violations (reproduced 3×, identical)</h3>
+<p>Scope excludes <code>docs/research/*</code> and
+<code>docs/qa/*</code> but <strong>not</strong>
+<code>docs/scripts/</code>.</p>
+<ul>
+<li><code>docs/scripts/test_gitignore_swallow_is_loud.{html,pdf}</code>
+<strong>MISSING</strong> — caused directly by the new untracked
+<code>docs/scripts/test_gitignore_swallow_is_loud.md</code>. This is the
+§11.4.18 companion doc written for the new test script; authoring it is
+what created the invariant-16 violation.</li>
+<li><code>docs/Issues.{html,pdf}</code> +
+<code>docs/Fixed.{html,pdf}</code> <strong>STALE</strong> —
+<code>.md</code> mtime 1787774388 vs exports 1787772253–1787772292 (~35
+min newer). <strong>MOVING TARGET</strong>: these six files are all
+<code>M</code> and owned by a concurrent writer.</li>
+</ul>
+<p>Remediation the driver implies:
+<code>bash scripts/generate_markdown_exports.sh</code>.</p>
+<h3
+id="cm-bash-unit-tests-executed-a-new-red-test-fails-the-gate">[30/52]
+CM-BASH-UNIT-TESTS-EXECUTED — a new RED test fails the gate</h3>
+<p>Enumerates by filesystem glob → <strong>runs the new untracked
+suites</strong>. Executed exactly as the driver does
+(<code>BOBA_PREBUILD_NESTED=1 timeout 300 bash &lt;suite&gt;</code>):</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>suite</th>
+<th>exit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tests/pre_build/test_bob205_danger_roots_scope.sh</code>
+(NEW)</td>
+<td><strong>1 — RED</strong></td>
+</tr>
+<tr>
+<td><code>tests/pre_build/test_check_cm_lan_routes_authenticated.sh</code>
+(NEW)</td>
+<td>0 (115/0, 56s)</td>
+</tr>
+<tr>
+<td><code>tests/unit/test_ddos_sibling_retry_after_classification.sh</code>
+(NEW)</td>
+<td>0 (32/0)</td>
+</tr>
+</tbody>
+</table>
+<p><code>BASH_TEST_FAILED&gt;0 → fail()</code>. The BOB-205 suite is a
+<strong>RED test for an unfixed defect</strong> — it is
+<em>supposed</em> to fail, and invariant 30 has no RED-test
+allowance.</p>
+<h3
+id="cm-runtime-deps-parity-8-divergences-pre-existing-state-dependent">[48/52]
+CM-RUNTIME-DEPS-PARITY — 8 divergences (pre-existing,
+state-dependent)</h3>
+<p>venv 3.4.9/3.32.2/3.18/0.27.3/1.4.1/0.4.2/0.52.1 vs container
+counterparts, plus CPython 3.14.6 (venv) vs 3.12.13 (container). Tracked
+as BOB-154, blocked on BOB-158. <strong>Not caused by any new
+file.</strong> It compares the live <code>.venv</code> against the
+<em>running</em> <code>qbittorrent-proxy</code> container, so it is
+<strong>state-dependent</strong>: with the container down the gate SKIPs
+and this failure disappears.</p>
+<h2 id="per-new-file-prediction">Per-new-file prediction</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>file</th>
+<th>invariants that see it</th>
+<th>prediction</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docs/scripts/test_gitignore_swallow_is_loud.md</code></td>
+<td>16 (<code>find docs/</code>)</td>
+<td><strong>FAIL</strong> — no .html/.pdf twins</td>
+</tr>
+<tr>
+<td><code>docs/qa/{BOB-186,191,196,198,205,206,212,T028-uid100999,T041}/**</code></td>
+<td>none</td>
+<td>PASS — inv 16 excludes <code>docs/qa/*</code>; inv 19/20 read only
+<code>docs/QA_DISCOVERY_LEDGER.md</code>, never the filesystem</td>
+</tr>
+<tr>
+<td><code>tests/pre_build/test_bob205_danger_roots_scope.sh</code></td>
+<td>30 (glob, executes)</td>
+<td><strong>FAIL</strong> — RED by design</td>
+</tr>
+<tr>
+<td><code>tests/pre_build/test_check_cm_lan_routes_authenticated.sh</code></td>
+<td>30</td>
+<td>PASS (115/0)</td>
+</tr>
+<tr>
+<td><code>tests/unit/test_ddos_sibling_retry_after_classification.sh</code></td>
+<td>30</td>
+<td>PASS (32/0)</td>
+</tr>
+<tr>
+<td><code>tests/security/test_gitignore_swallow_is_loud.sh</code></td>
+<td><strong>none</strong></td>
+<td>PASS by invisibility — <strong>orphan guard</strong></td>
+</tr>
+<tr>
+<td><code>scripts/pre_build/check_cm_lan_routes_authenticated.sh</code></td>
+<td>none (not wired into the 52)</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>scripts/pre_build/lib/cm_export_charset_scan.py</code></td>
+<td>23 (PASS), 39 (adds 1 WARN hit)</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>scripts/pre_build/cm_export_charset_valid.baseline</code></td>
+<td>50</td>
+<td>PASS (343 scanned, 0 missing, at baseline)</td>
+</tr>
+<tr>
+<td><code>scripts/pre_build/tighten_cm_export_charset_baseline.sh</code></td>
+<td>none</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>config/lan_route_auth_policy.yaml</code></td>
+<td>none</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>qBitTorrent-go/internal/jackettapi/bob204_failclosed_test.go</code></td>
+<td>39 only (advisory)</td>
+<td>PASS</td>
+</tr>
+<tr>
+<td><code>specs/**/evidence/*.md</code> (11 new)</td>
+<td>none — inv 16 scans only root, <code>docs/</code>,
+<code>scripts/</code></td>
+<td>PASS</td>
+</tr>
+</tbody>
+</table>
+<p><strong>§11.4.18 script-documentation is NOT gated.</strong>
+<code>grep -E '11\.4\.18[^0-9]'</code> over the driver returns
+<strong>zero</strong> (the earlier count of 1 was <code>11.4.18</code>
+prefix-matching <code>11.4.180</code>+). There is no
+<code>CM-SCRIPT-DOCS-SYNC</code> among the 52. New scripts without a
+companion doc are therefore not a gate failure — the irony is that
+<em>writing</em> one
+(<code>docs/scripts/test_gitignore_swallow_is_loud.md</code>) is what
+tripped invariant 16.</p>
+<p><strong>§11.4.44 revision headers are NOT gated</strong> either:
+<code>grep -cE 'REVISION-HEADER|revision_header|Revision:\*\*'</code> →
+0 (control needle <code>CM-BADGE-FRESHNESS</code> → 3). New
+<code>.md</code> without headers will not fail.</p>
+<p><strong>Residue scan (inv 23):</strong> 273 files, 0 hits, 1 audited
+waiver — PASS. The count already sits at the predicted 273; no new file
+trips it.</p>
+<p><strong>§11.4.224 test-first:</strong> no invariant demands a paired
+mutation or fixture for a new gate script. Invariant 30 only demands
+that whatever suites <em>exist</em> pass.</p>
+<h2 id="task-3-the-three-hole-interaction">Task 3 — the three-hole
+interaction</h2>
+<p><strong>Answer: no. Invariant 39 does not pass today, and fixing the
+holes cannot make T042 fail.</strong></p>
+<p>Two independent reasons, both measured:</p>
+<ol type="1">
+<li><p><strong>Structural.</strong> Invariant 39’s non-zero branch is
+<code>echo "  WARN: ... (ADVISORY, non-blocking per §11.4.234 ...)"</code>.
+It never calls <code>fail()</code>. <code>FAIL_COUNT</code> is untouched
+regardless of hit count.</p></li>
+<li><p><strong>Empirical.</strong> Invariant 39 is <em>already</em>
+WARNing. Running its own gate over its own <code>DANGER_ROOTS</code> at
+this tree state:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>root</th>
+<th>hits</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>download-proxy/src</code></td>
+<td>28</td>
+</tr>
+<tr>
+<td><code>plugins</code></td>
+<td>50</td>
+</tr>
+<tr>
+<td><code>scripts</code></td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>frontend/src</code></td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>qBitTorrent-go</code></td>
+<td>not scanned (stay-off); per BOB-191 structurally unanalysable →
+~0</td>
+</tr>
+<tr>
+<td><strong>total</strong></td>
+<td><strong>~80</strong></td>
+</tr>
+</tbody>
+</table>
+<p>So the premise “invariant 39 currently PASSes because of the holes”
+is false — it currently WARNs with ~80 hits and contributes nothing to
+the exit code either way.</p></li>
+</ol>
+<p>Hole probes (a hit is a LEAD, §11.4.194(6)(b) — all triaged to the
+line):</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>probe</th>
+<th>result</th>
+<th>triage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scripts</code> ext=<code>sh</code>
+(<strong>BOB-213</strong>)</td>
+<td>1 hit</td>
+<td><code>scripts/codegraph_validate.sh:81</code> — a real
+<code>try{...}catch(e){}</code> inside an embedded Node <code>-e</code>
+one-liner. Genuine pattern match, but guarded downstream by
+<code>n=0</code> default + <code>[ "$MCP_NODES" -gt 0 ]</code>
+fail-closed assertion. Low severity.</td>
+</tr>
+<tr>
+<td><code>tools</code> default ext (<strong>BOB-214</strong>)</td>
+<td>3 hits</td>
+<td><code>tools/plugin_update_automation.py:189,198,215</code> — silent
+default returns in first-party Python. <strong>Real and genuinely
+unscanned.</strong></td>
+</tr>
+<tr>
+<td><code>cmd</code> default ext</td>
+<td>0 hits</td>
+<td>the RED test’s <code>cmd/boba-ctl</code> needle is synthetic; no
+live hit</td>
+</tr>
+<tr>
+<td><code>config</code> default ext</td>
+<td>43 hits</td>
+<td><strong>FALSE POSITIVE class</strong> — all in
+<code>config/qBittorrent/nova3/engines/*.py</code>, verified
+<code>git check-ignore</code> → GITIGNORED. These are the <em>installed
+copies</em> of <code>plugins/</code> (already a DANGER_ROOT),
+i.e. duplicates of hits already counted. <code>config/</code> is
+correctly excluded.</td>
+</tr>
+<tr>
+<td><code>challenges</code> ext=<code>sh</code></td>
+<td>0 hits</td>
+<td>clean</td>
+</tr>
+</tbody>
+</table>
+<p>Net: fixing all three holes moves the advisory WARN from ~80 to ~84.
+<strong>Zero effect on T042’s exit code.</strong> T042’s outcome is not
+an artifact of scanner blindness.</p>
+<h2 id="verified-pass-roster">Verified-PASS roster</h2>
+<p>Executed in isolation, all exit 0 / <code>fail()</code>-free:
+<strong>1–15</strong> (extracted, 0 fails), <strong>17</strong>
+(validate 218 items OK; diff in-sync 218/218; DB md5 stable across the
+read), <strong>18</strong>, <strong>19–20</strong> (extracted, ledger
+28==28), <strong>21–22</strong> (extracted), <strong>23</strong> (273
+files, 0 hits), <strong>24</strong> (docs_chain 2/2 in-sync),
+<strong>25</strong> (5 signatures below threshold), <strong>27</strong>
+(170 files), <strong>28</strong> (324), <strong>29</strong> (324),
+<strong>31–32</strong> (17/17 lockstep), <strong>33–38</strong>
+(const-gates), <strong>42–43</strong> (honest SKIP, wired blocking),
+<strong>44</strong> (5 services), <strong>45</strong>,
+<strong>46</strong> (8 counts), <strong>47</strong> (2 builder stages),
+<strong>49</strong>, <strong>50</strong> (343 exports, baseline 0),
+<strong>51</strong> (92 inputs), <strong>52</strong> (79 inputs).</p>
+<h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
+<ol type="1">
+<li><strong>Invariant 30 is only 3/38 verified.</strong> It runs 40
+globbed suites minus 2 structurally excluded. I ran the <strong>3
+new</strong> ones. The other <strong>35 are unverified</strong> — any
+one failing adds to the same single <code>fail()</code>. This is the
+largest residual uncertainty and it can only widen the failure, never
+narrow it.</li>
+<li><strong><code>qBitTorrent-go</code> was not scanned</strong>
+(stay-off constraint). Its inv-39 contribution is assumed ~0 on
+BOB-191’s structural-unanalysability finding, not measured here.</li>
+<li><strong>Invariant 48 is state-dependent, not tree-dependent</strong>
+— its verdict flips with whether the <code>qbittorrent-proxy</code>
+container is running.</li>
+<li><strong>Four of the six invariant-16 violations are on
+concurrently-owned files</strong>
+(<code>docs/{Issues,Fixed}.{html,pdf,md}</code>). Another agent may
+regenerate them at any moment. Only the two
+<code>docs/scripts/test_gitignore_swallow_is_loud.*</code> misses are
+attributable to this session’s new files and stable.</li>
+<li><strong>Cross-invariant interactions were not simulated.</strong>
+Invariant 30’s no-trace corpus check fails if any suite leaves an mtime
+trace on a tracked file; I ran suites individually, not under that
+guard, so a trace-induced inv-30 failure would not have shown up in my
+runs.</li>
+<li><strong>Whole-driver-only effects unobservable:</strong> ordering,
+the <code>BOBA_PREBUILD_NESTED</code> sentinel path, total wall-clock,
+and any shared state between invariants.</li>
+</ol>
+<h2 id="new-finding-surfaced-by-this-preflight">New finding surfaced by
+this preflight</h2>
+<p><code>tests/security/test_gitignore_swallow_is_loud.sh</code> (a
+BOB-212 RED test authored this session) sits in a directory <strong>no
+invariant executes</strong> — inv 30’s glob covers only
+<code>tests/unit</code>, <code>tests/pre_build</code>,
+<code>tests/hooks</code>. This is a recurrence of the exact orphan-guard
+class the driver’s own comment at L1190-1195 records as having already
+happened twice (“the SAME orphan-guard class that stranded
+<code>tests/pre_build/</code> recurred one directory over”). Third
+occurrence, one directory over again.</p>
+</body>
+</html>

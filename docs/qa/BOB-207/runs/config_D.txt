@@ -1,0 +1,321 @@
+test_ownership_repair.sh — contract cases:
+  1 golden-bad      : wrongly-owned tree repaired, exit 0, change record NON-EMPTY
+  2 preserve_mode   : credential-store entry keeps its EXACT bits (FR-015)
+  3 negative control: path OUTSIDE declared scope left untouched (FR-005)
+  4 golden-good     : correct tree -> exit 0, change record EMPTY, nothing mutated
+  5 interrupt/resume: kill mid-run -> marker ABSENT -> re-run completes (FR-004a)
+  6 scope re-arm    : scope change invalidates the marker (data-model E2)
+  7 honest failure  : unrepairable item reported, does NOT exit 0 (FR-006)
+  8 symlink fence   : a link inside scope does NOT carry the repair outside (FR-005)
+  9 preserve_mode fence: preserve_mode must not chmod THROUGH a symlink (FR-005+FR-015)
+ 10 scope coverage  : the SHIPPED scope declares every rw bind-mount source (FR-012)
+ 11 record loss     : a destroyed change record is REPORTED, not silently replaced
+ 12 record rotation : a superseded change record is preserved as its own artifact
+ 13 state dir       : OWNERSHIP_STATE_DIR overrides; the default path is unchanged
+ 14 relative scope  : a repo-relative entry resolves against the project root (E1)
+ 15 dotenv shape    : the shipped .env entry keeps a 600 credential file at 600
+ 16 empty scope     : a scope yielding ZERO locations is 'could not run', not 'complete'
+ 17 declared-path fence: a scope may not name /, a system tree, or a .. escape
+ 18 hardlink claim   : the out-of-scope hardlink reach is measured and documented
+ 19 chown reason     : a failed chown reports WHY it failed
+ 20 mode-restore     : a failed FR-015 mode restore is reported, not swallowed
+ 21 fingerprint prose: the comment matches what the fingerprint is computed from
+ 22 declared-root    : a failure on the declared root itself is named as such
+
+  fixture identity: operator 1000:1000; wrong-owner fixtures seeded as uid 100000 via podman unshare
+
+Case 1/2/3: golden-bad repair, preserve_mode, out-of-scope negative control
+  PASS: golden-bad: exit 0 after repairing a wrongly-owned tree
+  PASS: golden-bad: all 15 not-operator-owned items are now uid 1000
+  PASS: golden-bad: change record is non-empty (a repaired item path is recorded)
+  PASS: golden-bad: repair marker written after a successful pass and carries the scope fingerprint (E2)
+  PASS: preserve_mode: credential store kept mode 600 exactly
+  PASS: preserve_mode: credential store ownership WAS repaired (preserve_mode guards bits, not ownership)
+  PASS: negative control: out-of-scope tree byte-identical in owner/mode after the run (FR-005 scope fence holds)
+  PASS: negative control: no out-of-scope path appears in the change record
+
+Case 4: golden-good — already-correct tree
+  PASS: golden-good: exit 0 on an already-correct tree
+  PASS: golden-good: nothing mutated (owner and mode identical for every item)
+  PASS: golden-good: change record is EMPTY (no item recorded as changed)
+  PASS: golden-good: marker written after a successful no-change pass (E2 / FR-004c precondition)
+
+Case 5: interrupt -> resume (marker written only on success)
+  PASS: interrupt: no marker after an interrupted run (marker is written only on success)
+  PASS: resume: the follow-up run exits 0
+  PASS: resume: every remaining item was repaired (the interrupted remainder was NOT skipped)
+  PASS: resume: marker written once the pass genuinely completed
+
+Case 6: scope-fingerprint change re-arms the repair
+  PASS: scope re-arm: adding a declared path changes the scope fingerprint
+  PASS: scope re-arm: the newly-declared path WAS repaired despite an existing marker
+  PASS: scope re-arm: the marker now carries the NEW scope fingerprint
+
+Case 7: honest failure — an item that cannot be repaired
+  PASS: honest failure: did NOT exit 0 with an unrepairable item outstanding (FR-006)
+  PASS: honest failure: exit 1 (contract: at least one item could not be repaired)
+  PASS: honest failure: the unrepairable path is named individually in the output
+
+Case 8: out-of-scope reach through symlinks (FR-005)
+tests/unit/test_ownership_repair.sh: line 348: /tmp/.private/milosvasic/boba_ownership_repair.5wrItsTW/sb.VLylVAXi/fixture/out_of_scope/secret.bin: Permission denied
+  PASS: symlink fence: the in-scope tree WAS repaired in this run (the fence is proven against a run that really mutated, not a no-op)
+  PASS: symlink fence: out-of-scope targets byte-identical in owner/group/mode — a symlink inside the scope did NOT carry the repair outside it (FR-005)
+tests/unit/test_ownership_repair.sh: line 348: /tmp/.private/milosvasic/boba_ownership_repair.5wrItsTW/sb.VLylVAXi/fixture/out_of_scope/secret.bin: Permission denied
+  PASS: symlink fence: out-of-scope file CONTENT unchanged (no write reached through a link either)
+  PASS: symlink fence: no out-of-scope path appears in the change record, under either the resolved or the link-traversed spelling
+  PASS: symlink fence: all three in-scope links are now operator-owned AS LINKS (fencing the target is not an excuse to skip the link)
+  PASS: symlink fence: every link is still a link pointing at its original target (the repair did not resolve or replace it)
+  PASS: symlink fence: exit 0 with a dangling symlink in scope (a broken link is not an unrepairable item)
+  PASS: symlink fence: the dangling link's absent target was not created by the run
+
+DECLARED GAPS — not covered by this unit suite, by measurement not by choice:
+  * CLOSED 2026-08-27 — a real host-UID mismatch IS now seeded here, via
+    `podman unshare chown`, so every case above runs against the
+    real defect and forces the repair's namespace fallback. The earlier
+    claim that this was impossible omitted that command; see THE FIXTURE
+    IDENTITY block at the top of this file.
+  * Foreign-owned DIRECTORIES are still not seeded: only files and
+    symlinks carry the foreign uid. Seeding the directories too would
+    leave the harness unable to create the symlinks Cases 8/9/18 add
+    after seeding. NOTE: the container-write suite covers the CREATION
+    side of that shape (a container writing a directory, FR-002) — NOT
+    the repair-side walk over a tree whose interior directories already
+    carry a foreign uid. Case 22's seed_wrong -D covers only a foreign
+    declared ROOT, and only on the failure path. Repair-side directory
+    coverage is tracked as an integration-layer item.
+  * FR-004d blocking-before-services and FR-004e real progress output are
+    integration-layer properties and are deliberately not asserted here.
+  * The preserve_mode:TRUE symlink path WAS broken and is now covered
+    by Case 9: a bare chmod follows a symlink on Linux (there is no -h),
+    and a symlink's find %m is 777, so the mode-restore step moved an
+    OUT-OF-SCOPE target from 600 to 777. Measured and fixed 2026-08-21.
+
+Case 9: preserve_mode TRUE must not chmod through a symlink (FR-005 + FR-015)
+  PASS: preserve_mode symlink fence: the in-scope tree WAS repaired in this run (9b is not green on a no-op)
+  PASS: preserve_mode symlink fence: out-of-scope target still mode 600 — chmod did not follow the link
+  PASS: preserve_mode symlink fence: out-of-scope content byte-identical
+  PASS: preserve_mode symlink fence: the link is still a link pointing at its original target
+
+Case 10: the SHIPPED scope declares every container-written (rw bind-mount) location
+  PASS: scope coverage: all 6 rw bind-mount source(s) in docker-compose.yml are declared (or covered by a declared ancestor)
+
+Case 11: a destroyed change record is reported, not silently replaced
+  PASS: record loss: the run REPORTS that the marker's named change record is gone (FR-004b trail loss is surfaced, not swallowed)
+
+Case 12: a superseded change record is preserved as a distinct artifact
+  PASS: record rotation: the first run's record survives the second run
+  PASS: record rotation: each run's record is its own artifact (run 1 and run 2 share no record file)
+
+Case 13: the state directory is overridable, default unchanged
+  PASS: state-dir override: the marker landed in OWNERSHIP_STATE_DIR
+  PASS: state-dir override: the DEFAULT state directory was not created when the override is set (an ad-hoc run does not touch the live trail)
+  PASS: state-dir default: unchanged — marker at logs/ownership/repair-marker.json (the live path the journal and docs already name)
+
+Case 14: a repo-relative declared path resolves against the project root, from any cwd
+  PASS: relative scope: a repo-relative entry was resolved against the project root and repaired from a foreign cwd
+
+Case 15: shipped .env entry shape — preserve_mode keeps a 600 credential file at 600
+  PASS: dotenv shape: credential file still mode 600 after the repair (never widened, FR-015)
+  PASS: dotenv shape: credential file ownership WAS repaired (preserve_mode guards bits, not ownership)
+
+Case 16: a scope that yields ZERO locations is 'could not run', not 'complete' (IMPORTANT-1)
+  PASS: empty scope [control needle]: a NON-empty scope in the same sandbox shape exits 0 and writes a marker — the assertions below are not vacuous
+  PASS: empty scope [paths: []]: exit 2 — the run reported 'could not run' rather than 'complete'
+  PASS: empty scope [paths: []]: no completion marker written — the next start still repairs
+  PASS: empty scope [paths: []]: the operator is told why this scope yields nothing
+  PASS: empty scope [top-level key mistyped 'path:']: exit 2 — the run reported 'could not run' rather than 'complete'
+  PASS: empty scope [top-level key mistyped 'path:']: no completion marker written — the next start still repairs
+  PASS: empty scope [top-level key mistyped 'path:']: the operator is told why this scope yields nothing
+  PASS: empty scope [every ${VAR} expands empty]: exit 2 — the run reported 'could not run' rather than 'complete'
+ownership: 1 declared entry in /tmp/.private/milosvasic/boba_ownership_repair.5wrItsTW/sb.eT4DSSzk/config/owned_paths.yaml resolved to no usable location:
+ownership:   entry 1 — path: '${BOBA_NO_SUCH_VARIABLE_QQQ}' — it expanded to an empty path: ${BOBA_NO_SUCH_VARIABLE_QQQ} is unset or empty and the entry supplies no ':-' default
+ownership: refusing the WHOLE scope, not only these entries: the completion
+ownership:   marker's fingerprint claims EVERY declared location, so a partial
+ownership:   walk that exited 0 would latch the miss on every later start.
+ownership: remedy: give the entry a default (${VAR:-/path}), set the variable,
+ownership:   or remove the entry. `optional: true` does not cover this — it
+ownership:   says the path may be ABSENT, not that the DECLARATION may be.
+  PASS: empty scope [every ${VAR} expands empty]: no completion marker written — the next start still repairs
+  PASS: empty scope [every ${VAR} expands empty]: the operator is told why this scope yields nothing
+
+Case 17: the DECLARED path is itself fenced — a scope may not name /, a system tree, or a .. escape (IMPORTANT-2)
+  PASS: fence [legitimate shapes]: an absolute out-of-project path AND a repo-relative path are both accepted and repaired (the fence is not a blanket refusal)
+  PASS: fence [shipped entry, env repointed to a bare top-level dir]: exit 2 — refused before anything was walked
+  PASS: fence [shipped entry, env repointed to a bare top-level dir]: no item was named for chown
+  PASS: fence [shipped entry, env repointed to a bare top-level dir]: the refusal names the offending entry (§11.4.201(5) resolved evidence)
+  PASS: fence [relative entry escaping the project root with ..]: exit 2 — refused before anything was walked
+  PASS: fence [relative entry escaping the project root with ..]: no item was named for chown
+  PASS: fence [relative entry escaping the project root with ..]: the refusal names the offending entry (§11.4.201(5) resolved evidence)
+  PASS: fence [absolute system tree (under /usr/lib)]: exit 2 — refused before anything was walked
+  PASS: fence [absolute system tree (under /usr/lib)]: no item was named for chown
+  PASS: fence [absolute system tree (under /usr/lib)]: the refusal names the offending entry (§11.4.201(5) resolved evidence)
+  PASS: fence predicate [the shipped default /mnt/DATA]: accept (expected accept)
+  PASS: fence predicate [this host real root /run/media/.../DL]: accept (expected accept)
+  PASS: fence predicate [filesystem root /]: refuse (expected refuse)
+  PASS: fence predicate [bare top-level /mnt]: refuse (expected refuse)
+  PASS: fence predicate [system tree /etc]: refuse (expected refuse)
+  PASS: fence predicate [under a system tree /var/lib/x/y]: refuse (expected refuse)
+  PASS: fence predicate [absolute .. escape /mnt/DATA/../..]: refuse (expected refuse)
+  PASS: fence predicate [relative staying inside the root]: accept (expected accept)
+  PASS: fence predicate [relative escaping the root]: refuse (expected refuse)
+
+Case 18: the hardlink escape is real, bounded, and the header says so (MINOR-1)
+    measured: the out-of-scope hardlink target went 100000:100000 -> 1000:1000 (the escape is REAL)
+  PASS: hardlink escape: the escape is real AND the artifact documents it — the header no longer overclaims (§11.4.6)
+  PASS: hardlink escape: the out-of-scope file's CONTENT is untouched (the escape is ownership-only, as documented)
+
+Case 19: a failed chown reports the reason it failed, not just that it failed (MINOR-2)
+  PASS: chown reason [control needle]: the injected chown failure really reached the artifact (exit 1, not 0)
+  PASS: chown reason: the FAILED report carries the reason chown gave ('Read-only file system')
+
+Case 20: a failed mode restore is reported and blocks the completion marker (MINOR-3, FR-015)
+  PASS: mode-restore failure: the run REPORTS that a mode could not be restored
+  PASS: mode-restore failure: did not exit 0 with FR-015 undelivered
+  PASS: mode-restore failure: no completion marker — the next run retries
+
+Case 21: the fingerprint comment matches what the fingerprint actually is (NIT-1)
+  PASS: fingerprint prose [measured]: one unchanged scope file yields two fingerprints under two environments — it is NOT the file's literal text
+  PASS: fingerprint prose [measured]: neither fingerprint equals sha256 of the file's literal bytes
+  PASS: fingerprint prose: the artifact no longer claims the fingerprint is the file's literal text
+  PASS: fingerprint prose: the corrected comment names the environment-expanded parse as the fingerprint's input
+
+Case 22: a chown failure on the DECLARED ROOT itself is named as such (NIT-2)
+  PASS: declared-root failure [control needle]: the injected root-only failure really reached the artifact (exit 1)
+  PASS: declared-root failure: the report identifies the failing item as the DECLARED ROOT, so the remediation is the mount and not the files
+
+Case 23: a declared entry that expands to NOTHING refuses the whole run (R2-M1)
+  PASS: vanished entry [control needle]: two literal entries report '(2 declared locations)', exit 0 and write a marker — the count is read from THIS sandbox's scope, and the assertions below are not vacuous
+  PASS: vanished entry [unset ${VAR}, no default]: exit 2 — 'could not run', not a completed repair
+  PASS: vanished entry [unset ${VAR}, no default]: the run never announced a shrunken location count — it refused before walking
+ownership: 1 declared entry in /tmp/.private/milosvasic/boba_ownership_repair.5wrItsTW/sb.2GGiBsNX/config/owned_paths.yaml resolved to no usable location:
+ownership:   entry 1 — path: '${BOBA_T028_UNSET_QQQ}' — it expanded to an empty path: ${BOBA_T028_UNSET_QQQ} is unset or empty and the entry supplies no ':-' default
+ownership: refusing the WHOLE scope, not only these entries: the completion
+ownership:   marker's fingerprint claims EVERY declared location, so a partial
+ownership:   walk that exited 0 would latch the miss on every later start.
+ownership: remedy: give the entry a default (${VAR:-/path}), set the variable,
+ownership:   or remove the entry. `optional: true` does not cover this — it
+ownership:   says the path may be ABSENT, not that the DECLARATION may be.
+  PASS: vanished entry [unset ${VAR}, no default]: no completion marker written — the next start still repairs
+  PASS: vanished entry [unset ${VAR}, no default]: the refusal names WHICH declared entry produced no path
+  PASS: vanished entry [unset ${VAR}, no default]: the surviving location was not touched — the refusal happened before any walk
+  PASS: vanished entry [set-but-EMPTY ${VAR}, no default]: exit 2 — 'could not run', not a completed repair
+  PASS: vanished entry [set-but-EMPTY ${VAR}, no default]: the run never announced a shrunken location count — it refused before walking
+ownership: 1 declared entry in /tmp/.private/milosvasic/boba_ownership_repair.5wrItsTW/sb.48apriSH/config/owned_paths.yaml resolved to no usable location:
+ownership:   entry 2 — path: '${BOBA_T028_EMPTY_QQQ}' — it expanded to an empty path: ${BOBA_T028_EMPTY_QQQ} is unset or empty and the entry supplies no ':-' default
+ownership: refusing the WHOLE scope, not only these entries: the completion
+ownership:   marker's fingerprint claims EVERY declared location, so a partial
+ownership:   walk that exited 0 would latch the miss on every later start.
+ownership: remedy: give the entry a default (${VAR:-/path}), set the variable,
+ownership:   or remove the entry. `optional: true` does not cover this — it
+ownership:   says the path may be ABSENT, not that the DECLARATION may be.
+  PASS: vanished entry [set-but-EMPTY ${VAR}, no default]: no completion marker written — the next start still repairs
+  PASS: vanished entry [set-but-EMPTY ${VAR}, no default]: the refusal names WHICH declared entry produced no path
+  PASS: vanished entry [set-but-EMPTY ${VAR}, no default]: the surviving location was not touched — the refusal happened before any walk
+  PASS: vanished entry [entry with no path: key at all]: exit 2 — 'could not run', not a completed repair
+  PASS: vanished entry [entry with no path: key at all]: the run never announced a shrunken location count — it refused before walking
+ownership: 1 declared entry in /tmp/.private/milosvasic/boba_ownership_repair.5wrItsTW/sb.cDd7q1Bn/config/owned_paths.yaml resolved to no usable location:
+ownership:   entry 1 — path: '' — the entry declares no usable `path:` key — it is missing, null, or an empty path
+ownership: refusing the WHOLE scope, not only these entries: the completion
+ownership:   marker's fingerprint claims EVERY declared location, so a partial
+ownership:   walk that exited 0 would latch the miss on every later start.
+ownership: remedy: give the entry a default (${VAR:-/path}), set the variable,
+ownership:   or remove the entry. `optional: true` does not cover this — it
+ownership:   says the path may be ABSENT, not that the DECLARATION may be.
+  PASS: vanished entry [entry with no path: key at all]: no completion marker written — the next start still repairs
+  PASS: vanished entry [entry with no path: key at all]: the refusal names WHICH declared entry produced no path
+  PASS: vanished entry [entry with no path: key at all]: the surviving location was not touched — the refusal happened before any walk
+  PASS: vanished entry [vanished entry marked optional: true]: exit 2 — 'could not run', not a completed repair
+  PASS: vanished entry [vanished entry marked optional: true]: the run never announced a shrunken location count — it refused before walking
+ownership: 1 declared entry in /tmp/.private/milosvasic/boba_ownership_repair.5wrItsTW/sb.vGyQC4pG/config/owned_paths.yaml resolved to no usable location:
+ownership:   entry 1 — path: '${BOBA_T028_UNSET_QQQ}' — it expanded to an empty path: ${BOBA_T028_UNSET_QQQ} is unset or empty and the entry supplies no ':-' default
+ownership: refusing the WHOLE scope, not only these entries: the completion
+ownership:   marker's fingerprint claims EVERY declared location, so a partial
+ownership:   walk that exited 0 would latch the miss on every later start.
+ownership: remedy: give the entry a default (${VAR:-/path}), set the variable,
+ownership:   or remove the entry. `optional: true` does not cover this — it
+ownership:   says the path may be ABSENT, not that the DECLARATION may be.
+  PASS: vanished entry [vanished entry marked optional: true]: no completion marker written — the next start still repairs
+  PASS: vanished entry [vanished entry marked optional: true]: the refusal names WHICH declared entry produced no path
+  PASS: vanished entry [vanished entry marked optional: true]: the surviving location was not touched — the refusal happened before any walk
+  PASS: vanished entry [unresolved ${VAR} mid-path]: exit 2 — a declaration that silently rewrote itself into a different path is refused
+  PASS: vanished entry [unresolved ${VAR} mid-path]: the substituted tree was not touched
+  PASS: vanished entry [golden-FALSE, interpolated ${VAR:-default}]: a mid-path default is NOT refused — it resolved and really repaired the tree
+  PASS: unresolved spelling [nested ${A:-${B}}, both unset]: exit 2 — a declaration the documented grammar cannot resolve is refused before any walk
+  PASS: unresolved spelling [nested ${A:-${B}}, both unset]: the refusal names WHICH entry and says the spelling was not fully resolved (§11.4.201(5))
+ownership: 1 declared entry in /tmp/.private/milosvasic/boba_ownership_repair.5wrItsTW/sb.UMtlBVqu/config/owned_paths.yaml resolved to no usable location:
+ownership:   entry 1 — path: '/tmp/boba-t028-nested/${BOBA_T028_UNSET_QQQ:-${BOBA_T028_UNSET_B}}/leaf' — the entry's spelling was not fully resolved: ${BOBA_T028_UNSET_QQQ:-${BOBA_T028_UNSET_B} nests one `${...}` inside another's default, which the documented `${VAR}` / `${VAR:-default}` grammar does not cover — the inner `}` closes the outer form and the remainder is left stranded, so the walked path would not be the declared one
+ownership: refusing the WHOLE scope, not only these entries: the completion
+ownership:   marker's fingerprint claims EVERY declared location, so a partial
+ownership:   walk that exited 0 would latch the miss on every later start.
+ownership: remedy: give the entry a default (${VAR:-/path}), set the variable,
+ownership:   or remove the entry. `optional: true` does not cover this — it
+ownership:   says the path may be ABSENT, not that the DECLARATION may be.
+  PASS: unresolved spelling [nested ${A:-${B}}, both unset]: no completion marker written — the next start still repairs
+  PASS: unresolved spelling [nested ${A:-${B}}, both unset]: the surviving location was not touched — the refusal happened before any walk
+  PASS: unresolved spelling [nested ${A:-${B}}, A set — the corrupted-path variant]: exit 2 — a declaration the documented grammar cannot resolve is refused before any walk
+  PASS: unresolved spelling [nested ${A:-${B}}, A set — the corrupted-path variant]: the refusal names WHICH entry and says the spelling was not fully resolved (§11.4.201(5))
+ownership: 1 declared entry in /tmp/.private/milosvasic/boba_ownership_repair.5wrItsTW/sb.xPawSacl/config/owned_paths.yaml resolved to no usable location:
+ownership:   entry 1 — path: '/tmp/boba-t028-nested/${BOBA_T028_SET_A:-${BOBA_T028_UNSET_B}}/leaf' — the entry's spelling was not fully resolved: ${BOBA_T028_SET_A:-${BOBA_T028_UNSET_B} nests one `${...}` inside another's default, which the documented `${VAR}` / `${VAR:-default}` grammar does not cover — the inner `}` closes the outer form and the remainder is left stranded, so the walked path would not be the declared one
+ownership: refusing the WHOLE scope, not only these entries: the completion
+ownership:   marker's fingerprint claims EVERY declared location, so a partial
+ownership:   walk that exited 0 would latch the miss on every later start.
+ownership: remedy: give the entry a default (${VAR:-/path}), set the variable,
+ownership:   or remove the entry. `optional: true` does not cover this — it
+ownership:   says the path may be ABSENT, not that the DECLARATION may be.
+  PASS: unresolved spelling [nested ${A:-${B}}, A set — the corrupted-path variant]: no completion marker written — the next start still repairs
+  PASS: unresolved spelling [nested ${A:-${B}}, A set — the corrupted-path variant]: the surviving location was not touched — the refusal happened before any walk
+  PASS: unresolved spelling [nested ${A:-${B}} marked optional: true]: exit 2 — a declaration the documented grammar cannot resolve is refused before any walk
+  PASS: unresolved spelling [nested ${A:-${B}} marked optional: true]: the refusal names WHICH entry and says the spelling was not fully resolved (§11.4.201(5))
+ownership: 1 declared entry in /tmp/.private/milosvasic/boba_ownership_repair.5wrItsTW/sb.Jd5UgJN7/config/owned_paths.yaml resolved to no usable location:
+ownership:   entry 1 — path: '/tmp/boba-t028-nested/${BOBA_T028_UNSET_QQQ:-${BOBA_T028_UNSET_B}}/leaf' — the entry's spelling was not fully resolved: ${BOBA_T028_UNSET_QQQ:-${BOBA_T028_UNSET_B} nests one `${...}` inside another's default, which the documented `${VAR}` / `${VAR:-default}` grammar does not cover — the inner `}` closes the outer form and the remainder is left stranded, so the walked path would not be the declared one
+ownership: refusing the WHOLE scope, not only these entries: the completion
+ownership:   marker's fingerprint claims EVERY declared location, so a partial
+ownership:   walk that exited 0 would latch the miss on every later start.
+ownership: remedy: give the entry a default (${VAR:-/path}), set the variable,
+ownership:   or remove the entry. `optional: true` does not cover this — it
+ownership:   says the path may be ABSENT, not that the DECLARATION may be.
+  PASS: unresolved spelling [nested ${A:-${B}} marked optional: true]: no completion marker written — the next start still repairs
+  PASS: unresolved spelling [nested ${A:-${B}} marked optional: true]: the surviving location was not touched — the refusal happened before any walk
+  PASS: unresolved spelling [out-of-grammar ${} opener]: exit 2 — a declaration the documented grammar cannot resolve is refused before any walk
+  PASS: unresolved spelling [out-of-grammar ${} opener]: the refusal names WHICH entry and says the spelling was not fully resolved (§11.4.201(5))
+ownership: 1 declared entry in /tmp/.private/milosvasic/boba_ownership_repair.5wrItsTW/sb.nf3eDPZS/config/owned_paths.yaml resolved to no usable location:
+ownership:   entry 1 — path: '/tmp/boba-t028-nested/${}/leaf' — the entry's spelling was not fully resolved: it contains a `${` the documented `${VAR}` / `${VAR:-default}` grammar cannot consume (an empty, non-identifier, or unterminated name), so the marker would survive into the walked path
+ownership: refusing the WHOLE scope, not only these entries: the completion
+ownership:   marker's fingerprint claims EVERY declared location, so a partial
+ownership:   walk that exited 0 would latch the miss on every later start.
+ownership: remedy: give the entry a default (${VAR:-/path}), set the variable,
+ownership:   or remove the entry. `optional: true` does not cover this — it
+ownership:   says the path may be ABSENT, not that the DECLARATION may be.
+  PASS: unresolved spelling [out-of-grammar ${} opener]: no completion marker written — the next start still repairs
+  PASS: unresolved spelling [out-of-grammar ${} opener]: the surviving location was not touched — the refusal happened before any walk
+  PASS: unresolved spelling [out-of-grammar ${1} positional]: exit 2 — a declaration the documented grammar cannot resolve is refused before any walk
+  PASS: unresolved spelling [out-of-grammar ${1} positional]: the refusal names WHICH entry and says the spelling was not fully resolved (§11.4.201(5))
+ownership: 1 declared entry in /tmp/.private/milosvasic/boba_ownership_repair.5wrItsTW/sb.LbOv15dX/config/owned_paths.yaml resolved to no usable location:
+ownership:   entry 1 — path: '/tmp/boba-t028-nested/${1}/leaf' — the entry's spelling was not fully resolved: it contains a `${` the documented `${VAR}` / `${VAR:-default}` grammar cannot consume (an empty, non-identifier, or unterminated name), so the marker would survive into the walked path
+ownership: refusing the WHOLE scope, not only these entries: the completion
+ownership:   marker's fingerprint claims EVERY declared location, so a partial
+ownership:   walk that exited 0 would latch the miss on every later start.
+ownership: remedy: give the entry a default (${VAR:-/path}), set the variable,
+ownership:   or remove the entry. `optional: true` does not cover this — it
+ownership:   says the path may be ABSENT, not that the DECLARATION may be.
+  PASS: unresolved spelling [out-of-grammar ${1} positional]: no completion marker written — the next start still repairs
+  PASS: unresolved spelling [out-of-grammar ${1} positional]: the surviving location was not touched — the refusal happened before any walk
+  PASS: unresolved spelling [golden-FALSE, literal } beside an interpolation]: NOT refused — it resolved and really repaired the tree
+  PASS: unresolved spelling [golden-FALSE, a VALUE containing ${]: NOT refused — the rule judges the declared spelling, never the variable's value
+  PASS: vanished entry [golden-FALSE, ${VAR:-default}]: the shipped entry shape is NOT refused — it resolved to its default and really repaired the tree
+  PASS: vanished entry [shared predicate]: ownership_scope_entries itself returns 2 — every consumer of the scope inherits the refusal, no second dialect (§11.4.251)
+  PASS: vanished entry [shared predicate]: the diagnosis names the unresolved variable, so the operator's remedy is reachable from the message
+  PASS: vanished entry [shared predicate]: no survivor rows were emitted alongside the refusal — a caller cannot accidentally consume a partial scope
+
+Case 24: the fence names its symlink limit and denies container storage without refusing $HOME (R2-N1, R2-N2)
+  PASS: fence boundary [R2-N1]: the fence's honest boundary states that it judges the SPELLING and that the kernel resolves intermediate components
+  PASS: fence boundary [R2-N1]: every citation the fence carries (BOB-201) EXISTS in the tracker and really records this reach — body carries both 'symlink' and 'intermediate' (§11.4.197/§11.4.214)
+  PASS: fence boundary [container storage root]: REFUSED — '/tmp/.private/milosvasic/boba_ownership_repair.5wrItsTW/fakehome/.local/share/containers' is inside the container-runtime storage tree /tmp/.private/milosvasic/boba_ownership_repair.5wrItsTW/fakehome/.local/share/containers; those files are owned by mapped subuids by design and a recursive ownership change there breaks the rootless runtime (§11.4.161)
+  PASS: fence boundary [inside container storage]: REFUSED — '/tmp/.private/milosvasic/boba_ownership_repair.5wrItsTW/fakehome/.local/share/containers/storage/overlay' is inside the container-runtime storage tree /tmp/.private/milosvasic/boba_ownership_repair.5wrItsTW/fakehome/.local/share/containers; those files are owned by mapped subuids by design and a recursive ownership change there breaks the rootless runtime (§11.4.161)
+  PASS: fence boundary [golden-FALSE $HOME/Downloads]: ACCEPTED — an ordinary $HOME-rooted location is not swallowed by the deny
+  PASS: fence boundary [golden-FALSE $HOME/.local/share]: ACCEPTED — an ordinary $HOME-rooted location is not swallowed by the deny
+  PASS: fence boundary [golden-FALSE sibling of storage]: ACCEPTED — an ordinary $HOME-rooted location is not swallowed by the deny
+  PASS: fence boundary [golden-FALSE the real library shape]: ACCEPTED — an ordinary $HOME-rooted location is not swallowed by the deny
+  PASS: fence boundary [degenerate HOME]: with HOME unset the computed deny still accepts an ordinary absolute root — it did not broaden
+  PASS: fence boundary [golden-FALSE end-to-end]: a $HOME-rooted download tree is walked and really repaired — the deny did not break the ordinary case
+RESULT: 146 passed, 0 failed, 0 skipped

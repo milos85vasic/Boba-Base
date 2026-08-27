@@ -16,43 +16,54 @@
 # in this harness. Once T019 lands, every case below must go GREEN unmodified.
 #
 # ============================================================================
-# THE FIXTURE CONSTRAINT, MEASURED — WHY THESE CASES USE A **gid** MISMATCH
+# THE FIXTURE IDENTITY, MEASURED — WHY THESE CASES USE A REAL FOREIGN **uid**
 # ============================================================================
 # The observed production defect is a **uid** mismatch: the download tree's new
 # files land at uid 100999 (the rootless-podman subuid mapping) while the
 # operator is uid 1000, so the operator cannot rename, move or delete their own
 # downloads and cannot read config/boba.db.
 #
-# A unit test runs UNPRIVILEGED and MUST NOT use sudo. Reproducing a foreign
-# **uid** on disk was probed three ways on this host (2026-08-21, §11.4.6 —
-# measured, not assumed):
+# THIS BLOCK PREVIOUSLY ASSERTED THAT SUCH A FIXTURE WAS IMPOSSIBLE HERE. It
+# claimed "a real host-uid mismatch is NOT constructible in an unprivileged
+# hermetic sandbox", citing three probes (2026-08-21): plain `chown` -> EPERM,
+# `unshare -Ur` + chown -> EINVAL, and `unshare --map-users` over the real
+# subuid range -> EPERM. Those three measurements were correct. The CONCLUSION
+# drawn from them was not, because the list omitted the one command that works
+# — and it is the very command `docs/guides/file-ownership.md` documents as the
+# manual repair for this defect:
 #
-#   1. plain `chown 1001 f`                       -> EPERM "Operation not permitted"
-#   2. `unshare -Ur` then `chown 1:1 f`           -> EINVAL "Invalid argument"
-#                                                    (only uid 0 is mapped)
-#   3. `unshare -U --map-users=100000,0,65536`
-#      (the real subuid range, /etc/subuid says
-#       milosvasic:100000:65536) then `chown`     -> EPERM; the file reads
-#                                                    65534:65534 inside the ns
-#                                                    and 1000:1000 on the host
+#   $ podman unshare chown 1:1 f     # then, read back from the host:
+#   $ stat -c '%u:%g' f
+#   100000:100000                     # measured 2026-08-27, unprivileged
 #
-# So a real host-uid mismatch is NOT constructible in an unprivileged hermetic
-# sandbox — and, symmetrically, an unprivileged process could not chown it BACK
-# either, so even a perfect implementation could not turn such a fixture green
-# here. That half of the defect belongs to the integration layer and is
-# DECLARED AS A GAP at the end of this file rather than faked (§11.4.6,
-# §11.4.115(G): a constructed precondition that does not trace to the real
-# defect mints at most defensive hardening, never a defect-closing test).
+# `podman|docker unshare` re-enters the rootless user namespace in which the
+# host operator IS uid 0. A `chown 1:1` performed there lands on the host as
+# the FIRST SUBORDINATE UID — a genuine not-operator-owned item, built with no
+# sudo, no loopback, no mount, on an ordinary filesystem. The symmetric claim
+# ("an unprivileged process could not repair such an item back either") was
+# false for the same reason: `unshare chown 0:0` restores it, which is exactly
+# what ownership_repair.sh's own fallback does.
 #
-# What IS honestly constructible, and IS the same defect class: a **gid**
-# mismatch. Measured on this host: `chgrp 10 f` succeeds (the operator is a
-# member of `wheel`), producing a real on-disk `1000:10` — an item that is NOT
-# operator-owned — and the repair can genuinely put it back to `1000:1000`
-# unprivileged. This is not a proxy for the defect: `scripts/lib/ownership.sh`
-# models the operator identity as uid AND gid (`ownership_operator_uid` /
-# `ownership_operator_gid`), and data-model E3 records `previous_gid`/`new_gid`
-# as first-class fields. A gid-wrong item is squarely inside the set the repair
-# must fix, and it exercises the full RED->GREEN mutation path end to end.
+# So these cases now seed the REAL defect rather than a stand-in for it. Under
+# §11.4.115(G) that is an upgrade from a CONSTRUCTED precondition to an
+# OBSERVED one: the earlier gid fixture was a proxy chosen because uid was
+# believed impossible, and a proxy mints at most defensive hardening.
+#
+# IT ALSO CLOSES A COVERAGE HOLE THE PROXY CONCEALED. A gid-only mismatch is
+# repairable by a PLAIN chown (the operator is a member of the group), so the
+# proxy exercised only `chown_paths()` and never reached
+# `unshare_chown_paths()` — the namespace fallback that is the ONLY code path
+# capable of repairing the production defect. A real foreign uid makes the
+# plain chown fail with EPERM (measured) and forces that fallback, so the
+# production repair path is now under test for the first time.
+#
+# HONEST NARROWING (§11.4.6). Only FILES and SYMLINKS are given the foreign
+# uid; the DIRECTORIES holding them stay operator-owned. In production the
+# directories are foreign-owned too, but seeding them that way would make the
+# fixture unbuildable by its own harness — Cases 8/9/18 create symlinks INSIDE
+# a seeded tree after seeding it, which an operator cannot do in a directory
+# they no longer have write access to. The foreign-owned-DIRECTORY half is
+# declared as a gap below rather than faked.
 #
 # ============================================================================
 # HOW THE MARKER AND CHANGE RECORD ARE LOCATED (they are deliberately
@@ -137,7 +148,16 @@ cleanup_all() {
     if [[ -n "${BG_PID}" ]] && [[ "${BG_PID}" =~ ^[0-9]+$ ]] && (( BG_PID > 1 )); then
         kill -KILL "${BG_PID}" 2>/dev/null || true
     fi
-    [[ -n "${RUN_ROOT:-}" && "${RUN_ROOT}" == *boba_ownership_repair.* ]] && rm -rf "${RUN_ROOT}"
+    if [[ -n "${RUN_ROOT:-}" && "${RUN_ROOT}" == *boba_ownership_repair.* ]]; then
+        rm -rf "${RUN_ROOT}" 2>/dev/null || true
+        # A deliberately foreign-owned DIRECTORY (seed_wrong -D) cannot be
+        # emptied by the operator, so a plain rm leaves it behind. Reap it with
+        # the same mechanism that created it, then re-try the plain rm.
+        if [[ -d "${RUN_ROOT}" && -n "${NS_RUNTIME:-}" ]]; then
+            timeout 120 "${NS_RUNTIME}" unshare rm -rf "${RUN_ROOT}" >/dev/null 2>&1 || true
+            rm -rf "${RUN_ROOT}" 2>/dev/null || true
+        fi
+    fi
     return 0
 }
 trap cleanup_all EXIT INT TERM
@@ -199,23 +219,26 @@ if ! python3 -c 'import yaml' >/dev/null 2>&1; then
     finish
 fi
 
-# A secondary group is what makes a real not-operator-owned fixture possible
-# unprivileged. PROBED, never assumed — membership in `id -G` does not by
-# itself prove chgrp will succeed on this filesystem.
-WRONG_GID=""
-_probe_dir="${RUN_ROOT}/gidprobe"; mkdir -p "${_probe_dir}"; : > "${_probe_dir}/f"
-for _g in $(id -G); do
-    [[ "${_g}" == "${OP_GID}" ]] && continue
-    if chgrp "${_g}" "${_probe_dir}/f" 2>/dev/null; then
-        if [[ "$(stat -c '%g' "${_probe_dir}/f")" == "${_g}" ]]; then WRONG_GID="${_g}"; break; fi
+# A user namespace is what makes a REAL not-operator-owned fixture possible
+# unprivileged (see THE FIXTURE IDENTITY above). PROBED, never assumed — the
+# presence of a runtime binary does not prove its `unshare` can seed here.
+NS_RUNTIME=""
+WRONG_UID=""
+_probe_dir="${RUN_ROOT}/uidprobe"; mkdir -p "${_probe_dir}"; : > "${_probe_dir}/f"
+for _rt in podman docker; do
+    command -v "${_rt}" >/dev/null 2>&1 || continue
+    timeout 60 "${_rt}" unshare chown 1:1 "${_probe_dir}/f" >/dev/null 2>&1 || continue
+    _got="$(stat -c '%u' "${_probe_dir}/f" 2>/dev/null || true)"
+    if [[ -n "${_got}" && "${_got}" != "${OP_UID}" ]]; then
+        NS_RUNTIME="${_rt}"; WRONG_UID="${_got}"; break
     fi
 done
-rm -rf "${_probe_dir}"
-if [[ -z "${WRONG_GID}" ]]; then
-    skip "no secondary group this account can chgrp to — a real not-operator-owned fixture cannot be built unprivileged (hardware_not_present-class topology gap; see the DECLARED GAPS note at the end of this file)"
+rm -rf "${_probe_dir}" 2>/dev/null || true
+if [[ -z "${NS_RUNTIME}" ]]; then
+    skip "no container runtime whose \`unshare\` can seed a foreign uid — a REAL not-operator-owned fixture cannot be built here (topology_unsupported; see the DECLARED GAPS note)"
     finish
 fi
-echo "  fixture identity: operator ${OP_UID}:${OP_GID}; wrong-owner fixtures seeded as ${OP_UID}:${WRONG_GID}"
+echo "  fixture identity: operator ${OP_UID}:${OP_GID}; wrong-owner fixtures seeded as uid ${WRONG_UID} via ${NS_RUNTIME} unshare"
 echo
 
 # ---------------------------------------------------------------------------
@@ -260,17 +283,52 @@ sb_scope() {
     done
 }
 
-# seed_tree <dir> <count> <gid> — a real tree of real files at a real gid.
+# seed_wrong [-h|-R] <path…> — give paths a REAL foreign uid, via the same user
+# namespace the production defect and ownership_repair.sh's own fallback use.
+#
+#   (default)  the named paths themselves; -h is implied so a symlink is
+#              re-owned rather than its target
+#   -D         the named DIRECTORY itself. Used only where a foreign-owned
+#              directory is the subject under test (Case 22's declared root,
+#              which stands in for an unowned mount point). Such a directory
+#              cannot be emptied by the operator, so cleanup_all reaps it
+#              through the namespace.
+#   -R         every FILE and SYMLINK under the named directory. The
+#              DIRECTORIES stay operator-owned — see the HONEST NARROWING note
+#              in the header block for why, and the DECLARED GAPS note for the
+#              half that therefore stays uncovered.
+#
+# One namespace entry per call (never one per file): `find … -exec chown -h {} +`
+# runs INSIDE the namespace, so seeding a 3000-item tree costs one spawn.
+seed_wrong() {
+    local mode="paths"
+    case "${1:-}" in
+        -h) shift ;;
+        -R) mode="recursive"; shift ;;
+        -D) mode="dir"; shift ;;
+    esac
+    if [[ "${mode}" == "dir" ]]; then
+        timeout 300 "${NS_RUNTIME}" unshare chown 1:1 -- "$@" >/dev/null 2>&1
+    elif [[ "${mode}" == "recursive" ]]; then
+        timeout 300 "${NS_RUNTIME}" unshare sh -c \
+            'find "$1" \( -type f -o -type l \) -exec chown -h 1:1 {} +' _ "$1" >/dev/null 2>&1
+    else
+        timeout 300 "${NS_RUNTIME}" unshare chown -h 1:1 -- "$@" >/dev/null 2>&1
+    fi
+}
+
+# seed_tree <dir> <count> <wrong|correct> — a real tree of real files, either
+# left operator-owned or given a REAL foreign uid.
 seed_tree() {
-    local dir="$1" count="$2" gid="$3" i
+    local dir="$1" count="$2" want="$3" i
     mkdir -p "${dir}/sub/deeper"
     for (( i = 0; i < count; i++ )); do
         printf 'item %d\n' "${i}" > "${dir}/item_$(printf '%05d' "${i}").bin"
     done
     printf 'nested\n' > "${dir}/sub/nested.bin"
     printf 'deep\n'   > "${dir}/sub/deeper/deep.bin"
-    if [[ "${gid}" != "${OP_GID}" ]]; then
-        chgrp -R "${gid}" "${dir}"
+    if [[ "${want}" == "wrong" ]]; then
+        seed_wrong -R "${dir}"
     fi
 }
 
@@ -291,9 +349,15 @@ content_digest() {
     done < <(find "${root}" -type f -printf '%P\n' 2>/dev/null | LC_ALL=C sort)
 }
 
-# wrong_owned_count <dir> — items NOT owned by the operator (uid AND gid).
+# wrong_owned_count <dir> — items NOT owned by the operator.
+#
+# uid ALONE, matching the feature's single definition of the property
+# (data-model E4 models `probe_uid`/`expected_uid` with no gid field; see the
+# BOB-207 note in scripts/ownership_repair.sh). This predicate is deliberately
+# the SAME one the repair's walk uses: if the two drift apart again, the suite
+# stops measuring what the tool does.
 wrong_owned_count() {
-    find "$1" \( ! -uid "${OP_UID}" -o ! -gid "${OP_GID}" \) -printf '.' 2>/dev/null | wc -c
+    find "$1" ! -uid "${OP_UID}" -printf '.' 2>/dev/null | wc -c
 }
 
 # artifact_files <sb> — every file the run could have written, EXCLUDING the
@@ -383,12 +447,12 @@ IN1="${SB1}/fixture/in_scope"
 OUT1="${SB1}/fixture/out_of_scope"
 CRED1="${IN1}/creds/boba.db"
 
-seed_tree "${IN1}" 12 "${WRONG_GID}"
-seed_tree "${OUT1}" 6 "${WRONG_GID}"
+seed_tree "${IN1}" 12 wrong
+seed_tree "${OUT1}" 6 wrong
 mkdir -p "${IN1}/creds"
 printf 'pretend-encrypted-credential-store\n' > "${CRED1}"
-chgrp "${WRONG_GID}" "${CRED1}"
 chmod 600 "${CRED1}"
+seed_wrong "${CRED1}"   # AFTER chmod: a foreign-owned file cannot be chmod'd
 
 printf '%s\tdownloads\tfalse\tfalse\ttrue\n%s\tcredential-store\ttrue\ttrue\tfalse\n' \
     "${IN1}" "${CRED1}" | sb_scope "${SB1}"
@@ -407,7 +471,10 @@ fi
 # -- 1b: the tree is ACTUALLY operator-owned now (user-observable outcome) ---
 IN1_WRONG_AFTER="$(wrong_owned_count "${IN1}")"
 if [[ "${IN1_WRONG_BEFORE}" -gt 0 && "${IN1_WRONG_AFTER}" -eq 0 ]]; then
-    pass "golden-bad: all ${IN1_WRONG_BEFORE} not-operator-owned items are now ${OP_UID}:${OP_GID}"
+    # Says uid, because that is what wrong_owned_count measures. The gid the
+    # chown also writes is asserted separately (the %u:%g pair checks in the
+    # symlink-fence cases), so this is a wording bound, not a coverage gap.
+    pass "golden-bad: all ${IN1_WRONG_BEFORE} not-operator-owned items are now uid ${OP_UID}"
 elif [[ "${IN1_WRONG_BEFORE}" -eq 0 ]]; then
     fail "golden-bad: fixture seeded 0 wrongly-owned items — the fixture is blind, not the script"
 else
@@ -436,16 +503,16 @@ fi
 # -- 2: preserve_mode keeps EXACT bits (FR-015) -----------------------------
 if [[ -f "${CRED1}" ]]; then
     _cred_mode="$(stat -c '%a' "${CRED1}")"
-    _cred_gid="$(stat -c '%g' "${CRED1}")"
+    _cred_uid="$(stat -c '%u' "${CRED1}")"
     if [[ "${_cred_mode}" == "600" ]]; then
         pass "preserve_mode: credential store kept mode 600 exactly"
     else
         fail "preserve_mode: credential store mode is ${_cred_mode}, was 600 — FR-015 forbids relaxing access while changing ownership"
     fi
-    if [[ "${_cred_gid}" == "${OP_GID}" ]]; then
+    if [[ "${_cred_uid}" == "${OP_UID}" ]]; then
         pass "preserve_mode: credential store ownership WAS repaired (preserve_mode guards bits, not ownership)"
     else
-        fail "preserve_mode: credential store still gid ${_cred_gid} — preserve_mode must not stop the ownership repair itself"
+        fail "preserve_mode: credential store still uid ${_cred_uid} — preserve_mode must not stop the ownership repair itself"
     fi
 else
     fail "preserve_mode: fixture credential store vanished during the run"
@@ -472,7 +539,7 @@ echo
 echo "Case 4: golden-good — already-correct tree"
 SB2="$(sb_new)" || { fail "could not build sandbox"; finish; }
 IN2="${SB2}/fixture/in_scope"
-seed_tree "${IN2}" 10 "${OP_GID}"
+seed_tree "${IN2}" 10 correct
 printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN2}" | sb_scope "${SB2}"
 
 IN2_BEFORE="$(manifest "${IN2}")"
@@ -533,7 +600,7 @@ for _c5_size in 800 3000; do
     [[ "${_c5_done}" -eq 1 ]] && break
     SB3="$(sb_new)" || { fail "could not build sandbox"; break; }
     IN3="${SB3}/fixture/in_scope"
-    seed_tree "${IN3}" "${_c5_size}" "${WRONG_GID}"
+    seed_tree "${IN3}" "${_c5_size}" wrong
     printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN3}" | sb_scope "${SB3}"
     _c5_total="$(wrong_owned_count "${IN3}")"
 
@@ -642,7 +709,7 @@ if [[ "${MARKER_DETECTOR_PROVEN}" -ne 1 ]]; then
     fail "scope re-arm: case 1 never established a valid marker, so this case has no precondition to invalidate"
 else
     NEW1="${SB1}/fixture/newly_declared"
-    seed_tree "${NEW1}" 8 "${WRONG_GID}"
+    seed_tree "${NEW1}" 8 wrong
     FP_BEFORE="$(sb_fingerprint "${SB1}")"
 
     printf '%s\tdownloads\tfalse\tfalse\ttrue\n%s\tcredential-store\ttrue\ttrue\tfalse\n%s\tdownloads\tfalse\tfalse\ttrue\n' \
@@ -683,7 +750,7 @@ echo "Case 7: honest failure — an item that cannot be repaired"
 SB4="$(sb_new)" || { fail "could not build sandbox"; finish; }
 IN4="${SB4}/fixture/in_scope"
 MISSING4="${SB4}/fixture/declared_but_absent"
-seed_tree "${IN4}" 6 "${WRONG_GID}"
+seed_tree "${IN4}" 6 wrong
 printf '%s\tdownloads\tfalse\tfalse\ttrue\n%s\tdownloads\tfalse\tfalse\ttrue\n' \
     "${IN4}" "${MISSING4}" | sb_scope "${SB4}"
 
@@ -762,21 +829,21 @@ LNK_DIR="${IN5}/link_to_outside_dir"
 LNK_DANGLE="${IN5}/dangling_link"
 DANGLE_TARGET="${SB5}/fixture/target_that_never_exists"
 
-seed_tree "${IN5}" 6 "${WRONG_GID}"
-seed_tree "${OUT5}" 4 "${WRONG_GID}"
+seed_tree "${IN5}" 6 wrong
+seed_tree "${OUT5}" 4 wrong
 # A second observable dimension: mode. Seeded at 600 so a mode-following
 # restore step would show up in the manifest exactly as an ownership reach does.
 printf 'out-of-scope-secret\n' > "${OUT5}/secret.bin"
-chgrp "${WRONG_GID}" "${OUT5}/secret.bin"
 chmod 600 "${OUT5}/secret.bin"
+seed_wrong "${OUT5}/secret.bin"   # AFTER chmod, same reason
 
-# Links are created AFTER seed_tree so its `chgrp -R` cannot touch them, and
-# are given the wrong gid with `chgrp -h` so the LINK — never its target — is
+# Links are created AFTER seed_tree so its recursive seeding cannot touch them,
+# and are re-owned with `seed_wrong -h` so the LINK — never its target — is
 # what the walk will find not-operator-owned.
 ln -s "${OUT5}/secret.bin"    "${LNK_FILE}"
 ln -s "${OUT5}/sub"           "${LNK_DIR}"
 ln -s "${DANGLE_TARGET}"      "${LNK_DANGLE}"
-chgrp -h "${WRONG_GID}" "${LNK_FILE}" "${LNK_DIR}" "${LNK_DANGLE}"
+seed_wrong -h "${LNK_FILE}" "${LNK_DIR}" "${LNK_DANGLE}"
 
 # Only the in-scope tree is declared. preserve_mode is false — the same shape
 # the real download tree and config tree use.
@@ -899,16 +966,20 @@ echo
 # DECLARED GAPS (§11.4.6 — stated, never silently implied covered)
 # ===========================================================================
 echo "DECLARED GAPS — not covered by this unit suite, by measurement not by choice:"
-echo "  * A real host-UID mismatch (the observed uid-100999 defect) cannot be"
-echo "    seeded unprivileged: chown -> EPERM, unshare -Ur chown -> EINVAL, and"
-echo "    unshare --map-users over the real subuid range -> EPERM (all measured"
-echo "    2026-08-21). An unprivileged process also could not repair such an item"
-echo "    back, so no implementation could turn that fixture green here. Covered"
-echo "    by tests/ownership/test_container_writes_owned_files.py instead."
-echo "  * A genuine chown/chgrp EPERM on an EXISTING item (the real-world failure"
-echo "    mode behind FR-006) needs a foreign-owned file, which is the same"
-echo "    privilege gap. Case 7 uses the absent-non-optional-path route, which is"
-echo "    real and deterministic but exercises a different code path than EPERM."
+echo "  * CLOSED 2026-08-27 — a real host-UID mismatch IS now seeded here, via"
+echo "    \`${NS_RUNTIME} unshare chown\`, so every case above runs against the"
+echo "    real defect and forces the repair's namespace fallback. The earlier"
+echo "    claim that this was impossible omitted that command; see THE FIXTURE"
+echo "    IDENTITY block at the top of this file."
+echo "  * Foreign-owned DIRECTORIES are still not seeded: only files and"
+echo "    symlinks carry the foreign uid. Seeding the directories too would"
+echo "    leave the harness unable to create the symlinks Cases 8/9/18 add"
+echo "    after seeding. NOTE: the container-write suite covers the CREATION"
+echo "    side of that shape (a container writing a directory, FR-002) — NOT"
+echo "    the repair-side walk over a tree whose interior directories already"
+echo "    carry a foreign uid. Case 22's seed_wrong -D covers only a foreign"
+echo "    declared ROOT, and only on the failure path. Repair-side directory"
+echo "    coverage is tracked as an integration-layer item."
 echo "  * FR-004d blocking-before-services and FR-004e real progress output are"
 echo "    integration-layer properties and are deliberately not asserted here."
 echo "  * The preserve_mode:TRUE symlink path WAS broken and is now covered"
@@ -944,7 +1015,7 @@ IN6="${SB6}/fixture/in_scope_pm"
 OUT6="${SB6}/fixture/out_of_scope_pm"
 LNK6="${IN6}/relocated_store.db"
 
-seed_tree "${IN6}" 3 "${WRONG_GID}"
+seed_tree "${IN6}" 3 wrong
 mkdir -p "${OUT6}"
 printf 'encrypted-credential-bytes\n' > "${OUT6}/credstore.bin"
 chmod 600 "${OUT6}/credstore.bin"
@@ -953,7 +1024,7 @@ chmod 600 "${OUT6}/credstore.bin"
 # and mode 600, so any change to the target is unambiguously a reach rather than
 # a repair the tool was asked to perform.
 ln -s "${OUT6}/credstore.bin" "${LNK6}"
-chgrp -h "${WRONG_GID}" "${LNK6}"
+seed_wrong -h "${LNK6}"
 
 printf '%s\tproject-config\tfalse\ttrue\ttrue\n' "${IN6}" | sb_scope "${SB6}"
 
@@ -963,7 +1034,7 @@ IN6_WRONG_BEFORE="$(wrong_owned_count "${IN6}")"
 
 if [[ ! -L "${LNK6}" ]]; then
     fail "preserve_mode symlink fence: fixture link is not a symlink — nothing was tested"
-elif [[ "$(stat -c '%g' "${LNK6}")" == "${OP_GID}" ]]; then
+elif [[ "$(stat -c '%u' "${LNK6}")" == "${OP_UID}" ]]; then
     fail "preserve_mode symlink fence: fixture link already operator-owned — the walk would never reach it"
 elif [[ "${OUT6_MODE_BEFORE}" != "600" ]]; then
     fail "preserve_mode symlink fence: fixture target is mode ${OUT6_MODE_BEFORE}, expected 600 — a widening would be invisible"
@@ -1161,7 +1232,7 @@ echo
 echo "Case 11: a destroyed change record is reported, not silently replaced"
 SB7="$(sb_new)" || { fail "could not build sandbox"; finish; }
 IN7="${SB7}/fixture/t1"
-seed_tree "${IN7}" 3 "${WRONG_GID}"
+seed_tree "${IN7}" 3 wrong
 printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN7}" | sb_scope "${SB7}"
 
 run_repair "${SB7}"
@@ -1205,7 +1276,7 @@ echo "Case 12: a superseded change record is preserved as a distinct artifact"
 SB8="$(sb_new)" || { fail "could not build sandbox"; finish; }
 IN8A="${SB8}/fixture/first"
 IN8B="${SB8}/fixture/second"
-seed_tree "${IN8A}" 3 "${WRONG_GID}"
+seed_tree "${IN8A}" 3 wrong
 printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN8A}" | sb_scope "${SB8}"
 run_repair "${SB8}"
 _C12_A="${IN8A}/item_00000.bin"
@@ -1216,7 +1287,7 @@ elif [[ -z "$(artifact_mentions "${SB8}" "${_C12_A}")" ]]; then
     fail "record rotation: the first run wrote no record naming ${_C12_A} — nothing to supersede"
 else
     # Second run, armed by a genuine scope change (the realistic path).
-    seed_tree "${IN8B}" 3 "${WRONG_GID}"
+    seed_tree "${IN8B}" 3 wrong
     printf '%s\tdownloads\tfalse\tfalse\ttrue\n%s\tdownloads\tfalse\tfalse\ttrue\n' \
         "${IN8A}" "${IN8B}" | sb_scope "${SB8}"
     run_repair "${SB8}"
@@ -1264,7 +1335,7 @@ echo
 echo "Case 13: the state directory is overridable, default unchanged"
 SB9="$(sb_new)" || { fail "could not build sandbox"; finish; }
 IN9="${SB9}/fixture/statedir"
-seed_tree "${IN9}" 3 "${WRONG_GID}"
+seed_tree "${IN9}" 3 wrong
 printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN9}" | sb_scope "${SB9}"
 
 _C13_EXT="$(mktemp -d "${RUN_ROOT}/extstate.XXXXXXXX")"
@@ -1294,7 +1365,7 @@ fi
 # The default must remain byte-for-byte the documented live path.
 SB9B="$(sb_new)" || { fail "could not build sandbox"; finish; }
 IN9B="${SB9B}/fixture/defaultstate"
-seed_tree "${IN9B}" 3 "${WRONG_GID}"
+seed_tree "${IN9B}" 3 wrong
 printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN9B}" | sb_scope "${SB9B}"
 run_repair "${SB9B}"
 if [[ -f "${SB9B}/logs/ownership/repair-marker.json" ]]; then
@@ -1324,7 +1395,7 @@ echo
 echo "Case 14: a repo-relative declared path resolves against the project root, from any cwd"
 SB10="$(sb_new)" || { fail "could not build sandbox"; finish; }
 IN10="${SB10}/fixture/relscope"
-seed_tree "${IN10}" 3 "${WRONG_GID}"
+seed_tree "${IN10}" 3 wrong
 # The entry is deliberately RELATIVE — the shipped shape.
 printf 'fixture/relscope\tdownloads\tfalse\tfalse\ttrue\n' | sb_scope "${SB10}"
 _C14_WRONG_BEFORE="$(wrong_owned_count "${IN10}")"
@@ -1370,26 +1441,26 @@ SB11="$(sb_new)" || { fail "could not build sandbox"; finish; }
 _C15_ENV="${SB11}/dotenv_fixture"
 printf 'PLACEHOLDER_NAME_ONLY=not-a-credential\n' > "${_C15_ENV}"
 chmod 600 "${_C15_ENV}"
-chgrp "${WRONG_GID}" "${_C15_ENV}"
+seed_wrong "${_C15_ENV}"
 printf 'dotenv_fixture\tcredential-store\ttrue\ttrue\tfalse\n' | sb_scope "${SB11}"
 
 _C15_MODE_BEFORE="$(stat -c '%a' "${_C15_ENV}")"
-_C15_GID_BEFORE="$(stat -c '%g' "${_C15_ENV}")"
-if [[ "${_C15_MODE_BEFORE}" != "600" || "${_C15_GID_BEFORE}" == "${OP_GID}" ]]; then
-    fail "dotenv shape: fixture is mode ${_C15_MODE_BEFORE} gid ${_C15_GID_BEFORE} — a widening or a repair would be invisible"
+_C15_UID_BEFORE="$(stat -c '%u' "${_C15_ENV}")"
+if [[ "${_C15_MODE_BEFORE}" != "600" || "${_C15_UID_BEFORE}" == "${OP_UID}" ]]; then
+    fail "dotenv shape: fixture is mode ${_C15_MODE_BEFORE} uid ${_C15_UID_BEFORE} — a widening or a repair would be invisible"
 else
     run_repair "${SB11}"
     _C15_MODE_AFTER="$(stat -c '%a' "${_C15_ENV}" 2>/dev/null)"
-    _C15_GID_AFTER="$(stat -c '%g' "${_C15_ENV}" 2>/dev/null)"
+    _C15_UID_AFTER="$(stat -c '%u' "${_C15_ENV}" 2>/dev/null)"
     if [[ "${_C15_MODE_AFTER}" == "600" ]]; then
         pass "dotenv shape: credential file still mode 600 after the repair (never widened, FR-015)"
     else
         fail "dotenv shape: credential file went 600 -> ${_C15_MODE_AFTER} — the repair WIDENED the file that holds BOBA_MASTER_KEY"
     fi
-    if [[ "${_C15_GID_AFTER}" == "${OP_GID}" ]]; then
+    if [[ "${_C15_UID_AFTER}" == "${OP_UID}" ]]; then
         pass "dotenv shape: credential file ownership WAS repaired (preserve_mode guards bits, not ownership)"
     else
-        fail "dotenv shape: credential file still gid ${_C15_GID_AFTER} — preserve_mode must not stop the ownership repair itself"
+        fail "dotenv shape: credential file still uid ${_C15_UID_AFTER} — preserve_mode must not stop the ownership repair itself"
     fi
 fi
 
@@ -1535,7 +1606,7 @@ echo "Case 16: a scope that yields ZERO locations is 'could not run', not 'compl
 # marker" below could be produced by a sandbox that never ran at all.
 SB16C="$(sb_new)" || { fail "could not build sandbox"; finish; }
 IN16C="${SB16C}/fixture/nonempty"
-seed_tree "${IN16C}" 3 "${WRONG_GID}"
+seed_tree "${IN16C}" 3 wrong
 printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN16C}" | sb_scope "${SB16C}"
 run_repair "${SB16C}"
 if [[ "${RUN_RC}" -eq 0 ]] && marker_present "${SB16C}"; then
@@ -1546,8 +1617,17 @@ else
     fail "empty scope [control needle]: a non-empty scope gave rc=${RUN_RC} / marker=$(marker_present "${SB16C}" && echo present || echo absent) — the instrument is blind, so no 'refused' verdict below can be trusted"
 fi
 
+# RECONCILED 2026-08-26 (§11.4.120), NOT weakened. Shape (c) below — every
+# ${VAR} expanding empty — is now refused one layer EARLIER, by
+# ownership_scope_entries itself (R2-M1, Case 23), so it no longer reaches this
+# script's "contains no locations" branch and no longer prints that phrase.
+# Shapes (a) and (b) still do. Collapsing all three onto one generic regex
+# would have been the tautology §11.4.120 forbids, so each shape now asserts
+# the evidence ITS OWN cause produces: strictly more specific than before, and
+# a shape that started printing another shape's message would now FAIL.
+# The exit-2 and no-marker assertions are unchanged for all three.
 _c16_probe() {
-    local label="$1" yaml="$2" sb
+    local label="$1" yaml="$2" evidence="$3" sb
     sb="$(sb_new)" || { fail "empty scope [${label}]: could not build sandbox"; return 0; }
     mkdir -p "${sb}/fixture/present"
     : > "${sb}/fixture/present/f.bin"
@@ -1570,15 +1650,16 @@ _c16_probe() {
         pass "empty scope [${label}]: no completion marker written — the next start still repairs"
     fi
 
-    if printf '%s' "${RUN_OUT}" | grep -qiE 'no locations|zero locations'; then
-        pass "empty scope [${label}]: the operator is told the scope declares no locations"
+    if printf '%s' "${RUN_OUT}" | grep -qiE "${evidence}"; then
+        pass "empty scope [${label}]: the operator is told why this scope yields nothing"
     else
-        fail "empty scope [${label}]: output never says the scope is empty — the refusal must print its resolved evidence (§11.4.201(5))"
+        fail "empty scope [${label}]: output never matched /${evidence}/ — the refusal must print its resolved evidence (§11.4.201(5))"
+        printf '%s\n' "${RUN_OUT}" | grep -iE 'scope|entry|location' | head -4 | sed 's/^/        /'
     fi
 }
 
 _c16_probe "paths: []" 'schema_version: 1
-paths: []'
+paths: []' 'no locations|zero locations'
 
 _c16_probe "top-level key mistyped 'path:'" 'schema_version: 1
 path:
@@ -1586,7 +1667,7 @@ path:
     kind: downloads
     optional: false
     preserve_mode: false
-    recursive: true'
+    recursive: true' 'no locations|zero locations'
 
 _c16_probe 'every ${VAR} expands empty' 'schema_version: 1
 paths:
@@ -1594,7 +1675,7 @@ paths:
     kind: downloads
     optional: false
     preserve_mode: false
-    recursive: true'
+    recursive: true' 'resolved to no usable location|empty path'
 
 # ===========================================================================
 # CASE 17 — THE DECLARED PATH ITSELF IS FENCED (IMPORTANT-2, the dangerous one).
@@ -1662,8 +1743,8 @@ echo "Case 17: the DECLARED path is itself fenced — a scope may not name /, a 
 SB17OK="$(sb_new)" || { fail "could not build sandbox"; finish; }
 IN17ABS="${SB17OK}/fixture/legit_abs"      # absolute, outside no-one's project
 IN17REL="rel_legit"                         # repo-relative, inside PROJECT_ROOT
-seed_tree "${IN17ABS}" 3 "${WRONG_GID}"
-seed_tree "${SB17OK}/${IN17REL}" 3 "${WRONG_GID}"
+seed_tree "${IN17ABS}" 3 wrong
+seed_tree "${SB17OK}/${IN17REL}" 3 wrong
 printf '%s\tdownloads\tfalse\tfalse\ttrue\n%s\tdownloads\tfalse\tfalse\ttrue\n' \
     "${IN17ABS}" "${IN17REL}" | sb_scope "${SB17OK}"
 _C17_WRONG_BEFORE=$(( $(wrong_owned_count "${IN17ABS}") + $(wrong_owned_count "${SB17OK}/${IN17REL}") ))
@@ -1834,7 +1915,7 @@ printf 'payload\n' > "${OUT18}/outside_file.bin"
 if ! ln "${OUT18}/outside_file.bin" "${IN18}/inside_link.bin" 2>/dev/null; then
     skip "hardlink escape: this filesystem refuses hardlinks — the behaviour cannot be measured here (topology_unsupported)"
 else
-    chgrp "${WRONG_GID}" "${OUT18}/outside_file.bin"
+    seed_wrong "${OUT18}/outside_file.bin"
     _C18_BEFORE="$(stat -c '%u:%g' "${OUT18}/outside_file.bin")"
     _C18_LINKS="$(stat -c '%h' "${OUT18}/outside_file.bin")"
     printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN18}" | sb_scope "${SB18}"
@@ -1896,7 +1977,7 @@ echo
 echo "Case 19: a failed chown reports the reason it failed, not just that it failed (MINOR-2)"
 SB19="$(sb_new)" || { fail "could not build sandbox"; finish; }
 IN19="${SB19}/fixture/tree"
-seed_tree "${IN19}" 2 "${WRONG_GID}"
+seed_tree "${IN19}" 2 wrong
 printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN19}" | sb_scope "${SB19}"
 _C19_NEEDLE='Read-only file system'
 _C19_SHIM="$(shim_dir "${SB19}" chown \
@@ -1950,7 +2031,7 @@ IN20="${SB20}/fixture/preserved"
 mkdir -p "${IN20}"
 printf 'x\n' > "${IN20}/f.bin"
 chmod 640 "${IN20}/f.bin"
-chgrp -R "${WRONG_GID}" "${IN20}"
+seed_wrong -R "${IN20}"
 printf '%s\tcredential-store\tfalse\ttrue\ttrue\n' "${IN20}" | sb_scope "${SB20}"
 _C20_SHIM="$(shim_dir "${SB20}" chmod \
     '#!/bin/sh
@@ -2072,7 +2153,11 @@ echo
 echo "Case 22: a chown failure on the DECLARED ROOT itself is named as such (NIT-2)"
 SB22="$(sb_new)" || { fail "could not build sandbox"; finish; }
 IN22="${SB22}/fixture/mountpoint"
-seed_tree "${IN22}" 2 "${WRONG_GID}"
+seed_tree "${IN22}" 2 wrong
+# The declared ROOT itself carries the foreign uid — that IS the case's
+# subject (an unowned mount point), and a uid-owned root would never be
+# selected by the walk at all. Seeded LAST: nothing writes into it afterwards.
+seed_wrong -D "${IN22}"
 printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${IN22}" | sb_scope "${SB22}"
 # Fail ONLY on the declared root, exactly as an unowned mount point does; every
 # child still chowns normally, so the case distinguishes "the root failed" from
@@ -2087,7 +2172,7 @@ for a in "$@"; do
 done
 exec /usr/bin/chown "$@"')"
 RUN_OUT="$(
-    cd "${SB22}" && PATH="${_C22_SHIM}:${PATH}" CONTAINER_RUNTIME="" \
+    cd "${SB22}" && PATH="${_C22_SHIM}:${PATH}" CONTAINER_RUNTIME="${NS_RUNTIME}" \
         OWNED_PATHS_FILE="${SB22}/config/owned_paths.yaml" \
         bash "${SB22}/scripts/ownership_repair.sh" \
             --scope "${SB22}/config/owned_paths.yaml" 2>&1
@@ -2104,6 +2189,699 @@ else
         fail "declared-root failure: the failing declared root is reported exactly like an ordinary in-scope file — the operator cannot tell a root-owned mount point from a bad file, and the consequence is a full re-walk of the library on every start"
         printf '%s\n' "${RUN_OUT}" | grep -i 'FAILED' | head -3 | sed 's/^/        /'
     fi
+fi
+
+# ===========================================================================
+# CASE 23 — A DECLARED ENTRY THAT EXPANDS TO NOTHING REFUSES THE WHOLE RUN
+#           (R2-M1 — the PARTIAL half of the empty-scope family).
+#
+# Case 16 pinned the TOTAL-empty scope (exit 2, no marker). Its PARTIAL sibling
+# was uncovered and, MEASURED 2026-08-26 against the pre-fix artifact:
+#
+#     a 2-entry scope whose first entry is `${UNSET_VAR}` (no `:-` default)
+#     reported "(1 declared locations)", walked only the survivor, exited 0,
+#     and WROTE A COMPLETION MARKER.
+#
+# One DECLARED location silently vanished. `ownership_scope_entries`
+# (scripts/lib/ownership.sh) dropped it with a bare `continue`, so no consumer
+# — not this repair, not scripts/ownership_precondition.sh, not the pre-build
+# gate — could tell a 2-entry scope with a hole from an honest 1-entry scope.
+# That is the same §11.4.201(6) false-null the IMPORTANT-1 remediation names:
+# a blind read and a clean tree return the same quiet number.
+#
+# WHY THE WHOLE RUN AND NOT JUST THE ENTRY (the decision this case pins):
+#   The completion marker carries a fingerprint over the PARSED entries and
+#   start.sh reads it as "already repaired", so a partial walk that exits 0
+#   does not merely miss a location once — it LATCHES the miss for every
+#   subsequent start. scripts/ownership_repair.sh:485-489 already recorded the
+#   identical decision for the fence ("ONE BAD ENTRY REFUSES THE WHOLE RUN …
+#   Refusing per-entry and proceeding with the rest would silently repair a
+#   partial scope while writing a marker that claims the whole one"), and two
+#   different answers to one question inside one file is the second dialect
+#   §11.4.251 forbids.
+#
+# WHY THIS LIVES IN THE PARSER AND NOT IN THIS CONSUMER:
+#   The parser is the only layer that still holds the raw spelling and the
+#   variable name; every layer above it has already lost the information
+#   (§11.4.241 — enforce at the strongest rung that can see the invariant).
+#   Putting it there also gives all three consumers one predicate rather than
+#   three crosschecks that could disagree about expansion semantics.
+#
+# THE GOLDEN-FALSE HALF IS LOAD-BEARING (§11.4.201(1)): the shipped scope's
+# FIRST entry is `${QBITTORRENT_DATA_DIR:-/mnt/DATA}`. A refusal that also
+# refused the `:-default` shape would refuse the live product configuration —
+# a false-positive refusal, forbidden exactly as firmly as a false pass.
+# ===========================================================================
+echo
+echo "Case 23: a declared entry that expands to NOTHING refuses the whole run (R2-M1)"
+
+# --- control needle FIRST (§11.4.201(7)(b)) --------------------------------
+# Two LITERAL entries in the same sandbox shape must report TWO declared
+# locations, exit 0 and write a marker. Without this, every "exit 2 / no
+# marker" verdict below could be produced by a sandbox that never ran, and a
+# "(1 declared locations)" assertion could be read off the wrong scope file —
+# both instrument failures this task has already produced once.
+SB23C="$(sb_new)" || { fail "could not build sandbox"; finish; }
+mkdir -p "${SB23C}/fixture/a23" "${SB23C}/fixture/b23"
+seed_tree "${SB23C}/fixture/a23" 2 wrong
+seed_tree "${SB23C}/fixture/b23" 2 wrong
+{
+    printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${SB23C}/fixture/a23"
+    printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${SB23C}/fixture/b23"
+} | sb_scope "${SB23C}"
+run_repair "${SB23C}"
+_C23_NEEDLE=0
+if [[ "${RUN_RC}" -eq 0 ]] \
+   && printf '%s' "${RUN_OUT}" | grep -qF '(2 declared locations)' \
+   && marker_present "${SB23C}"; then
+    _C23_NEEDLE=1
+    pass "vanished entry [control needle]: two literal entries report '(2 declared locations)', exit 0 and write a marker — the count is read from THIS sandbox's scope, and the assertions below are not vacuous"
+else
+    fail "vanished entry [control needle]: two literal entries gave rc=${RUN_RC}, count line '$(printf '%s' "${RUN_OUT}" | grep -o '([0-9]* declared locations)' || echo NONE)' — the instrument is blind, so no verdict below can be trusted"
+fi
+
+# _c23_refuses <label> <yaml> [env-assignment…]
+# Asserts the four properties a vanished declaration must produce.
+_c23_refuses() {
+    local label="$1" yaml="$2"; shift 2
+    local sb
+    sb="$(sb_new)" || { fail "vanished entry [${label}]: could not build sandbox"; return 0; }
+    mkdir -p "${sb}/fixture/survivor"
+    seed_tree "${sb}/fixture/survivor" 2 wrong
+    # The survivor's absolute path is substituted into the fixture YAML so the
+    # scope really does declare a walkable location alongside the broken one.
+    sb_raw_scope "${sb}" "${yaml//@SURVIVOR@/${sb}/fixture/survivor}"
+    local before after
+    before="$(manifest "${sb}/fixture/survivor")"
+    RUN_OUT="$(
+        cd "${sb}" && env "$@" OWNED_PATHS_FILE="${sb}/config/owned_paths.yaml" \
+            bash "${sb}/scripts/ownership_repair.sh" \
+                --scope "${sb}/config/owned_paths.yaml" 2>&1
+    )"
+    RUN_RC=$?
+    after="$(manifest "${sb}/fixture/survivor")"
+
+    if [[ "${RUN_RC}" -eq 2 ]]; then
+        pass "vanished entry [${label}]: exit 2 — 'could not run', not a completed repair"
+    elif [[ "${RUN_RC}" -eq 0 ]]; then
+        fail "vanished entry [${label}]: exit 0 — a DECLARED location vanished and the run reported SUCCESS (§11.4.201(6) false-null; the marker latches the miss on every subsequent start)"
+    else
+        fail "vanished entry [${label}]: exit ${RUN_RC} — the contract reserves 2 for 'could not run'"
+    fi
+
+    if printf '%s' "${RUN_OUT}" | grep -qE '\([0-9]+ declared locations\)'; then
+        fail "vanished entry [${label}]: the run announced '$(printf '%s' "${RUN_OUT}" | grep -o '([0-9]* declared locations)')' and proceeded — a scope with a hole was reported as an honest scope of that size"
+    else
+        pass "vanished entry [${label}]: the run never announced a shrunken location count — it refused before walking"
+    fi
+
+    if [[ "${_C23_NEEDLE}" -ne 1 ]]; then
+        fail "vanished entry [${label}]: marker verdict WITHHELD — the control needle never fired (§11.4.201(7)(b))"
+    elif marker_present "${sb}"; then
+        fail "vanished entry [${label}]: a COMPLETION MARKER was written for a scope with a vanished declaration — start.sh will skip the repair from now on"
+    else
+        pass "vanished entry [${label}]: no completion marker written — the next start still repairs"
+    fi
+
+    # §11.4.201(5): the refusal must print its resolved evidence — WHICH entry
+    # and WHY, not merely that something was empty.
+    if printf '%s' "${RUN_OUT}" | grep -qiE 'entry [0-9]+' \
+       && printf '%s' "${RUN_OUT}" | grep -qiE 'empty path|expanded to nothing|no path'; then
+        pass "vanished entry [${label}]: the refusal names WHICH declared entry produced no path"
+    else
+        fail "vanished entry [${label}]: the refusal does not name the offending entry — the operator cannot act on it (§11.4.201(5))"
+        printf '%s\n' "${RUN_OUT}" | grep -iE 'scope|entry|empty' | head -4 | sed 's/^/        /'
+    fi
+
+    if [[ "${before}" == "${after}" ]]; then
+        pass "vanished entry [${label}]: the surviving location was not touched — the refusal happened before any walk"
+    else
+        fail "vanished entry [${label}]: the surviving location was MUTATED despite the refusal"
+    fi
+}
+
+_c23_refuses 'unset ${VAR}, no default' 'schema_version: 1
+paths:
+  - path: "${BOBA_T028_UNSET_QQQ}"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true
+  - path: "@SURVIVOR@"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true'
+
+_c23_refuses 'set-but-EMPTY ${VAR}, no default' 'schema_version: 1
+paths:
+  - path: "@SURVIVOR@"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true
+  - path: "${BOBA_T028_EMPTY_QQQ}"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true' BOBA_T028_EMPTY_QQQ=
+
+_c23_refuses 'entry with no path: key at all' 'schema_version: 1
+paths:
+  - kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true
+  - path: "@SURVIVOR@"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true'
+
+# An `optional: true` entry is NOT an escape hatch. `optional` declares that the
+# path may be ABSENT from the filesystem; it does not declare that the path may
+# be absent from the DECLARATION. The scope format already has a vocabulary for
+# "this location is not configured on this host" — `${VAR:-default}` — and the
+# remedy for a hole is to supply one or delete the entry.
+_c23_refuses 'vanished entry marked optional: true' 'schema_version: 1
+paths:
+  - path: "${BOBA_T028_UNSET_QQQ}"
+    kind: credential-store
+    optional: true
+    preserve_mode: true
+    recursive: false
+  - path: "@SURVIVOR@"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true'
+
+# --- ADJACENT CASE, found while fixing R2-M1 and closed with it (§11.4.238) --
+# A `${VAR}` with no default that resolves empty MID-PATH does not empty the
+# path — it SILENTLY REWRITES it. MEASURED 2026-08-26 against the pre-fix
+# artifact: `<sb>/fixture/decoy/${UNSET}/leaf` collapsed to
+# `<sb>/fixture/decoy/leaf`, the fence accepted it (absolute, deep enough), and
+# the repair walked and chowned a tree the scope never declared, exit 0.
+#
+# The depth floor catches the shapes that collapse to `/x` or `/`, but not one
+# that collapses to another well-formed deep path — so the fence is NOT a
+# backstop for this and the parser must refuse it. `${VAR:-default}` (and the
+# explicit `${VAR:-}`) are the operator SAYING what empty means, and are not
+# refused; the golden-FALSE below pins that.
+SB23M="$(sb_new)" || { fail "could not build sandbox"; finish; }
+mkdir -p "${SB23M}/fixture/decoy/leaf"
+seed_tree "${SB23M}/fixture/decoy/leaf" 2 wrong
+sb_raw_scope "${SB23M}" "schema_version: 1
+paths:
+  - path: \"${SB23M}/fixture/decoy/\${BOBA_T028_UNSET_QQQ}/leaf\"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true"
+_C23M_BEFORE="$(manifest "${SB23M}/fixture/decoy/leaf")"
+run_repair "${SB23M}"
+if [[ "${RUN_RC}" -eq 2 ]]; then
+    pass "vanished entry [unresolved \${VAR} mid-path]: exit 2 — a declaration that silently rewrote itself into a different path is refused"
+else
+    fail "vanished entry [unresolved \${VAR} mid-path]: exit ${RUN_RC} — an unset variable collapsed the declared path into a DIFFERENT well-formed path and the run proceeded (the depth floor cannot catch this shape)"
+fi
+if [[ "${_C23M_BEFORE}" == "$(manifest "${SB23M}/fixture/decoy/leaf")" ]]; then
+    pass "vanished entry [unresolved \${VAR} mid-path]: the substituted tree was not touched"
+else
+    fail "vanished entry [unresolved \${VAR} mid-path]: the repair CHOWNED a tree the scope never declared — the operator declared one path and a different one was rewritten"
+fi
+
+# golden-FALSE for the mid-path rule: an interpolated `:-default` must still run.
+SB23N="$(sb_new)" || { fail "could not build sandbox"; finish; }
+mkdir -p "${SB23N}/fixture/mid/real/leaf"
+seed_tree "${SB23N}/fixture/mid/real/leaf" 2 wrong
+sb_raw_scope "${SB23N}" "schema_version: 1
+paths:
+  - path: \"${SB23N}/fixture/mid/\${BOBA_T028_UNSET_QQQ:-real}/leaf\"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true"
+run_repair "${SB23N}"
+if [[ "${RUN_RC}" -eq 0 ]] && [[ "$(wrong_owned_count "${SB23N}/fixture/mid/real/leaf")" -eq 0 ]]; then
+    pass "vanished entry [golden-FALSE, interpolated \${VAR:-default}]: a mid-path default is NOT refused — it resolved and really repaired the tree"
+else
+    fail "vanished entry [golden-FALSE, interpolated \${VAR:-default}]: exit ${RUN_RC}, $(wrong_owned_count "${SB23N}/fixture/mid/real/leaf") item(s) still wrongly owned — the mid-path rule swallowed a legitimate default (§11.4.201(1))"
+fi
+
+# --- R3-N1: a spelling the documented grammar cannot resolve ---------------
+# The header documents exactly TWO forms: `${VAR}` and `${VAR:-default}`.
+# MEASURED 2026-08-26 against the round-3 artifact: a NESTED `${A:-${B}}`
+# satisfies neither and was NOT refused — the default group `[^}]*` stops at
+# the INNER `}`, so with both unset the row came out as the literal
+# `…/${BOBA_T028_UNSET_B}/leaf`, and with A set as the corrupted `…//tmp/x}/leaf`
+# (the outer `}` stranded). Neither is the path the operator declared.
+#
+# WHY THIS IS THE R2-M1 FAMILY AND NOT A CURIOSITY: a NON-optional entry then
+# fails honestly ("does not exist", exit 1), but an `optional: true` one logs
+# `absent, declared optional — skipped` and the run EXITS 0 and writes the
+# marker — a corrupted path that looks like a successful run while repairing
+# nothing. That is the same under-repair-while-reporting-success shape R2-M1
+# closed for the whole-path case, still open for this one.
+#
+# THE RULE IS ABOUT SPELLING, NEVER ABOUT A VARIABLE'S VALUE (§11.4.201(1)).
+# The two golden-FALSE cases below are the false-positive guards that pin it:
+# a literal `}` in a path that also interpolates, and a variable whose VALUE
+# contains `${`, must both still resolve and really repair. A value is
+# env-writer-controlled exactly as QBITTORRENT_DATA_DIR is (round-2 RM9).
+#
+# _c23_unresolved <label> <yaml> [env-assignment…]
+# Its own CAUSE-SPECIFIC evidence regex (§11.4.120): the existing families keep
+# theirs, so broadening nothing — this one dies if the rule is reverted OR if
+# the message stops naming the unresolved spelling.
+_c23_unresolved() {
+    local label="$1" yaml="$2"; shift 2
+    local sb before after
+    sb="$(sb_new)" || { fail "unresolved spelling [${label}]: could not build sandbox"; return 0; }
+    mkdir -p "${sb}/fixture/survivor"
+    seed_tree "${sb}/fixture/survivor" 2 wrong
+    sb_raw_scope "${sb}" "${yaml//@SURVIVOR@/${sb}/fixture/survivor}"
+    before="$(manifest "${sb}/fixture/survivor")"
+    RUN_OUT="$(
+        cd "${sb}" && env "$@" OWNED_PATHS_FILE="${sb}/config/owned_paths.yaml" \
+            bash "${sb}/scripts/ownership_repair.sh" \
+                --scope "${sb}/config/owned_paths.yaml" 2>&1
+    )"
+    RUN_RC=$?
+    after="$(manifest "${sb}/fixture/survivor")"
+
+    if [[ "${RUN_RC}" -eq 2 ]]; then
+        pass "unresolved spelling [${label}]: exit 2 — a declaration the documented grammar cannot resolve is refused before any walk"
+    else
+        fail "unresolved spelling [${label}]: exit ${RUN_RC} — a path the grammar could not resolve was accepted; marked \`optional: true\` this is a silent skip that exits 0 while repairing nothing (§11.4.201(6))"
+    fi
+
+    if printf '%s' "${RUN_OUT}" | grep -qiE 'entry [0-9]+' \
+       && printf '%s' "${RUN_OUT}" | grep -qiE 'not fully resolved'; then
+        pass "unresolved spelling [${label}]: the refusal names WHICH entry and says the spelling was not fully resolved (§11.4.201(5))"
+    else
+        fail "unresolved spelling [${label}]: the refusal names neither the entry nor the unresolved spelling — the operator cannot act on it (§11.4.201(5))"
+        printf '%s\n' "${RUN_OUT}" | grep -iE 'entry|resolv|scope' | head -4 | sed 's/^/        /'
+    fi
+
+    if [[ "${_C23_NEEDLE}" -ne 1 ]]; then
+        fail "unresolved spelling [${label}]: marker verdict WITHHELD — the control needle never fired (§11.4.201(7)(b))"
+    elif marker_present "${sb}"; then
+        fail "unresolved spelling [${label}]: a COMPLETION MARKER was written for a scope whose spelling never resolved — start.sh will skip the repair from now on"
+    else
+        pass "unresolved spelling [${label}]: no completion marker written — the next start still repairs"
+    fi
+
+    if [[ "${before}" == "${after}" ]]; then
+        pass "unresolved spelling [${label}]: the surviving location was not touched — the refusal happened before any walk"
+    else
+        fail "unresolved spelling [${label}]: the surviving location was MUTATED despite the refusal"
+    fi
+}
+
+_c23_unresolved 'nested ${A:-${B}}, both unset' 'schema_version: 1
+paths:
+  - path: "/tmp/boba-t028-nested/${BOBA_T028_UNSET_QQQ:-${BOBA_T028_UNSET_B}}/leaf"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true
+  - path: "@SURVIVOR@"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true'
+
+_c23_unresolved 'nested ${A:-${B}}, A set — the corrupted-path variant' 'schema_version: 1
+paths:
+  - path: "/tmp/boba-t028-nested/${BOBA_T028_SET_A:-${BOBA_T028_UNSET_B}}/leaf"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true
+  - path: "@SURVIVOR@"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true' BOBA_T028_SET_A=/tmp/boba-t028-a
+
+# The motivating case: `optional: true` turned the corrupted path into an
+# exit-0 skip. It must be refused exactly as the non-optional one is.
+_c23_unresolved 'nested ${A:-${B}} marked optional: true' 'schema_version: 1
+paths:
+  - path: "/tmp/boba-t028-nested/${BOBA_T028_UNSET_QQQ:-${BOBA_T028_UNSET_B}}/leaf"
+    kind: credential-store
+    optional: true
+    preserve_mode: true
+    recursive: false
+  - path: "@SURVIVOR@"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true'
+
+# Out-of-grammar openers the substitution never consumes: round 2 recorded
+# these as "left literal, walks nothing silently" — which is the same silent
+# under-repair. They belong to this family.
+_c23_unresolved 'out-of-grammar ${} opener' 'schema_version: 1
+paths:
+  - path: "/tmp/boba-t028-nested/${}/leaf"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true
+  - path: "@SURVIVOR@"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true'
+
+_c23_unresolved 'out-of-grammar ${1} positional' 'schema_version: 1
+paths:
+  - path: "/tmp/boba-t028-nested/${1}/leaf"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true
+  - path: "@SURVIVOR@"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true'
+
+# golden-FALSE A (§11.4.201(1)): a LITERAL `}` in a path that ALSO interpolates.
+# The rule must judge the interpolation, not every brace character — a
+# directory named with a `}` is legal and must still be repaired.
+SB23U="$(sb_new)" || { fail "could not build sandbox"; finish; }
+mkdir -p "${SB23U}/fixture/brace/real/od}d"
+seed_tree "${SB23U}/fixture/brace/real/od}d" 2 wrong
+sb_raw_scope "${SB23U}" "schema_version: 1
+paths:
+  - path: \"${SB23U}/fixture/brace/\${BOBA_T028_UNSET_QQQ:-real}/od}d\"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true"
+run_repair "${SB23U}"
+if [[ "${RUN_RC}" -eq 0 ]] && [[ "$(wrong_owned_count "${SB23U}/fixture/brace/real/od}d")" -eq 0 ]]; then
+    pass "unresolved spelling [golden-FALSE, literal } beside an interpolation]: NOT refused — it resolved and really repaired the tree"
+else
+    fail "unresolved spelling [golden-FALSE, literal } beside an interpolation]: exit ${RUN_RC}, $(wrong_owned_count "${SB23U}/fixture/brace/real/od}d") item(s) still wrongly owned — the rule judged a brace CHARACTER instead of the interpolation (§11.4.201(1))"
+fi
+
+# golden-FALSE B (§11.4.201(1)): a variable whose VALUE contains `${`. Values
+# are env-writer-controlled exactly as QBITTORRENT_DATA_DIR is, so the rule
+# must never reach into them.
+SB23V="$(sb_new)" || { fail "could not build sandbox"; finish; }
+mkdir -p "${SB23V}/fixture/val/\${weird}"
+seed_tree "${SB23V}/fixture/val/\${weird}" 2 wrong
+sb_raw_scope "${SB23V}" "schema_version: 1
+paths:
+  - path: \"\${BOBA_T028_VALUE_QQQ}/leaf\"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true"
+mkdir -p "${SB23V}/fixture/val/\${weird}/leaf"
+seed_tree "${SB23V}/fixture/val/\${weird}/leaf" 2 wrong
+RUN_OUT="$(
+    cd "${SB23V}" && env "BOBA_T028_VALUE_QQQ=${SB23V}/fixture/val/\${weird}" \
+        OWNED_PATHS_FILE="${SB23V}/config/owned_paths.yaml" \
+        bash "${SB23V}/scripts/ownership_repair.sh" \
+            --scope "${SB23V}/config/owned_paths.yaml" 2>&1
+)"
+RUN_RC=$?
+if [[ "${RUN_RC}" -eq 0 ]] && [[ "$(wrong_owned_count "${SB23V}/fixture/val/\${weird}/leaf")" -eq 0 ]]; then
+    pass "unresolved spelling [golden-FALSE, a VALUE containing \${]: NOT refused — the rule judges the declared spelling, never the variable's value"
+else
+    fail "unresolved spelling [golden-FALSE, a VALUE containing \${]: exit ${RUN_RC}, $(wrong_owned_count "${SB23V}/fixture/val/\${weird}/leaf") item(s) still wrongly owned — the rule reached into a variable's VALUE, refusing an env-writer-controlled path (§11.4.201(1))"
+fi
+
+# --- GOLDEN-FALSE (§11.4.201(1)): the SHIPPED entry shape must still run ----
+# `${VAR:-default}` with VAR unset is the shape of the shipped scope's first
+# entry. A refusal that swallowed it would refuse the live product.
+SB23G="$(sb_new)" || { fail "could not build sandbox"; finish; }
+mkdir -p "${SB23G}/fixture/defaulted"
+seed_tree "${SB23G}/fixture/defaulted" 2 wrong
+sb_raw_scope "${SB23G}" "schema_version: 1
+paths:
+  - path: \"\${BOBA_T028_UNSET_QQQ:-${SB23G}/fixture/defaulted}\"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true"
+run_repair "${SB23G}"
+if [[ "${RUN_RC}" -eq 0 ]] && [[ "$(wrong_owned_count "${SB23G}/fixture/defaulted")" -eq 0 ]]; then
+    pass "vanished entry [golden-FALSE, \${VAR:-default}]: the shipped entry shape is NOT refused — it resolved to its default and really repaired the tree"
+else
+    fail "vanished entry [golden-FALSE, \${VAR:-default}]: exit ${RUN_RC}, $(wrong_owned_count "${SB23G}/fixture/defaulted") item(s) still wrongly owned — the refusal swallowed the SHIPPED entry shape, which is a false-positive refusal (§11.4.201(1))"
+fi
+
+# --- the predicate is SHARED, not a repair-only dialect (§11.4.251) ---------
+# scripts/ownership_precondition.sh and the pre-build gate read the same scope
+# through the same parser. Asserted against the shared helper directly, so a
+# future fix that moved the rule up into ownership_repair.sh alone fails here.
+SB23S="$(sb_new)" || { fail "could not build sandbox"; finish; }
+mkdir -p "${SB23S}/fixture/keep"
+: > "${SB23S}/fixture/keep/f.bin"
+sb_raw_scope "${SB23S}" "schema_version: 1
+paths:
+  - path: \"\${BOBA_T028_UNSET_QQQ}\"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true
+  - path: \"${SB23S}/fixture/keep\"
+    kind: downloads
+    optional: false
+    preserve_mode: false
+    recursive: true"
+_C23_LIB_OUT="$(
+    OWNED_PATHS_FILE="${SB23S}/config/owned_paths.yaml"
+    export OWNED_PATHS_FILE
+    # shellcheck disable=SC1090
+    source "${SB23S}/scripts/lib/ownership.sh"
+    ownership_scope_entries 2>&1
+)"
+_C23_LIB_RC=$?
+if [[ "${_C23_LIB_RC}" -eq 2 ]]; then
+    pass "vanished entry [shared predicate]: ownership_scope_entries itself returns 2 — every consumer of the scope inherits the refusal, no second dialect (§11.4.251)"
+else
+    fail "vanished entry [shared predicate]: ownership_scope_entries returned ${_C23_LIB_RC} — the rule lives above the shared parser, so scripts/ownership_precondition.sh and the pre-build gate still read a scope with a hole as an honest scope (§11.4.251)"
+fi
+if printf '%s' "${_C23_LIB_OUT}" | grep -qF 'BOBA_T028_UNSET_QQQ'; then
+    pass "vanished entry [shared predicate]: the diagnosis names the unresolved variable, so the operator's remedy is reachable from the message"
+else
+    fail "vanished entry [shared predicate]: the diagnosis never names the unresolved variable — the operator is told something vanished but not what to set"
+fi
+if [[ -z "$(printf '%s' "${_C23_LIB_OUT}" | grep -v 'BOBA_T028_UNSET_QQQ' | grep -F "${SB23S}/fixture/keep")" ]]; then
+    pass "vanished entry [shared predicate]: no survivor rows were emitted alongside the refusal — a caller cannot accidentally consume a partial scope"
+else
+    fail "vanished entry [shared predicate]: survivor rows were emitted on stdout despite the refusal — a caller that ignores the exit code would walk a partial scope"
+fi
+
+# ===========================================================================
+# CASE 24 — THE FENCE'S TWO NAMED BOUNDARIES (R2-N1, R2-N2).
+#
+# R2-N1 is documentation-only BY DECISION: an existing symlink in a NON-FINAL
+# component of a declared path steers the walk to the link's target (MEASURED,
+# no race needed), and the fence — lexical by design, so that it cannot be
+# raced and can judge paths that do not exist yet — cannot see it. The reach is
+# bounded by who can write components ABOVE the declared root, which is outside
+# every container bind mount and is already the trust boundary that the
+# untracked `.env` sits on. What was owed is the SENTENCE: a fence whose stated
+# limits let a reader infer symlink safety it does not provide is the
+# overstatement §11.4.6 forbids. This case pins that the sentence is there.
+#
+# R2-N2 is a real DENY, not just a sentence: `/home/<user>` clears the depth
+# floor and is deliberately not denylisted (`/home/<user>/Downloads` is an
+# ordinary download root), so a declared root at or above the rootless
+# container storage would be accepted and the `podman unshare` fallback would
+# rewrite subuid-owned image storage. The deny is computed per host, so this
+# case drives ownership_path_fence() DIRECTLY with a controlled HOME — a pure
+# string predicate, touching nothing real, and never the operator's own $HOME.
+#
+# THE GOLDEN-FALSE HALF IS THE POINT (§11.4.201(1)): a fence that over-refuses
+# is a FAIL-bluff of exactly the severity of one that under-refuses, so the
+# ordinary $HOME-rooted download directory must still be ACCEPTED, and must
+# still really repair end to end.
+# ===========================================================================
+echo
+echo "Case 24: the fence names its symlink limit and denies container storage without refusing \$HOME (R2-N1, R2-N2)"
+
+# --- R2-N1: the honest boundary states the intermediate-symlink limit -------
+if grep -qiE 'intermediate|NON-FINAL component' "${LIB}" \
+   && grep -qi 'judges the spelling' "${LIB}"; then
+    pass "fence boundary [R2-N1]: the fence's honest boundary states that it judges the SPELLING and that the kernel resolves intermediate components"
+else
+    fail "fence boundary [R2-N1]: the fence declares its limits without naming static intermediate-symlink resolution — a reader can infer symlink safety the fence does not provide (§11.4.6)"
+fi
+# THE STRING IS NOT THE TRACKING (R3-M1, MEASURED 2026-08-26). Round 3 cited
+# BOB-159 here; that item's 4674-character body contains ZERO occurrences of
+# `symlink` or `intermediate` (control needle: 30 hits for `warm|repair`
+# through the same sqlite read), and no item in the tracker mentioned symlinks
+# at all — a pointer that LOOKS like coverage and is not, which is exactly the
+# lost-defect shape §11.4.214 warns about: no tracker query could find the
+# static reach. A `grep` for the literal could not see that, because it pinned
+# the SPELLING of the citation and never asked whether the pointee records the
+# pointed-at content. So this check reads the ids OUT of the fence and asks the
+# tracker two questions per id: does that item EXIST, and does it actually
+# record THIS reach. The next dangling citation fails here instead of passing.
+#
+# ONE CITATION IS NOT EVERY CITATION (R4-N2, MEASURED 2026-08-26). Round 4
+# extracted the id through `head -1`, so only the FIRST `Tracked as` citation
+# was ever judged. The round-4 reviewer's mutation M-F — a SECOND, dangling
+# `Tracked as BOB-159` appended after the real one, exactly the shape a future
+# edit adding another residual-reach clause would take — SURVIVED at 146/0/0,
+# re-opening the R3-M1 shape invisibly through the very check built to close
+# it. Re-measured here before fixing (RED): the mutated fence still PASSED with
+# "linked to BOB-201 … really records the symlink reach" while a dangling
+# BOB-159 sat two lines below it, unasked. This loop judges EVERY distinct
+# citation the fence carries. `sort -u` because judging one id twice adds
+# nothing: the property is that no cited id goes UNASKED, not that occurrences
+# are counted. One aggregate verdict is emitted regardless of how many ids are
+# cited, so the suite's assertion count does not drift with the fence's prose.
+#
+# WHAT "RECORDS THIS REACH" MEANS, AND WHAT IT DOES NOT (§11.4.6). Round 4
+# asked only `grep -qi symlink`. That was anchored by LUCK: BOB-201 is the ONLY
+# symlink-mentioning item in this tracker (measured 2026-08-26: 1 item of 200),
+# so ANY symlink-mentioning item would have satisfied a message claiming the
+# item "really records the symlink reach". The reach has two halves — an
+# INTERMEDIATE component, and a SYMLINK — so both tokens must be present.
+# Measured on this tracker: BOB-201 carries both (its title reads "intermediate
+# symlink components"); BOB-159, the round-3 dangling citation, carries NEITHER
+# (0 occurrences of each) — the same discriminator the round-3 forensic used.
+# Two independent whole-body greps rather than an adjacency regex ON PURPOSE: a
+# future re-wording that names "symlink" in the title and "intermediate" three
+# paragraphs down still records this reach, and refusing it would be the
+# §11.4.201(1) false refusal this suite spends nine golden-FALSE assertions
+# guarding against. This stays a PROXY — it asserts both concepts are present,
+# never that the prose is correct.
+_C24_IDS="$(grep -oE 'Tracked as BOB-[0-9]+' "${LIB}" | grep -oE 'BOB-[0-9]+' | sort -u)"
+_C24_IDLIST="$(printf '%s' "${_C24_IDS}" | tr '\n' ' ' | sed 's/ *$//')"
+_C24_DB="${PROJECT_ROOT}/docs/workable_items.db"
+if [[ -z "${_C24_IDS}" ]]; then
+    fail "fence boundary [R2-N1]: the documented residual reach names no tracked item"
+elif ! command -v sqlite3 >/dev/null 2>&1; then
+    # Honest SKIP, never a pass: the citations ARE present, but this host cannot
+    # read the tracker to judge them (§11.4.3 topology_unsupported).
+    skip "fence boundary [R2-N1]: cites ${_C24_IDLIST}, but sqlite3 is absent — the tracker cannot be read here, so the citations are unjudged rather than approved"
+elif [[ ! -f "${_C24_DB}" ]]; then
+    skip "fence boundary [R2-N1]: cites ${_C24_IDLIST}, but ${_C24_DB} is absent — the tracker cannot be read here, so the citations are unjudged rather than approved"
+else
+    # CONTROL NEEDLE (§11.4.201(7)(b)): a zero from the per-id queries below is
+    # evidence ONLY if this same read can see a known-present row. A blind read
+    # and an absent item return the identical quiet nothing.
+    _C24_ROWS="$(sqlite3 "${_C24_DB}" "SELECT COUNT(*) FROM items;" 2>/dev/null)"
+    if [[ -z "${_C24_ROWS}" ]] || [[ "${_C24_ROWS}" -eq 0 ]]; then
+        skip "fence boundary [R2-N1]: the tracker read returned no rows at all — treating this as a BLIND read, not as absence (§11.4.201(7)(b))"
+    else
+        # VERDICT ORDER: FAIL > SKIP > PASS. A proven dangling citation is a
+        # defect whether or not some OTHER id read blind, so a FAIL anywhere
+        # dominates; and a blind read anywhere forbids a PASS, because
+        # approving on a quiet nothing is precisely the §11.4.201(6)
+        # false-null. Only an all-ids-judged-clean run reaches `pass`.
+        _C24_BAD=""
+        _C24_BLIND=""
+        for _c24_id in ${_C24_IDS}; do
+            _C24_EXISTS="$(sqlite3 "${_C24_DB}" "SELECT COUNT(*) FROM items WHERE atm_id='${_c24_id}';" 2>/dev/null)"
+            _C24_BODY="$(sqlite3 "${_C24_DB}" "SELECT COALESCE(title,'')||' '||COALESCE(description,'') FROM items WHERE atm_id='${_c24_id}';" 2>/dev/null)"
+            if [[ -z "${_C24_EXISTS}" ]]; then
+                # The whole-table needle succeeded but THIS query returned
+                # nothing: a blind per-id read, never evidence of absence.
+                _C24_BLIND="${_C24_BLIND} ${_c24_id}(existence read returned nothing)"
+            elif [[ "${_C24_EXISTS}" != "1" ]]; then
+                _C24_BAD="${_C24_BAD} ${_c24_id}(no such item exists in the tracker)"
+            elif [[ -z "${_C24_BODY}" ]]; then
+                # The row EXISTS but its body read came back empty: that is a
+                # blind read of the body, not an item empty of content.
+                _C24_BLIND="${_C24_BLIND} ${_c24_id}(body read returned nothing)"
+            else
+                _c24_miss=""
+                printf '%s' "${_C24_BODY}" | grep -qi 'symlink'      || _c24_miss="${_c24_miss} symlink"
+                printf '%s' "${_C24_BODY}" | grep -qi 'intermediate' || _c24_miss="${_c24_miss} intermediate"
+                [[ -z "${_c24_miss}" ]] || _C24_BAD="${_C24_BAD} ${_c24_id}(exists, but its body never says:${_c24_miss})"
+            fi
+        done
+        if [[ -n "${_C24_BAD}" ]]; then
+            fail "fence boundary [R2-N1]: the fence's citation(s)${_C24_BAD} — a citation that does not resolve to an item recording THIS reach looks like coverage and is none, so no tracker query can find the defect (§11.4.214)"
+        elif [[ -n "${_C24_BLIND}" ]]; then
+            skip "fence boundary [R2-N1]: cited${_C24_BLIND} — BLIND tracker read, unjudged rather than approved (§11.4.201(7)(b))"
+        else
+            pass "fence boundary [R2-N1]: every citation the fence carries (${_C24_IDLIST}) EXISTS in the tracker and really records this reach — body carries both 'symlink' and 'intermediate' (§11.4.197/§11.4.214)"
+        fi
+    fi
+fi
+
+# --- R2-N2: behaviour, driven directly with a controlled HOME ---------------
+# _c24_fence <label> <HOME> <abs-path> <expect: accept|refuse>
+_c24_fence() {
+    local label="$1" home="$2" path="$3" expect="$4" out rc
+    out="$(
+        HOME="${home}"
+        unset XDG_DATA_HOME
+        export HOME
+        # shellcheck disable=SC1090
+        source "${LIB}"
+        ownership_path_fence "${path}" 0 "${home}/project" 2>&1
+    )"
+    rc=$?
+    if [[ "${expect}" == "refuse" ]]; then
+        if [[ "${rc}" -ne 0 ]]; then
+            pass "fence boundary [${label}]: REFUSED — ${out}"
+        else
+            fail "fence boundary [${label}]: ACCEPTED '${path}' — a recursive ownership change of rootless container storage breaks the runtime this project mandates (§11.4.161)"
+        fi
+    else
+        if [[ "${rc}" -eq 0 ]]; then
+            pass "fence boundary [${label}]: ACCEPTED — an ordinary \$HOME-rooted location is not swallowed by the deny"
+        else
+            fail "fence boundary [${label}]: REFUSED '${path}' — ${out} — this is a false-positive refusal of a legitimate download root (§11.4.201(1))"
+        fi
+    fi
+}
+
+_C24_HOME="${RUN_ROOT}/fakehome"
+mkdir -p "${_C24_HOME}"
+_c24_fence 'container storage root'  "${_C24_HOME}" "${_C24_HOME}/.local/share/containers"                 refuse
+_c24_fence 'inside container storage' "${_C24_HOME}" "${_C24_HOME}/.local/share/containers/storage/overlay" refuse
+# GOLDEN-FALSE set — every one of these must survive the deny.
+_c24_fence 'golden-FALSE $HOME/Downloads'      "${_C24_HOME}" "${_C24_HOME}/Downloads"            accept
+_c24_fence 'golden-FALSE $HOME/.local/share'   "${_C24_HOME}" "${_C24_HOME}/.local/share"         accept
+_c24_fence 'golden-FALSE sibling of storage'   "${_C24_HOME}" "${_C24_HOME}/.local/share/containerz" accept
+_c24_fence 'golden-FALSE the real library shape' "${_C24_HOME}" "/run/media/someone/DISK/Downloads" accept
+
+# A degenerate computed value must never broaden into a top-level prefix: with
+# HOME unset the deny would compute /.local/share/containers, and it must not
+# start swallowing unrelated roots.
+_C24_UNSET_OUT="$(
+    unset HOME XDG_DATA_HOME
+    # shellcheck disable=SC1090
+    source "${LIB}"
+    ownership_path_fence "/run/media/someone/DISK/Downloads" 0 "/run/media/someone/DISK/project" 2>&1
+)"
+if [[ $? -eq 0 ]]; then
+    pass "fence boundary [degenerate HOME]: with HOME unset the computed deny still accepts an ordinary absolute root — it did not broaden"
+else
+    fail "fence boundary [degenerate HOME]: with HOME unset the fence refused an ordinary root — ${_C24_UNSET_OUT}"
+fi
+
+# --- R2-N2 end-to-end: a $HOME-rooted download tree still really repairs ----
+SB24="$(sb_new)" || { fail "could not build sandbox"; finish; }
+mkdir -p "${SB24}/fakehome/Downloads"
+seed_tree "${SB24}/fakehome/Downloads" 3 wrong
+printf '%s\tdownloads\tfalse\tfalse\ttrue\n' "${SB24}/fakehome/Downloads" | sb_scope "${SB24}"
+RUN_OUT="$(
+    cd "${SB24}" && HOME="${SB24}/fakehome" CONTAINER_RUNTIME="${NS_RUNTIME}" \
+        OWNED_PATHS_FILE="${SB24}/config/owned_paths.yaml" \
+        bash "${SB24}/scripts/ownership_repair.sh" \
+            --scope "${SB24}/config/owned_paths.yaml" 2>&1
+)"
+RUN_RC=$?
+if [[ "${RUN_RC}" -eq 0 ]] && [[ "$(wrong_owned_count "${SB24}/fakehome/Downloads")" -eq 0 ]]; then
+    pass "fence boundary [golden-FALSE end-to-end]: a \$HOME-rooted download tree is walked and really repaired — the deny did not break the ordinary case"
+else
+    fail "fence boundary [golden-FALSE end-to-end]: exit ${RUN_RC}, $(wrong_owned_count "${SB24}/fakehome/Downloads") item(s) still wrongly owned — the container-storage deny broke a legitimate \$HOME-rooted root"
 fi
 
 finish

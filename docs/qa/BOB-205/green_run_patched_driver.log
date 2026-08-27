@@ -1,0 +1,17 @@
+== BOB-205 scope RED ==
+driver: /tmp/.private/milosvasic/claude-1000/-run-media-milosvasic-DATA4TB-Projects-boba/7efc93d6-f339-4d2c-9ad6-1e17f0eaa2d8/scratchpad/driver_fixed.sh
+gate:   /run/media/milosvasic/DATA4TB/Projects/boba/constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh
+gate sha256: c5752428c08279029422384119f83364e29e7ca0a1262e21d2ea6c8e3a95b06a
+DANGER_ROOTS (6): download-proxy/src plugins scripts qBitTorrent-go frontend/src cmd/boba-ctl
+needle sha256 (control == probe): 8d8bd909433bba614688f86d6973a54f0d39a42f6e4b8bcc89b10466f05b2e4e
+roots scanned by the driver's own list: 6
+CONTROL needle (download-proxy/src/): 1 hit(s) — instrument PROVEN seeing
+PROBE   needle (cmd/boba-ctl/): 1 hit(s)
+
+-- PRIMARY oracle (metamorphic: byte-identical needles => identical verdicts) --
+PASS: the planted fail-open inside cmd/boba-ctl/ WAS seen by the §11.4.252 scanner as invariant 39 drives it.
+
+-- SECONDARY oracle (structural; WEAKER — pins list CONTENT, not SCANNING) --
+PASS: DANGER_ROOTS contains cmd/boba-ctl.
+
+VERDICT: GREEN (primary=PASS secondary=PASS)

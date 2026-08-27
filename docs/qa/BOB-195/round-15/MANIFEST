@@ -1,0 +1,45 @@
+# BOB-195 ROUND-15 REVIEWED-BYTES SNAPSHOT
+# Purpose: §11.4.83 / §11.4.226 evidence custody for the review chain.
+#   The round-10-shipped gate (md5 2832f49d...) exists nowhere, making every
+#   round-over-round diff claim on this item permanently uncheckable. These
+#   are the EXACT bytes round 14 reviewed, snapshotted BEFORE round-15 edits,
+#   so round 16's diff claims are checkable against a real baseline.
+# Captured (UTC): 2026-08-27T01:38:15Z
+# Captured from HEAD: a3e1141777914f3d71d62a6cd32a4c79c7f43842
+#
+# ⚠ OWED ACTION — CUSTODY IS NOT YET DURABLE (§11.4.226, §11.4.197)
+#   `git status --porcelain docs/qa/BOB-195/` reports this tree UNTRACKED.
+#   The founding rationale above recurs verbatim if this checkout is lost:
+#   the snapshots would exist nowhere and round 16's diff claims would be as
+#   uncheckable as round 10's are now. The round-15 agent operated under a
+#   standing no-commit constraint (three other streams own adjacent files),
+#   so it COULD NOT close this and is recording it rather than leaving the
+#   gap silent. OWED: `git add docs/qa/BOB-195/` and commit, by whoever
+#   holds the commit authority for this item. Until then the custody chain
+#   is checkout-local and one `rm -rf` from gone.
+#
+MD5               PATH                                LINES   MTIME(UTC)
+b90c5945d44b891c793c448e7165682c  constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh  1268  2026-08-27T00:05:42Z
+e4bf75c6f835eeded92259f872f83759  constitution/scripts/gates/cm_dangerous_combination_fail_closed_mutation_test.sh  2034  2026-08-27T00:06:48Z
+
+# ── AFTER round-15 remediation ────────────────────────────────────────
+# Recorded (UTC): 2026-08-27T01:38:15Z
+# The gate script is BYTE-IDENTICAL to the snapshot above, as it has been
+# since round 11: all fourteen new fixtures pin behaviour the shipped gate
+# ALREADY has correct, so this round adds assertions only and changes no
+# gate logic. Every one of the 18 mutations below was applied to the gate
+# and REVERTED; the gate's md5 is unchanged from the snapshot.
+MD5               PATH                                LINES   DELTA-VS-SNAPSHOT
+b90c5945d44b891c793c448e7165682c  constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh  1268  +0/-0
+72e3fdd6cf78d2fab766a88df2d71d77  constitution/scripts/gates/cm_dangerous_combination_fail_closed_mutation_test.sh  2499  +465/-0
+#
+# Suite: 117 OK / 0 FAIL / exit 0  ->  144 OK / 0 FAIL / exit 0
+#   (+14 fixtures L50-L63, +27 assertions; L59 carries an AST assertion only
+#    -- the text scanner is MEASURED blind to `except*`, recorded as owed
+#    work in the harness header rather than pinned as correct.)
+#
+# 18 doors closed, each measured RED-first: mutation applied (md5 delta
+# proven), observed to SURVIVE the pre-fixture suite, fixture added, exactly
+# one assertion observed to flip. Kill matrix DIAGONAL except that the text
+# scanner's `[] {} ()` share one source line, so that single mutation is
+# killed by L55 and L56 together.

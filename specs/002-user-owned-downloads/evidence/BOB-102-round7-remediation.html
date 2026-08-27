@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>BOB-102-round7-remediation</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">BOB-102-round7-remediation</h1>
+</header>
+<h1
+id="bob-102-round-7-remediation-of-the-cm-lan-routes-authenticated-gate">BOB-102
+— round-7 remediation of the CM-LAN-ROUTES-AUTHENTICATED gate</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-26T19:48:19Z <strong>Author label:</strong>
+<code>(T11/002-user-owned-downloads - milos85vasic - ? - xhigh)</code>
+<strong>Round-6 verdict remediated:</strong> NO-GO — 3 IMPORTANT / 4
+MINOR / 3 NIT <strong>Artifacts:</strong>
+<code>scripts/pre_build/lan_route_auth_analyzer.py</code>,
+<code>tests/pre_build/test_check_cm_lan_routes_authenticated.sh</code>,
+<code>docs/scripts/check_cm_lan_routes_authenticated.md</code> (+
+.html/.pdf/.docx twins)</p>
+<h2 id="the-primitive-this-round-fixed-was-again-a-claim">0 — The
+primitive this round fixed was, again, a CLAIM</h2>
+<p>Round 6 retracted the <code>DROPS</code>-completeness assertion and
+then wrote a <strong>fresh absolute one column over</strong>: <em>“every
+construct able to mark a route protected was audited; the four that
+leaked are pinned.”</em> Round 7 falsified it <strong>twice</strong>, in
+two constructs that same audit had explicitly recorded as <em>“measured
+fail-closed”</em>.</p>
+<p>The lesson is the one the DROPS retraction had already recorded:
+<strong>“audited” is a record of where somebody looked</strong>, and
+inspection cannot convert that into “there are no others” (§11.4.118).
+The credit side now carries exactly the form the drop side carries — an
+<strong>enumerated set</strong>, a <strong>stated method</strong>, an
+<strong>honest gap</strong> — and each per-construct verdict is a
+<strong>dated measurement</strong>: <em>fail-closed</em> means
+<em>measured fail-closed on the shapes tried</em>, never <em>cannot
+leak</em>.</p>
+<p>Rewritten in all four places the absolute lived: the analyzer’s
+<code>METHOD</code> bullet, the analyzer’s credit-audit prose, the
+harness’s round-6 section comment, and the guide’s <em>credit-bearing
+primitive</em> section (which gains its own boxed retraction beside the
+round-6 one).</p>
+<h2 id="reproduced-before-fixed-11.4.199-then-fixed">1 — Reproduced
+before fixed (§11.4.199), then fixed</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>finding</th>
+<th>pre-fix measurement</th>
+<th>closure</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>I1</td>
+<td>gin group NAME re-bound by a declaration <code>GIN_GROUP</code>
+cannot see</td>
+<td><code>POST /admin/wipe auth_wired=true</code>, findings 0,
+<strong>exit 0</strong> — wrong path <em>and</em> falsely safe</td>
+<td>per-declaration-SITE keying + refusal + credit drop</td>
+</tr>
+<tr>
+<td>I1b</td>
+<td>the same name bound twice, both resolvable (last-wins)</td>
+<td>earlier route inherited the later group, <strong>exit
+0</strong></td>
+<td>ambiguity refusal + <code>len(sites)==1</code> credit filter</td>
+</tr>
+<tr>
+<td>I2</td>
+<td><code>MUX_DECL</code> had no lookbehind:
+<code>s.mux = http.NewServeMux()</code></td>
+<td><code>ANY /api/v1/wipe auth_wired=true</code>, findings 0,
+<strong>exit 0</strong></td>
+<td><code>(?&lt;![\w.])</code> on <code>MUX_DECL</code></td>
+</tr>
+<tr>
+<td>I2b</td>
+<td>the return-scan credited through the dot:
+<code>WithAuth(s.mux)</code></td>
+<td>local <code>mux</code> wrapped by a <em>field</em> mux, <strong>exit
+0</strong></td>
+<td><code>(?&lt;![\w.])</code> on the return-scan name match</td>
+</tr>
+<tr>
+<td>I3</td>
+<td>the router-attribute rule was <strong>same-module only</strong></td>
+<td><code>from .routers import router</code> +
+<code>router.post("/wipe")(wipe)</code> → route
+<strong>vanished</strong>, findings 0, <strong>exit 0</strong></td>
+<td>owner resolved transitively through <code>imports</code></td>
+</tr>
+<tr>
+<td>M1</td>
+<td>gomux composite-literal receiver was a <strong>SILENT
+DROP</strong></td>
+<td><code>Server{}.mux.HandleFunc(...)</code> absent from the inventory,
+<strong>exit 0</strong></td>
+<td>dotted check keys on a preceding dot, not a character allowlist</td>
+</tr>
+<tr>
+<td>N2</td>
+<td>gin composite-literal receiver refused under the <strong>wrong
+label</strong></td>
+<td>refused as <em>“path is not a string literal”</em> — untrue of that
+line</td>
+<td>same primitive; F8 class, second instance</td>
+</tr>
+<tr>
+<td>M4</td>
+<td><code>_carriers</code> recorded as fail-closed</td>
+<td><code>stats := describe(mux)</code>; <code>WithAuth(stats)</code> →
+<code>auth_wired=true</code></td>
+<td><strong>behaviour unchanged</strong>; the boundary is now owned and
+pinned</td>
+</tr>
+</tbody>
+</table>
+<p><strong>I1, I2, I3, M1 are false attributions of SAFETY or silent
+drops on unauthenticated mutating LAN routes.</strong> Every one was
+reproduced against the shipped analyzer before being called a
+defect.</p>
+<h2 id="the-primitive-stated-once-and-applied-to-every-door-11.4.250">2
+— The primitive, stated once and applied to every door (§11.4.250)</h2>
+<p>Three of this round’s fixes are the SAME defect in three places, and
+in two of them the defective thing was an <strong>enumerated
+allowlist</strong>:</p>
+<ul>
+<li><code>MUX_DOTTED_OWNER</code> / <code>GIN_DOTTED_OWNER</code> led
+with <code>[\w)\]]</code> — a list of “characters a Go expression may
+end with”. <code>}</code> was not in it. The condition that was ever
+load-bearing is <em>the receiver is reached through a selector</em>,
+i.e. <strong>preceded by a dot</strong>; the verb+<code>(</code> pair is
+what keeps a dotted handler argument out, not the leading class.</li>
+<li><code>groups</code> was name-keyed and file-scoped, so an
+unresolvable declaration re-bound a name <strong>invisibly</strong>.
+Counted per declaration SITE now — the rule already applied to gin
+engines (A2) and FastAPI routers (A3).</li>
+<li>the router-attribute rule asked <em>“did THIS module declare
+it?”</em>, so it was one <code>import</code> away from being bypassed.
+The engine already resolved imports for guard aliases and for mounts;
+same-module keying was an omission.</li>
+</ul>
+<h2 id="mutation-matrix-against-byte-verified-scratch-copies">3 — §1.1
+mutation matrix (against byte-verified scratch copies)</h2>
+<p>Kill direction — every new rule is load-bearing:</p>
+<pre><code>MU-2  return-scan LEADING lookbehind removed   KILLED  gomux-dotted-return-false-safe
+MU-3  return-scan TRAILING \b removed (X1)     KILLED  gomux-return-prefix-not-credit
+MU-1  MUX_DECL lookbehind removed              SURVIVED alone -&gt; EQUIVALENT behind MU-2
+MU-1+MU-2 combined                             KILLED  gomux-dotted-decl-false-safe (+1)
+MU-4  MUX_DOTTED_OWNER allowlist restored      KILLED  gomux-complit-receiver-refused
+MU-5  GIN_DOTTED_OWNER allowlist restored      KILLED  complit-label diagnostic
+MU-6a group ambiguity out + last-wins back     KILLED  gin-group-rebound-false-safe
+MU-7  ambiguity REFUSAL removed                KILLED  group-ambiguity-label diagnostic
+MU-8  unresolvable-group REFUSAL removed       KILLED  group-rebind-label diagnostic
+MU-9  _router_key back to same-module          KILLED  fastapi-imported-router-call
+MU-10 drop `mount`                             KILLED  fastapi-unmodelled-mount
+MU-11 drop `add_route`                         KILLED  fastapi-unmodelled-add-route
+MU-12 kill exemption class validation          KILLED  exemption-bad-class
+MU-13 drop the *_test.go FILTER                KILLED  gin- + gomux-test-file-skipped</code></pre>
+<p>False-positive direction (§11.4.201(1)) — every guard is RED-capable
+both ways:</p>
+<pre><code>G-1 ambiguity fires on ANY group name          KILLED  gin-group-inherit + gin-two-groups-distinct-ok
+G-2 _router_key drops owner qualification      KILLED  fastapi-imported-nonrouter-quiet
+G-3 group credit dropped entirely              KILLED  gin-group-inherit (+1)
+G-4 MUX_DOTTED_OWNER over-broad                KILLED  x14 fixtures
+G-5 GIN_DOTTED_OWNER over-broad                KILLED  gin-dotted-handler-ok (+1)
+G-6 GIN_GROUP_DECL over-broad (any assignment) KILLED  gin-group-decl-semicolon</code></pre>
+<p>Round-5/6 pins re-verified against the new regexes (they could have
+become equivalent):</p>
+<pre><code>R6-M2 GIN_USE lookbehind removed               KILLED  gin-dotted-use-false-safe
+R6-M4 gomux dotted refusal removed             KILLED  gomux-dotted-recv-false-safe (+1)
+R5    GIN_ROUTE lookbehind removed             SURVIVED alone -&gt; EQUIVALENT (see §4)
+R5 + gin dotted refusal removed                KILLED  gin-dotted-owner-false-safe (+1)</code></pre>
+<h2 id="found-this-round-not-reported-by-the-review">4 — Found this
+round, not reported by the review</h2>
+<p><strong>The gin twin of round-6’s proven-equivalent M3.</strong>
+Round 6 measured that <code>MUX_ROUTE</code>’s lookbehind is unreachable
+behind <code>MUX_DOTTED_OWNER</code> and recorded it as an equivalent
+mutant. <strong>Nobody measured the gin twin.</strong>
+<code>GIN_ROUTE</code>’s lookbehind is in exactly the same position:
+<code>GIN_DOTTED_OWNER</code> refuses and <code>continue</code>s first,
+so removing the lookbehind alone leaves all 115 fixtures green, while
+removing <strong>both</strong> kills
+<code>gin-dotted-owner-false-safe</code>. The pair is load-bearing as a
+unit. Recorded beside <code>GIN_ROUTE</code> so a future reader does not
+delete it as dead code — a surviving single mutation is not evidence of
+redundancy.</p>
+<p><strong>A live corroboration of the NIT-1 gap, mid-session.</strong>
+At 21:40, concurrent BOB-204 work created an untracked
+<code>qBitTorrent-go/internal/jackettapi/bob204_failclosed_test.go</code>
+— <strong>inside a scanned policy root</strong>. The
+<code>*_test.go</code> FILTER is what kept it out of the route
+inventory, and until this round that filter had <strong>no fixture in
+either Go extractor</strong>. The scan-list digest and the
+<code>--json</code> md5 are byte-identical precisely because that filter
+works; before this round nothing held it to it.</p>
+<h2 id="the-two-moved-digits-explained-rather-than-absorbed">5 — The two
+moved digits, explained rather than absorbed</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>digit</th>
+<th>round 6</th>
+<th>round 7</th>
+<th>cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>non-vendor <code>.go</code> census</td>
+<td>106</td>
+<td><strong>107</strong></td>
+<td>the foreign untracked BOB-204 test file above</td>
+</tr>
+<tr>
+<td>residue-gate scan</td>
+<td>272 files</td>
+<td><strong>273</strong></td>
+<td>the same one file</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Attributed by controlled experiment, not by
+inference:</strong> moving that single file aside returns the census to
+<strong>106</strong> and the residue gate to
+<code>scanned 272 file(s); 0 hit(s); 1 audited waiver(s)</code>;
+restoring it returns both. Neither delta is attributable to this round’s
+changes, and the digits that would have moved <em>if</em> they were are
+all byte-identical (below).</p>
+<h2 id="do-not-regress-all-re-run-this-round">6 — Do-not-regress (all
+re-run this round)</h2>
+<pre><code>harness                 115 passed, 0 failed  (was 93; +22 fixtures) x3 deterministic,
+                        byte-identical stdout, verdict-stream sha 8030fee6400991ac (was 2794ed7597175549 at 93)
+real tree               74 routes / 3 services / 23 known-gaps / PASS, exit 0, stderr 0 bytes   UNCHANGED
+real tree --json md5    ecd4b31c2f40c87ed321a00c43cacb26                                        UNCHANGED
+scan list               19 paths (8 .py + 11 .go), sha256 head c7a793a0021c3804                 UNCHANGED
+go lexical census       107 files, 0 lex gaps, 0 odd separators, control needle proven seeing
+                        (106 excluding the foreign BOB-204 file — see §5)
+py_compile              CLEAN under -W error::SyntaxWarning
+bash -n                 CLEAN (gate + harness)
+residue gate            scanned 273 file(s); 0 hit(s); 1 audited waiver(s); exit 0
+                        (272 excluding the foreign file; the waiver is a SIBLING gate&#39;s, unchanged)
+guide twins             .html/.pdf/.docx regenerated, mtimes strictly after .md,
+                        0 mojibake, needles § x26 / — x66, round-7 retraction present in the PDF</code></pre>
+<h2 id="not-closed-honestly-open">7 — Not closed / honestly open</h2>
+<ul>
+<li><strong>The <code>_carriers</code> over-approximation is fail-OPEN
+and is KEPT.</strong> <code>stats := describe(mux)</code> +
+<code>return WithAuth(stats)</code> credits <code>mux</code>. The
+behaviour is unchanged by design — the alternative is a Go return-value
+model, a second parser with its own failure modes — and it is now owned
+in <code>_carriers</code>, in the skip table and in the guide, and
+pinned by <code>gomux-carrier-over-approximates</code> so a future
+narrowing is deliberate.</li>
+<li><strong>The gate still asserts static WIRING, never runtime
+ARMING.</strong> <code>BOBA_API_TOKEN</code> unset ⇒
+statically-protected routes are open on a default deploy. Tracked as
+<strong>BOB-197</strong>. Unchanged, not claimed covered.</li>
+<li><strong>fastapi module-basename collision</strong> is measured
+fail-closed but incidental; the note now lives beside the guard-alias
+rule that produces the refusal, not only in a round-6 evidence
+file.</li>
+<li><strong><code>uses</code> remains file-scoped across
+functions.</strong> <code>gin-one-engine-two-funcs</code> pins that a
+<code>.Use</code> in one function credits a route in another — an
+over-approximation the harness deliberately enshrines. Full
+function-scoping would close it and would flip that green fixture, so it
+is an operator-owned change, recorded here rather than made
+silently.</li>
+<li><strong>The enumerated set is a sample, not a proof</strong> — on
+the credit side now too.</li>
+<li><code>pre_build_verification.sh</code> was NOT run — the conductor
+owns it.</li>
+</ul>
+</body>
+</html>

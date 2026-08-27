@@ -86,6 +86,65 @@ ownership_python() {
 # Returns 2 (not 1, and never 0) when the scope cannot be read: a caller must be
 # able to distinguish "scope says nothing is wrong" from "I could not read the
 # scope at all" (§11.4.201(6)).
+#
+# A DECLARED ENTRY THAT RESOLVES TO NO USABLE LOCATION IS ALSO A READ FAILURE
+# (R2-M1, MEASURED 2026-08-26 against the pre-fix parser)
+# ---------------------------------------------------------------------------
+# This function used to drop such an entry with a bare `continue`. Measured
+# consequence, on a 2-entry scope whose first entry was `${UNSET_VAR}`:
+# ownership_repair.sh announced "(1 declared locations)", walked only the
+# survivor, exited 0 and WROTE A COMPLETION MARKER. One DECLARED location had
+# silently vanished, and no consumer could tell that scope from an honest
+# 1-entry one — the §11.4.201(6) false-null, where a blind read and a clean
+# tree return the same quiet number.
+#
+# Two shapes are refused, both of which mean "the declaration does not denote
+# the location it claims to":
+#
+#   (1) the expansion is EMPTY — an unset/empty `${VAR}` with no default, an
+#       explicit `${VAR:-}`, a missing or null `path:` key, or a list item that
+#       is not a mapping at all. A declared location that is nothing has no
+#       legitimate meaning; `optional: true` says the path may be ABSENT from
+#       the filesystem, never that the DECLARATION may be absent.
+#
+#   (2) the expansion is NON-EMPTY but a `${VAR}` WITHOUT a default resolved to
+#       nothing, so the path silently became a DIFFERENT one. MEASURED: with
+#       `<root>/decoy/${UNSET}/leaf` the parser produced `<root>/decoy/leaf`,
+#       the fence accepted it (absolute and deep enough) and the repair chowned
+#       a tree the scope never declared, exit 0. The fence's depth floor is NOT
+#       a backstop here — it only catches collapses that land on `/` or a bare
+#       top-level directory, not one that lands on another well-formed path.
+#
+# `${VAR:-default}` — including the explicit `${VAR:-}` — is the operator
+# STATING what empty means, and is never refused by (2). That shape is the
+# shipped scope's first entry (`${QBITTORRENT_DATA_DIR:-/mnt/DATA}`), so a rule
+# that swallowed it would refuse the live product: a false-positive refusal,
+# which §11.4.201(1) forbids exactly as firmly as a false pass. Both golden-FALSE
+# fixtures are pinned in tests/unit/test_ownership_repair.sh Case 23.
+#
+# WHY THE WHOLE SCOPE AND NOT JUST THE OFFENDING ENTRY
+#   The completion marker carries a fingerprint over the PARSED entries and
+#   start.sh reads it as "already repaired", so a partial walk that exits 0 does
+#   not merely miss a location once — it LATCHES the miss on every subsequent
+#   start. ownership_repair.sh:485-489 already recorded the identical decision
+#   for the declared-path fence ("ONE BAD ENTRY REFUSES THE WHOLE RUN … Refusing
+#   per-entry and proceeding with the rest would silently repair a partial scope
+#   while writing a marker that claims the whole one"), and two different answers
+#   to one question is the second dialect §11.4.251 forbids. Magnitude is not a
+#   semantic boundary either: `paths: []` (every entry vanishing) is already
+#   exit 2, so letting 1-of-2 exit 0 would put the operator's mental model on an
+#   arbitrary cliff.
+#
+# WHY HERE AND NOT IN EACH CONSUMER
+#   This parser is the only layer that still holds the raw spelling and the
+#   variable name; every layer above it has already lost them (§11.4.241 —
+#   enforce at the strongest rung that can see the invariant). It also gives all
+#   three consumers (ownership_repair.sh, ownership_precondition.sh,
+#   check_cm_ownership_invariants.sh) ONE predicate instead of three crosschecks
+#   that could disagree about expansion semantics (§11.4.251).
+#
+# NOTHING is written to stdout when the scope is refused: a caller that ignored
+# the exit code would otherwise consume a partial scope.
 # ---------------------------------------------------------------------------
 ownership_scope_entries() {
     local py scope
@@ -98,23 +157,132 @@ ownership_scope_entries() {
     }
     "${py}" - "${scope}" <<'PYEOF'
 import os, sys, re, yaml
+
+# ${VAR} and ${VAR:-default}. group(2) present == a default was supplied, which
+# is the operator stating what empty means; group(3) is that default's text.
+VAR_RE = re.compile(r'\$\{([A-Za-z_][A-Za-z0-9_]*)(:-([^}]*))?\}')
+
 doc = yaml.safe_load(open(sys.argv[1])) or {}
-for e in (doc.get("paths") or []):
-    raw = str(e.get("path", ""))
-    # expand ${VAR} and ${VAR:-default} against the live environment
-    def sub(m):
-        var, dflt = m.group(1), m.group(3)
-        return os.environ.get(var) or (dflt if dflt is not None else "")
-    path = re.sub(r'\$\{([A-Za-z_][A-Za-z0-9_]*)(:-([^}]*))?\}', sub, raw)
-    if not path:
+rows = []
+vanished = []
+
+
+def _named(vs):
+    return "; ".join(
+        "${%s} is unset or empty and the entry supplies no ':-' default" % v
+        for v in dict.fromkeys(vs)
+    )
+
+
+for idx, e in enumerate(doc.get("paths") or [], start=1):
+    if not isinstance(e, dict):
+        vanished.append((idx, str(e),
+                         "the list item is not a mapping, so it declares no "
+                         "`path:` key and resolves to an empty path"))
         continue
-    print("\t".join([
+
+    raw = e.get("path")
+    raw = "" if raw is None else str(raw)
+
+    # SPELLING CHECK, before anything is substituted (R3-N1, measured
+    # 2026-08-26). The documented grammar is exactly `${VAR}` and
+    # `${VAR:-default}`. Two spellings satisfy neither and used to survive as a
+    # literal or corrupted path rather than being refused:
+    #   * NESTED `${A:-${B}}` — the default group `[^}]*` cannot span the INNER
+    #     `}`, so that `}` closes the OUTER form and the trailing one is
+    #     stranded. Measured: both-unset produced the literal row
+    #     `.../${B}/leaf`; A set produced the corrupted `.../tmp/x}/leaf`.
+    #     Neither is the path the operator declared.
+    #   * an opener the grammar cannot consume at all — `${}`, `${1}`, or an
+    #     unterminated `${VAR` — which the substitution leaves in place, so the
+    #     marker survives into the walked path.
+    #
+    # WHY IT IS REFUSED RATHER THAN LEFT TO FAIL LATER: a NON-optional entry of
+    # either shape does fail honestly ("does not exist", exit 1), but an
+    # `optional: true` one logs `absent, declared optional — skipped`, exits 0
+    # and writes the marker — a corrupted path that reads as a successful run
+    # while repairing nothing. That is the same under-repair-while-reporting-
+    # success shape the vanished rule below closes for the whole-path case.
+    #
+    # IT JUDGES THE DECLARED SPELLING ONLY (§11.4.201(1)). `raw` is read
+    # straight from the tracked scope file; a variable's VALUE that happens to
+    # contain `${` is env-writer-controlled exactly as QBITTORRENT_DATA_DIR is
+    # and is never reached here — nor is a literal `}` in a directory name,
+    # because only an unconsumed `${` opener counts. Both are pinned as
+    # golden-FALSE cases in the suite.
+    _nested = [m.group(0) for m in VAR_RE.finditer(raw)
+               if m.group(3) is not None and "${" in m.group(3)]
+    if _nested or "${" in VAR_RE.sub("", raw):
+        if _nested:
+            why = ("the entry's spelling was not fully resolved: %s nests one "
+                   "`${...}` inside another's default, which the documented "
+                   "`${VAR}` / `${VAR:-default}` grammar does not cover — the "
+                   "inner `}` closes the outer form and the remainder is left "
+                   "stranded, so the walked path would not be the declared one"
+                   % "; ".join(dict.fromkeys(_nested)))
+        else:
+            why = ("the entry's spelling was not fully resolved: it contains a "
+                   "`${` the documented `${VAR}` / `${VAR:-default}` grammar "
+                   "cannot consume (an empty, non-identifier, or unterminated "
+                   "name), so the marker would survive into the walked path")
+        vanished.append((idx, raw, why))
+        continue
+
+    # Variables that resolved to nothing AND supplied no default. An entry
+    # written `${VAR:-...}` (the explicit `${VAR:-}` included) never lands here.
+    undeclared = []
+
+    def sub(m, _u=undeclared):
+        var, has_default, dflt = m.group(1), m.group(2) is not None, m.group(3)
+        val = os.environ.get(var) or (dflt if dflt is not None else "")
+        if not val and not has_default:
+            _u.append(var)
+        return val
+
+    path = VAR_RE.sub(sub, raw)
+
+    if not path:
+        if not raw:
+            why = ("the entry declares no usable `path:` key — it is missing, "
+                   "null, or an empty path")
+        elif undeclared:
+            why = "it expanded to an empty path: " + _named(undeclared)
+        else:
+            why = "it expanded to an empty path"
+        vanished.append((idx, raw, why))
+        continue
+
+    if undeclared:
+        vanished.append((idx, raw,
+                         "it expanded to '%s', a DIFFERENT path than declared: %s"
+                         % (path, _named(undeclared))))
+        continue
+
+    rows.append("\t".join([
         path,
         str(e.get("kind", "")),
         "1" if e.get("optional", False) else "0",
         "1" if e.get("preserve_mode", False) else "0",
         "1" if e.get("recursive", True) else "0",
     ]))
+
+if vanished:
+    w = sys.stderr.write
+    w("ownership: %d declared entr%s in %s resolved to no usable location:\n"
+      % (len(vanished), "y" if len(vanished) == 1 else "ies", sys.argv[1]))
+    for idx, raw, why in vanished:
+        w("ownership:   entry %d — path: %r — %s\n" % (idx, raw, why))
+    w("ownership: refusing the WHOLE scope, not only these entries: the completion\n")
+    w("ownership:   marker's fingerprint claims EVERY declared location, so a partial\n")
+    w("ownership:   walk that exited 0 would latch the miss on every later start.\n")
+    w("ownership: remedy: give the entry a default (${VAR:-/path}), set the variable,\n")
+    w("ownership:   or remove the entry. `optional: true` does not cover this — it\n")
+    w("ownership:   says the path may be ABSENT, not that the DECLARATION may be.\n")
+    sys.exit(2)
+
+# Written only once every entry resolved: a caller that ignored the exit code
+# must never be handed a partial scope.
+sys.stdout.write("".join(r + "\n" for r in rows))
 PYEOF
 }
 
@@ -127,6 +295,29 @@ PYEOF
 # The probe file is created inside the probed directory ON PURPOSE — ownership
 # is a property of the filesystem and mount the file lands on, so probing
 # anywhere else would answer a different question.
+#
+# ---- THE AGREED PROPERTY IS uid, NOT uid+gid (BOB-207, §11.4.250) ----------
+# This reads `%u` and compares against ownership_operator_uid(), and does NOT
+# read `%g`. That asymmetry is deliberate and is the feature's single
+# definition of "correct ownership", not an oversight:
+#
+#   * data-model E4 models this very result with `probe_uid` / `expected_uid`
+#     and the verdict enum `ok|wrong-owner|unwritable|absent` — no gid field,
+#     no gid verdict. Reading `%g` here would produce data E4 does not model,
+#     and refusing on it would need a verdict this enum cannot express (the
+#     honest attempt emits `wrong-owner:1000`, naming the CORRECT uid as the
+#     fault — an FR-010a violation).
+#   * contracts/startup-precondition.md P1 says compare against "the operator's
+#     uid"; FR-001/FR-002/FR-003/FR-010b all say "owned by the account".
+#   * scripts/ownership_precondition.sh — the shipped FR-010 gate — is uid-only
+#     at every site, INCLUDING its own independent P1 container-write probe.
+#
+# ownership_repair.sh's walk was, until BOB-207, the one place that meant
+# uid+gid; it was narrowed to match this. If a future change widens either
+# side, widen BOTH and amend E4 first — a probe and a repair that disagree
+# about which property they mean is the §11.4.250 primitive defect, and
+# whichever answer the operator happens to read is then not a fact about the
+# system.
 # ---------------------------------------------------------------------------
 probe_location() {
     local dir="$1" want probe got
@@ -158,8 +349,33 @@ probe_location() {
 # invalidate the marker, otherwise a newly-declared path is silently never
 # repaired: the marker would say "already done" about work never performed.
 # ---------------------------------------------------------------------------
+#
+# EMITS NOTHING WHEN THE SCOPE REFUSES (R3-N4). Piping straight into `sha256sum`
+# hashed the parser's EMPTY output before `pipefail` surfaced its exit 2, so a
+# refused scope printed `e3b0c442…` — the sha256 of the empty string — on
+# stdout while returning non-zero. Every current caller guards the rc, so
+# nothing was broken; but round 3 made a non-zero rc reachable from a new cause
+# (unresolved and vanished declarations), and a refusing function that emits a
+# plausible-looking value is a trap for the next caller that captures stdout
+# and forgets. The entries are materialised FIRST and the function returns
+# before hashing, so a refusal produces an empty stdout and the rc.
+# BYTE-IDENTICAL TO THE PIPE IT REPLACES, for every input (proven 2026-08-26).
+# Command substitution strips trailing newlines, so re-adding one unconditionally
+# would hash "\n" instead of "" for a scope that parses to ZERO rows — a
+# DIFFERENT fingerprint for the `paths: []` shape, which returns rc 0. That case
+# is refused downstream before any marker is written, so the value never reaches
+# disk; the empty branch below removes the divergence anyway rather than relying
+# on that. Verified against the live shipped scope: old pipe, new function and
+# the on-disk marker written by the old code all yield c41619d2…, so no
+# completion marker silently re-arms.
 ownership_scope_fingerprint() {
-    ownership_scope_entries | LC_ALL=C sort | sha256sum | cut -d' ' -f1
+    local entries
+    entries="$(ownership_scope_entries)" || return $?
+    if [[ -z "${entries}" ]]; then
+        printf '' | LC_ALL=C sort | sha256sum | cut -d' ' -f1
+    else
+        printf '%s\n' "${entries}" | LC_ALL=C sort | sha256sum | cut -d' ' -f1
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -427,6 +643,35 @@ ownership_normalise_path() {
 #   require the path to be operator-owned, because a root-owned mount point
 #   with operator-owned content beneath it is the ordinary state of a removable
 #   disk, and refusing it would refuse the very case the feature exists for.
+#
+#   IT JUDGES THE SPELLING; THE KERNEL RESOLVES THE PATH (R2-N1, MEASURED
+#   2026-08-26). ownership_normalise_path() is LEXICAL, so an existing symlink
+#   in a NON-FINAL component of a declared path is invisible here: the kernel
+#   resolves it at walk time and the walk names items under the link's TARGET.
+#   Measured with a pre-existing `…/piv/hop → real` and a declared
+#   `…/piv/hop/data`, the walk named `…/real/data/victim` — no race required,
+#   so this is not merely the TOCTOU artifact the normaliser's own rationale
+#   describes. A symlinked FINAL component IS contained (find's default -P does
+#   not descend it, and the trailing slash that would defeat that is stripped —
+#   pinned by Case 17). What bounds the intermediate case is not this fence but
+#   WHO CAN WRITE those components: they sit ABOVE the declared root, outside
+#   every container bind mount, and an actor able to write there can edit the
+#   untracked `.env` that supplies the root anyway — so no capability is
+#   gained. Tracked as BOB-201 — the item that RECORDS this static reach, with
+#   its scope and severity bounds and an operator-owned resolve-or-accept
+#   decision (§11.4.66). Round 3 cited BOB-159 here, which is the WARM-START
+#   repair-window item and whose body never mentioned symlinks at all: a
+#   pointer that looked like coverage and was none, so no tracker query could
+#   have found this reach (§11.4.214). Case 24 now reads this id out of the
+#   fence and asks the tracker whether it exists AND records the reach, so the
+#   next dangling citation fails a check instead of passing one. Stated here
+#   because a fence that let a reader infer symlink safety it does not provide
+#   would be the overstatement §11.4.6 forbids.
+#
+#   ONE WELL-SHAPED PATH IS DENIED BY COMPUTATION, NOT BY SHAPE (R2-N2): the
+#   container runtime's own storage under $HOME — see
+#   ownership_fence_runtime_trees() below for the rule, its reasoning and its
+#   own honest limit.
 # ---------------------------------------------------------------------------
 OWNERSHIP_FENCE_MIN_COMPONENTS=2
 
@@ -444,6 +689,61 @@ ownership_path_components() {
         [[ -n "${seg}" ]] && n=$(( n + 1 ))
     done
     printf '%s' "${n}"
+}
+
+# ---------------------------------------------------------------------------
+# ownership_fence_runtime_trees — trees that are neither system trees nor
+# download roots: the CONTAINER RUNTIME's own storage, whose files are owned by
+# mapped subuids BY DESIGN rather than by the operator.
+#
+# WHY IT IS NOT IN OWNERSHIP_FENCE_SYSTEM_TREES
+#   That list is static and absolute. Rootless storage lives under the
+#   operator's own $HOME (or $XDG_DATA_HOME), so the path is per host and must
+#   be computed.
+#
+# WHY IT IS DENIED AT ALL (R2-N2, measured 2026-08-26)
+#   `/home/<user>` clears the depth floor and is deliberately NOT denylisted —
+#   `/home/<user>/Downloads` is an ordinary download root the fence must keep
+#   accepting, and refusing it would be the §11.4.201(1) false positive. A
+#   declared root at or above `~/.local/share/containers` is therefore accepted
+#   by shape, and the repair's `podman unshare` fallback would rewrite the
+#   subuid-owned rootless container storage that this project's §11.4.161
+#   rootless mandate depends on. Recoverable (re-pull the images), destructive
+#   to the runtime, and NO download root has ever lived inside container
+#   storage — so the deny has no false-positive cost and removes a real hazard.
+#
+# HONEST LIMIT (§11.4.6): this resolves the DEFAULT graphroot and the
+#   XDG_DATA_HOME-relocated one, both of which are pure string operations. It
+#   does NOT resolve a graphroot relocated in storage.conf or via
+#   CONTAINERS_STORAGE_CONF: reading those would make the fence depend on
+#   filesystem state at check time, which is exactly the raceable property
+#   ownership_normalise_path() documents as disqualifying. A host that has
+#   moved its graphroot is NOT covered by this rule.
+#
+# A computed value that came out degenerate is DISCARDED rather than used, by
+# two DIFFERENT guards (MEASURED 2026-08-26 — the earlier comment here named
+# the wrong cause):
+#   * RELATIVE base — a relative HOME or XDG_DATA_HOME never reaches the
+#     candidate at all; the `== /*` guard on `base` discards it.
+#   * SHALLOWER THAN THE DEPTH FLOOR — reached via a degenerate XDG_DATA_HOME,
+#     NOT via an unset HOME: `XDG_DATA_HOME=/` computes `/containers`
+#     (1 component) and is discarded. An unset, empty or `/` HOME computes
+#     `/.local/share/containers` — 3 components, so it is KEPT, as a harmless
+#     narrow phantom deny that no real root lives under. Under those same
+#     degenerate values an ordinary root such as `/data/Downloads` is still
+#     ACCEPTED: the deny never broadens into a top-level prefix.
+# A deny rule that broadened into a top-level prefix would refuse legitimate
+# roots, and a fence that over-refuses is a §11.4.201(1) FAIL-bluff of the same
+# severity as one that under-refuses.
+# ---------------------------------------------------------------------------
+ownership_fence_runtime_trees() {
+    local base cand
+    base="${XDG_DATA_HOME:-${HOME:-}/.local/share}"
+    [[ "${base}" == /* ]] || return 0
+    cand="$(ownership_normalise_path "${base}/containers")" || return 0
+    [[ "${cand}" == /* ]] || return 0
+    [[ "$(ownership_path_components "${cand}")" -ge "${OWNERSHIP_FENCE_MIN_COMPONENTS}" ]] || return 0
+    printf '%s\n' "${cand}"
 }
 
 # ownership_path_fence <resolved-abs-path> <declared-was-relative:0|1> <project-root>
@@ -495,6 +795,22 @@ ownership_path_fence() {
             fi
         fi
     done
+
+    # --- container-runtime storage: computed, absolute entries only --------
+    # Absolute-only for the same reason as the system trees above: a REPOSITORY
+    # that legitimately lives under one of these prefixes keeps working, because
+    # its relative entries are bounded by project containment, which is the
+    # stronger guarantee.
+    if [[ "${was_rel}" -eq 0 ]]; then
+        local rt
+        while IFS= read -r rt; do
+            [[ -n "${rt}" ]] || continue
+            if [[ "${norm}" == "${rt}" || "${norm}" == "${rt}"/* ]]; then
+                echo "'${norm}' is inside the container-runtime storage tree ${rt}; those files are owned by mapped subuids by design and a recursive ownership change there breaks the rootless runtime (§11.4.161)" >&2
+                return 1
+            fi
+        done < <(ownership_fence_runtime_trees)
+    fi
 
     if [[ "${was_rel}" -eq 1 ]]; then
         # --- relative: must stay inside the project root -------------------

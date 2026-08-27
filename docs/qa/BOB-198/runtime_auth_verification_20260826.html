@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>runtime_auth_verification_20260826</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">runtime_auth_verification_20260826</h1>
+</header>
+<h1 id="bob-198-runtime-lan-auth-verification-11.4.108-layer-34">BOB-198
+— Runtime LAN Auth Verification (§11.4.108 layer 3–4)</h1>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Revision</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Created</td>
+<td>2026-08-26T18:37:35Z</td>
+</tr>
+<tr>
+<td>Last modified</td>
+<td>2026-08-26T18:37:35Z</td>
+</tr>
+<tr>
+<td>Status</td>
+<td>active</td>
+</tr>
+<tr>
+<td>Status summary</td>
+<td>Runtime-only verification of live LAN auth posture. NO fixes
+applied, NO source/config modified. Establishes as measured fact that
+unauthenticated mutating LAN requests ARE currently accepted by two live
+services.</td>
+</tr>
+<tr>
+<td>Scope</td>
+<td>Runtime observation only (§11.4.108 layers 3–4). Static wiring
+(layer 1) explicitly OUT of scope — that is the separate gate, tracked
+as BOB-197.</td>
+</tr>
+<tr>
+<td>Label</td>
+<td>(T11/002-user-owned-downloads - milos85vasic - ? - xhigh)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="method-instrument-honesty-11.4.201">1. Method + instrument
+honesty (§11.4.201)</h2>
+<p>All probes issued from the host against the <strong>LAN address
+<code>192.168.1.90</code></strong>, not <code>127.0.0.1</code>. This is
+load-bearing: BOB-198 concerns <em>LAN</em> routes, and qBittorrent
+implements a localhost-bypass, so a loopback probe would have measured a
+different code path.</p>
+<p><strong>Control needle (§11.4.201(7)(b)) — the prober can observe a
+rejection:</strong></p>
+<pre><code>GET http://127.0.0.1:9117/api/v2.0/indexers/all/results?Query=test
+-&gt; HTTP 401</code></pre>
+<p>A 401 is therefore observable through this exact instrument+path. Any
+<code>200</code> reported below is a real 200, not instrument
+blindness.</p>
+<p><strong>Reachability/absence needle:</strong></p>
+<pre><code>GET http://127.0.0.1:7188/  -&gt; HTTP 000, curl exit=7 (connection refused)</code></pre>
+<p>The instrument distinguishes “refused” from “answered”, so an absence
+below is a real absence.</p>
+<p><strong>Negative control on the one gate that did fire
+(7189):</strong></p>
+<pre><code>DELETE /api/v1/jackett/credentials/&lt;nonexistent&gt;  [Authorization: WRONG]  -&gt; HTTP 401</code></pre>
+<p><strong>Determinism (§11.4.50):</strong> the four decisive probes
+were run 3x with identical results (see §5).</p>
+<p><strong>Credential discipline (§11.4.10):</strong>
+<code>BOBA_API_TOKEN</code> was read from <code>.env</code> into a shell
+variable and referenced <strong>by name only</strong>. Its value was
+never printed, logged, or echoed. Confirmed present:
+<code>BOBA_API_TOKEN is set in .env (len=64)</code>.
+<code>GET /api/v2/app/preferences</code> bodies are reported by
+<strong>byte count only</strong> — never dumped — as they may carry
+sensitive fields.</p>
+<p><strong>Non-mutation discipline:</strong> every mutating probe
+targeted a <strong>non-existent id</strong>, and the qBittorrent probe
+additionally ran against a <strong>provably empty torrent list</strong>
+(<code>torrents/info</code> = <code>[]</code> before and after). Effect
+is nil, verified both sides. No <code>.env</code>, compose, source, or
+config file was modified.</p>
+<blockquote>
+<p>Method note: the documented <code>./start.sh -s</code> status path
+was <strong>deliberately not used</strong>. <code>start.sh</code> runs
+<code>load-tracker-cookies.sh</code> (which <em>writes</em>
+<code>.env</code>) and <code>ensure_boba_master_key</code>
+<em>before</em> it reaches the <code>status_only</code> branch
+(<code>start.sh:1183-1194</code>). Invoking it would have violated the
+standing “do NOT modify <code>.env</code>” constraint. The read-only
+project-owned path <code>scripts/boba-svc.sh status</code> (pure
+<code>systemctl --user</code> read) was used instead, plus a host
+socket-table read. No raw <code>podman</code>/<code>docker</code>
+command was issued (Hard Stop #3 respected).</p>
+</blockquote>
+<h2 id="live-service-port-map-measured">2. Live service / port map
+(measured)</h2>
+<p><code>ss -ltnp</code>, corroborated by the
+<code>boba-stack.service</code> cgroup container list:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Port</th>
+<th>Bound by</th>
+<th>Bind address</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7185</td>
+<td><code>qbittorrent-nox</code> (pid 1172768)</td>
+<td><code>*</code> (all interfaces)</td>
+<td>LIVE</td>
+</tr>
+<tr>
+<td>7186</td>
+<td><code>python3</code> (pid 1182998)</td>
+<td><code>0.0.0.0</code></td>
+<td>LIVE — download-proxy</td>
+</tr>
+<tr>
+<td>7187</td>
+<td><code>python3</code> (pid 1182998, <strong>same
+process</strong>)</td>
+<td><code>0.0.0.0</code></td>
+<td>LIVE — merge service</td>
+</tr>
+<tr>
+<td>7188</td>
+<td>—</td>
+<td>—</td>
+<td><strong>NOT BOUND</strong> — honest SKIP</td>
+</tr>
+<tr>
+<td>7189</td>
+<td><code>boba-jackett</code> (pid 1182706)</td>
+<td><code>*</code> (all interfaces)</td>
+<td>LIVE — Go/Gin</td>
+</tr>
+<tr>
+<td>9117</td>
+<td><code>jackett</code> (pid 2269398)</td>
+<td><code>*</code> (all interfaces)</td>
+<td>LIVE</td>
+</tr>
+</tbody>
+</table>
+<p>Running containers (from the service cgroup, read-only):
+<code>qbittorrent</code>, <code>jackett</code>,
+<code>boba-jackett</code>, <code>qbittorrent-proxy</code>.</p>
+<p><strong>Every live service binds all interfaces — none is
+loopback-only.</strong></p>
+<h3 id="topology-skips-11.4.3-honest-neither-pass-nor-fail">Topology
+SKIPs (§11.4.3 — honest, neither pass nor fail)</h3>
+<ul>
+<li><strong><code>qbittorrent-proxy-go</code> — NOT RUNNING.</strong> It
+is the literal subject of BOB-198. It is <code>profiles:</code>-gated in
+<code>docker-compose.yml:186</code> (opt-in via
+<code>--profile go</code>) and is absent from the running container set.
+Its runtime auth posture is therefore <strong>UNVERIFIED — SKIP, reason:
+topology_unsupported / service_not_running.</strong> No claim is made
+about it in either direction.</li>
+<li><strong><code>webui-bridge</code> (7188) — NOT RUNNING.</strong>
+Port unbound, connection refused. <strong>SKIP, reason:
+service_not_running.</strong></li>
+</ul>
+<h2 id="per-service-findings">3. Per-service findings</h2>
+<h3 id="port-7187-python-fastapi-merge-service-no-auth-at-all">3.1 Port
+7187 — Python FastAPI merge service — <strong>NO AUTH AT
+ALL</strong></h3>
+<p>34 routes exposed via <code>openapi.json</code> (fetched
+unauthenticated, HTTP 200).</p>
+<p>Unauthenticated reads, all from LAN, all <strong>HTTP
+200</strong>:</p>
+<pre><code>GET /api/v1/config           -&gt; 200  {&quot;qbittorrent_url&quot;:&quot;http://192.168.1.90:7186&quot;, ...}
+GET /api/v1/stats            -&gt; 200  {&quot;active_searches&quot;:0, ... &quot;trackers&quot;:[...]}
+GET /api/v1/auth/status      -&gt; 200  {&quot;trackers&quot;:{&quot;rutracker&quot;:{&quot;has_session&quot;:true,...
+GET /api/v1/hooks            -&gt; 200  {&quot;hooks&quot;:[],&quot;count&quot;:0}
+GET /api/v1/schedules        -&gt; 200  {&quot;schedules&quot;:[],&quot;count&quot;:0}
+GET /api/v1/downloads/active -&gt; 200  {&quot;downloads&quot;:[],&quot;count&quot;:0}</code></pre>
+<p>Note <code>/api/v1/auth/status</code> discloses <strong>which tracker
+sessions are live</strong> (<code>rutracker: has_session=true</code>,
+<code>nnmclub: has_session=true</code>) to any unauthenticated LAN
+caller.</p>
+<p>Unauthenticated <strong>mutating</strong> probes (nil-effect
+targets):</p>
+<pre><code>DELETE /api/v1/hooks/bob198-nonexistent-probe-id
+-&gt; HTTP 404   {&quot;detail&quot;:&quot;Hook not found&quot;}
+
+POST /api/v1/hooks            body {}
+-&gt; HTTP 422   {&quot;detail&quot;:[{&quot;type&quot;:&quot;missing&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;name&quot;],...}]}
+
+POST /api/v1/schedules        body {}
+-&gt; HTTP 422   {&quot;detail&quot;:[{&quot;type&quot;:&quot;missing&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;name&quot;],...}]}</code></pre>
+<p><strong>Interpretation.</strong> A <code>401</code> would mean auth
+ran and refused. Instead: <code>404 "Hook not found"</code> means the
+<strong>handler executed and performed a lookup</strong>;
+<code>422</code> means the request reached <strong>FastAPI body
+validation</strong>, which runs <em>after</em> middleware. Both prove
+there is <strong>no authentication layer</strong> on this service.</p>
+<p><strong>The armed token is INERT here</strong> — identical responses
+with and without it:</p>
+<pre><code>GET /api/v1/config  [Authorization: Bearer &lt;redacted&gt;] -&gt; HTTP 200
+GET /api/v1/config  [X-API-Token:  &lt;redacted&gt;]         -&gt; HTTP 200
+GET /api/v1/config  [X-Boba-Token: &lt;redacted&gt;]         -&gt; HTTP 200
+DELETE /api/v1/hooks/&lt;nonexistent&gt; [Authorization: &lt;redacted&gt;] -&gt; HTTP 404</code></pre>
+<h3
+id="port-7186-download-proxy-qbittorrent-mutating-control-accepted">3.2
+Port 7186 — download-proxy → qBittorrent — <strong>MUTATING CONTROL
+ACCEPTED</strong></h3>
+<pre><code>GET /api/v2/app/version      -&gt; 200 (6 bytes)
+GET /api/v2/app/webapiVersion-&gt; 200 (6 bytes)
+GET /api/v2/app/preferences  -&gt; 200 (6306 bytes)   [body NOT dumped, §11.4.10]
+GET /api/v2/torrents/info    -&gt; 200 (2 bytes = [])
+GET /api/v2/transfer/info    -&gt; 200 (248 bytes)</code></pre>
+<p>The <strong>mutating</strong> probe — the one that matters:</p>
+<pre><code>precondition: GET /api/v2/torrents/info -&gt; []     (zero torrents =&gt; nil effect)
+
+POST http://192.168.1.90:7186/api/v2/torrents/stop
+     -d &quot;hashes=0000000000000000000000000000000000000000&quot;
+     (no credentials of any kind)
+-&gt; HTTP 200
+
+postcondition: GET /api/v2/torrents/info -&gt; []    (unchanged, nil effect confirmed)</code></pre>
+<p><strong><code>HTTP 200</code> on an unauthenticated LAN request to a
+qBittorrent state-changing control endpoint.</strong>
+<code>POST /api/v2/torrents/pause</code> returned 404 from the proxy’s
+own error page (that verb is not routed); <code>/stop</code> routed
+through and qBittorrent accepted it.</p>
+<p>Port <strong>7185 direct</strong> shows the same open posture from
+LAN (<code>/api/v2/app/preferences</code> -&gt; 200, 6306 bytes), so the
+exposure is not solely a proxy artifact.</p>
+<h3 id="port-7189-boba-jackett-gogin-read-open-write-gated">3.3 Port
+7189 — boba-jackett (Go/Gin) — <strong>read open, write
+gated</strong></h3>
+<pre><code>GET /healthz                       -&gt; 200  {&quot;status&quot;:&quot;ok&quot;,&quot;db_ok&quot;:true,...}
+GET /api/v1/jackett/credentials    -&gt; 200  []
+GET /api/v1/jackett/indexers       -&gt; 200  []
+
+DELETE /api/v1/jackett/credentials/&lt;nonexistent&gt;  -&gt; 401  unauthorized
+POST   /api/v1/jackett/credentials  body {}       -&gt; 401  unauthorized</code></pre>
+<p>This is the <strong>only</strong> live service enforcing anything at
+runtime, and only on <strong>writes</strong>. Reads — including the
+credential-store listing route — are open to any unauthenticated LAN
+caller.</p>
+<p><strong>The armed <code>BOBA_API_TOKEN</code> does not open this
+gate</strong> in any tested header shape:</p>
+<pre><code>[X-API-Token: &lt;redacted&gt;]   -&gt; 401
+[X-Boba-Token: &lt;redacted&gt;]  -&gt; 401
+[X-Auth-Token: &lt;redacted&gt;]  -&gt; 401
+[X-Api-Key: &lt;redacted&gt;]     -&gt; 401
+[Authorization: Bearer &lt;redacted&gt;] -&gt; 401</code></pre>
+<p>Consistent with <code>docker-compose.yml</code>, where
+<code>BOBA_API_TOKEN</code> is injected into <strong>exactly
+one</strong> service — <code>download-proxy</code> (line 237) — and into
+neither <code>qbittorrent-proxy-go</code> (block at line 113) nor
+<code>boba-jackett</code> (block at line 292).</p>
+<h2 id="verdict">4. Verdict</h2>
+<p><strong>YES — unauthenticated mutating LAN requests are currently
+accepted.</strong></p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Service</th>
+<th>Port</th>
+<th>Unauth read</th>
+<th>Unauth mutate</th>
+<th>Token honored</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>merge service (Python)</td>
+<td>7187</td>
+<td><strong>ACCEPTED</strong> (200)</td>
+<td><strong>ACCEPTED</strong> (404/422 = handler ran)</td>
+<td><strong>NO — inert</strong></td>
+</tr>
+<tr>
+<td>download-proxy → qBittorrent</td>
+<td>7186</td>
+<td><strong>ACCEPTED</strong> (200)</td>
+<td><strong>ACCEPTED</strong> (200 on <code>torrents/stop</code>)</td>
+<td>not exercised</td>
+</tr>
+<tr>
+<td>qBittorrent direct</td>
+<td>7185</td>
+<td><strong>ACCEPTED</strong> (200)</td>
+<td>not probed</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>boba-jackett (Go)</td>
+<td>7189</td>
+<td><strong>ACCEPTED</strong> (200)</td>
+<td><strong>REFUSED</strong> (401)</td>
+<td><strong>NO</strong> — 401 in all shapes</td>
+</tr>
+<tr>
+<td>qbittorrent-proxy-go</td>
+<td>—</td>
+<td>SKIP</td>
+<td>SKIP</td>
+<td>SKIP — not running</td>
+</tr>
+<tr>
+<td>webui-bridge</td>
+<td>7188</td>
+<td>SKIP</td>
+<td>SKIP</td>
+<td>SKIP — not bound</td>
+</tr>
+</tbody>
+</table>
+<p>Exact accepted unauthenticated mutating routes, by service:</p>
+<ol type="1">
+<li><strong><code>POST /api/v2/torrents/stop</code></strong> on
+<strong>download-proxy (7186)</strong> → HTTP 200.</li>
+<li><strong><code>POST /api/v1/hooks</code></strong> on <strong>merge
+service (7187)</strong> → HTTP 422 (reached validation; no auth
+layer).</li>
+<li><strong><code>POST /api/v1/schedules</code></strong> on
+<strong>merge service (7187)</strong> → HTTP 422.</li>
+<li><strong><code>DELETE /api/v1/hooks/{hook_id}</code></strong> on
+<strong>merge service (7187)</strong> → HTTP 404 (handler executed a
+lookup; no auth layer).</li>
+</ol>
+<p><code>/api/v1/hooks</code> is a webhook-registration surface taking a
+<code>script_path</code>, and 7186 fronts full qBittorrent control —
+both reachable unauthenticated from the LAN.</p>
+<h2 id="determinism-evidence-11.4.50-33-identical">5. Determinism
+evidence (§11.4.50) — 3/3 identical</h2>
+<pre><code>iter 1: 7186 stop=200 | 7187 POST hooks=422 | 7187 DELETE hook=404 | 7189 POST creds=401
+iter 2: 7186 stop=200 | 7187 POST hooks=422 | 7187 DELETE hook=404 | 7189 POST creds=401
+iter 3: 7186 stop=200 | 7187 POST hooks=422 | 7187 DELETE hook=404 | 7189 POST creds=401</code></pre>
+<h2 id="honest-boundary-11.4.6">6. Honest boundary (§11.4.6)</h2>
+<ul>
+<li>This documents <strong>runtime posture only</strong>. It makes
+<strong>no</strong> claim about the static gate
+<code>check_cm_lan_routes_authenticated</code> (BOB-197), which measures
+a different layer.</li>
+<li><code>qbittorrent-proxy-go</code> — BOB-198’s named subject —
+<strong>was not running</strong>, so its runtime posture is genuinely
+<strong>UNKNOWN</strong>, not “passing” and not “failing”. The “22 LAN
+routes with no auth” claim is <strong>not runtime-confirmed
+here</strong> and is <strong>not runtime-refuted</strong> either.</li>
+<li>The header shapes tried against 7189 are the five common ones; a
+sixth, differently-named shape may exist. The measured fact is narrower:
+<strong>the armed <code>BOBA_API_TOKEN</code> did not open the gate in
+any tested shape</strong>, which is consistent with compose never
+injecting it into that container.</li>
+<li>Probing was from the host’s own LAN interface. Reachability from a
+<em>different</em> LAN host was not exercised; all services bind
+<code>0.0.0.0</code>/<code>*</code>, but no second-host test was
+performed.</li>
+<li>No fix was applied and none is authorised by this task.</li>
+</ul>
+</body>
+</html>

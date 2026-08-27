@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>review_scope_map_20260826</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">review_scope_map_20260826</h1>
+</header>
+<h1
+id="t041-review-scope-map-git-diff-main...head-002-user-owned-downloads">T041
+Review-Scope Map — <code>git diff main...HEAD</code>
+(002-user-owned-downloads)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-26T19:05:00Z <strong>Status:</strong> active <strong>Status
+summary:</strong> Read-only PREFLIGHT scope map for T041. Produced so
+the §11.4.209 Fable-<code>xhigh</code> review can be exhaustive per
+§11.4.194(1) rather than sampling whatever the diff surfaces first. This
+document performs NO review and issues NO verdict.
+<strong>Authority:</strong> §11.4.194(1) scenario-space enumeration;
+§11.4.201(6)(7) needled measurement; §11.4.44 revision header.
+<strong>Scope:</strong> <code>git diff main...HEAD</code> measured at
+HEAD <code>a3e1141</code>, merge-base <code>79c00b9</code>, 97
+commits.</p>
+<hr />
+<h2 id="preflight-facts-instrument-discipline">0. Preflight facts +
+instrument discipline</h2>
+<table>
+<thead>
+<tr>
+<th>Fact</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Branch</td>
+<td><code>002-user-owned-downloads</code></td>
+</tr>
+<tr>
+<td>HEAD</td>
+<td><code>a3e1141777914f3d71d62a6cd32a4c79c7f43842</code></td>
+</tr>
+<tr>
+<td>merge-base with <code>main</code></td>
+<td><code>79c00b9bf8e4a73e50f87e7c5601ee87d74d2431</code></td>
+</tr>
+<tr>
+<td>Commits <code>main..HEAD</code></td>
+<td>97</td>
+</tr>
+<tr>
+<td>Files changed</td>
+<td><strong>923</strong></td>
+</tr>
+<tr>
+<td>Insertions / deletions</td>
+<td><strong>+143,745 / −3,815</strong></td>
+</tr>
+<tr>
+<td>Binary files in diff</td>
+<td>322 (321 PDF + 1 <code>.db</code>)</td>
+</tr>
+<tr>
+<td>Measured at (UTC)</td>
+<td>2026-08-26T18:57–19:05Z</td>
+</tr>
+</tbody>
+</table>
+<h3 id="instruments-and-their-control-needles-11.4.2017b">Instruments
+and their control needles (§11.4.201(7)(b))</h3>
+<p>Every count below came from an instrument that was proven able to see
+through the <strong>same path</strong> before any zero was reported.
+Needle results:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Instrument</th>
+<th>Known-present needle</th>
+<th>Negative control</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>git diff --numstat</code> → grep on path</td>
+<td><code>specs/…/tasks.md</code> = 1</td>
+<td>absent path = 0</td>
+</tr>
+<tr>
+<td><code>git ls-files</code> → grep -x</td>
+<td><code>start.sh</code> = 1</td>
+<td>absent = 0</td>
+</tr>
+<tr>
+<td><code>git ls-files --others</code></td>
+<td><code>lan_route_auth_analyzer.py</code> = 1</td>
+<td>absent = 0</td>
+</tr>
+<tr>
+<td><code>grep -rl</code> into <code>tests/</code></td>
+<td><code>def test_</code> = 200 files</td>
+<td>absent = 0</td>
+</tr>
+<tr>
+<td><code>find -mmin</code></td>
+<td><code>ownership.sh -mmin -600</code> = 1</td>
+<td>absent name = 0</td>
+</tr>
+<tr>
+<td>gate-registration grep</td>
+<td>8/8 gates found</td>
+<td><code>check_cm_zzz_absent_gate</code> = 0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Two false-nulls were caught by this discipline and are
+recorded because the reviewer will hit the same traps:</strong></p>
+<ol type="1">
+<li><strong><code>grep -E '^specs/'</code> on <code>--numstat</code>
+output returns ZERO.</strong> <code>--numstat</code> rows are
+<code>ins \t del \t path</code>, so the line does not start with the
+path. The corrected instrument is
+<code>awk -F'\t' '$3 ~ /^specs\//'</code>, which returns 21. A
+line-anchored pattern against numstat is a silent false-null.</li>
+<li><strong>Gate-mutation pairing under one naming convention returns
+ZERO.</strong> The repo uses <strong>two</strong> conventions side by
+side — <code>tests/pre_build/test_check_cm_&lt;x&gt;.sh</code>
+<em>and</em> <code>tests/pre_build/test_cm_&lt;x&gt;.sh</code>.
+Searching for one misses the other. All 8 changed gates are paired; a
+single-convention scan would have reported 3 of them unpaired. See
+§2.</li>
+<li><code>find -newermt</code> with a <strong>relative</strong> argument
+errors on this host’s <code>find</code> (it is <code>bfs</code>); with
+stderr swallowed that reads as an empty result. All recency measurements
+here use <code>-mmin</code>.</li>
+<li><code>git status --porcelain</code> collapses untracked
+<strong>directories</strong> to one entry. The 20 <code>??</code>
+entries expand to <strong>24 untracked files</strong>; each collapsed
+directory was expanded with <code>find -type f</code> (§6).</li>
+</ol>
+<hr />
+<h2 id="the-diff-measured-and-classified">1. The diff, measured and
+classified</h2>
+<h3 id="classification-rule-reproducible">1.1 Classification rule
+(reproducible)</h3>
+<p>First match wins, top to bottom. Reproduce with
+<code>awk -F'\t' -f classify.awk &lt;(git diff main...HEAD --numstat)</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode awk"><code class="sourceCode awk"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>p <span class="op">==</span> <span class="st">&quot;constitution&quot;</span><span class="op">)</span>                                      <span class="op">-&gt;</span> submodule<span class="op">-</span>pointer</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>p <span class="op">~</span> <span class="ot">/\</span><span class="sc">.</span><span class="ss">db</span><span class="ot">$/</span><span class="op">)</span>                                              <span class="op">-&gt;</span> tracked<span class="op">-</span>data</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>p <span class="op">~</span> <span class="ot">/^</span><span class="ss">docs</span><span class="ot">\</span><span class="sc">/</span><span class="ss">qa</span><span class="ot">\</span><span class="sc">/</span><span class="ot">.*\</span><span class="sc">.</span><span class="ot">(</span><span class="ss">json</span><span class="ot">|</span><span class="ss">txt</span><span class="ot">|</span><span class="ss">log</span><span class="ot">|</span><span class="ss">diff</span><span class="ot">)$/</span><span class="op">)</span>                <span class="op">-&gt;</span> qa<span class="op">-</span>evidence</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>p <span class="op">~</span> <span class="ot">/^</span><span class="ss">tests</span><span class="ot">\</span><span class="sc">/</span><span class="ot">/</span><span class="op">)</span>                                           <span class="op">-&gt;</span> test<span class="op">+</span>fixture</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>p <span class="op">~</span> <span class="ot">/\</span><span class="sc">/</span><span class="ss">fixtures</span><span class="ot">?\</span><span class="sc">/</span><span class="ot">/</span><span class="op">)</span>                                      <span class="op">-&gt;</span> test<span class="op">+</span>fixture</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>p <span class="op">~</span> <span class="ot">/(^|\</span><span class="sc">/</span><span class="ot">)(</span><span class="ss">test_</span><span class="ot">[^\</span><span class="sc">/</span><span class="ot">]*|[^\</span><span class="sc">/</span><span class="ot">]*</span><span class="ss">_test</span><span class="ot">)\</span><span class="sc">.</span><span class="ot">(</span><span class="ss">py</span><span class="ot">|</span><span class="ss">sh</span><span class="ot">|</span><span class="ss">go</span><span class="ot">|</span><span class="ss">ts</span><span class="ot">|</span><span class="ss">js</span><span class="ot">)$/</span><span class="op">)</span> <span class="op">-&gt;</span> test<span class="op">+</span>fixture</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>p <span class="op">~</span> <span class="ot">/\</span><span class="sc">.</span><span class="ss">spec</span><span class="ot">\</span><span class="sc">.</span><span class="ss">ts</span><span class="ot">$/</span><span class="op">)</span>                                        <span class="op">-&gt;</span> test<span class="op">+</span>fixture</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>p <span class="op">~</span> <span class="ot">/\</span><span class="sc">.</span><span class="ot">(</span><span class="ss">html</span><span class="ot">|</span><span class="ss">pdf</span><span class="ot">|</span><span class="ss">docx</span><span class="ot">)$/</span><span class="op">)</span>                                 <span class="op">-&gt;</span> generated<span class="op">-</span>export</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>p <span class="op">~</span> <span class="ot">/^</span><span class="ss">scripts</span><span class="ot">\</span><span class="sc">/</span><span class="ss">pre_build</span><span class="ot">\</span><span class="sc">/</span><span class="ot">/</span><span class="op">)</span>                              <span class="op">-&gt;</span> gate<span class="op">-</span>script</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>p <span class="op">~</span> <span class="ot">/^</span><span class="ss">constitution</span><span class="ot">\</span><span class="sc">/</span><span class="ss">scripts</span><span class="ot">\</span><span class="sc">/</span><span class="ss">gates</span><span class="ot">\</span><span class="sc">/</span><span class="ot">/</span><span class="op">)</span>                    <span class="op">-&gt;</span> gate<span class="op">-</span>script</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>p <span class="op">~</span> <span class="ot">/^</span><span class="ss">challenges</span><span class="ot">\</span><span class="sc">/</span><span class="ss">scripts</span><span class="ot">\</span><span class="sc">/</span><span class="ot">/</span><span class="op">)</span>                             <span class="op">-&gt;</span> gate<span class="op">-</span>script</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>p <span class="op">~</span> <span class="ot">/(^|\</span><span class="sc">/</span><span class="ot">)</span><span class="ss">pre_build_verification</span><span class="ot">\</span><span class="sc">.</span><span class="ss">sh</span><span class="ot">$/</span><span class="op">)</span>                  <span class="op">-&gt;</span> gate<span class="op">-</span>script</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>p <span class="op">~</span> <span class="ot">/(^|\</span><span class="sc">/</span><span class="ot">)(</span><span class="ss">check</span><span class="ot">|</span><span class="ss">cm</span><span class="ot">|</span><span class="ss">guard</span><span class="ot">)</span><span class="ss">_</span><span class="ot">[^\</span><span class="sc">/</span><span class="ot">]*\</span><span class="sc">.</span><span class="ot">(</span><span class="ss">sh</span><span class="ot">|</span><span class="ss">py</span><span class="ot">)$/</span><span class="op">)</span>            <span class="op">-&gt;</span> gate<span class="op">-</span>script</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>p <span class="op">~</span> <span class="ot">/\</span><span class="sc">.</span><span class="ot">(</span><span class="ss">py</span><span class="ot">|</span><span class="ss">sh</span><span class="ot">|</span><span class="ss">go</span><span class="ot">|</span><span class="ss">ts</span><span class="ot">|</span><span class="ss">tsx</span><span class="ot">|</span><span class="ss">js</span><span class="ot">|</span><span class="ss">scss</span><span class="ot">)$/</span><span class="op">)</span>                       <span class="op">-&gt;</span> executable<span class="op">-</span>source</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>p <span class="op">~</span> <span class="ot">/\</span><span class="sc">.</span><span class="ot">(</span><span class="ss">json</span><span class="ot">|</span><span class="ss">ya</span><span class="ot">?</span><span class="ss">ml</span><span class="ot">|</span><span class="ss">toml</span><span class="ot">|</span><span class="ss">service</span><span class="ot">|</span><span class="ss">target</span><span class="ot">|</span><span class="ss">conf</span><span class="ot">|</span><span class="ss">cfg</span><span class="ot">|</span><span class="ss">ini</span><span class="ot">)$/</span><span class="op">)</span>   <span class="op">-&gt;</span> config</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>p <span class="op">~</span> <span class="ot">/(^|\</span><span class="sc">/</span><span class="ot">)\</span><span class="sc">.</span><span class="ss">gitignore</span><span class="ot">$/</span> <span class="op">||</span> <span class="op">/(^|</span>\<span class="op">/)</span>\.env<span class="op">/)</span>                <span class="op">-&gt;</span> config</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>p <span class="op">~</span> <span class="ot">/(^|\</span><span class="sc">/</span><span class="ot">)(</span><span class="ss">Dockerfile</span><span class="ot">|</span><span class="ss">Makefile</span><span class="ot">|</span><span class="ss">docker-compose</span><span class="ot">[^\</span><span class="sc">/</span><span class="ot">]*)$/</span><span class="op">)</span>  <span class="op">-&gt;</span> config</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>p <span class="op">~</span> <span class="ot">/\</span><span class="sc">.</span><span class="ot">(</span><span class="ss">log</span><span class="ot">|</span><span class="ss">diff</span><span class="ot">)$/</span><span class="op">)</span>                                      <span class="op">-&gt;</span> qa<span class="op">-</span>evidence</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="op">(</span>p <span class="op">~</span> <span class="ot">/\</span><span class="sc">.</span><span class="ot">(</span><span class="ss">md</span><span class="ot">|</span><span class="ss">txt</span><span class="ot">)$/</span><span class="op">)</span>                                        <span class="op">-&gt;</span> governance<span class="op">+</span>docs</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>otherwise                                                     <span class="op">-&gt;</span> UNCLASSIFIED</span></code></pre></div>
+<p><strong>Precedence is load-bearing, not incidental.</strong>
+<code>tests/</code> precedes the <code>.html</code> rule <em>on
+purpose</em>: <code>tests/ux/fixtures/*.html</code> are hand-authored
+oracles, not generated exports. This was independently confirmed in §5 —
+those four files are the only changed <code>.html</code> with no
+<code>.md</code> source anywhere on disk.</p>
+<h3 id="bucket-totals">1.2 Bucket totals</h3>
+<table>
+<thead>
+<tr>
+<th>Bucket</th>
+<th style="text-align: right;">Files</th>
+<th style="text-align: right;">Insertions</th>
+<th style="text-align: right;">Deletions</th>
+<th style="text-align: right;">Binary</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>generated-export</td>
+<td style="text-align: right;">641</td>
+<td style="text-align: right;">84,617</td>
+<td style="text-align: right;">1,709</td>
+<td style="text-align: right;">321</td>
+</tr>
+<tr>
+<td>qa-evidence</td>
+<td style="text-align: right;">75</td>
+<td style="text-align: right;">13,664</td>
+<td style="text-align: right;">799</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>governance+docs</td>
+<td style="text-align: right;">74</td>
+<td style="text-align: right;">14,260</td>
+<td style="text-align: right;">687</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>test+fixture</td>
+<td style="text-align: right;">57</td>
+<td style="text-align: right;">18,396</td>
+<td style="text-align: right;">56</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td><strong>executable-source</strong></td>
+<td style="text-align: right;"><strong>53</strong></td>
+<td style="text-align: right;"><strong>8,353</strong></td>
+<td style="text-align: right;"><strong>427</strong></td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>config</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">470</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td><strong>gate-script</strong></td>
+<td style="text-align: right;"><strong>10</strong></td>
+<td style="text-align: right;"><strong>3,984</strong></td>
+<td style="text-align: right;"><strong>126</strong></td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td>tracked-data</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td>submodule-pointer</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+</tr>
+<tr>
+<td><strong>TOTAL</strong></td>
+<td style="text-align: right;"><strong>923</strong></td>
+<td style="text-align: right;"><strong>143,745</strong></td>
+<td style="text-align: right;"><strong>3,815</strong></td>
+<td style="text-align: right;">322</td>
+</tr>
+</tbody>
+</table>
+<p>Verification: <code>UNCLASSIFIED = 0</code>; row count 923 = numstat
+923; recomputed <code>ins=143745 del=3815</code> reconciles exactly with
+<code>--shortstat</code>.</p>
+<h3 id="the-headline-ratio">1.3 The headline ratio</h3>
+<p><strong>The adversarial-review surface is <code>gate-script</code> +
+<code>executable-source</code> = 63 files, +12,337 / −553 — 6.8% of the
+files and 8.6% of the insertions.</strong> The other 860 files are
+exports, evidence, docs and data. §5 says which of those still need
+eyes.</p>
+<h3 id="two-classification-caveats-the-reviewer-should-know">1.4 Two
+classification caveats the reviewer should know</h3>
+<ul>
+<li><code>download-proxy/requirements.txt</code> (+114/−15) landed in
+<strong>governance+docs</strong> because the rule keys on
+<code>.txt</code>. It is a <strong>dependency manifest</strong> and
+belongs to the §11.4.246 supply-chain surface. Do not let the bucket
+hide it.</li>
+<li><code>docs/qa/BOB-164/*.py</code> (662 lines) landed in
+<strong>executable-source</strong> correctly, but they live under
+<code>docs/</code> and will be invisible to any reviewer who scopes by
+directory rather than by extension.</li>
+</ul>
+<hr />
+<h2
+id="the-executable-surface-what-actually-needs-adversarial-review">2.
+The executable surface — what actually needs adversarial review</h2>
+<p>Coverage columns: <strong>DOC</strong> = companion doc at
+<code>docs/scripts/&lt;stem&gt;.md</code> (§11.4.18);
+<strong>MUT</strong> = a paired mutation harness exists;
+<strong>TEST</strong> = the stem is referenced by a file under
+<code>tests/</code>. Absences below are reported <strong>as
+findings-for-the-reviewer</strong>, not fixed here.</p>
+<h3 id="tier-1-the-feature-core-ownership-4086-new-executable-lines">2.1
+Tier 1 — the feature core (ownership), 4,086 new executable lines</h3>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 21%" />
+<col style="width: 21%" />
+<col style="width: 21%" />
+<col style="width: 21%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th style="text-align: right;">Δ</th>
+<th style="text-align: center;">DOC</th>
+<th style="text-align: center;">MUT</th>
+<th style="text-align: center;">TEST</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scripts/ownership_precondition.sh</code></td>
+<td style="text-align: right;">+1,229</td>
+<td style="text-align: center;">YES</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">YES</td>
+</tr>
+<tr>
+<td><code>scripts/pre_build/check_cm_ownership_invariants.sh</code></td>
+<td style="text-align: right;">+1,095</td>
+<td style="text-align: center;"><strong>NO</strong></td>
+<td style="text-align: center;">YES
+(<code>tests/pre_build/test_check_cm_ownership_invariants.sh</code>, 934
+ln)</td>
+<td style="text-align: center;">YES</td>
+</tr>
+<tr>
+<td><code>scripts/ownership_repair.sh</code></td>
+<td style="text-align: right;">+1,059</td>
+<td style="text-align: center;">YES</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">YES</td>
+</tr>
+<tr>
+<td><code>scripts/lib/ownership.sh</code></td>
+<td style="text-align: right;">+529</td>
+<td style="text-align: center;"><strong>NO</strong></td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">YES</td>
+</tr>
+<tr>
+<td><code>config/owned_paths.yaml</code></td>
+<td style="text-align: right;">+174</td>
+<td style="text-align: center;">(data pack)</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">YES</td>
+</tr>
+</tbody>
+</table>
+<p>Backed by <strong>4,256 lines of test</strong>:
+<code>test_ownership_repair.sh</code> (+2,109),
+<code>test_check_cm_ownership_invariants.sh</code> (+934),
+<code>test_ownership_precondition.sh</code> (+594),
+<code>test_ownership_rootless_detection.sh</code> (+348),
+<code>tests/ownership/test_container_writes_owned_files.py</code>
+(+262).</p>
+<p><strong>Findings for the reviewer:</strong> - <strong>F-1</strong>
+<code>scripts/lib/ownership.sh</code> — the shared library every other
+ownership component sources — has <strong>no
+<code>docs/scripts/ownership.md</code></strong> (§11.4.18 requires one
+for every shell script). It is also the only Tier-1 file with no
+dedicated test file of its own; it is covered only transitively through
+its callers, so a defect in a library function no caller currently
+exercises is invisible. - <strong>F-2</strong>
+<code>check_cm_ownership_invariants.sh</code> (1,095 lines, the FR-011
+gate) has <strong>no companion doc</strong>, unlike 6 of the 8 other
+changed gates which do.</p>
+<h3 id="tier-2-the-other-newchanged-gates">2.2 Tier 2 — the other
+new/changed gates</h3>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 22%" />
+<col style="width: 22%" />
+<col style="width: 16%" />
+<col style="width: 22%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th style="text-align: right;">Δ</th>
+<th style="text-align: center;">DOC</th>
+<th>Paired harness</th>
+<th style="text-align: right;">Harness ln</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scripts/pre_build/check_cm_closure_seam_binds.sh</code></td>
+<td style="text-align: right;">+674</td>
+<td style="text-align: center;">YES</td>
+<td><code>test_check_cm_closure_seam_binds.sh</code></td>
+<td style="text-align: right;">258</td>
+</tr>
+<tr>
+<td><code>scripts/pre_build/check_cm_go_toolchain_matches_builder.sh</code></td>
+<td style="text-align: right;">+364</td>
+<td style="text-align: center;">YES</td>
+<td><code>test_check_cm_go_toolchain_matches_builder.sh</code></td>
+<td style="text-align: right;">271</td>
+</tr>
+<tr>
+<td><code>scripts/pre_build/check_cm_plugin_count.sh</code></td>
+<td style="text-align: right;">+351</td>
+<td style="text-align: center;"><strong>NO</strong></td>
+<td><code>test_check_cm_plugin_count.sh</code></td>
+<td style="text-align: right;">313</td>
+</tr>
+<tr>
+<td><code>scripts/pre_build/check_cm_runtime_deps_parity.sh</code></td>
+<td style="text-align: right;">+343</td>
+<td style="text-align: center;">YES</td>
+<td><code>test_check_cm_runtime_deps_parity.sh</code></td>
+<td style="text-align: right;">313</td>
+</tr>
+<tr>
+<td><code>scripts/pre_build/check_cm_served_bundle_fresh.sh</code></td>
+<td style="text-align: right;">+200</td>
+<td style="text-align: center;"><strong>NO</strong></td>
+<td><code>test_cm_served_bundle_fresh.sh</code></td>
+<td style="text-align: right;">264</td>
+</tr>
+<tr>
+<td><code>scripts/pre_build/check_cm_export_charset_valid.sh</code></td>
+<td style="text-align: right;">+107</td>
+<td style="text-align: center;">YES</td>
+<td><code>test_cm_export_charset_valid.sh</code></td>
+<td style="text-align: right;">324</td>
+</tr>
+<tr>
+<td><code>scripts/pre_build/check_cm_workable_items_binary_fresh.sh</code></td>
+<td style="text-align: right;">+97</td>
+<td style="text-align: center;">YES</td>
+<td><code>test_cm_workable_items_binary_fresh.sh</code></td>
+<td style="text-align: right;">100</td>
+</tr>
+<tr>
+<td><code>scripts/pre_build_verification.sh</code></td>
+<td style="text-align: right;">+410 / −61</td>
+<td style="text-align: center;"><strong>NO</strong></td>
+<td>—</td>
+<td style="text-align: right;">—</td>
+</tr>
+<tr>
+<td><code>challenges/scripts/ddos_resilience_challenge.sh</code></td>
+<td style="text-align: right;">+343 / −65</td>
+<td style="text-align: center;"><strong>NO</strong></td>
+<td>—</td>
+<td style="text-align: right;">—</td>
+</tr>
+</tbody>
+</table>
+<p>All 8 <code>check_cm_*</code> gates <strong>do</strong> register in
+<code>pre_build_verification.sh</code> (verified per-gate; negative
+control returned 0). The file now declares invariants up to
+<strong>51</strong> and references <code>check_cm_</code> 38 times.</p>
+<p><strong>Findings for the reviewer:</strong> - <strong>F-3</strong>
+The <strong>harness naming is split</strong> across
+<code>test_check_cm_*</code> (5 files) and <code>test_cm_*</code> (3
+files). This is not cosmetic: it defeats convention-based discovery and
+produced a live false-null during this preflight. Any gate added under
+the wrong convention will read as unpaired. - <strong>F-4</strong>
+<code>pre_build_verification.sh</code> (+410/−61, touched by <strong>12
+commits</strong>) has no companion doc and no harness of its own. It is
+the seam through which all 51 invariants run — a defect in its dispatch
+logic silently disarms gates that each individually pass their own
+mutation test. Per §11.4.249 it is the <strong>gate</strong> role;
+nothing here audits it (the <strong>verifier</strong> role is vacant). -
+<strong>F-5</strong> The mutation harnesses were located and their
+vocabulary counted, but <strong>this preflight did not execute any of
+them</strong>, so “a fixture that dies under the mutation” is
+<strong>UNVERIFIED</strong> for all 8. Vocabulary-hit counts
+(<code>mutat|golden.?bad|MUST FAIL|polarity</code>) range 4→34; the two
+lowest (<code>closure_seam_binds</code> = 4,
+<code>served_bundle_fresh</code> = 4,
+<code>workable_items_binary_fresh</code> = 6) are the ones most worth
+opening first.</p>
+<h3 id="tier-3-runtime-service-code-python-go">2.3 Tier 3 — runtime
+service code (Python / Go)</h3>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 21%" />
+<col style="width: 21%" />
+<col style="width: 21%" />
+<col style="width: 21%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th style="text-align: right;">Δ</th>
+<th style="text-align: center;">DOC</th>
+<th style="text-align: center;">MUT</th>
+<th style="text-align: center;">TEST</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>download-proxy/src/merge_service/deduplicator.py</code></td>
+<td style="text-align: right;">+417 / −199</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">YES</td>
+<td style="text-align: center;">YES</td>
+</tr>
+<tr>
+<td><code>plugins/download_proxy.py</code></td>
+<td style="text-align: right;">+375</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">YES</td>
+</tr>
+<tr>
+<td><code>download-proxy/src/api/hooks.py</code></td>
+<td style="text-align: right;">+257 / −29</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">YES</td>
+<td style="text-align: center;">YES</td>
+</tr>
+<tr>
+<td><code>download-proxy/src/main.py</code></td>
+<td style="text-align: right;">+180 / −28</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">YES</td>
+</tr>
+<tr>
+<td><code>download-proxy/src/merge_service/search.py</code></td>
+<td style="text-align: right;">+172 / −11</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">YES</td>
+<td style="text-align: center;">YES</td>
+</tr>
+<tr>
+<td><code>plugins/rutracker.py</code></td>
+<td style="text-align: right;">+71 / −11</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">YES</td>
+</tr>
+<tr>
+<td><code>download-proxy/src/api/routes.py</code></td>
+<td style="text-align: right;">+57 / −2</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">YES</td>
+<td style="text-align: center;">YES</td>
+</tr>
+<tr>
+<td><code>download-proxy/src/api/rate_limit.py</code></td>
+<td style="text-align: right;">+42 / −5</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">YES</td>
+<td style="text-align: center;">YES</td>
+</tr>
+<tr>
+<td><code>qBitTorrent-go/cmd/boba-jackett/main.go</code></td>
+<td style="text-align: right;">+18 / −1</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">—</td>
+<td style="text-align: center;">YES</td>
+</tr>
+</tbody>
+</table>
+<p><code>deduplicator.py</code> is the largest <strong>rewrite</strong>
+in the diff (−199 lines deleted, the highest deletion count of any
+executable file). It has a 3,475-line golden fixture
+(<code>tests/unit/merge_service/bob145_dedup_golden.json</code>) — per
+§11.4.245 the reviewer must confirm that golden is an
+<strong>independent</strong> oracle and not a record of what the new
+code happens to emit.</p>
+<h3 id="tier-4-infrastructure-orchestration-scripts">2.4 Tier 4 —
+infrastructure / orchestration scripts</h3>
+<table>
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 28%" />
+<col style="width: 28%" />
+<col style="width: 21%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th style="text-align: right;">Δ</th>
+<th style="text-align: center;">DOC</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scripts/flight-recorder/flight-recorder.sh</code></td>
+<td style="text-align: right;">+591</td>
+<td style="text-align: center;">YES</td>
+<td>new subsystem</td>
+</tr>
+<tr>
+<td><code>start.sh</code></td>
+<td style="text-align: right;">+348 / −5</td>
+<td style="text-align: center;"><strong>NO</strong></td>
+<td>invokes the ownership precondition</td>
+</tr>
+<tr>
+<td><code>scripts/diagnostics/bob131_container_death_triage.sh</code></td>
+<td style="text-align: right;">+334</td>
+<td style="text-align: center;">YES</td>
+<td></td>
+</tr>
+<tr>
+<td><code>scripts/hooks/check-brief-inputs.sh</code></td>
+<td style="text-align: right;">+282</td>
+<td style="text-align: center;">YES</td>
+<td></td>
+</tr>
+<tr>
+<td><code>scripts/testing/update_readme_doc_links.sh</code></td>
+<td style="text-align: right;">+259</td>
+<td style="text-align: center;">YES</td>
+<td></td>
+</tr>
+<tr>
+<td><code>scripts/hooks/unattributed-commit-guard.sh</code></td>
+<td style="text-align: right;">+237</td>
+<td style="text-align: center;">YES</td>
+<td>commit seam</td>
+</tr>
+<tr>
+<td><code>scripts/flight-recorder/install.sh</code></td>
+<td style="text-align: right;">+114</td>
+<td style="text-align: center;"><strong>NO</strong></td>
+<td>writes systemd user units</td>
+</tr>
+<tr>
+<td><code>scripts/flight-recorder/uninstall.sh</code></td>
+<td style="text-align: right;">+109</td>
+<td style="text-align: center;"><strong>NO</strong></td>
+<td><strong>no test</strong></td>
+</tr>
+<tr>
+<td><code>scripts/compute-badges.sh</code></td>
+<td style="text-align: right;">+97 / −4</td>
+<td style="text-align: center;">YES</td>
+<td>§11.4.259</td>
+</tr>
+<tr>
+<td><code>scripts/verify-all-constitution-rules.sh</code></td>
+<td style="text-align: right;">+73</td>
+<td style="text-align: center;"><strong>NO</strong></td>
+<td><strong>no test</strong></td>
+</tr>
+<tr>
+<td><code>scripts/diagnostics/bob137_thread_census.sh</code></td>
+<td style="text-align: right;">+69</td>
+<td style="text-align: center;"><strong>NO</strong></td>
+<td><strong>no test</strong></td>
+</tr>
+<tr>
+<td><code>scripts/run_all_challenges.sh</code></td>
+<td style="text-align: right;">+56 / −9</td>
+<td style="text-align: center;"><strong>NO</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>scripts/hooks/docs-sync-commit-seam.sh</code></td>
+<td style="text-align: right;">+43 / −7</td>
+<td style="text-align: center;"><strong>NO</strong></td>
+<td><strong>no test</strong></td>
+</tr>
+<tr>
+<td><code>scripts/install.sh</code></td>
+<td style="text-align: right;">+31 / −5</td>
+<td style="text-align: center;"><strong>NO</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ci.sh</code></td>
+<td style="text-align: right;">+32</td>
+<td style="text-align: center;"><strong>NO</strong></td>
+<td></td>
+</tr>
+<tr>
+<td><code>scripts/boba-svc.sh</code></td>
+<td style="text-align: right;">+15</td>
+<td style="text-align: center;"><strong>NO</strong></td>
+<td><strong>no test</strong></td>
+</tr>
+<tr>
+<td><code>scripts/commit-push-all.sh</code></td>
+<td style="text-align: right;">+5 / −1</td>
+<td style="text-align: center;">YES</td>
+<td>§11.4.234</td>
+</tr>
+</tbody>
+</table>
+<p><strong>F-6</strong> Six changed shell scripts have <strong>neither a
+companion doc nor any test reference</strong>:
+<code>flight-recorder/uninstall.sh</code>,
+<code>verify-all-constitution-rules.sh</code>,
+<code>bob137_thread_census.sh</code>,
+<code>docs-sync-commit-seam.sh</code>, <code>boba-svc.sh</code>,
+<code>bob137_soak.sh</code>. §11.4.18 requires the doc unconditionally;
+§11.4.224(A) requires an executing test through the real invocation path
+(a <code>bash -n</code> parse-check does not satisfy it).
+<code>uninstall.sh</code> and <code>docs-sync-commit-seam.sh</code> are
+the two that mutate state.</p>
+<h3 id="tier-5-frontend">2.5 Tier 5 — frontend</h3>
+<p><strong>15 of 22 frontend files are cosmetic</strong> (≤10 changed
+lines each, 46 insertions total — palette-token renames). The
+substantive set is only: <code>palette.model.ts</code> (+338/−14),
+<code>styles.scss</code> (+27/−2), <code>dashboard.component.scss</code>
+(+56/−44), <code>node-shims.d.ts</code> (+30), plus two new spec files
+(<code>palette.contrast.spec.ts</code> +285,
+<code>style-contrast.spec.ts</code> +579).</p>
+<p><strong>F-7</strong> Nine frontend files show <strong>no test
+reference at all</strong> (the <code>jackett/</code> component subtree).
+They are all in the cosmetic set, so the risk is low — but it is a real
+coverage hole, not an absence of risk.</p>
+<h3 id="analyzers-under-docs">2.6 Analyzers under
+<code>docs/</code></h3>
+<p><code>docs/qa/BOB-164/axe_contrast_scan.py</code> (+544) and
+<code>measure_rendered_cascade.py</code> (+118) are
+<strong>analyzers</strong>. §11.4.107(10) requires every analyzer to
+ship golden-good + golden-bad self-validation. Neither has a doc, a
+test, or a visible fixture pair. <strong>F-8.</strong></p>
+<hr />
+<h2 id="the-11.4.1941-scenario-space">3. The §11.4.194(1) scenario
+space</h2>
+<p>This is the section past rounds kept finding under-covered. Each
+factor below is an <strong>independent term</strong>; a degenerate value
+in <strong>any one</strong> flips the outcome, so each must be verified
+separately rather than assumed from a sibling.</p>
+<h3 id="probe_location-scriptslibownership.sh299">3.1
+<code>probe_location()</code> —
+<code>scripts/lib/ownership.sh:299</code></h3>
+<p>Emits
+<code>ok | wrong-owner:&lt;uid&gt; | unwritable | absent</code>. The
+verdict is a product of <strong>at least seven</strong> independent
+terms:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Factor</th>
+<th>Degenerate value</th>
+<th>Consequence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>path exists</td>
+<td>missing</td>
+<td><code>absent</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>path <strong>type</strong></td>
+<td>file vs directory</td>
+<td><strong>two entirely different code paths</strong> — a file
+<code>stat</code>s the target directly, a directory creates a probe.
+Both must be covered.</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>mktemp</code> in the dir</td>
+<td>fails</td>
+<td><code>unwritable</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>stat -c %u</code> on the probe</td>
+<td>empty output</td>
+<td><code>unwritable</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>uid equality vs <code>id -u</code></td>
+<td>mismatch</td>
+<td><code>wrong-owner:&lt;uid&gt;</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>filesystem uid semantics</strong></td>
+<td><code>vfat</code>/<code>exfat</code>/<code>ntfs</code> mounted with
+<code>uid=</code></td>
+<td><strong>every</strong> file reports the mount uid, so the probe can
+return <code>ok</code> on a filesystem that cannot express ownership at
+all</td>
+</tr>
+<tr>
+<td>7</td>
+<td>mount kind under the path</td>
+<td>bind vs volume vs overlay</td>
+<td>changes which uid the write lands as</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Factor 6 is the classic multi-factor gap.</strong> The
+download root is <code>QBITTORRENT_DATA_DIR</code>
+(<code>/mnt/DATA</code>) — a host-specific mount whose filesystem the
+reviewer must not assume. The source header justifies probing over
+inspecting, which is correct, but the reviewer must confirm whether a
+uid-flattening filesystem produces a <strong>false
+<code>ok</code></strong> (a §11.4 PASS-bluff) and whether that case is
+covered by <code>tests/unit/test_ownership_rootless_detection.sh</code>
+or anywhere else.</p>
+<h3 id="ownership_precondition.sh-four-distinct-refusal-triggers">3.2
+<code>ownership_precondition.sh</code> — four distinct refusal
+triggers</h3>
+<p>The header names <strong>four</strong> triggers plus one deliberate
+non-trigger. Each has its own factor product:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Trigger</th>
+<th>Refuse when</th>
+<th>Independent factors</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>R1</strong> probe failure</td>
+<td>any declared location probes not-<code>ok</code></td>
+<td>scope parse × per-path probe (all 7 factors of §3.1) × entry
+count</td>
+</tr>
+<tr>
+<td><strong>R2</strong> <em>(non-trigger)</em> P1 unavailable</td>
+<td><strong>SKIP</strong>, deliberately not a refusal</td>
+<td>runtime present × probe reachable — refusing here would be a
+§11.4.201(1) false positive on every host with no runtime</td>
+</tr>
+<tr>
+<td><strong>R3</strong> PUID=0 on rootful</td>
+<td>measured-rootful <strong>AND</strong> some service declares
+<code>PUID=0</code></td>
+<td>(a) <code>detect_rootless</code> verdict <strong>and</strong> (b)
+compose parse finding <code>PUID=0</code></td>
+</tr>
+<tr>
+<td><strong>R4</strong> non-root <code>user:</code> on rootless</td>
+<td>measured-rootless <strong>AND</strong> service declares non-root
+<code>user:</code> <strong>AND</strong> that service mounts a declared
+location</td>
+<td><strong>three</strong> terms — a two-term check would refuse healthy
+configurations</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The reviewer must independently verify each term of R3 and
+R4.</strong> R4 in particular is a three-way product; verifying two and
+assuming the third is precisely the §11.4.194(1) failure mode. The
+source states R4 exists because <em>“neither this check nor the FR-011
+pre-build gate read the compose <code>user:</code> key”</em> — so this
+term has no second line of defence.</p>
+<h3 id="detect_rootless-the-tri-state-that-gates-r3-and-r4">3.3
+<code>detect_rootless()</code> — the tri-state that gates R3 and R4</h3>
+<p>Returns <code>rootless | rootful | unknown:&lt;reason&gt;</code>.
+Factors:</p>
+<ol type="1">
+<li>Which runtime binary is in use (<code>podman</code> vs
+<code>docker</code> — different probes).</li>
+<li>Whether the runtime’s rootless field parses to a recognised
+value.</li>
+<li><strong>The <code>unknown:</code> branch.</strong> Both R3 and R4
+consume this verdict. The header documents the asymmetry explicitly:
+reading silence as <code>rootful</code> refuses healthy hosts; reading
+it as <code>rootless</code> waves through the case the check exists to
+catch. <strong>The reviewer must confirm what <code>unknown:</code>
+actually does at each of the two consumption sites, and that both do the
+same thing</strong> — the source warns that “the two checks must never
+refuse on different facts.”</li>
+<li>A <strong>carrier trap the source already documents</strong>: a
+profile <em>path</em> containing the word <code>rootless</code> must not
+match the <code>name=rootless</code> marker (§11.4.201(7)(a)
+substring-vs-structure). Confirm the guard, and confirm a golden-FALSE
+fixture exercises it.</li>
+<li><strong>Honest gap named in the source itself:</strong> the docker
+branch “is written from Docker’s documented rootless [behaviour]” —
+i.e. it is <strong>not measured</strong>. Per §11.4.6 that is an
+untested term, and it is a term in both R3 and R4.</li>
+</ol>
+<h3 id="ownership_scope_fingerprint-the-marker-invalidation-product">3.4
+<code>ownership_scope_fingerprint()</code> — the marker-invalidation
+product</h3>
+<p>Guards the repair completion marker: if the fingerprint does not
+change when scope changes, a newly-declared path is <strong>never
+repaired</strong> while the marker says “already done.” Factors:</p>
+<ol type="1">
+<li>Scope parse success (a refusal must emit <strong>nothing</strong>,
+not a plausible hash).</li>
+<li>Entry set contents.</li>
+<li><strong>Empty-entry branch</strong> — <code>paths: []</code> returns
+rc 0 with zero rows; the source documents that command substitution
+strips trailing newlines, so a naive re-add would hash <code>"\n"</code>
+instead of <code>""</code> and produce a <em>different</em> fingerprint
+for that shape.</li>
+<li>Whether a marker already exists on disk written by the
+<strong>old</strong> code path.</li>
+</ol>
+<p>The source claims byte-identity with the pipe it replaces, verified
+against the live scope (<code>c41619d2…</code>). <strong>That claim is a
+change made in this branch and is the reviewer’s to re-verify</strong>,
+because it is precisely the “green because the value looks plausible”
+shape: an empty pipe previously emitted <code>e3b0c442…</code> (sha256
+of the empty string) on stdout while returning non-zero.</p>
+<h3 id="ownership_path_fence-ownership_fence_runtime_trees">3.5
+<code>ownership_path_fence()</code> /
+<code>ownership_fence_runtime_trees()</code></h3>
+<p>Refuses recursive chown inside container-runtime storage
+(subuid-owned by design; a recursive change there breaks the rootless
+runtime per §11.4.161). Factors: path normalisation × symlink resolution
+× runtime-storage root detection × the fail-closed default on an
+unresolvable root. The source records a live near-miss: with an empty
+runtime root the fence “refused on its fail-closed [path]” and read the
+root as <code>absent</code> — <strong>both</strong> misdiagnoses that
+FR-010a exists to prevent. Confirm the current default and its
+golden-FALSE.</p>
+<h3 id="non-ownership-executables-dimensions-to-enumerate">3.6
+Non-ownership executables — dimensions to enumerate</h3>
+<ul>
+<li><strong><code>deduplicator.py</code></strong> (+417/−199): input
+dimensions = tracker count × result-set size × duplicate topology
+(identical / near / none) × unicode normalisation × event-loop blocking
+(there is a dedicated <code>test_dedup_event_loop_blocking.py</code>).
+The −199 means <strong>behaviour was removed</strong>; §11.4.124
+requires investigate-before-remove evidence for each removal.</li>
+<li><strong><code>rate_limit.py</code> +
+<code>test_rate_limit_download_proxy.py</code> (+673)</strong>:
+dimensions = limit class × burst shape × concurrent callers × response
+contract (a dedicated
+<code>test_bob129_slowapi_response_contract.py</code> exists). §11.4.253
+idempotency-under-retry applies.</li>
+<li><strong><code>hooks.py</code></strong> (+257/−29): two new tests
+name <strong>persistence failure</strong>
+(<code>test_bob173_hook_persistence_failure.py</code>) and
+<strong>corrupt store</strong>
+(<code>test_bob174_corrupt_hook_store.py</code>, +854). This is a
+§11.4.239 critical-invariant <strong>integrity</strong> surface;
+failure-path scenarios are required as gates, not optional.</li>
+<li><strong><code>rutracker.py</code> +
+<code>test_rutracker_redos_bounds.py</code></strong>: ReDoS bounds —
+dimensions = pattern × adversarial input length × timeout budget.</li>
+<li><strong><code>start.sh</code></strong> (+348): the reload-level
+matrix (<code>--reload-python</code> / <code>--reload-plugins</code> /
+<code>--recreate</code>) × runtime detection × ownership-precondition
+exit code (1 = refuse, 2 = cannot-run — <strong>these must not be
+conflated</strong>).</li>
+</ul>
+<hr />
+<h2 id="cross-cutting-risk-register">4. Cross-cutting risk register</h2>
+<p>Pairs where two work-streams touch one file, or where one change’s
+assumption is another change’s output.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Shared surface</th>
+<th>Touched by</th>
+<th>Risk</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>X-1</strong></td>
+<td><code>scripts/pre_build_verification.sh</code></td>
+<td><strong>12 commits</strong>; all 8 new gates register here</td>
+<td>Single dispatch seam for 51 invariants. A registration merged
+correctly in isolation can still be mis-ordered or shadowed here. This
+file has no harness (F-4).</td>
+</tr>
+<tr>
+<td><strong>X-2</strong></td>
+<td><code>docs/workable_items.db</code></td>
+<td><strong>37 commits</strong>, binary, tracked (§11.4.95)</td>
+<td>Binary ⇒ <strong>no merge resolution possible</strong>. Prior
+session memory records a shared-checkout race on exactly this file. Any
+concurrent write is last-writer-wins with no conflict signal.</td>
+</tr>
+<tr>
+<td><strong>X-3</strong></td>
+<td><code>docs/Issues.md</code> (37) / <code>Issues_Summary</code> (34)
+/ <code>Issues.html</code> (34) / <code>.pdf</code> (33)</td>
+<td>many</td>
+<td>Counts diverge (37 / 34 / 34 / 33) ⇒ the <code>.md</code> moved
+without its exports in ≥3 commits. §11.4.106 docs-chain question, not a
+code question.</td>
+</tr>
+<tr>
+<td><strong>X-4</strong></td>
+<td><code>specs/002-user-owned-downloads/tasks.md</code></td>
+<td>12 commits, <strong>and modified in the worktree right
+now</strong></td>
+<td>The task ledger driving this very review is itself in flux.</td>
+</tr>
+<tr>
+<td><strong>X-5</strong></td>
+<td><code>config/owned_paths.yaml</code> → 3 consumers</td>
+<td>precondition (FR-010), repair (FR-004), gate (FR-011)</td>
+<td>One data pack, three readers with <strong>different</strong>
+correctness requirements. A scope entry valid for the gate may be
+un-probeable by the precondition. Scope changes must invalidate the
+repair marker (§3.4) — that coupling is the fingerprint.</td>
+</tr>
+<tr>
+<td><strong>X-6</strong></td>
+<td><code>detect_rootless()</code> verdict → R3 <strong>and</strong>
+R4</td>
+<td>one producer, two consumers</td>
+<td>The source itself warns the two “must never refuse on different
+facts.” Verify both consumption sites agree on
+<code>unknown:</code>.</td>
+</tr>
+<tr>
+<td><strong>X-7</strong></td>
+<td><code>docker-compose.yml</code> (+56/−4) →
+<code>ownership_compose_rows()</code></td>
+<td>compose file is the parser’s input</td>
+<td>The parser reads <code>userns_mode</code>, <code>PUID</code>,
+<code>user:</code>, mount sources. A compose edit landing without a
+parser update (or vice versa) silently changes R3/R4 coverage.
+<strong>Both changed in this branch.</strong></td>
+</tr>
+<tr>
+<td><strong>X-8</strong></td>
+<td><code>scripts/systemd/user/boba-stack.service</code> +
+<code>boba.target</code> + <code>flight-recorder/install.sh</code></td>
+<td>new systemd units, new installer</td>
+<td>The installer writes user units; the units are also tracked.
+Divergence between the two is undetectable at review time.</td>
+</tr>
+<tr>
+<td><strong>X-9</strong></td>
+<td><code>docs/scripts/check_cm_lan_routes_authenticated.md</code>
+<strong>tracked &amp; modified</strong> vs its script
+<strong>untracked</strong></td>
+<td>sibling work-stream</td>
+<td>§11.4.215 inversion: the binding doc is in the repo, the code it
+binds is not. See §6.</td>
+</tr>
+<tr>
+<td><strong>X-10</strong></td>
+<td><code>pyproject.toml</code> / <code>requirements.txt</code> /
+<code>package.json</code> / <code>package-lock.json</code></td>
+<td>4 manifests changed</td>
+<td>§11.4.246 supply-chain surface; <code>requirements.txt</code> alone
+is +114/−15 and is bucketed as “docs” by extension (§1.4).</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="what-a-reviewer-should-not-spend-budget-on">5. What a reviewer
+should NOT spend budget on</h2>
+<p><strong>Verified per file, not assumed by extension.</strong></p>
+<h3 id="safe-to-skip-267-orphan-export-twins">5.1 Safe to skip — 267
+orphan export twins</h3>
+<p>Measured: 324 changed export stems
+(<code>.html</code>/<code>.pdf</code>/<code>.docx</code>), 74 changed
+<code>.md</code> stems. <strong>271 export stems have no
+correspondingly-changed <code>.md</code>.</strong> Of those, <strong>267
+have an unchanged <code>.md</code> on disk</strong> — i.e. the source
+did not change and only the rendered twin did. That is mechanical
+re-render churn (roughly <strong>84,617 insertions</strong>, 59% of the
+whole diff) and carries no reviewable logic.</p>
+<p>Examples: <code>AGENTS.*</code>, <code>CONSTITUTION.*</code>,
+<code>CHANGELOG.*</code>, the entire
+<code>docs/browser_extension/**</code> export tree,
+<code>docs/CODEGRAPH.*</code>.</p>
+<blockquote>
+<p>This churn is worth <strong>one</strong> note to the reviewer, not
+267: 267 exports moved without their sources. That is a §11.4.106
+docs-chain / §11.4.222 export-wave observation, not a code finding.</p>
+</blockquote>
+<h3 id="not-safe-to-skip-despite-the-extension">5.2 NOT safe to skip,
+despite the extension</h3>
+<ul>
+<li><strong><code>tests/ux/fixtures/{a11y,keyboard}_{good,bad}.html</code></strong>
+— the only 4 changed <code>.html</code> with <strong>no <code>.md</code>
+source anywhere on disk</strong>. They are hand-authored accessibility
+oracles. <code>a11y_bad.html</code> / <code>keyboard_bad.html</code> are
+the <strong>golden-bad fixtures</strong> (§11.4.107(10)); if they do not
+actually fail the analyzer, the whole UX suite is decoration.</li>
+<li><strong><code>specs/002-user-owned-downloads/tasks.md</code></strong>
+— the task ledger. Load-bearing.</li>
+<li><strong><code>specs/002-user-owned-downloads/{spec,plan,data-model,research}.md</code></strong>
+and <code>contracts/{repair-cli,startup-precondition}.md</code> — the
+acceptance criteria the executable surface is reviewed <em>against</em>.
+The two <code>contracts/</code> files are the CLI/precondition contracts
+and should be read <strong>before</strong> the scripts.</li>
+<li><strong><code>specs/002-user-owned-downloads/checklists/requirements.md</code></strong>
+— the requirements checklist.</li>
+<li><strong><code>specs/002-user-owned-downloads/progress.yml</code></strong>
+— bucketed <code>config</code>, but it is ledger state.</li>
+<li><strong><code>download-proxy/requirements.txt</code></strong> —
+bucketed <code>governance+docs</code> by extension; actually a
+dependency manifest (§1.4, X-10).</li>
+<li><strong><code>docs/guides/file-ownership.md</code></strong> (+214) —
+the operator-facing contract for the feature under review.</li>
+</ul>
+<h3 id="skim-only">5.3 Skim only</h3>
+<p><code>qa-evidence</code> (75 files, +13,664): captured
+<code>.log</code> / <code>.diff</code> / <code>.json</code> artifacts.
+Read the ones an executable change <strong>cites as its
+evidence</strong>; do not read the corpus. <code>docs/Issues.md</code> /
+<code>Fixed.md</code> (+1,678 combined) are tracker state generated from
+the DB — audit them only for §11.4.146(D3) status-custody, not line by
+line.</p>
+<hr />
+<h2 id="honest-gaps-11.4.6">6. Honest gaps (§11.4.6)</h2>
+<h3 id="the-tree-is-not-quiescent-measured-with-timestamps">6.1 The tree
+is NOT quiescent — measured, with timestamps</h3>
+<p>Observed <strong>2026-08-26T19:01:06Z</strong>. 31 tracked files
+modified in the working tree, i.e. <strong>already diverged from the
+<code>main...HEAD</code> diff measured above</strong>:</p>
+<p><strong>Uncommitted deltas on the executable/test surface (+1,650
+insertions):</strong></p>
+<table>
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th style="text-align: right;">Uncommitted Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tests/unit/test_ownership_repair.sh</code></td>
+<td style="text-align: right;"><strong>+710 / −7</strong></td>
+</tr>
+<tr>
+<td><code>challenges/scripts/ddos_resilience_challenge.sh</code></td>
+<td style="text-align: right;"><strong>+498 / −44</strong></td>
+</tr>
+<tr>
+<td><code>scripts/lib/ownership.sh</code></td>
+<td style="text-align: right;"><strong>+302 / −9</strong> — <em>the
+feature-core library</em></td>
+</tr>
+<tr>
+<td><code>scripts/pre_build/check_cm_export_charset_valid.sh</code></td>
+<td style="text-align: right;">+109 / −62</td>
+</tr>
+<tr>
+<td><code>scripts/ownership_precondition.sh</code></td>
+<td style="text-align: right;">+29 / −6</td>
+</tr>
+<tr>
+<td><code>specs/002-user-owned-downloads/tasks.md</code></td>
+<td style="text-align: right;">+2 / −2</td>
+</tr>
+</tbody>
+</table>
+<p>Also modified: <code>constitution</code> (submodule),
+<code>docs/workable_items.db</code>, and 18 doc/export twins.</p>
+<blockquote>
+<p><strong>Consequence for T041:</strong> a review of
+<code>git diff main...HEAD</code> right now reviews a
+<code>scripts/lib/ownership.sh</code> that is <strong>302 lines
+behind</strong> the working tree. Per §11.4.115(F) / §11.4.236 the
+review verdict must name the exact tree state it read (HEAD
+<code>a3e1141</code> + whether the worktree delta was included), or the
+verdict’s fingerprint does not match anything that will ship.</p>
+</blockquote>
+<h3 id="files-under-active-sibling-agent-edit-observed-times">6.2 Files
+under active sibling-agent edit — observed times</h3>
+<p><code>find -mmin -30</code> at <strong>2026-08-26T19:01Z</strong>
+(relative <code>-newermt</code> is unusable on this host’s
+<code>bfs</code> <code>find</code>):</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh</code></td>
+<td>modified &lt;30 min ago</td>
+</tr>
+<tr>
+<td><code>constitution/scripts/gates/cm_dangerous_combination_fail_closed_mutation_test.sh</code></td>
+<td>modified &lt;30 min ago</td>
+</tr>
+<tr>
+<td><code>specs/002-user-owned-downloads/tasks.md</code></td>
+<td>modified &lt;30 min ago</td>
+</tr>
+<tr>
+<td><code>config/merge-service/scheduling.json</code></td>
+<td>modified &lt;30 min ago</td>
+</tr>
+<tr>
+<td><code>config/qBittorrent/qBittorrent-data.conf</code></td>
+<td>modified &lt;30 min ago</td>
+</tr>
+<tr>
+<td><code>config/boba.db-shm</code></td>
+<td>modified &lt;30 min ago</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Nothing in this document reports the content of those files
+as settled.</strong></p>
+<h3 id="the-sibling-lan-route-work-is-not-in-this-diff-at-all">6.3 The
+sibling LAN-route work is NOT in this diff at all</h3>
+<p>Measured, not inferred:</p>
+<table>
+<colgroup>
+<col style="width: 27%" />
+<col style="width: 36%" />
+<col style="width: 36%" />
+</colgroup>
+<thead>
+<tr>
+<th>Path</th>
+<th style="text-align: center;">In <code>main...HEAD</code></th>
+<th style="text-align: center;">Tracked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scripts/pre_build/lan_route_auth_analyzer.py</code></td>
+<td style="text-align: center;"><strong>0</strong></td>
+<td style="text-align: center;"><strong>0 (untracked)</strong></td>
+</tr>
+<tr>
+<td><code>scripts/pre_build/check_cm_lan_routes_authenticated.sh</code></td>
+<td style="text-align: center;"><strong>0</strong></td>
+<td style="text-align: center;"><strong>0 (untracked)</strong></td>
+</tr>
+<tr>
+<td><code>config/lan_route_auth_policy.yaml</code></td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0 (untracked)</td>
+</tr>
+<tr>
+<td><code>scripts/pre_build/lib/</code> (3 files)</td>
+<td style="text-align: center;">0</td>
+<td style="text-align: center;">0 (untracked)</td>
+</tr>
+<tr>
+<td><code>docs/scripts/check_cm_lan_routes_authenticated.md</code></td>
+<td style="text-align: center;"><strong>YES</strong></td>
+<td style="text-align: center;"><strong>YES, and modified
+now</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>A T041 review scoped to <code>git diff main...HEAD</code>
+reviews NONE of the LAN-route code, while its companion doc IS in
+scope.</strong> That is the §11.4.215 inversion (X-9): a binding doc
+tracked in the repo describing code that exists in no commit. Either the
+review scope or the commit state must be reconciled before T041 can
+claim completeness.</p>
+<p>24 untracked files total. <code>git status --porcelain</code> showed
+only 20 <code>??</code> entries because it collapses directories;
+expanded: <code>docs/qa/BOB-186|191|196|198</code> and
+<code>docs/qa/T028-uid100999</code> = 1 file each,
+<code>scripts/pre_build/lib/</code> = 3 files.</p>
+<h3
+id="the-constitution-submodule-hides-the-largest-change-in-the-branch">6.4
+The constitution submodule hides the largest change in the branch</h3>
+<pre><code>constitution: f6cf86e -&gt; 7a5e53a   (one line in the parent diff)</code></pre>
+<p>Measured inside the submodule:</p>
+<ul>
+<li><strong>11 commits</strong></li>
+<li><strong>164 files changed, +20,292 / −3,826</strong></li>
+</ul>
+<p><strong>A reviewer reading only <code>git diff main...HEAD</code>
+sees ONE line where 20,292 insertions of governance content actually
+landed.</strong> Per §11.4.233(G) I checked the pointer’s health, and it
+is good:</p>
+<ul>
+<li><strong>Resolvable:</strong> <code>git cat-file -t 7a5e53a</code> →
+<code>commit</code> ✔</li>
+<li><strong>Checked out:</strong> submodule HEAD == the recorded pointer
+✔</li>
+<li><strong>Fetchable:</strong> contained by <code>origin/main</code>,
+<code>github/main</code>, <code>gitlab/main</code>,
+<code>gitflic/main</code>, <code>gitverse/main</code> (all 5
+remote-tracking refs) ✔ — so this is <strong>not</strong> the
+<code>not our ref</code> class.</li>
+</ul>
+<p>But the submodule worktree is itself <strong>dirty</strong> (§6.2),
+so its content is moving.</p>
+<h3 id="what-this-preflight-did-not-determine">6.5 What this preflight
+did NOT determine</h3>
+<ol type="1">
+<li><strong>Whether any mutation harness actually kills its
+gate.</strong> Harnesses were located and their vocabulary counted;
+<strong>none were executed</strong>. “MUT = YES” in §2 means <em>a
+paired harness exists</em>, <strong>not</strong> <em>a fixture dies
+under it</em>. That is F-5 and is the reviewer’s to establish.</li>
+<li><strong>Whether the golden fixtures are independent oracles</strong>
+(§11.4.245) — specifically <code>bob145_dedup_golden.json</code> (3,475
+lines) and the four <code>tests/ux/fixtures/*.html</code>.</li>
+<li><strong>Filesystem-semantics coverage</strong> (§3.1 factor 6) — I
+did not determine whether any test exercises a uid-flattening
+filesystem.</li>
+<li><strong>Whether <code>detect_rootless</code>’s <code>unknown:</code>
+branch is handled identically at its two consumption sites</strong>
+(§3.3 / X-6) — read the headers, did not trace both call sites.</li>
+<li><strong>The docker rootless branch is documented-not-measured by the
+source’s own admission</strong> — I confirmed the admission, not the
+behaviour.</li>
+<li><strong><code>pre_build_verification.sh</code> was deliberately not
+executed</strong> (~26 s fork-heavy long-op owned by the conductor), so
+no gate verdict here is runtime-confirmed. Every claim in this document
+is source/metadata class (§11.4.226) and none is offered as runtime
+evidence.</li>
+<li><strong>Bucket boundary cases</strong> — <code>.scss</code> was
+classified <code>executable-source</code> (shipped code, not prose); a
+reviewer preferring a separate “style” bucket would move 8 files / 79
+insertions.</li>
+</ol>
+<hr />
+<h2 id="recommended-review-order">7. Recommended review order</h2>
+<ol type="1">
+<li><code>specs/…/contracts/*.md</code> + <code>spec.md</code> +
+<code>data-model.md</code> — the acceptance criteria (≈600 lines)
+<strong>before</strong> any code.</li>
+<li><strong>Tier 1 ownership core</strong> — 4,086 lines, against
+§3.1–§3.5 factor tables.</li>
+<li><strong>X-6 / X-7</strong> — the <code>detect_rootless</code> →
+R3/R4 coupling and the compose-parser ↔︎ <code>docker-compose.yml</code>
+pair.</li>
+<li><strong>F-5</strong> — open the 3 lowest-vocabulary harnesses and
+confirm they kill.</li>
+<li><strong>X-1 / F-4</strong> — <code>pre_build_verification.sh</code>
+dispatch (the unaudited gate).</li>
+<li>Tier 3 runtime code, <code>deduplicator.py</code> first (largest
+rewrite, −199).</li>
+<li>Tier 4 scripts, prioritising the 6 with neither doc nor test
+(F-6).</li>
+<li><strong>Skip</strong> the 267 orphan exports (§5.1); note the churn
+once.</li>
+</ol>
+</body>
+</html>

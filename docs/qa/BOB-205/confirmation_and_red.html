@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>confirmation_and_red</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">confirmation_and_red</h1>
+</header>
+<h1 id="bob-205-danger_roots-scope-hole-confirmed-red">BOB-205 —
+DANGER_ROOTS scope hole: CONFIRMED + RED</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-26T00:00:00Z</p>
+<p>Verdict: <strong>CONFIRMED</strong>, with three corrections and one
+larger unnamed gap.</p>
+<h2 id="the-driver-and-its-root-list-verbatim">1. The driver and its
+root list (verbatim)</h2>
+<p><code>scripts/pre_build_verification.sh:1481-1541</code> is invariant
+39 (<code>CM-DANGEROUS-COMBINATION-FAIL-CLOSED</code>, ADVISORY). Line
+<strong>1511</strong>:</p>
+<pre><code>    DANGER_ROOTS=(download-proxy/src plugins scripts qBitTorrent-go frontend/src)</code></pre>
+<p>Five roots. The loop (1513-1535) skips a root that does not exist
+(1514) and otherwise calls the gate once per root with
+<code>--root "${PROJECT_ROOT}/${_dr}" --quiet</code> (1517). The gate is
+invoked from exactly ONE place outside agent worktrees
+(<code>scripts/pre_build_verification.sh:1507</code>) — so a root absent
+from this array is scanned by <strong>no arm</strong>.</p>
+<h2 id="cmdboba-ctl-is-absent-re-measured">2. <code>cmd/boba-ctl</code>
+is absent — re-measured</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>metric</th>
+<th>value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tracked <code>.go</code> files</td>
+<td><strong>4</strong> (<code>main.go</code>,
+<code>deploy_test.go</code>, <code>health_test.go</code>,
+<code>projectroot_test.go</code>)</td>
+</tr>
+<tr>
+<td>tracked <code>.go</code> LOC</td>
+<td><strong>947</strong></td>
+</tr>
+<tr>
+<td>non-test <code>.go</code> LOC</td>
+<td>621 (<code>main.go</code>)</td>
+</tr>
+<tr>
+<td>all tracked files</td>
+<td>6 (adds <code>go.mod</code> 16, <code>go.sum</code> 23)</td>
+</tr>
+<tr>
+<td>all tracked LOC</td>
+<td>986</td>
+</tr>
+</tbody>
+</table>
+<p>The item’s “4 files, 947 LOC” is <strong>accurate</strong> for the Go
+source. No drift.</p>
+<h2
+id="is-it-a-11.4.252-dangerous-combination-surface-yes-5-of-6-capabilities">3.
+Is it a §11.4.252 dangerous-combination surface? YES — 5 of 6
+capabilities</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>§11.4.252 capability</th>
+<th>evidence in <code>cmd/boba-ctl/main.go</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>(1) mutation of shared resource</td>
+<td><code>up</code>/<code>down</code>/<code>restart</code> drive compose
+state — <code>main.go:34,36</code>, orchestrator
+<code>main.go:95-105</code>, <code>compose.WithUpDetach</code>
+<code>main.go:121</code></td>
+</tr>
+<tr>
+<td>(2) untrusted input</td>
+<td><code>os.Args</code> <code>main.go:21,33,47,110,144,170,302</code>;
+<code>os.Getenv("PROJECT_ROOT")</code> <code>main.go:53</code>; YAML
+host registry <code>main.go:453-465</code></td>
+</tr>
+<tr>
+<td>(3) credential access</td>
+<td>SSH deploy auth selection <code>main.go:432-440,496-509</code>;
+<code>KeyPath</code> <code>main.go:440</code></td>
+</tr>
+<tr>
+<td>(4) external side effect</td>
+<td><code>net.Dialer</code> health probes <code>main.go:239,323</code>;
+SSH-driven remote boot <code>main.go:430-431</code></td>
+</tr>
+<tr>
+<td>(5) shell / exec</td>
+<td><strong>INDIRECT</strong> — delegated to
+<code>digital.vasic.containers/pkg/compose</code>
+(<code>main.go:13</code>). No <code>exec.Command</code> in
+<code>main.go</code> itself.</td>
+</tr>
+<tr>
+<td>(6) irreversible</td>
+<td><code>down</code> <code>main.go:36,142</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Correction to the item:</strong> it calls boba-ctl “a
+shell-exec plus state-mutation surface”. State mutation is direct;
+shell-exec is one hop away through the Containers submodule. The ≥2
+threshold is met several times over regardless.</p>
+<p><strong>Concrete fail-open-shaped construct found by review (not by
+the gate):</strong> <code>main.go:498-509</code>
+<code>authMethod()</code> —
+<code>default: return remote.AuthSSHKey</code> (line 507). An
+unrecognised, typo’d or empty <code>auth:</code> value in the deploy
+host registry silently resolves to SSH-key auth instead of refusing.
+That is the §11.4.252 “default on ambiguous input” shape on a
+credential-selection path feeding an SSH remote deploy.</p>
+<p><strong>Honest qualification (§11.4.6):</strong> <code>main.go</code>
+contains <strong>no</strong> <code>_ = err</code> /
+<code>if err != nil {}</code> / silent-<code>return nil</code> shapes
+today (grep control-needled against
+<code>qBitTorrent-go/internal/config/config.go</code>, which does have
+them). So the scope hole here is currently <strong>latent</strong> — it
+hides no live gate-visible hit; it guarantees a future one lands
+unseen.</p>
+<h2 id="the-full-gap-list">4. The FULL gap list</h2>
+<p><strong>Rule for “first-party executable-source root”
+(reproducible):</strong> a git-tracked path P where (a) P is not under
+any <code>.gitmodules</code> submodule path nor
+<code>constitution/</code> / <code>superspec/</code>; (b) P holds ≥1
+tracked file whose extension is in the gate’s <strong>own</strong>
+scannable set
+(<code>py go rs c cc cpp h hpp java cs js ts jsx tsx php rb</code>, gate
+line 318) — measuring against the gate’s own list keeps the comparison
+honest, because a <code>.sh</code>-only root is invisible for a
+<em>different</em> reason; (c) P is taken at top level, except where
+<code>DANGER_ROOTS</code> already uses a second-level path
+(<code>download-proxy/src</code>, <code>frontend/src</code>), in which
+case siblings of that path are reported separately.</p>
+<h3 id="a.-gate-visible-language-files-outside-the-scan-scope">4a.
+Gate-visible-language files OUTSIDE the scan scope</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>root</th>
+<th>files</th>
+<th>shipping?</th>
+<th>concealed real hits (direct scan)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tests/</code></td>
+<td>324</td>
+<td>first-party, non-production</td>
+<td>not scanned (excluded-by-intent, <strong>undeclared</strong>)</td>
+</tr>
+<tr>
+<td><code>extension/</code></td>
+<td>108</td>
+<td><strong>SHIPPED browser extension</strong></td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>docs/</code></td>
+<td>51</td>
+<td>non-shipping (research/qa assets)</td>
+<td>not measured</td>
+</tr>
+<tr>
+<td><code>challenges/</code></td>
+<td>18</td>
+<td>first-party validation harness</td>
+<td>0</td>
+</tr>
+<tr>
+<td><strong><code>cmd/boba-ctl/</code></strong></td>
+<td><strong>4</strong></td>
+<td><strong>shipped orchestrator</strong></td>
+<td><strong>0 (and Go-blind — see §5)</strong></td>
+</tr>
+<tr>
+<td><code>frontend/e2e/</code></td>
+<td>3</td>
+<td>test, sibling of <code>frontend/src</code></td>
+<td>not measured</td>
+</tr>
+<tr>
+<td><code>tools/</code></td>
+<td>1</td>
+<td>first-party automation</td>
+<td><strong>3</strong>
+(<code>plugin_update_automation.py:189,198,215</code>)</td>
+</tr>
+<tr>
+<td><code>&lt;repo root&gt;</code></td>
+<td>1</td>
+<td><strong><code>webui-bridge.py</code>, live host service
+:7188</strong></td>
+<td><strong>1</strong> (<code>webui-bridge.py:295</code>)</td>
+</tr>
+<tr>
+<td><code>frontend/vitest.config.ts</code>,
+<code>frontend/playwright.config.ts</code></td>
+<td>2</td>
+<td>config</td>
+<td>not measured</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Totals:</strong> 266 gate-visible first-party source files
+are inside <code>DANGER_ROOTS</code>; <strong>512 are outside
+it</strong> — i.e. <strong>66% of the gate-visible first-party corpus is
+never scanned.</strong> <code>cmd/boba-ctl</code> is 4 of those 512.</p>
+<h3 id="b.-the-bigger-unnamed-gap-the-repository-root">4b. The bigger
+unnamed gap — the repository root</h3>
+<p><code>webui-bridge.py</code> (466 LOC) is an HTTP server on port 7188
+(<code>BaseHTTPRequestHandler</code> :85,
+<code>do_GET</code>/<code>do_POST</code> :92-97, <code>self.path</code>
+:103, outbound <code>urlopen</code> :273) that reads qBittorrent
+connection env (<code>:55-59,74</code>). It is <strong>not under any
+DANGER_ROOT</strong>. Pointing the gate at it reports a real hit:</p>
+<pre><code>❌ ... silent default return (exception handler returns a trivial literal with
+   no re-raise/log) at .../webui-bridge.py:295 (§11.4.252)</code></pre>
+<p>(<code>webui-bridge.py:293-296</code> —
+<code>except Exception: return False</code> around
+<code>urlparse</code>. Whether that specific one is a real fail-open or
+a benign narrow guard is a triage question; the point is the gate
+<strong>reports</strong> it and invariant 39 <strong>never sees</strong>
+it.)</p>
+<p>The repo root additionally holds <strong>13 first-party shell
+scripts</strong> including <code>start.sh</code> (1288 LOC — per
+CLAUDE.md <em>the</em> container orchestrator), <code>stop.sh</code>,
+<code>setup.sh</code>, <code>install-plugin.sh</code>,
+<code>ci.sh</code>, and the credential-handling
+<code>init-qbit-password.sh</code> / <code>fix-qbit-password.sh</code>.
+They are outside the scope <strong>and</strong> outside the language set
+(§4c).</p>
+<p><strong>Measured consequence:</strong> the scope hole conceals
+<strong>at least 4 real hits the gate itself reports on sight</strong>
+(1 at the repo root + 3 in <code>tools/</code>). Invariant 39’s advisory
+“36 hits” is therefore a §11.4.201(6) under-count of the first-party
+population, not a census.</p>
+<h3 id="c.-a-third-hole-the-item-did-not-name-the-language-hole">4c. A
+THIRD hole the item did not name — the LANGUAGE hole</h3>
+<p>Gate line 318:
+<code>exts="${DANGEROUS_COMBO_EXT:-py go rs c cc cpp h hpp java cs js ts jsx tsx php rb}"</code>.
+<strong><code>sh</code> is not in the list.</strong> Measured: a
+<code>.sh</code> fail-open and a <code>.py</code> fail-open planted in
+the SAME scanned root → py reported, sh <strong>not reported</strong>,
+and the gate emits <strong>zero</strong> mention of shell
+(<code>grep -ciE 'shell|\.sh|bash'</code> on its output = 0).</p>
+<p>Consequence: <code>scripts/</code> <strong>is</strong> a DANGER_ROOT
+but holds 71 <code>.sh</code> and only 3 <code>.py</code> + 1
+<code>.js</code> — so 71/75 of that root is silently invisible while the
+driver prints <em>“no fail-open anti-pattern across N first-party source
+root(s)”</em>. Project-wide, <strong>198 tracked shell files</strong>
+are unscannable by language.</p>
+<p><strong>Correction to the item’s acceptance criterion (4):</strong>
+it states the gate “already implements correctly” an honest §11.4.3
+SKIP-with-reason for unenumerated extensions. Measured: it does so for
+the <strong>Python arm’s</strong> degradations (missing interpreter /
+parse failure — gate lines 843, 863, 874, 876), but for an extension
+entirely absent from the ext list it says <strong>nothing at
+all</strong>. That is a silent false-null, not an honest skip.</p>
+<h2 id="bob-205-vs-bob-191-distinct-and-they-compound">5. BOB-205 vs
+BOB-191 — distinct, and they COMPOUND</h2>
+<p>Measured in one temp root containing both a Go needle and a Python
+needle:</p>
+<pre><code>go-needle hits:  0
+py-needle hits:  1</code></pre>
+<p>The gate routes only <code>*.py</code> to its AST analyser (gate line
+670); everything else falls to a line-based text scanner with no Go
+shape to match. <strong>Go-blindness independently
+confirmed.</strong></p>
+<p>And, pointing the gate <strong>directly</strong> at the real
+<code>cmd/boba-ctl</code>:</p>
+<pre><code>✅ CM-DANGEROUS-COMBINATION-FAIL-CLOSED: PASS — no swallowed-exception,
+   silent-default-return or credential-default-to-literal anti-patterns found</code></pre>
+<p>— a green verdict over 947 LOC it cannot analyse.</p>
+<p><strong>They are NOT the same defect, and fixing BOB-205 alone is not
+sufficient.</strong> Adding <code>cmd/boba-ctl</code> to
+<code>DANGER_ROOTS</code> moves it from <em>never looked at</em> to
+<em>looked at and falsely green</em> — a §11.4.201(6) FALSE-NULL, which
+is the worse of the two states because it now counts as covered. BOB-191
+must land too.</p>
+<h2 id="the-red">6. The RED</h2>
+<p><code>tests/pre_build/test_bob205_danger_roots_scope.sh</code></p>
+<p><strong>Oracle (§11.4.245): METAMORPHIC + INVARIANT, with a control
+needle.</strong> Two <strong>byte-identical</strong> Python fail-open
+needles are planted in a hermetic fixture: one in a root that IS in
+<code>DANGER_ROOTS</code> (CONTROL), one in <code>cmd/boba-ctl</code>
+(PROBE). The scanner is driven exactly as invariant 39 drives it.
+Identical input in two locations must produce identical verdicts; the
+needles are byte-identical (sha256 asserted equal at runtime), so
+matcher strength, language support and gate version are all held
+constant and <strong>scope is the only free variable</strong>. The
+oracle is structurally independent of the code under test: the expected
+verdict comes from the metamorphic relation, not from reading
+<code>DANGER_ROOTS</code>.</p>
+<p>Shape (a) — direct — was chosen over shape (b) — structural. (b) is
+included as a clearly-labelled SECONDARY assertion only; it pins list
+<em>content</em>, not <em>scanning</em>, so it would pass against a list
+entry that the loop never reaches (e.g. a typo’d path silently skipped
+by the <code>[[ -d ]]</code> guard at line 1514).</p>
+<p><strong>Confound avoided:</strong> the needle is <strong>Python, not
+Go</strong>, precisely because of BOB-191. A Go needle would stay unseen
+even after the scope fix, so the RED would never flip — a §11.4.201(1)
+FAIL-bluff. Fixing BOB-191 alone will <strong>not</strong> turn this
+test green; only widening the scope will.</p>
+<p><strong>Instrument viability (§11.4.201(7)(b)):</strong> if the
+CONTROL needle is not found the script exits <strong>3 = ABORT</strong>,
+not 1 = RED. A null from a blind instrument is not evidence.</p>
+<p><strong>Binding to the source of truth:</strong> the test parses
+<code>DANGER_ROOTS</code> from the real
+<code>scripts/pre_build_verification.sh</code>, so it flips GREEN the
+moment the root is added, with zero edits to the test.</p>
+<p>It does <strong>not</strong> run
+<code>pre_build_verification.sh</code> and touches nothing outside its
+own <code>mktemp -d</code>.</p>
+<h3 id="red-today-red_run_live_gate.log-exit-1">RED (today) —
+<code>red_run_live_gate.log</code>, exit 1</h3>
+<pre><code>gate sha256: c5752428c08279029422384119f83364e29e7ca0a1262e21d2ea6c8e3a95b06a
+DANGER_ROOTS (5): download-proxy/src plugins scripts qBitTorrent-go frontend/src
+needle sha256 (control == probe): 8d8bd909433bba614688f86d6973a54f0d39a42f6e4b8bcc89b10466f05b2e4e
+roots scanned by the driver&#39;s own list: 5
+CONTROL needle (download-proxy/src/): 1 hit(s) — instrument PROVEN seeing
+PROBE   needle (cmd/boba-ctl/): 0 hit(s)
+FAIL: a fail-open that IS reported when it sits in download-proxy/src/ is INVISIBLE when it sits in cmd/boba-ctl/.
+VERDICT: RED (primary=FAIL secondary=FAIL) — BOB-205 scope hole reproduced</code></pre>
+<h3 id="green-polarity-proof-green_run_patched_driver.log-exit-0">GREEN
+(polarity proof) — <code>green_run_patched_driver.log</code>, exit
+0</h3>
+<p>Run against a <strong>scratch copy</strong> of the driver with
+<code>cmd/boba-ctl</code> appended
+(<code>BOB205_DRIVER=&lt;scratch&gt;</code>). The real
+<code>scripts/pre_build_verification.sh</code> was <strong>not
+modified</strong> (<code>git diff --stat</code> empty).</p>
+<pre><code>DANGER_ROOTS (6): ... frontend/src cmd/boba-ctl
+CONTROL needle (download-proxy/src/): 1 hit(s) — instrument PROVEN seeing
+PROBE   needle (cmd/boba-ctl/): 1 hit(s)
+VERDICT: GREEN (primary=PASS secondary=PASS)</code></pre>
+<h3 id="determinism-11.4.50">Determinism (§11.4.50)</h3>
+<p>3/3 RED runs → exit 1. 3/3 GREEN runs → exit 0.</p>
+<h2 id="fix-direction-assessed-not-applied">7. Fix direction — assessed,
+NOT applied</h2>
+<p>The item points at §11.4.251 (replace the hand-maintained list with a
+manifest derived from the build’s own source of truth).
+<strong>Assessment: feasible, and the source of truth already exists —
+but it must be an EXPLICIT manifest, not a derivation from the build
+graph.</strong></p>
+<p>Candidate sources of truth, measured:</p>
+<ol type="1">
+<li><strong><code>docker-compose.yml</code> build contexts</strong> —
+covers <code>download-proxy</code>, <code>qBitTorrent-go</code>,
+<code>submodules/jackett</code>; does <strong>not</strong> cover
+<code>plugins/</code>, <code>frontend/src</code>,
+<code>extension/</code>, <code>cmd/boba-ctl</code>, or
+<code>webui-bridge.py</code> (host process, no compose service).
+Insufficient alone.</li>
+<li><strong>git + language markers</strong> (<code>go.mod</code> /
+<code>package.json</code> / <code>pyproject.toml</code>) — discovers
+<code>cmd/boba-ctl</code> (has <code>go.mod</code>),
+<code>qBitTorrent-go</code>, <code>frontend</code>,
+<code>extension</code>; misses <code>plugins/</code> and
+<code>webui-bridge.py</code>, both of which have no module marker.</li>
+<li><strong>Derive from git-tracked source extensions, minus a declared
+fence</strong> — the only rule that reaches every gap above. This is the
+§11.4.224(E) exclusion-list shape: enumerate first-party source roots
+mechanically, and allow exclusion <strong>only</strong> via a checked-in
+list whose every entry is justified from the closed class set (generated
+/ vendored / non-shipping-fixtures), with first-party exclusions
+additionally carrying a tracked §11.4.197 item.</li>
+</ol>
+<p><strong>Recommendation:</strong> option 3, i.e. flip the INCLUSION
+list into a <em>mechanically-derived</em> set plus a <em>declared
+exclusion fence</em>. That is what makes the invariant self-closing: a
+new root cannot exist without either being scanned or appearing,
+justified, in the fence. Option 1/2 leave the same class of hole in a
+different place.</p>
+<p><strong>If instead the operator keeps a hand-maintained list</strong>
+(a legitimate choice — it is auditable and cheap), the omission-catching
+guard is the missing piece: a gate that recomputes the derived root set
+and FAILs when a first-party source root exists that is neither in
+<code>DANGER_ROOTS</code> nor in the declared fence. That guard is the
+same computation as option 3 — so the honest framing is that the
+derivation must be built either way; the only question is whether it
+<em>drives</em> the scan or merely <em>audits</em> the hand list.</p>
+<p>Whichever route: the <code>tests/</code> question (324 files) is an
+operator decision per §11.4.66/§11.4.224(E) — production-only is a
+defensible scope, but it is currently <strong>undeclared</strong>, and
+an undeclared exclusion is what §11.4.224(E) forbids.</p>
+<h2 id="not-applied-out-of-scope-for-this-task">8. Not applied / out of
+scope for this task</h2>
+<p>No production fix was made.
+<code>scripts/pre_build_verification.sh</code> and
+<code>constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh</code>
+were read and (for the gate) snapshotted, never edited.
+<code>pre_build_verification.sh</code> was never executed.</p>
+</body>
+</html>

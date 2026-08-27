@@ -1,0 +1,165 @@
+test_ownership_repair.sh — contract cases:
+  1 golden-bad      : wrongly-owned tree repaired, exit 0, change record NON-EMPTY
+  2 preserve_mode   : credential-store entry keeps its EXACT bits (FR-015)
+  3 negative control: path OUTSIDE declared scope left untouched (FR-005)
+  4 golden-good     : correct tree -> exit 0, change record EMPTY, nothing mutated
+  5 interrupt/resume: kill mid-run -> marker ABSENT -> re-run completes (FR-004a)
+  6 scope re-arm    : scope change invalidates the marker (data-model E2)
+  7 honest failure  : unrepairable item reported, does NOT exit 0 (FR-006)
+  8 symlink fence   : a link inside scope does NOT carry the repair outside (FR-005)
+  9 preserve_mode fence: preserve_mode must not chmod THROUGH a symlink (FR-005+FR-015)
+ 10 scope coverage  : the SHIPPED scope declares every rw bind-mount source (FR-012)
+ 11 record loss     : a destroyed change record is REPORTED, not silently replaced
+ 12 record rotation : a superseded change record is preserved as its own artifact
+ 13 state dir       : OWNERSHIP_STATE_DIR overrides; the default path is unchanged
+ 14 relative scope  : a repo-relative entry resolves against the project root (E1)
+ 15 dotenv shape    : the shipped .env entry keeps a 600 credential file at 600
+ 16 empty scope     : a scope yielding ZERO locations is 'could not run', not 'complete'
+ 17 declared-path fence: a scope may not name /, a system tree, or a .. escape
+ 18 hardlink claim   : the out-of-scope hardlink reach is measured and documented
+ 19 chown reason     : a failed chown reports WHY it failed
+ 20 mode-restore     : a failed FR-015 mode restore is reported, not swallowed
+ 21 fingerprint prose: the comment matches what the fingerprint is computed from
+ 22 declared-root    : a failure on the declared root itself is named as such
+
+  fixture identity: operator 1000:1000; wrong-owner fixtures seeded as 1000:10
+
+Case 1/2/3: golden-bad repair, preserve_mode, out-of-scope negative control
+  PASS: golden-bad: exit 0 after repairing a wrongly-owned tree
+  FAIL: golden-bad: 18/18 items still not operator-owned after repair
+  FAIL: golden-bad: no artifact records the repaired path /tmp/.private/milosvasic/boba_ownership_repair.Ox11DIaQ/sb.bypicPk1/fixture/in_scope/item_00000.bin — E3 change record missing or empty
+  PASS: golden-bad: repair marker written after a successful pass and carries the scope fingerprint (E2)
+  PASS: preserve_mode: credential store kept mode 600 exactly
+  FAIL: preserve_mode: credential store still gid 10 — preserve_mode must not stop the ownership repair itself
+  PASS: negative control: out-of-scope tree byte-identical in owner/mode after the run (FR-005 scope fence holds)
+  PASS: negative control: no out-of-scope path appears in the change record
+
+Case 4: golden-good — already-correct tree
+  PASS: golden-good: exit 0 on an already-correct tree
+  PASS: golden-good: nothing mutated (owner and mode identical for every item)
+  PASS: golden-good: change record is EMPTY (no item recorded as changed)
+  PASS: golden-good: marker written after a successful no-change pass (E2 / FR-004c precondition)
+
+Case 5: interrupt -> resume (marker written only on success)
+  FAIL: interrupt: could not observe a partial mid-run state even at 3000 items — the case could not be driven, so nothing about FR-004a is claimed (§11.4.6)
+
+Case 6: scope-fingerprint change re-arms the repair
+  PASS: scope re-arm: adding a declared path changes the scope fingerprint
+  FAIL: scope re-arm: the newly-declared path was left unrepaired — the stale marker suppressed the run, so new scope is silently never repaired (E2)
+  PASS: scope re-arm: the marker now carries the NEW scope fingerprint
+
+Case 7: honest failure — an item that cannot be repaired
+  PASS: honest failure: did NOT exit 0 with an unrepairable item outstanding (FR-006)
+  PASS: honest failure: exit 1 (contract: at least one item could not be repaired)
+  PASS: honest failure: the unrepairable path is named individually in the output
+
+Case 8: out-of-scope reach through symlinks (FR-005)
+  FAIL: symlink fence: the in-scope tree was not repaired (14/14 still wrong) — every out-of-scope assertion below would be vacuous
+  PASS: symlink fence: out-of-scope targets byte-identical in owner/group/mode — a symlink inside the scope did NOT carry the repair outside it (FR-005)
+  PASS: symlink fence: out-of-scope file CONTENT unchanged (no write reached through a link either)
+  PASS: symlink fence: no out-of-scope path appears in the change record, under either the resolved or the link-traversed spelling
+  FAIL: symlink fence: /tmp/.private/milosvasic/boba_ownership_repair.Ox11DIaQ/sb.9hU4kIzs/fixture/in_scope/link_to_outside_file is still not operator-owned — an in-scope item was skipped rather than repaired
+  PASS: symlink fence: every link is still a link pointing at its original target (the repair did not resolve or replace it)
+  PASS: symlink fence: exit 0 with a dangling symlink in scope (a broken link is not an unrepairable item)
+  PASS: symlink fence: the dangling link's absent target was not created by the run
+
+DECLARED GAPS — not covered by this unit suite, by measurement not by choice:
+  * A real host-UID mismatch (the observed uid-100999 defect) cannot be
+    seeded unprivileged: chown -> EPERM, unshare -Ur chown -> EINVAL, and
+    unshare --map-users over the real subuid range -> EPERM (all measured
+    2026-08-21). An unprivileged process also could not repair such an item
+    back, so no implementation could turn that fixture green here. Covered
+    by tests/ownership/test_container_writes_owned_files.py instead.
+  * A genuine chown/chgrp EPERM on an EXISTING item (the real-world failure
+    mode behind FR-006) needs a foreign-owned file, which is the same
+    privilege gap. Case 7 uses the absent-non-optional-path route, which is
+    real and deterministic but exercises a different code path than EPERM.
+  * FR-004d blocking-before-services and FR-004e real progress output are
+    integration-layer properties and are deliberately not asserted here.
+  * The preserve_mode:TRUE symlink path WAS broken and is now covered
+    by Case 9: a bare chmod follows a symlink on Linux (there is no -h),
+    and a symlink's find %m is 777, so the mode-restore step moved an
+    OUT-OF-SCOPE target from 600 to 777. Measured and fixed 2026-08-21.
+
+Case 9: preserve_mode TRUE must not chmod through a symlink (FR-005 + FR-015)
+  FAIL: preserve_mode symlink fence: in-scope tree not repaired — the fence assertion would be vacuous
+  PASS: preserve_mode symlink fence: out-of-scope target still mode 600 — chmod did not follow the link
+  PASS: preserve_mode symlink fence: out-of-scope content byte-identical
+  PASS: preserve_mode symlink fence: the link is still a link pointing at its original target
+
+Case 10: the SHIPPED scope declares every container-written (rw bind-mount) location
+  PASS: scope coverage: all 6 rw bind-mount source(s) in docker-compose.yml are declared (or covered by a declared ancestor)
+
+Case 11: a destroyed change record is reported, not silently replaced
+  FAIL: record loss: the seeding run wrote no change record naming /tmp/.private/milosvasic/boba_ownership_repair.Ox11DIaQ/sb.whPeNYHp/fixture/t1/item_00000.bin — nothing to destroy, so this case would prove nothing
+
+Case 12: a superseded change record is preserved as a distinct artifact
+  FAIL: record rotation: the first run wrote no record naming /tmp/.private/milosvasic/boba_ownership_repair.Ox11DIaQ/sb.TP88cwtU/fixture/first/item_00000.bin — nothing to supersede
+
+Case 13: the state directory is overridable, default unchanged
+  PASS: state-dir override: the marker landed in OWNERSHIP_STATE_DIR
+  PASS: state-dir override: the DEFAULT state directory was not created when the override is set (an ad-hoc run does not touch the live trail)
+  PASS: state-dir default: unchanged — marker at logs/ownership/repair-marker.json (the live path the journal and docs already name)
+
+Case 14: a repo-relative declared path resolves against the project root, from any cwd
+  FAIL: relative scope: exit 0 but the tree was NOT repaired — the run resolved the relative path to somewhere else and reported success about nothing
+
+Case 15: shipped .env entry shape — preserve_mode keeps a 600 credential file at 600
+  PASS: dotenv shape: credential file still mode 600 after the repair (never widened, FR-015)
+  FAIL: dotenv shape: credential file still gid 10 — preserve_mode must not stop the ownership repair itself
+
+Case 16: a scope that yields ZERO locations is 'could not run', not 'complete' (IMPORTANT-1)
+  PASS: empty scope [control needle]: a NON-empty scope in the same sandbox shape exits 0 and writes a marker — the assertions below are not vacuous
+  PASS: empty scope [paths: []]: exit 2 — the run reported 'could not run' rather than 'complete'
+  PASS: empty scope [paths: []]: no completion marker written — the next start still repairs
+  PASS: empty scope [paths: []]: the operator is told the scope declares no locations
+  PASS: empty scope [top-level key mistyped 'path:']: exit 2 — the run reported 'could not run' rather than 'complete'
+  PASS: empty scope [top-level key mistyped 'path:']: no completion marker written — the next start still repairs
+  PASS: empty scope [top-level key mistyped 'path:']: the operator is told the scope declares no locations
+  PASS: empty scope [every ${VAR} expands empty]: exit 2 — the run reported 'could not run' rather than 'complete'
+  PASS: empty scope [every ${VAR} expands empty]: no completion marker written — the next start still repairs
+  PASS: empty scope [every ${VAR} expands empty]: the operator is told the scope declares no locations
+
+Case 17: the DECLARED path is itself fenced — a scope may not name /, a system tree, or a .. escape (IMPORTANT-2)
+  FAIL: fence [legitimate shapes]: exit 0 but the trees were NOT repaired
+  PASS: fence [shipped entry, env repointed to a bare top-level dir]: exit 2 — refused before anything was walked
+  PASS: fence [shipped entry, env repointed to a bare top-level dir]: no item was named for chown
+  PASS: fence [shipped entry, env repointed to a bare top-level dir]: the refusal names the offending entry (§11.4.201(5) resolved evidence)
+  PASS: fence [relative entry escaping the project root with ..]: exit 2 — refused before anything was walked
+  PASS: fence [relative entry escaping the project root with ..]: no item was named for chown
+  PASS: fence [relative entry escaping the project root with ..]: the refusal names the offending entry (§11.4.201(5) resolved evidence)
+  PASS: fence [absolute system tree (under /usr/lib)]: exit 2 — refused before anything was walked
+  PASS: fence [absolute system tree (under /usr/lib)]: no item was named for chown
+  PASS: fence [absolute system tree (under /usr/lib)]: the refusal names the offending entry (§11.4.201(5) resolved evidence)
+  PASS: fence predicate [the shipped default /mnt/DATA]: accept (expected accept)
+  PASS: fence predicate [this host real root /run/media/.../DL]: accept (expected accept)
+  PASS: fence predicate [filesystem root /]: refuse (expected refuse)
+  PASS: fence predicate [bare top-level /mnt]: refuse (expected refuse)
+  PASS: fence predicate [system tree /etc]: refuse (expected refuse)
+  PASS: fence predicate [under a system tree /var/lib/x/y]: refuse (expected refuse)
+  PASS: fence predicate [absolute .. escape /mnt/DATA/../..]: refuse (expected refuse)
+  PASS: fence predicate [relative staying inside the root]: accept (expected accept)
+  PASS: fence predicate [relative escaping the root]: refuse (expected refuse)
+
+Case 18: the hardlink escape is real, bounded, and the header says so (MINOR-1)
+    measured: the out-of-scope hardlink target stayed 1000:10 (no escape on this filesystem)
+  SKIP: hardlink escape: not reproducible on this filesystem — no claim made either way
+  PASS: hardlink escape: the out-of-scope file's CONTENT is untouched (the escape is ownership-only, as documented)
+
+Case 19: a failed chown reports the reason it failed, not just that it failed (MINOR-2)
+  FAIL: chown reason: exit 0 while every chown failed — the shim never took effect, so this case proved nothing (instrument blind, §11.4.201(7)(b))
+
+Case 20: a failed mode restore is reported and blocks the completion marker (MINOR-3, FR-015)
+  FAIL: mode-restore failure: silence — the FR-015 mode restore failed for every item and nothing said so (no log line, no record, no exit-code effect)
+  FAIL: mode-restore failure: exit 0 — the run claimed the exact bits were preserved while every restore failed (§11.4 PASS-bluff at the FR-015 layer)
+  FAIL: mode-restore failure: a COMPLETION MARKER was written although FR-015 was not delivered — the next start will skip the repair
+
+Case 21: the fingerprint comment matches what the fingerprint actually is (NIT-1)
+  PASS: fingerprint prose [measured]: one unchanged scope file yields two fingerprints under two environments — it is NOT the file's literal text
+  PASS: fingerprint prose [measured]: neither fingerprint equals sha256 of the file's literal bytes
+  PASS: fingerprint prose: the artifact no longer claims the fingerprint is the file's literal text
+  PASS: fingerprint prose: the corrected comment names the environment-expanded parse as the fingerprint's input
+
+Case 22: a chown failure on the DECLARED ROOT itself is named as such (NIT-2)
+  FAIL: declared-root failure: exit 0 — the shim never took effect, so this case proved nothing (instrument blind)
+RESULT: 61 passed, 18 failed, 1 skipped

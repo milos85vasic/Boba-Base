@@ -247,17 +247,39 @@
 <h1
 id="scriptsownership_repair.sh-ownership-repair"><code>scripts/ownership_repair.sh</code>
 — Ownership Repair</h1>
-<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
-2026-08-25T00:00:00Z <strong>Purpose:</strong> Operator guide for the
+<p><strong>Revision:</strong> 7 <strong>Last modified:</strong>
+2026-08-27T00:00:00Z <strong>Purpose:</strong> Operator guide for the
 tool that brings pre-existing content back under the ownership of the
 person who started the system. <strong>Last verified:</strong>
-2026-08-21</p>
+2026-08-27</p>
 <hr />
 <h2 id="overview">Overview</h2>
 <p><code>scripts/ownership_repair.sh</code> walks every location
 declared in <code>config/owned_paths.yaml</code> and <code>chown</code>s
 every item that is <strong>not</strong> owned by the operator back to
 the operator’s <code>uid:gid</code>.</p>
+<p><strong>“Owned by the operator” means the <code>uid</code> matches —
+nothing else.</strong> The walk selects on <code>uid</code> alone, and
+an item the operator already owns is left untouched even if its
+<em>group</em> differs. That is the feature’s single definition of the
+property: data-model E4 models the ownership probe with
+<code>probe_uid</code>/<code>expected_uid</code> and no gid field,
+<code>contracts/startup-precondition.md</code> compares against “the
+operator’s uid”, and FR-001/FR-002/FR-003/FR-010b all say “owned by the
+account”. Operationally it is sufficient because owner-class permission
+bits are selected by <code>uid</code> match, so renaming, moving and
+deleting (FR-003) work whatever the group is.</p>
+<p>The <code>chown</code> it performs still <strong>writes</strong>
+<code>uid:gid</code> — one syscall, and it gives a genuinely-broken
+<code>100999:100999</code> item a resolvable group. Until BOB-207 the
+walk also <em>selected</em> on gid, which made this script the only
+place in the feature that meant <code>uid+gid</code> while the startup
+precondition meant <code>uid</code>: the precondition could certify a
+location this walk simultaneously reported as broken. Narrowing the
+selection settled that, and has a second effect worth knowing — a
+deliberate shared-group or <code>setgid</code> arrangement on content
+you already own is no longer silently rewritten by a repair that was
+never asked to touch it.</p>
 <p>It exists because of a measured state, not a hypothetical one: on
 2026-08-21 the download root contained an item owned by uid
 <code>100999</code> and <code>config/</code> contained
@@ -517,11 +539,13 @@ declared scope.</td>
 <tr>
 <td><code>2</code></td>
 <td>Could not run: the scope is missing/unparseable, <strong>the scope
-declares zero locations</strong>, <strong>the scope declares a path this
-repair must never walk</strong> (see <em>The declared-path fence</em>
-below), the fingerprint cannot be computed, the state directory cannot
-be created, or the change record cannot be opened for append. Nothing
-was touched.</td>
+declares zero locations</strong>, <strong>a declared entry resolved to
+no usable location</strong> (see <em>Why an empty scope is
+<code>2</code> and not <code>0</code></em> below), <strong>the scope
+declares a path this repair must never walk</strong> (see <em>The
+declared-path fence</em> below), the fingerprint cannot be computed, the
+state directory cannot be created, or the change record cannot be opened
+for append. Nothing was touched.</td>
 </tr>
 </tbody>
 </table>
@@ -544,6 +568,141 @@ class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb9-1"><a href="
 <p>All three now exit <code>2</code>.
 <code>scripts/ownership_precondition.sh</code> has always refused them
 the same way; the two consumers of one scope file now agree.</p>
+<h4 id="and-so-does-a-scope-that-only-partly-vanishes-revision-4">…and
+so does a scope that only <em>partly</em> vanishes (Revision 4)</h4>
+<p>The rule above covered the case where <strong>every</strong> entry
+vanished. Measured 2026-08-26, its partial sibling did not: a two-entry
+scope whose first entry was <code>${UNSET_VAR}</code> announced
+<code>(1 declared locations)</code>, walked only the survivor, exited
+<code>0</code> and wrote the marker. One <strong>declared</strong>
+location had silently disappeared, and no consumer could tell that scope
+from an honest one-entry one.</p>
+<p>Since Revision 4 the scope reader itself refuses, so all three
+consumers (<code>ownership_repair.sh</code>,
+<code>ownership_precondition.sh</code> and the pre-build gate) inherit
+one rule rather than three crosschecks that could disagree. Two shapes
+are refused:</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">paths</span><span class="kw">:</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;${UNSET_VAR}&quot;</span><span class="co">          # expands to nothing — no &#39;:-&#39; default supplied</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/srv/media/downloads&quot;</span><span class="co">  # …and this one is NOT quietly repaired alone</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">paths</span><span class="kw">:</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">path</span><span class="kw">:</span><span class="at"> </span><span class="st">&quot;/srv/${UNSET_VAR}/downloads&quot;</span><span class="co">   # expands to /srv/downloads —</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co">                                          # a DIFFERENT path than declared</span></span></code></pre></div>
+<p>The second shape is the sharper one: the path stays non-empty, so the
+fence’s depth floor cannot catch it, and the repair chowned a tree the
+scope never named.</p>
+<p><strong>The whole run is refused, not just the offending
+entry.</strong> The completion marker’s fingerprint claims
+<em>every</em> declared location and <code>start.sh</code> reads it as
+“already repaired”, so a partial walk that exited <code>0</code> would
+latch the miss on every later start. It is also the decision the
+declared-path fence already takes for a refused entry — one question,
+one answer.</p>
+<p><code>${VAR:-default}</code> — including the explicit
+<code>${VAR:-}</code> — is you <em>stating</em> what empty means and is
+never refused. That is the shipped scope’s first entry
+(<code>${QBITTORRENT_DATA_DIR:-/mnt/DATA}</code>), so a rule that
+swallowed it would refuse the live configuration. The refusal names the
+entry, the raw spelling and the variable:</p>
+<pre><code>ownership: 1 declared entry in config/owned_paths.yaml resolved to no usable location:
+ownership:   entry 1 — path: &#39;${QBITTORRENT_DATA_DIR}&#39; — it expanded to an empty path:
+             ${QBITTORRENT_DATA_DIR} is unset or empty and the entry supplies no &#39;:-&#39; default
+ownership: remedy: give the entry a default (${VAR:-/path}), set the variable, or remove
+             the entry. `optional: true` does not cover this — it says the path may be
+             ABSENT, not that the DECLARATION may be.</code></pre>
+<p>Note the last line: <code>optional: true</code> declares that the
+path may be missing from the filesystem. It does not license a
+declaration that denotes nothing.</p>
+<h4
+id="two-interpolation-forms-are-supported-any-other-spelling-is-refused">Two
+interpolation forms are supported — any other <code>${…}</code> spelling
+is refused</h4>
+<p>A declared path may interpolate <code>${VAR}</code> and
+<code>${VAR:-default}</code> (the explicit <code>${VAR:-}</code>
+included). <strong>Those two forms are the whole of what is
+interpolated</strong>, and any <em>other</em> <code>${…}</code> spelling
+is refused rather than substituted, because the substitution would
+otherwise leave a marker in the walked path:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>spelling</th>
+<th>why it is refused</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>${A:-${B}}</code> — one form nested inside another’s
+default</td>
+<td>the default stops at the <strong>inner</strong> <code>}</code>, so
+that <code>}</code> closes the outer form and the trailing one is
+stranded. Measured: with both unset the path came out as the literal
+<code>…/${B}/leaf</code>; with <code>A</code> set, as the corrupted
+<code>…//tmp/x}/leaf</code>. Neither is what you declared.</td>
+</tr>
+<tr>
+<td><code>${}</code>, <code>${1}</code>, an unterminated
+<code>${VAR</code></td>
+<td>the substitution cannot consume them at all, so the <code>${</code>
+survives into the path the walk would use.</td>
+</tr>
+</tbody>
+</table>
+<p>This is judged on the <strong>declared spelling only</strong> — never
+on a variable’s <em>value</em>. A value that happens to contain
+<code>${</code>, or a directory whose name contains a literal
+<code>}</code>, is yours to choose and still resolves normally; both are
+pinned as golden-FALSE cases in the suite so the rule can never grow
+into them.</p>
+<p><strong>A bare <code>$NAME</code> is not interpolation — it is a
+literal path component.</strong> Only <code>${</code> openers are
+judged, so <code>path: /data/$USER/downloads</code> is neither expanded
+nor refused: it denotes a directory whose name really is the six
+characters <code>$USER</code>. Measured 2026-08-26 — a non-optional
+entry of that shape fails honestly when the directory is absent
+(<code>declared path does not exist and is not optional</code>, exit
+<code>1</code>), but an <code>optional: true</code> one logs
+<code>absent, declared optional — skipped</code> and exits
+<strong><code>0</code></strong>, which is the same optional-escape the
+refusals above exist to close, one grammar step away. The skip line
+prints the literal path, so it is visible in the log rather than silent.
+Unless you really do mean a <code>$</code>-named directory, read a bare
+<code>$</code> in a declared path as a typo for <code>${…}</code> —
+write <code>${USER}</code> or <code>${USER:-default}</code>.</p>
+<p>Refusing a bare <code>$</code> in code would be
+<strong>wrong</strong>, and is deliberately not done:
+<code>$</code>-named directories are real and in use. A
+Windows-formatted download disk carries a literal
+<code>$RECYCLE.BIN</code>, and such an entry is walked normally today
+(measured on a real directory of that name:
+<code>0/0 items need repair</code>, exit <code>0</code>). A rule that
+refused it would be a §11.4.201(1) false-positive refusal against a
+working configuration — which this project treats as exactly as serious
+as a false pass, and which the nine golden-FALSE assertions in the suite
+exist to prevent this rule from growing into.</p>
+<p>The refusal matters most for an <code>optional: true</code> entry.
+Without this rule a non-optional entry of either shape still failed
+honestly (<code>does not exist</code>, exit <code>1</code>), but an
+optional one logged <code>absent, declared optional — skipped</code>,
+exited <strong><code>0</code></strong> and wrote the completion marker —
+a corrupted path that read as a successful run while repairing nothing,
+and latched that miss on every later start. The message names the entry
+and the spelling:</p>
+<pre><code>ownership: 1 declared entry in config/owned_paths.yaml resolved to no usable location:
+ownership:   entry 1 — path: &#39;/srv/${A:-${B}}/leaf&#39; — the entry&#39;s spelling was not fully
+             resolved: ${A:-${B} nests one `${...}` inside another&#39;s default, which the
+             documented ${VAR} / ${VAR:-default} grammar does not cover — the inner `}`
+             closes the outer form and the remainder is left stranded, so the walked path
+             would not be the declared one</code></pre>
+<p>The remedy is the same as for any unresolved entry: give it a
+default, set the variable, or split the nesting into a single
+<code>${VAR:-default}</code>.</p>
 <h3 id="the-declared-path-fence">The declared-path fence</h3>
 <p>The walk only ever names items <em>under</em> a declared path — but
 until Revision 3 nothing constrained what a declared path could
@@ -579,6 +738,12 @@ must still be <strong>inside the project root</strong></td>
 (<code>/bin /boot /dev /etc /lib /lib32 /lib64 /libx32 /proc /root /sbin /sys /usr /var</code>)
 nor anything under one</td>
 </tr>
+<tr>
+<td>absolute, <em>computed</em> deny (Revision 4)</td>
+<td>never the container runtime’s own storage —
+<code>${XDG_DATA_HOME:-$HOME/.local/share}/containers</code> — whose
+files are owned by mapped subuids <strong>by design</strong></td>
+</tr>
 </tbody>
 </table>
 <p>The floor is 2 because the shipped default <code>/mnt/DATA</code> has
@@ -601,6 +766,32 @@ project with enough depth is exactly what a download root is, so it is
 accepted. It also does not require the path to be operator-owned,
 because a root-owned mount point with operator-owned content beneath it
 is the ordinary state of a removable disk.</p>
+<p>The container-storage deny exists because
+<code>/home/&lt;user&gt;</code> clears the floor and is deliberately not
+denylisted, so without it a declared root at or above the rootless image
+store would be accepted by shape — and the <code>podman unshare</code>
+fallback would rewrite the storage the rootless runtime depends on. Its
+own limit: it resolves the default and
+<code>XDG_DATA_HOME</code>-relocated graphroot (pure string operations),
+and <strong>not</strong> one relocated in <code>storage.conf</code> or
+via <code>CONTAINERS_STORAGE_CONF</code>, because reading those would
+make the fence depend on filesystem state at check time. A degenerate
+computed value (relative, or too shallow because <code>HOME</code> was
+unset) is discarded rather than used, so the deny can never broaden into
+a top-level prefix.</p>
+<p><strong>And it judges the spelling, not the resolved path.</strong>
+Normalisation is lexical — deliberately, so it cannot be raced and can
+judge a path that does not exist yet — so an existing symlink in a
+<strong>non-final</strong> component of a declared path is invisible to
+it, and the walk names items under the link’s target. Measured, and with
+no race required. A symlinked <strong>final</strong> component
+<em>is</em> contained (<code>find</code>’s default <code>-P</code> does
+not descend it, and the trailing slash that would defeat that is
+stripped). What bounds the intermediate case is who can write those
+components: they sit above the declared root, outside every container
+bind mount, and an actor able to write there can edit the untracked
+<code>.env</code> that supplies the root anyway — so no capability is
+gained. Tracked as BOB-159.</p>
 <p>If you see <code>REFUSED &lt;path&gt; — …</code>, fix
 <code>config/owned_paths.yaml</code> or the environment variable it
 reads; the message names the resolved path and the rule.</p>
@@ -736,8 +927,8 @@ for an operational log. The location is overridable per run via
 the <strong>E3 change record</strong> of the run currently <strong>in
 flight</strong>. Appended to, one JSON object per line, greppable by
 path:</p>
-<div class="sourceCode" id="cb10"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;path&quot;</span><span class="fu">:</span><span class="st">&quot;/…/config/some.file&quot;</span><span class="fu">,</span><span class="dt">&quot;previous_uid&quot;</span><span class="fu">:</span><span class="dv">100999</span><span class="fu">,</span><span class="dt">&quot;previous_gid&quot;</span><span class="fu">:</span><span class="dv">100999</span><span class="fu">,</span><span class="dt">&quot;previous_mode&quot;</span><span class="fu">:</span><span class="st">&quot;644&quot;</span><span class="fu">,</span><span class="dt">&quot;new_uid&quot;</span><span class="fu">:</span><span class="dv">1000</span><span class="fu">,</span><span class="dt">&quot;new_gid&quot;</span><span class="fu">:</span><span class="dv">1000</span><span class="fu">,</span><span class="dt">&quot;changed_at&quot;</span><span class="fu">:</span><span class="st">&quot;2026-08-21T14:00:00Z&quot;</span><span class="fu">,</span><span class="dt">&quot;outcome&quot;</span><span class="fu">:</span><span class="st">&quot;changed&quot;</span><span class="fu">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;path&quot;</span><span class="fu">:</span><span class="st">&quot;/…/config/some.file&quot;</span><span class="fu">,</span><span class="dt">&quot;previous_uid&quot;</span><span class="fu">:</span><span class="dv">100999</span><span class="fu">,</span><span class="dt">&quot;previous_gid&quot;</span><span class="fu">:</span><span class="dv">100999</span><span class="fu">,</span><span class="dt">&quot;previous_mode&quot;</span><span class="fu">:</span><span class="st">&quot;644&quot;</span><span class="fu">,</span><span class="dt">&quot;new_uid&quot;</span><span class="fu">:</span><span class="dv">1000</span><span class="fu">,</span><span class="dt">&quot;new_gid&quot;</span><span class="fu">:</span><span class="dv">1000</span><span class="fu">,</span><span class="dt">&quot;changed_at&quot;</span><span class="fu">:</span><span class="st">&quot;2026-08-21T14:00:00Z&quot;</span><span class="fu">,</span><span class="dt">&quot;outcome&quot;</span><span class="fu">:</span><span class="st">&quot;changed&quot;</span><span class="fu">}</span></span></code></pre></div>
 <p><code>outcome</code> is one of <code>changed</code> |
 <code>skipped</code> | <code>failed</code>. For a declared path that
 does not exist there is no previous ownership state, so every ownership
@@ -788,13 +979,13 @@ this document does not claim it does.</p>
 <code>--state-dir</code> somewhere outside the repository.</p>
 <p><strong><code>logs/ownership/repair-marker.json</code></strong> — the
 <strong>E2 completion marker</strong>:</p>
-<div class="sourceCode" id="cb12"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;completed_at&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-08-21T14:00:00Z&quot;</span><span class="fu">,</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;scope_fingerprint&quot;</span><span class="fu">:</span> <span class="st">&quot;&lt;sha256 of the sorted declared scope&gt;&quot;</span><span class="fu">,</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;items_changed&quot;</span><span class="fu">:</span> <span class="dv">52</span><span class="fu">,</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;record_file&quot;</span><span class="fu">:</span> <span class="st">&quot;repair-changes.20260821T140000Z.ndjson&quot;</span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;completed_at&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-08-21T14:00:00Z&quot;</span><span class="fu">,</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;scope_fingerprint&quot;</span><span class="fu">:</span> <span class="st">&quot;&lt;sha256 of the sorted declared scope&gt;&quot;</span><span class="fu">,</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;items_changed&quot;</span><span class="fu">:</span> <span class="dv">52</span><span class="fu">,</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;record_file&quot;</span><span class="fu">:</span> <span class="st">&quot;repair-changes.20260821T140000Z.ndjson&quot;</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
 <p>Written via <code>mktemp</code> + <code>mv -f</code>, so a
 half-written marker can never be read by the next start. Validity is a
 literal match on the current fingerprint inside the file — a stale

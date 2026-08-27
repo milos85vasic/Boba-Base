@@ -1,0 +1,111 @@
+############ 1. POLARITY FLIP (§11.4.115): RED_MODE=1 asserts defect PRESENT
+BOB-212 RED — .gitignore silent-swallow of credential-named source files
+repo: /run/media/milosvasic/DATA4TB/Projects/boba
+mode: RED_MODE=1 (assert defect PRESENT)
+
+-- control needle (§11.4.201(7)(b)): harness can see a visible new file --
+  [ok]     non-credential-named sibling IS visible in git status — harness proven seeing
+
+-- A1: is the credential-named source file visible to the commit path? --
+  ..       file is INVISIBLE to git status; blocking rule: .gitignore:31:*credentials*	qBitTorrent-go/internal/jackettapi/credentials_failclosed_test.go
+-- A2: does a swallow-guard exist and refuse loudly, naming rule + file? --
+  ..       no swallow-guard at /run/media/milosvasic/DATA4TB/Projects/boba/scripts/pre_build/check_gitignore_swallow.sh
+
+-- A3: does ANY signal distinguish 'swallowed' from 'never authored'? --
+  ..       git status is BYTE-IDENTICAL with and without the file:
+  ..         world A (file authored)   -> 330ceb52074cdbbe
+  ..         world B (file never made) -> 330ceb52074cdbbe
+
+-- ACCEPTANCE (BOB-212): commits normally OR loud refusal — never silence --
+  [RED]    NEITHER limb holds: the file is invisible AND nothing refuses loudly.
+  [RED]      swallowed by: .gitignore:31:*credentials*	qBitTorrent-go/internal/jackettapi/credentials_failclosed_test.go
+  [RED]      an author who writes this file gets NO indication it did not land.
+  [RED]    FALSE-NULL CONFIRMED (§11.4.201(6)): 'file swallowed' and 'no file authored'
+  [RED]      are indistinguishable to the commit path. A blind instrument and a clean
+  [RED]      tree return the identical quiet zero.
+
+-- GOLDEN-FALSE (§11.4.201(1)/§11.4.10): real secrets MUST stay ignored --
+  [ok]     all 15 secret-bearing shapes remain ignored
+
+RESULT: RED_MODE=1 — DEFECT REPRODUCED on the current .gitignore (exit 0).
+EXIT=0  (0 = reproduction captured)
+
+############ 2. WOULD-IT-FLIP proof A — simulate fix direction (b): a swallow-guard
+BOB-212 RED — .gitignore silent-swallow of credential-named source files
+repo: /run/media/milosvasic/DATA4TB/Projects/boba
+mode: guard (assert swallow is LOUD)
+
+-- control needle (§11.4.201(7)(b)): harness can see a visible new file --
+  [ok]     non-credential-named sibling IS visible in git status — harness proven seeing
+
+-- A1: is the credential-named source file visible to the commit path? --
+  ..       file is INVISIBLE to git status; blocking rule: .gitignore:31:*credentials*	qBitTorrent-go/internal/jackettapi/credentials_failclosed_test.go
+-- A2: does a swallow-guard exist and refuse loudly, naming rule + file? --
+  [ok]     guard refused (exit 1) and named both the file and the .gitignore rule
+
+-- A3: does ANY signal distinguish 'swallowed' from 'never authored'? --
+  ..       git status is BYTE-IDENTICAL with and without the file:
+  ..         world A (file authored)   -> 330ceb52074cdbbe
+  ..         world B (file never made) -> 330ceb52074cdbbe
+
+-- ACCEPTANCE (BOB-212): commits normally OR loud refusal — never silence --
+  [ok]     a signal reaches the author
+
+-- GOLDEN-FALSE (§11.4.201(1)/§11.4.10): real secrets MUST stay ignored --
+  [ok]     all 15 secret-bearing shapes remain ignored
+
+RESULT: PASS (exit 0) — the swallow is LOUD (or the file commits normally).
+EXIT=0  (0 = RED flipped GREEN under direction (b))
+
+############ 3. WOULD-IT-FLIP proof B — simulate fix direction (a): narrowed glob
+BOB-212 RED — .gitignore silent-swallow of credential-named source files
+repo: /tmp/bob212_narrow.rNDkbg
+mode: guard (assert swallow is LOUD)
+
+-- control needle (§11.4.201(7)(b)): harness can see a visible new file --
+  [ok]     non-credential-named sibling IS visible in git status — harness proven seeing
+
+-- A1: is the credential-named source file visible to the commit path? --
+  [ok]     file is visible in git status (commits normally) — acceptance limb 1 met
+-- A2: does a swallow-guard exist and refuse loudly, naming rule + file? --
+  ..       no swallow-guard at /tmp/bob212_narrow.rNDkbg/scripts/pre_build/check_gitignore_swallow.sh
+
+-- A3: does ANY signal distinguish 'swallowed' from 'never authored'? --
+  [ok]     git status differs between the two worlds — the author gets a signal
+
+-- ACCEPTANCE (BOB-212): commits normally OR loud refusal — never silence --
+  [ok]     a signal reaches the author
+
+-- GOLDEN-FALSE (§11.4.201(1)/§11.4.10): real secrets MUST stay ignored --
+  [ok]     all 15 secret-bearing shapes remain ignored
+
+RESULT: PASS (exit 0) — the swallow is LOUD (or the file commits normally).
+EXIT=0  (0 = RED flipped GREEN under direction (a))
+############ §1.1 MUTATION on the GOLDEN-FALSE: the naive fix = delete the globs
+  rules removed: 20
+  [BROKEN] LEAK: 'server.pem' is NOT ignored — a fix that admits secret material is strictly
+  [BROKEN]       worse than the defect it closes (§11.4.10).
+  [BROKEN] LEAK: 'client.p12' is NOT ignored — a fix that admits secret material is strictly
+  [BROKEN]       worse than the defect it closes (§11.4.10).
+  [BROKEN] LEAK: 'keystore.jks' is NOT ignored — a fix that admits secret material is strictly
+  [BROKEN]       worse than the defect it closes (§11.4.10).
+  [BROKEN] LEAK: 'download-proxy/qbittorrent_creds.json' is NOT ignored — a fix that admits secret material is strictly
+  [BROKEN]       worse than the defect it closes (§11.4.10).
+  [BROKEN] LEAK: 'config/aws_credentials.json' is NOT ignored — a fix that admits secret material is strictly
+  [BROKEN]       worse than the defect it closes (§11.4.10).
+  [BROKEN] LEAK: 'tracker_credentials.yaml' is NOT ignored — a fix that admits secret material is strictly
+  [BROKEN]       worse than the defect it closes (§11.4.10).
+  [BROKEN] LEAK: 'db_credentials.enc' is NOT ignored — a fix that admits secret material is strictly
+  [BROKEN]       worse than the defect it closes (§11.4.10).
+  [BROKEN] LEAK: 'cookies_rutracker.txt' is NOT ignored — a fix that admits secret material is strictly
+  [BROKEN]       worse than the defect it closes (§11.4.10).
+  [BROKEN] LEAK: 'RUTRACKER_session.txt' is NOT ignored — a fix that admits secret material is strictly
+  [BROKEN]       worse than the defect it closes (§11.4.10).
+  [BROKEN] LEAK: 'my_password.txt' is NOT ignored — a fix that admits secret material is strictly
+  [BROKEN]       worse than the defect it closes (§11.4.10).
+  [BROKEN] LEAK: 'service_credentials' is NOT ignored — a fix that admits secret material is strictly
+  [BROKEN]       worse than the defect it closes (§11.4.10).
+  [BROKEN] a secret-shaped path appeared in git status — leak at the commit path
+
+RESULT: INSTRUMENT BROKEN or SECRET LEAK (exit 2) — verdict above is void.
+EXIT=2   <-- MUST be 2 (leak detected). If it were 0, the RED would be a bluff.

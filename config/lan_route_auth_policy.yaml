@@ -1,0 +1,374 @@
+# lan_route_auth_policy.yaml — CM-LAN-ROUTES-AUTHENTICATED policy + exemption list.
+#
+# WHY THIS FILE EXISTS
+#   On 2026-08-26 the operator decided BOB-102 as "Keep 0.0.0.0 + auth guard":
+#   the tunnel stays LAN-reachable, and that exposure was accepted ON THE
+#   CONDITION that a permanent guard fails the build if any LAN-reachable
+#   route ever stops demanding authentication. This file is the checked-in
+#   DATA half of that guard (§11.4.35); the gate is
+#   scripts/pre_build/check_cm_lan_routes_authenticated.sh.
+#
+# HOW TO READ IT
+#   `services` declares which listeners are LAN-bound and how to resolve their
+#   routes and auth wiring. `exemptions` lists every route that is NOT
+#   auth-wired but is nonetheless allowed to ship, one entry per route, each
+#   with a mandatory `class` and a mandatory non-empty `justification` — the
+#   gate refuses an entry that lacks either, so an exemption can never be
+#   silent (§11.4.201(1)).
+#
+#   class: public-by-design  the route is genuinely meant to be open.
+#   class: known-gap         the route is a REAL hole carried honestly.
+#                            Not "fine" — visible, counted on every run, and
+#                            expected to shrink, never grow (§11.4.261).
+#
+# ADDING A ROUTE
+#   A new route is in neither the auth-wired set nor this list, so it FAILS
+#   until somebody consciously protects it or justifies exempting it. That
+#   refusal is the point: it is what stops silent drift.
+#
+# BIND EVIDENCE (measured 2026-08-26, cited so `lan_bound` is never a guess)
+#   merge-service-python  download-proxy/src/main.py:418 MERGE_SERVICE_HOST
+#                         defaults to "0.0.0.0"; docker-compose.yml:127 sets
+#                         MERGE_SERVICE_HOST=0.0.0.0 explicitly.
+#   qbittorrent-proxy-go  qBitTorrent-go/cmd/qbittorrent-proxy/main.go:119-121
+#                         binds addr=":<port>" — a bare ":port" in Go listens
+#                         on ALL interfaces.
+#   boba-jackett          qBitTorrent-go/cmd/boba-jackett/main.go:211
+#                         Addr: ":" + port — likewise all interfaces.
+#
+# HONEST BOUNDARY (§11.4.6)
+#   This gate asserts STATIC ROUTE WIRING: that each LAN-reachable route is
+#   attached to an auth mechanism. It does NOT assert that the mechanism is
+#   armed at runtime — merge-service auth is env-gated on BOBA_API_TOKEN and
+#   is OPEN when that variable is unset. That is a boot-time invariant
+#   (§11.4.254), not a static one, and belongs to a separate runtime check.
+#   Claiming otherwise here would be the bluff this guard exists to prevent.
+
+schema_version: 1
+
+services:
+  - id: merge-service-python
+    kind: fastapi
+    lan_bound: true
+    roots: ["download-proxy/src/api"]
+    auth_markers: ["require_api_token"]
+
+  - id: qbittorrent-proxy-go
+    kind: gin
+    lan_bound: true
+    roots: ["qBitTorrent-go/cmd/qbittorrent-proxy"]
+    auth_markers: []
+
+  - id: boba-jackett
+    kind: gomux
+    lan_bound: true
+    roots: ["qBitTorrent-go/internal/jackettapi"]
+    auth_markers: ["WithAuth"]
+
+exemptions:
+  - service: merge-service-python
+    method: GET
+    path: "/"
+    class: public-by-design
+    justification: "Dashboard SPA shell. Serves static markup only; no state read or written."
+    evidence: "download-proxy/src/api/__init__.py:381"
+  - service: merge-service-python
+    method: POST
+    path: "/api/v1/auth/nnmclub/login"
+    class: known-gap
+    justification: "KNOWN GAP: accepts tracker credentials and mutates server-side session state. Unauthenticated on a LAN bind."
+    evidence: "download-proxy/src/api/auth.py:408"
+  - service: merge-service-python
+    method: GET
+    path: "/api/v1/auth/nnmclub/status"
+    class: public-by-design
+    justification: "NNMClub session boolean. Returns authenticated true/false only, never credential values (§11.4.10)."
+    evidence: "download-proxy/src/api/auth.py:351"
+  - service: merge-service-python
+    method: POST
+    path: "/api/v1/auth/qbittorrent"
+    class: known-gap
+    justification: "KNOWN GAP: accepts qBittorrent WebUI credentials and mutates the stored session. Unauthenticated on a LAN bind."
+    evidence: "download-proxy/src/api/routes.py:926"
+  - service: merge-service-python
+    method: POST
+    path: "/api/v1/auth/qbittorrent/logout"
+    class: known-gap
+    justification: "KNOWN GAP: destroys the stored qBittorrent session. Any LAN host can force a logout."
+    evidence: "download-proxy/src/api/auth.py:545"
+  - service: merge-service-python
+    method: GET
+    path: "/api/v1/auth/rutracker/captcha"
+    class: known-gap
+    justification: "KNOWN GAP: issues a CAPTCHA challenge and mutates the pending-challenge store. Any LAN host can exhaust it. Bounded by a TTLCache cap, not by auth."
+    evidence: "download-proxy/src/api/auth.py:109"
+  - service: merge-service-python
+    method: POST
+    path: "/api/v1/auth/rutracker/cookie-login"
+    class: known-gap
+    justification: "KNOWN GAP: accepts a raw tracker cookie string and mutates server-side session state. Unauthenticated on a LAN bind."
+    evidence: "download-proxy/src/api/auth.py:299"
+  - service: merge-service-python
+    method: POST
+    path: "/api/v1/auth/rutracker/login"
+    class: known-gap
+    justification: "KNOWN GAP: accepts tracker credentials and mutates server-side session state. Unauthenticated on a LAN bind."
+    evidence: "download-proxy/src/api/auth.py:215"
+  - service: merge-service-python
+    method: GET
+    path: "/api/v1/auth/rutracker/status"
+    class: public-by-design
+    justification: "RuTracker session boolean. Returns authenticated true/false only, never credential values (§11.4.10)."
+    evidence: "download-proxy/src/api/auth.py:57"
+  - service: merge-service-python
+    method: GET
+    path: "/api/v1/auth/status"
+    class: public-by-design
+    justification: "Aggregate tracker-session booleans. Returns authenticated true/false only, never credential values (§11.4.10)."
+    evidence: "download-proxy/src/api/auth.py:480"
+  - service: merge-service-python
+    method: GET
+    path: "/api/v1/bridge/health"
+    class: public-by-design
+    justification: "webui-bridge reachability probe. Returns up/down only; no state."
+    evidence: "download-proxy/src/api/__init__.py:198"
+  - service: merge-service-python
+    method: GET
+    path: "/api/v1/config"
+    class: public-by-design
+    justification: "Non-secret client bootstrap config the SPA needs before any login. Carries no credentials."
+    evidence: "download-proxy/src/api/__init__.py:272"
+  - service: merge-service-python
+    method: GET
+    path: "/api/v1/downloads/active"
+    class: known-gap
+    justification: "KNOWN GAP: discloses the active torrent list (names, progress) to any LAN host."
+    evidence: "download-proxy/src/api/routes.py:884"
+  - service: merge-service-python
+    method: GET
+    path: "/api/v1/healthz"
+    class: public-by-design
+    justification: "Kubernetes-style liveness probe. Returns a fixed status literal; no state."
+    evidence: "download-proxy/src/api/routes.py:59"
+  - service: merge-service-python
+    method: GET
+    path: "/api/v1/hooks"
+    class: known-gap
+    justification: "KNOWN GAP: GET discloses configured webhook target URLs to any LAN host; the Go build additionally leaves POST (hook creation) unauthenticated."
+    evidence: "download-proxy/src/api/hooks.py:265"
+  - service: merge-service-python
+    method: GET
+    path: "/api/v1/hooks/logs"
+    class: known-gap
+    justification: "KNOWN GAP: discloses webhook delivery history, including target URLs, to any LAN host."
+    evidence: "download-proxy/src/api/hooks.py:380"
+  - service: merge-service-python
+    method: GET
+    path: "/api/v1/schedules"
+    class: known-gap
+    justification: "KNOWN GAP: GET discloses configured schedules; the Go build additionally leaves POST (schedule creation) unauthenticated. The Python build gates POST behind require_api_token."
+    evidence: "download-proxy/src/api/scheduler.py:40"
+  - service: merge-service-python
+    method: GET
+    path: "/api/v1/schedules/{schedule_id}"
+    class: known-gap
+    justification: "KNOWN GAP: discloses an individual schedule definition to any LAN host."
+    evidence: "download-proxy/src/api/scheduler.py:88"
+  - service: merge-service-python
+    method: POST
+    path: "/api/v1/search"
+    class: public-by-design
+    justification: "Query operation; POST only because the filter set travels in a body. Writes no persistent state and is per-IP rate limited (BOB-111)."
+    evidence: "download-proxy/src/api/routes.py:442"
+  - service: merge-service-python
+    method: GET
+    path: "/api/v1/search/stream/{search_id}"
+    class: public-by-design
+    justification: "SSE stream of the caller's own search progress. No state change; per-IP rate limited (BOB-111)."
+    evidence: "download-proxy/src/api/routes.py:802"
+  - service: merge-service-python
+    method: POST
+    path: "/api/v1/search/sync"
+    class: public-by-design
+    justification: "Synchronous variant of the query operation above. No persistent state; per-IP rate limited (BOB-111)."
+    evidence: "download-proxy/src/api/routes.py:569"
+  - service: merge-service-python
+    method: GET
+    path: "/api/v1/search/{search_id}"
+    class: public-by-design
+    justification: "Reads back the caller's own in-memory search result set. No state change."
+    evidence: "download-proxy/src/api/routes.py:841"
+  - service: merge-service-python
+    method: POST
+    path: "/api/v1/search/{search_id}/abort"
+    class: public-by-design
+    justification: "Cancels an in-flight in-memory search. Touches no persistent state."
+    evidence: "download-proxy/src/api/routes.py:874"
+  - service: merge-service-python
+    method: GET
+    path: "/api/v1/stats"
+    class: public-by-design
+    justification: "Aggregate counters for the dashboard header. No per-item or secret data."
+    evidence: "download-proxy/src/api/__init__.py:301"
+  - service: merge-service-python
+    method: GET
+    path: "/api/v1/theme"
+    class: public-by-design
+    justification: "UI palette/mode read. Cosmetic only."
+    evidence: "download-proxy/src/api/routes.py:136"
+  - service: merge-service-python
+    method: GET
+    path: "/api/v1/theme/stream"
+    class: public-by-design
+    justification: "UI palette SSE stream. Cosmetic only."
+    evidence: "download-proxy/src/api/routes.py:151"
+  - service: merge-service-python
+    method: GET
+    path: "/dashboard"
+    class: public-by-design
+    justification: "Dashboard SPA shell alias. Serves static markup only."
+    evidence: "download-proxy/src/api/__init__.py:387"
+  - service: merge-service-python
+    method: GET
+    path: "/health"
+    class: public-by-design
+    justification: "Container/LB liveness probe. Returns a fixed status literal; no state."
+    evidence: "download-proxy/src/api/__init__.py:193"
+  - service: merge-service-python
+    method: GET
+    path: "/{path:path}"
+    class: public-by-design
+    justification: "SPA static-asset catch-all (JS/CSS/img). Serves bundled files only; no API surface."
+    evidence: "download-proxy/src/api/__init__.py:392"
+  - service: qbittorrent-proxy-go
+    method: POST
+    path: "/api/v1/auth/qbittorrent"
+    class: known-gap
+    justification: "KNOWN GAP: accepts qBittorrent WebUI credentials and mutates the stored session. Unauthenticated on a LAN bind."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:102"
+  - service: qbittorrent-proxy-go
+    method: GET
+    path: "/api/v1/bridge/health"
+    class: public-by-design
+    justification: "webui-bridge reachability probe. Returns up/down only; no state."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:76"
+  - service: qbittorrent-proxy-go
+    method: GET
+    path: "/api/v1/config"
+    class: public-by-design
+    justification: "Non-secret client bootstrap config the SPA needs before any login. Carries no credentials."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:78"
+  - service: qbittorrent-proxy-go
+    method: POST
+    path: "/api/v1/download"
+    class: known-gap
+    justification: "KNOWN GAP: starts a torrent download. Mutating and unauthenticated in the Go build; the Python build gates the same operation behind require_api_token."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:98"
+  - service: qbittorrent-proxy-go
+    method: POST
+    path: "/api/v1/download/file"
+    class: known-gap
+    justification: "KNOWN GAP: accepts a .torrent upload and starts a download. Mutating and unauthenticated in the Go build; the Python build gates it behind require_api_token."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:99"
+  - service: qbittorrent-proxy-go
+    method: GET
+    path: "/api/v1/downloads/active"
+    class: known-gap
+    justification: "KNOWN GAP: discloses the active torrent list (names, progress) to any LAN host."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:101"
+  - service: qbittorrent-proxy-go
+    method: GET
+    path: "/api/v1/hooks"
+    class: known-gap
+    justification: "KNOWN GAP: GET discloses configured webhook target URLs to any LAN host; the Go build additionally leaves POST (hook creation) unauthenticated."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:107"
+  - service: qbittorrent-proxy-go
+    method: POST
+    path: "/api/v1/hooks"
+    class: known-gap
+    justification: "KNOWN GAP: GET discloses configured webhook target URLs to any LAN host; the Go build additionally leaves POST (hook creation) unauthenticated."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:108"
+  - service: qbittorrent-proxy-go
+    method: DELETE
+    path: "/api/v1/hooks/:id"
+    class: known-gap
+    justification: "KNOWN GAP: DELETE removes a configured webhook with no authentication in the Go build. The Python build gates the same operation behind require_api_token."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:109"
+  - service: qbittorrent-proxy-go
+    method: POST
+    path: "/api/v1/magnet"
+    class: known-gap
+    justification: "KNOWN GAP: adds a magnet link to the client. Mutating and unauthenticated in the Go build; the Python build gates the equivalent behind require_api_token."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:100"
+  - service: qbittorrent-proxy-go
+    method: GET
+    path: "/api/v1/schedules"
+    class: known-gap
+    justification: "KNOWN GAP: GET discloses configured schedules; the Go build additionally leaves POST (schedule creation) unauthenticated. The Python build gates POST behind require_api_token."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:114"
+  - service: qbittorrent-proxy-go
+    method: POST
+    path: "/api/v1/schedules"
+    class: known-gap
+    justification: "KNOWN GAP: GET discloses configured schedules; the Go build additionally leaves POST (schedule creation) unauthenticated. The Python build gates POST behind require_api_token."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:115"
+  - service: qbittorrent-proxy-go
+    method: DELETE
+    path: "/api/v1/schedules/:id"
+    class: known-gap
+    justification: "KNOWN GAP: DELETE removes a schedule with no authentication in the Go build. The Python build gates the same operation behind require_api_token."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:116"
+  - service: qbittorrent-proxy-go
+    method: POST
+    path: "/api/v1/search"
+    class: public-by-design
+    justification: "Query operation; POST only because the filter set travels in a body. Writes no persistent state and is per-IP rate limited (BOB-111)."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:92"
+  - service: qbittorrent-proxy-go
+    method: GET
+    path: "/api/v1/search/:id"
+    class: public-by-design
+    justification: "Reads back the caller's own in-memory search result set. No state change."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:95"
+  - service: qbittorrent-proxy-go
+    method: POST
+    path: "/api/v1/search/:id/abort"
+    class: public-by-design
+    justification: "Cancels an in-flight in-memory search. Touches no persistent state."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:96"
+  - service: qbittorrent-proxy-go
+    method: GET
+    path: "/api/v1/search/stream/:id"
+    class: public-by-design
+    justification: "SSE stream of the caller's own search progress. No state change; per-IP rate limited (BOB-111)."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:94"
+  - service: qbittorrent-proxy-go
+    method: POST
+    path: "/api/v1/search/sync"
+    class: public-by-design
+    justification: "Synchronous variant of the query operation above. No persistent state; per-IP rate limited (BOB-111)."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:93"
+  - service: qbittorrent-proxy-go
+    method: GET
+    path: "/api/v1/stats"
+    class: public-by-design
+    justification: "Aggregate counters for the dashboard header. No per-item or secret data."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:86"
+  - service: qbittorrent-proxy-go
+    method: GET
+    path: "/api/v1/theme"
+    class: public-by-design
+    justification: "UI palette/mode read. Cosmetic only."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:104"
+  - service: qbittorrent-proxy-go
+    method: PUT
+    path: "/api/v1/theme"
+    class: known-gap
+    justification: "KNOWN GAP: writes the persisted UI palette with no authentication in the Go build. The Python build gates PUT /api/v1/theme behind require_api_token — a real parity gap between the two implementations."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:105"
+  - service: qbittorrent-proxy-go
+    method: GET
+    path: "/health"
+    class: public-by-design
+    justification: "Container/LB liveness probe. Returns a fixed status literal; no state."
+    evidence: "qBitTorrent-go/cmd/qbittorrent-proxy/main.go:70"

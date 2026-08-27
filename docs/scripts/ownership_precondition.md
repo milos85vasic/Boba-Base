@@ -1,10 +1,10 @@
 # `scripts/ownership_precondition.sh` — Ownership Startup Precondition
 
-**Revision:** 3
-**Last modified:** 2026-08-25T19:28:28Z
+**Revision:** 5
+**Last modified:** 2026-08-26T15:15:25Z
 **Purpose:** Operator guide for the startup check that refuses to start the
 system when a declared location cannot produce operator-owned files.
-**Last verified:** 2026-08-25
+**Last verified:** 2026-08-26
 
 ---
 
@@ -204,9 +204,19 @@ No credential value is ever read, printed, or logged by this script.
 
 **`2` is not a pass, and it is not a failure of the system either.** It means
 the check asserted *nothing*: the scope file was missing, unparseable, or
-empty; **the scope declared a path the fence refuses** (see *The declared-path
-fence* below); no python3 with PyYAML was available; or the caller passed an
-unusable argument. Reporting "could not run" as success is the §11.4.201(6)
+empty; **a declared entry resolved to no usable location** (a `${VAR}` with no
+`:-` default that expanded to nothing, a missing `path:` key, a path that
+silently expanded into a *different* one, or a spelling outside the documented
+`${VAR}` / `${VAR:-default}` grammar — a nested `${A:-${B}}`, `${}`, `${1}`, an
+unterminated `${VAR` — which would otherwise leave an unresolved marker in the
+path; see the same section in
+[`ownership_repair.md`](ownership_repair.md)); **the scope declared a path the
+fence refuses** (see *The declared-path fence* below); no python3 with PyYAML
+was available; or the caller passed an unusable argument. When the scope reader
+is the one that refused, **its own message is replayed verbatim** in the
+`CANNOT-RUN` report: it is the only layer that still knows *which* entry failed
+and *why*, and a cause line that named only the file-level causes would state a
+cause that was never established. Reporting "could not run" as success is the §11.4.201(6)
 blind-instrument failure — a blind instrument and a clean system return the
 same quiet zero — so this script refuses to conflate them. The `CANNOT-RUN`
 report always names the cause and ends with the literal line:
@@ -247,6 +257,22 @@ repair was fenced is precisely so this caller would use that one. Its rules:
 | **F1** | A **repo-relative** entry must still resolve inside `PROJECT_ROOT`. An entry that climbs out with `..` was written to escape, and the scope format does not license that. |
 | **F2** | An **absolute** entry needs at least **2** path components. The shipped default `/mnt/DATA` has exactly 2, so the configuration itself forces this floor. |
 | **F3** | Never a system tree nor anything under one. `/usr/lib` has 2 components and clears F2, which is why F3 is separately load-bearing. |
+| **F4** | Never the container runtime's own storage — the *computed* tree `${XDG_DATA_HOME:-$HOME/.local/share}/containers`. `/home/<user>` clears F2 and is deliberately not denylisted (`/home/<user>/Downloads` is an ordinary download root), so without F4 a declared root at or above the rootless image store is accepted by shape, and those files are owned by mapped subuids **by design**. A degenerate computed value — relative, or shallower than the F2 floor because `HOME` was unset — is discarded rather than used, so the rule can never broaden into a top-level prefix. |
+
+**F4's honest limit:** it resolves the default graphroot and an
+`XDG_DATA_HOME`-relocated one, because both are pure string operations. It does
+**not** read `storage.conf` or `CONTAINERS_STORAGE_CONF` — doing so would make
+the fence depend on filesystem state at check time, the very raceable property
+F0 exists to avoid. A host that has moved its graphroot is not covered by F4.
+
+**F0's honest limit:** the fence judges the *spelling*; the kernel resolves the
+path. An existing symlink in a **non-final** component of a declared path is
+invisible to F0, and the walk (or the probe) lands under the link's target —
+measured, with no race required. A symlinked **final** component *is* contained.
+What bounds the intermediate case is not the fence but who can write those
+components: they sit above the declared root, outside every container bind
+mount, and an actor able to write there can edit the untracked `.env` that
+supplies the root anyway. Tracked as BOB-159.
 
 `/run`, `/home`, `/media`, `/mnt`, `/opt`, `/srv` and `/tmp` are **deliberately
 not** denylisted: this host's real library measures as

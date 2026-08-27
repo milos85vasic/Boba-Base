@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>door-sweep</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">door-sweep</h1>
+</header>
+<h1 id="bob-102-round-13-the-tenth-door-sweep">BOB-102 round-13 — the
+TENTH-DOOR sweep</h1>
+<p><strong>Round 12’s instruction:</strong> <em>“round 13 should assume
+a TENTH door, and names the search: the remaining constructs whose
+absence disarms a refusal rather than dropping a credit. Sweep that
+class exhaustively.”</em></p>
+<h2 id="the-class-restated">The class, restated</h2>
+<p>A construct whose <strong>absence drops a CREDIT</strong> degrades
+fail-closed and loud: the route stays in the inventory, reads unwrapped,
+and the gate exits 1 naming it.</p>
+<p>A construct whose <strong>absence disarms a REFUSAL</strong> degrades
+fail-OPEN and silent: nothing is inventoried, nothing is refused, exit
+0.</p>
+<p>The two look identical in the source and are opposite in consequence.
+The sweep below asks, of <strong>every</strong> refusal-arming construct
+in both Go extractors: <em>can it be spelled so that it matches
+nothing?</em></p>
+<h2 id="method">Method</h2>
+<p>Each construct was probed against the round-12 analyzer (md5
+<code>4a3e723942df3f3c8f09169cbac33a23</code>) with a synthetic service
+carrying one exempted healthy route and one mutating <code>/wipe</code>
+route, and each spelling was checked with <code>gofmt -e</code> for
+legality and for byte-stability through gofmt. A door is OPEN when the
+probe exits 0 with no finding over the mutating route.</p>
+<h2 id="result-2-open-5-closed">Result — 2 open, 5 closed</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Refusal-arming construct</th>
+<th>Axis probed</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>gin.New()</code> / <code>gin.Default()</code>
+(<code>GIN_ENGINE</code>)</td>
+<td>6 whitespace positions, 2 newline splits, comment-in-split</td>
+<td><strong>OPEN — the round-12 BLOCKING</strong></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>gin.New()</code> / <code>gin.Default()</code></td>
+<td>aliased/dot import (naming axis)</td>
+<td><strong>OPEN — found by this sweep</strong></td>
+</tr>
+<tr>
+<td>3</td>
+<td>the nine <code>GIN_UNMODELLED</code> members</td>
+<td>whitespace + newline split</td>
+<td><strong>OPEN — found by this sweep</strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>GIN_DOTTED_OWNER</code></td>
+<td>whitespace + newline split</td>
+<td>closed (the round-11 verb detectors catch it first)</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>MUX_DOTTED_OWNER</code></td>
+<td>whitespace + newline split</td>
+<td>closed (round-11 <code>MUX_WS_SELECTOR</code> /
+<code>MUX_CALL_HEAD</code>)</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>MUX_CALL</code> / <code>MUX_ANY</code>
+(<code>_sites &gt; _named</code>)</td>
+<td>whitespace + newline split</td>
+<td>closed (round-11)</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>owner == "http"</code> (DefaultServeMux)</td>
+<td>whitespace + newline split</td>
+<td>closed</td>
+</tr>
+<tr>
+<td>8</td>
+<td>the <code>;</code> / multi-statement rule</td>
+<td><code>.Group(</code> substring test</td>
+<td>closed (round-11 <code>.Group(</code> detectors fire first)</td>
+</tr>
+<tr>
+<td>9</td>
+<td>FastAPI unmodelled calls/decorators</td>
+<td>n/a</td>
+<td>closed by construction — parsed with <code>ast</code>,
+whitespace-immune</td>
+</tr>
+</tbody>
+</table>
+<p>The three <strong>credit-carrying</strong> constructs the round-12
+audit sentence lumped in with the engine were re-measured one at a time
+and behave as that sentence claimed — <code>.Use(</code> and
+<code>http.NewServeMux()</code> both drop the credit, exit 1. Only the
+engine declaration was mis-audited, because it carries no credit at
+all.</p>
+<h2 id="door-1-the-blocking-reproduced">Door 1 — the BLOCKING,
+reproduced</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> buildOps<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    r <span class="op">:=</span> gin<span class="op">.</span>New<span class="op">()</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    r<span class="op">.</span>Use<span class="op">(</span>AuthMW<span class="op">())</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    r<span class="op">.</span>GET<span class="op">(</span><span class="st">&quot;/ok&quot;</span><span class="op">,</span> api<span class="op">.</span>OK<span class="op">)</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">func</span> main<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    r <span class="op">:=</span> gin<span class="op">.</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        Default<span class="op">()</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    r<span class="op">.</span>POST<span class="op">(</span><span class="st">&quot;/wipe&quot;</span><span class="op">,</span> api<span class="op">.</span>WipeHandler<span class="op">)</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    r<span class="op">.</span>Run<span class="op">(</span><span class="st">&quot;:7187&quot;</span><span class="op">)</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p><code>gofmt -e</code> exit 0, <strong>byte-identical through
+gofmt</strong>.</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th></th>
+<th>routes</th>
+<th>findings</th>
+<th><code>/wipe</code></th>
+<th>exit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>round-12 analyzer</td>
+<td>2</td>
+<td>0</td>
+<td><code>auth_wired: true</code></td>
+<td><strong>0</strong></td>
+</tr>
+<tr>
+<td><strong>Control A</strong> (both spelled
+<code>gin.Default()</code>)</td>
+<td>2</td>
+<td>1</td>
+<td><code>auth_wired: true</code></td>
+<td><strong>1</strong></td>
+</tr>
+<tr>
+<td><strong>Control B</strong> (<code>r := gin . Default()</code>, one
+line)</td>
+<td>2</td>
+<td>0</td>
+<td><code>auth_wired: true</code></td>
+<td><strong>0</strong></td>
+</tr>
+<tr>
+<td>round-13 analyzer</td>
+<td>2</td>
+<td>1</td>
+<td><code>auth_wired: true</code></td>
+<td><strong>1</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Control A is what proves the split spelling is the disarming cause
+and not some unrelated difference: spelled normally, the very same file
+raises <code>2 gin engine declarations in one file (r)</code> and exits
+1.</p>
+<p>Round 13 makes the split spelling behave <strong>byte-for-byte like
+Control A</strong> rather than growing a second finding class — an
+engine SITE feeds only refusal counters and grants nothing, so widening
+its detector is strictly fail-closed and cannot mint a false PASS.</p>
+<h2 id="door-2-the-same-class-on-the-naming-axis">Door 2 — the same
+class on the naming axis</h2>
+<p><code>import g "github.com/gin-gonic/gin"</code> binds the package to
+<code>g</code>, so a hard-coded <code>gin.</code> selector is blind to
+it. Measured on the round-12 analyzer: <code>r := g.Default()</code>
+beside a <code>.Use</code>-carrying sibling engine → exit 0,
+<code>POST /wipe auth_wired: true</code>, gofmt-<strong>stable</strong>.
+Closed by resolving the local package name from the file’s own import
+block, so nothing is guessed and no other package’s <code>.New()</code>
+is ever mistaken for an engine (probed: <code>other.New()</code> beside
+an aliased gin import stays clean).</p>
+<p><code>import . "…/gin"</code> leaves no selector at all; that file is
+now refused rather than credited blind.</p>
+<h2 id="door-3-the-nine-unmodelled-members">Door 3 — the nine unmodelled
+members</h2>
+<p><code>.Any</code> <code>.Match</code> <code>.Handle</code>
+<code>.Static</code> <code>.StaticFile</code> <code>.StaticFS</code>
+<code>.StaticFileFS</code> <code>.NoRoute</code> <code>.NoMethod</code>
+are <strong>pure</strong> refusal-armers: none of them ever resolves
+into a route, so the whole of their contribution is the “not modelled”
+finding. The same-line detector needs receiver, dot and member adjacent,
+so a split spelling armed nothing and the route vanished — measured on
+<strong>all nine</strong>, every one gofmt-<strong>stable</strong>:</p>
+<pre><code>r.
+    Any(&quot;/wipe&quot;, api.WipeHandler)</code></pre>
+<p>→ round-12: exit 0, routes 1, findings 0, <code>/wipe</code>
+<strong>ABSENT</strong> from the inventory. The §11.4.201(6) zero-routes
+net cannot see it either, because the sibling route keeps the file
+non-empty.</p>
+<p><code>r.Any ("/wipe", …)</code> was already caught
+(<code>\s*\(</code> tolerated the space); the two genuinely open axes
+were whitespace <strong>touching the dot</strong> and the newline
+split.</p>
+<h2 id="false-positive-controls-11.4.2011">False-positive controls
+(§11.4.201(1))</h2>
+<p>A refusal-armer is only fail-closed while it fires on real
+constructs. Each of these is legal Go that must keep resolving cleanly,
+and each stays exit 0 on the round-13 analyzer:</p>
+<ul>
+<li><code>x := foo.</code> ⏎ <code>New()</code> — another package’s
+constructor</li>
+<li><code>x := mygin.</code> ⏎ <code>Default()</code> — a name merely
+ending in <code>gin</code></li>
+<li><code>log.Print("… r := gin.Default() …")</code> — a string
+carrier</li>
+<li><code>x := other.New()</code> beside an aliased gin import</li>
+<li>a single engine used across two functions
+(<code>gin-one-engine-two-funcs</code>)</li>
+<li><code>log.Print("do not use r . Any( here")</code> — an
+unmodelled-verb carrier</li>
+</ul>
+</body>
+</html>

@@ -1,0 +1,24 @@
+# BOB-195 ROUND-13 REVIEWED-BYTES SNAPSHOT
+# Purpose: §11.4.83 / §11.4.226 evidence custody for the review chain.
+#   The round-10-shipped gate (md5 2832f49d...) exists nowhere, making every
+#   round-over-round diff claim on this item permanently uncheckable.
+#   These are the EXACT bytes round 12 reviewed, snapshotted BEFORE round-13 edits,
+#   so round 14's diff claims are checkable against a real baseline.
+# Captured (UTC): 2026-08-27T00:41:02Z
+# Captured from HEAD: a3e1141777914f3d71d62a6cd32a4c79c7f43842
+#
+MD5               PATH                                LINES   MTIME(UTC)
+b90c5945d44b891c793c448e7165682c  constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh  1268  2026-08-27T00:05:42Z
+ea20930ff2be1d4e5e823878f8c501c3  constitution/scripts/gates/cm_dangerous_combination_fail_closed_mutation_test.sh  1769  2026-08-27T00:06:48Z
+
+# ── AFTER round-13 remediation ────────────────────────────────────────
+# Recorded (UTC): 2026-08-27T00:57:55Z
+# The gate script is BYTE-IDENTICAL to the snapshot above: all six new
+# fixtures pin behaviour the shipped gate ALREADY has correct, so this
+# round adds assertions only and changes no gate logic.
+MD5               PATH                                LINES   DELTA-VS-SNAPSHOT
+b90c5945d44b891c793c448e7165682c  constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh  1268  +0/-0
+e4bf75c6f835eeded92259f872f83759  constitution/scripts/gates/cm_dangerous_combination_fail_closed_mutation_test.sh  2034  +265/-0
+#
+# Suite: 105 OK / 0 FAIL / exit 0  ->  117 OK / 0 FAIL / exit 0 (+6 fixtures, +12 assertions)
+# New fixtures L44-L49; each kills exactly ONE surviving mutation (diagonal kill matrix).

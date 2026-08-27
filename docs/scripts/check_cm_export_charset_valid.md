@@ -1,7 +1,7 @@
 # check_cm_export_charset_valid.sh — CM-EXPORT-CHARSET-VALID
 
-**Revision:** 2
-**Last modified:** 2026-08-26T10:12:00Z
+**Revision:** 3
+**Last modified:** 2026-08-26T13:05:00Z
 **Authority:** §11.4.238 (automated QA is the discoverer) · §11.4.135 (monotone ratchet) · §11.4.249 (role separation) · §11.4.18 (script documentation)
 **Scope:** pre-build invariant 50 and the two scripts that surround it
 
@@ -52,13 +52,16 @@ one that yields weakened thresholds.
 | File | §11.4.249 role | Writes the baseline? |
 |---|---|---|
 | `scripts/pre_build/lib/cm_export_charset_scan.py` | **ORACLE** — counts violations; knows nothing about thresholds | no |
+| `scripts/pre_build/lib/cm_export_charset_baseline_read.sh` | **READER** — the single validator of what a baseline may be | **no — read-only by construction** |
 | `scripts/pre_build/check_cm_export_charset_valid.sh` | **GATE** — compares the count to the persisted baseline | **no — contains no write path at all** |
 | `scripts/pre_build/tighten_cm_export_charset_baseline.sh` | **PRODUCER** — explicitly invoked, never on the pre-build path | **yes, and only downward** |
 | `scripts/pre_build/cm_export_charset_valid.baseline` | the threshold as **DATA** (§11.4.35) | — |
 | `tests/pre_build/test_cm_export_charset_valid.sh` | **VERIFIER** — §1.1 paired mutations, outside the gate | no |
 
-The gate and the tightener share **one** oracle, so the number the tightener
-records and the number the gate later enforces cannot diverge.
+The gate and the tightener share **one** oracle *and* **one** baseline reader, so
+neither the number they act on nor the rule for what counts as a valid threshold
+can diverge between them. The reader exists because the round-1 BLOCKING was
+exactly that: one parse rule written twice and fixed once.
 
 The separation is a **capability**, not an instruction (§11.4.240(B)): the gate
 source has no line that could write the baseline, and the test suite asserts this
@@ -118,6 +121,11 @@ bash tests/pre_build/test_cm_export_charset_valid.sh
 | `1` | a regression, a blind scan, a non-discriminating detector, or a missing/malformed baseline |
 | `3` | **stale ratchet** — the corpus improved and the bar did not follow; run the tightener |
 
+These codes are a **contract**, not incidental non-zeros: invariant 50 branches on
+`{0,1,3}` to name the cause, so collapsing `3` into `1` would make it report "a NEW
+charset-less export landed" for a corpus that is merely un-ratcheted. The paired
+mutations assert each code exactly, so that collapse cannot land silently.
+
 ### Tightener exit codes
 
 | Exit | Meaning |
@@ -169,6 +177,19 @@ see "Known gaps".
 - **Baseline path is a directory** → the gate fails closed, and the tightener
   refuses rather than reporting a write it did not perform (`mv` would otherwise
   succeed by depositing the temp file *inside* the directory).
+- **Baseline over 18 digits (e.g. 2⁶⁴+3 = `18446744073709551619`)** → refuses. The
+  no-leading-zero rule alone accepts it, and bash arithmetic then wraps mod 2⁶⁴:
+  measured 2026-08-26, that value with **3 violations present** returned `exit 0`,
+  "at baseline". The sibling 2⁶⁴+1 refused but printed a resolved-evidence line
+  that was false. The accepted range is now `0`, or 1–18 digits.
+- **More than one `baseline=` line** → refuses as ambiguous. `sed …p | tail -1`
+  silently resolved such a file to its last *matching* line, so `baseline=3`
+  followed by `baseline=08` — plausibly an operator's intended correction —
+  resolved to 3 and passed; two conflicting well-formed lines resolved just as
+  quietly. Ambiguity is not a value (§11.4.252).
+- **Baseline path is a symlink** → refuses. `-f` follows symlinks, so a link to a
+  target outside the tree reads normally and every later raise edits that target
+  with no diff at all.
 
 ## Known gaps
 

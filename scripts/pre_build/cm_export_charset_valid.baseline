@@ -1,0 +1,16 @@
+# CM-EXPORT-CHARSET-VALID — ratchet baseline (§11.4.135 monotone decrease).
+#
+# This file is DATA (§11.4.35), not code: it carries the operator's recorded
+# brownfield adoption answer of 2026-08-26 — "keep the monotone ratchet" —
+# as a number the gate enforces.
+#
+# WRITTEN ONLY BY scripts/pre_build/tighten_cm_export_charset_baseline.sh,
+# which can only LOWER this value. The gate READS this file and has no write
+# path to it at all (§11.4.249 producer≠gate, §11.4.240(B) capability).
+#
+# RAISING it requires editing this file by hand — deliberately harder than
+# tightening, and visible to a reviewer as a diff (§11.4.142).
+baseline=0
+tightened_from=<first adoption>
+tightened_at=2026-08-26T09:41:30Z
+exports_scanned=340

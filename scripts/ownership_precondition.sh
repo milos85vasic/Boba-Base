@@ -1011,14 +1011,37 @@ main() {
     # A scope that cannot be read is NOT an empty scope. ownership_scope_entries
     # returns 2 for "could not read" and its parser exits non-zero on malformed
     # YAML; both mean this check asserted nothing, so both are exit 2.
-    local entries rc=0
-    entries="$(ownership_scope_entries 2>/dev/null)" || rc=$?
-    if [[ "${rc}" -ne 0 ]]; then
-        cannot_run \
-            "the declared scope could not be read: ${scope}" \
-            "cause: missing file, malformed YAML, or no python3 with PyYAML (reader exit ${rc})" \
-            "this is a BLIND read, not an empty scope"
+    # The reader's OWN stderr is captured and replayed, never discarded. Since
+    # R2-M1 the reader also refuses a scope in which a declared entry resolved
+    # to no usable location (a vanished `${VAR}`, a missing `path:` key, or a
+    # path that silently expanded into a different one), and it is the ONLY
+    # layer that still knows WHICH entry and WHY — this one has lost the raw
+    # spelling by the time it sees the rows. Swallowing that and printing a
+    # "cause:" line naming only the three file-level causes would state a cause
+    # that was never established, which §11.4.6 forbids.
+    local entries rc=0 errf reason_line
+    local -a reasons=()
+    errf="$(mktemp "${TMPDIR:-/tmp}/ownership_precondition_scope.XXXXXX" 2>/dev/null)" || errf=""
+    if [[ -n "${errf}" ]]; then
+        entries="$(ownership_scope_entries 2>"${errf}")" || rc=$?
+    else
+        entries="$(ownership_scope_entries 2>/dev/null)" || rc=$?
     fi
+    if [[ "${rc}" -ne 0 ]]; then
+        reasons=(
+            "the declared scope could not be read: ${scope}"
+            "cause: missing file, malformed YAML, no python3 with PyYAML, or a declared entry that resolved to no usable location (reader exit ${rc})"
+        )
+        if [[ -n "${errf}" && -s "${errf}" ]]; then
+            while IFS= read -r reason_line; do
+                if [[ -n "${reason_line}" ]]; then reasons+=("${reason_line}"); fi
+            done < "${errf}"
+        fi
+        reasons+=("this is a BLIND read, not an empty scope")
+        { [[ -n "${errf}" ]] && rm -f "${errf}"; } || :
+        cannot_run "${reasons[@]}"
+    fi
+    { [[ -n "${errf}" ]] && rm -f "${errf}"; } || :
     if [[ -z "${entries//[[:space:]]/}" ]]; then
         cannot_run \
             "the declared scope contains no locations: ${scope}" \

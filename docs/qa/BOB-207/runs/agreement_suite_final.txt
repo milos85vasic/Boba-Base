@@ -1,0 +1,13 @@
+== BOB-207: precondition/repair agreement on the ownership property ==
+  PASS: needle: probe_location refuses an absent path (verdict 'absent') — it is capable of saying no
+  fixture: /tmp/.private/milosvasic/bob207.rxj75MtC/case1/library -> files land uid=1000 gid=10; operator is 1000:1000 (gid MISMATCH via wheel)
+  precondition says : ok
+  repair says       : clean
+  PASS: gid-mismatched location: precondition ('ok') and repair ('clean') agree
+  fixture: /tmp/.private/milosvasic/bob207.rxj75MtC/case2/library -> files land uid=1000 gid=1000 (fully correct)
+  precondition says : ok
+  repair says       : clean
+  PASS: golden-FALSE: a fully-correct location is still accepted by the precondition
+  PASS: golden-FALSE: a fully-correct location gives the repair nothing to do
+  PASS: golden-FALSE: precondition and repair agree on a correct location
+RESULT: 5 passed, 0 failed, 0 skipped

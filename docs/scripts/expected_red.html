@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.10" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>expected_red</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">expected_red</h1>
+</header>
+<h1
+id="scriptslibexpected_red.sh-the-expected-red-declaration-mechanism-for-bash-suites">scripts/lib/expected_red.sh
+— the EXPECTED-RED declaration mechanism for bash suites</h1>
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-08-27T01:26:19Z <strong>Status:</strong> active
+<strong>Item:</strong> BOB-221 (invariant 30 has no concept of a suite
+that is supposed to fail)</p>
+<h2 id="overview">Overview</h2>
+<p>Pre-build invariant 30 (<code>CM-BASH-UNIT-TESTS-EXECUTED</code>)
+asserts <em>“no bash suite fails”</em>. The invariant it should assert
+is <em>“no bash suite fails <strong>unexpectedly</strong>”</em>. Those
+two differ the moment the constitution’s own test-first discipline is
+followed:</p>
+<ul>
+<li>§11.4.224 requires the RED test to be written and <strong>observed
+failing</strong> before the fix exists.</li>
+<li>§11.4.135 requires that guard to <strong>persist</strong>
+afterwards.</li>
+</ul>
+<p>So a correctly-authored, still-open RED is a permanent,
+<em>intended</em> failure — and before BOB-221 the gate counted it as a
+defect and refused the build. That is a §11.4.120 wrong-seam refusal and
+a §11.4.201(1) FAIL-bluff: following the constitution made the
+constitution’s own blocking gate refuse.</p>
+<p><code>scripts/lib/expected_red.sh</code> supplies the missing
+concept: a way to <strong>declare</strong> that a named suite is
+supposed to fail, honoured <strong>only</strong> while the declaration
+is corroborated, current, and accurate — and which
+<strong>blocks</strong> the moment it stops being any of those.</p>
+<h2 id="parity-not-a-new-bar">Parity, not a new bar</h2>
+<p>The Python side already runs this discipline via
+<code>pytest.mark.xfail(strict=True, reason=...)</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Suite</th>
+<th>Item</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tests/scaling/test_scaling_envelope.py</code></td>
+<td>BOB-167</td>
+</tr>
+<tr>
+<td><code>tests/stress/test_plugin_parsers_stress_chaos.py</code></td>
+<td>rutracker ReDoS</td>
+</tr>
+</tbody>
+</table>
+<p><code>strict=True</code> is the load-bearing half: an
+<strong>XPASS</strong> (a declared-red test that unexpectedly passes)
+<em>fails</em>, which forces the marker’s removal. A declaration that
+never expires is a permanent bluff licence. The bash side is held to the
+same self-clearing bar — this closed a parity gap, it did not invent a
+policy.</p>
+<h2 id="this-is-not-quarantine">This is NOT quarantine</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th></th>
+<th><code>BASH_TEST_QUARANTINE</code></th>
+<th>EXPECTED-RED declaration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Suite is executed</td>
+<td><strong>No</strong> — excluded entirely</td>
+<td><strong>Yes</strong> — always run</td>
+</tr>
+<tr>
+<td>Verdict is observed</td>
+<td>No</td>
+<td>Yes — the exit code is checked</td>
+</tr>
+<tr>
+<td>Distinguishes “supposed to fail” from “broken”</td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Self-clears</td>
+<td>No</td>
+<td>Yes (P3, P4, P7)</td>
+</tr>
+</tbody>
+</table>
+<p>Solving BOB-221 by widening quarantine would have traded a false
+refusal (§11.4.201(1)) for a false null (§11.4.201(6)) — strictly the
+worse outcome, because a quarantined suite’s failure is never seen at
+all.</p>
+<h2 id="the-row-format-a-repo-relative-path-exactly-two-fields">The row
+format: a repo-relative PATH, exactly two fields</h2>
+<pre><code>tests/unit/test_ownership_gid_agreement.sh   BOB-207</code></pre>
+<p><strong>Not a basename.</strong> The gate’s glob spans
+<strong>three</strong> directories — <code>tests/unit</code>,
+<code>tests/pre_build</code>, <code>tests/hooks</code> — so a basename
+does not identify a file.</p>
+<p>This was the round-1 independent review’s <strong>BLOCKING</strong>
+finding, and it was reproducible end-to-end through the real extracted
+invariant-30 loop with one row <code>test_zz_bt.sh BOB-207</code>:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>scenario</th>
+<th>before (basename key)</th>
+<th>after (path key)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>two same-basename failing suites (<code>tests/unit</code> +
+<code>tests/hooks</code>)</td>
+<td><code>RAN=2 FAILED=0 HONOURED=2</code></td>
+<td><code>RAN=2 FAILED=1 HONOURED=1</code></td>
+</tr>
+<tr>
+<td>the declared suite <strong>deleted</strong>, the never-reviewed
+sibling remains</td>
+<td><code>RAN=1 FAILED=0 HONOURED=1</code></td>
+<td><code>RAN=1 FAILED=2 HONOURED=0</code></td>
+</tr>
+</tbody>
+</table>
+<p>The attack the basename key allowed: a reviewed row exists for
+<code>tests/unit/test_foo.sh</code>; an author later adds a
+<strong>new</strong> failing suite at
+<code>tests/hooks/test_foo.sh</code> and copies the one-line marker into
+it. It is honoured with <strong>zero</strong> table review — the
+author-side act alone silences a failure, which is precisely the
+producer-alone channel §11.4.240 / §11.4.249 exist to close. The
+basename no longer reaches the decision at all:
+<code>expected_red_verdict</code> takes the suite <strong>path</strong>
+and matches on <code>${path#${PROJECT_ROOT}/}</code>.</p>
+<p>A row that is not a repo-relative path under <code>tests/</code> (a
+bare basename, an absolute path, anything containing <code>..</code>) is
+<strong>refused</strong>, and so is a row carrying more than two
+fields.</p>
+<h2 id="the-eighteen-properties">The eighteen properties</h2>
+<p>Fixed by BOB-221 and by the round-1 and round-3 independent reviews;
+asserted by
+<code>tests/pre_build/test_bob221_expected_red_declaration.sh</code>:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Property</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>P1</strong></td>
+<td>A <strong>declared</strong> red that fails does <strong>not</strong>
+block.</td>
+</tr>
+<tr>
+<td><strong>P2</strong></td>
+<td>An <strong>undeclared</strong> failing suite <strong>still
+blocks</strong>. <em>(load-bearing)</em></td>
+</tr>
+<tr>
+<td><strong>P3</strong></td>
+<td>A declared red whose tracked item is <strong>closed</strong> blocks,
+naming the rot.</td>
+</tr>
+<tr>
+<td><strong>P4</strong></td>
+<td>A declared red that <strong>passes</strong> blocks (strict-xfail
+parity).</td>
+</tr>
+<tr>
+<td><strong>P5</strong></td>
+<td>A declaration not corroborated by the file’s own marker blocks.</td>
+</tr>
+<tr>
+<td><strong>P6</strong></td>
+<td>A declaration binds to the <strong>file</strong> — a same-basename
+suite in another globbed directory is <strong>not</strong> excused.</td>
+</tr>
+<tr>
+<td><strong>P7</strong></td>
+<td>A row that matched <strong>no executed suite</strong> this run
+blocks.</td>
+</tr>
+<tr>
+<td><strong>P8</strong></td>
+<td>A declared red that <strong>aborts</strong> (exit 3) blocks.</td>
+</tr>
+<tr>
+<td><strong>P9</strong></td>
+<td>A declared red whose item carries <strong>any</strong> of §11.4.33’s
+four terminal statuses blocks as stale.</td>
+</tr>
+<tr>
+<td><strong>P10</strong></td>
+<td>A row with <strong>more than two fields</strong> blocks.</td>
+</tr>
+<tr>
+<td><strong>P11</strong></td>
+<td>An item whose stored status is <strong>empty</strong> blocks
+<em>without</em> being asserted CLOSED.</td>
+</tr>
+<tr>
+<td><strong>P12</strong></td>
+<td>A declared suite carrying <strong>no marker at all</strong> blocks,
+naming the two-place agreement.</td>
+</tr>
+<tr>
+<td><strong>P13</strong></td>
+<td>The path match is <strong>exact</strong>: a row for
+<code>tests/unit/x.sh</code> does not excuse
+<code>tests/unit/x.sh.sh</code>.</td>
+</tr>
+<tr>
+<td><strong>P14</strong></td>
+<td>An <strong>inline / trailing</strong> <code># EXPECTED-RED:</code>
+mention is not a marker — the left anchor is load-bearing.</td>
+</tr>
+<tr>
+<td><strong>P15</strong></td>
+<td>A bare-basename row is refused <strong>by the sweep</strong> when it
+matches nothing.</td>
+</tr>
+<tr>
+<td><strong>P16</strong></td>
+<td>An unmatched row with extra fields is refused by the sweep.</td>
+</tr>
+<tr>
+<td><strong>P17</strong></td>
+<td>An unmatched row with a malformed item id is refused by the
+sweep.</td>
+</tr>
+<tr>
+<td><strong>P18</strong></td>
+<td>Two rows naming one path block as ambiguous, <strong>counted
+once</strong>.</td>
+</tr>
+</tbody>
+</table>
+<p>P12–P18 were added in round 3, each closing a §11.4.115(F)
+instrumentation gap: a clause that was correct in the shipped code but
+whose reviewer-authored mutation survived the suite is unvalidated
+instrumentation <em>for that clause</em>. <strong>P13 is the
+load-bearing addition</strong> — a prefix-match regression
+(<code>[[ "${rel}" == "${rkey}"* ]]</code>) silently re-opened the
+round-1 BLOCKING finding (<code>RAN=2 FAILED=0 HONOURED=2</code> for an
+attacker-added <code>tests/unit/test_zz_p.sh.sh</code>) while all twelve
+prior properties stayed green. P6 cannot see it: a prefix match still
+blocks a same-basename file in a <em>different</em> directory, so the
+sibling has to share the declared path’s prefix.</p>
+<p>P2 is the one that matters most. A mechanism that quietly let any
+failure through would be a worse defect than the false refusal it was
+built to fix.</p>
+<h2 id="the-table-has-its-own-freshness-contract">The table has its own
+freshness contract</h2>
+<p>P3 (item closed) and P4 (XPASS) are only ever evaluated <strong>when
+the declared suite runs</strong>. A row whose suite was deleted,
+renamed, quarantined, or is self-recursive is therefore <strong>never
+judged</strong>: it can neither stale out nor XPASS out, so it rots
+silently while staying <strong>armed</strong>.</p>
+<p>The post-loop sweep (<code>expected_red_unmatched_rows</code>, wired
+in <code>pre_build_verification.sh</code> between the suite loop and the
+<code># END-INVARIANT-30-SUITE-LOOP</code> marker) closes that:
+<strong>every row must have been evaluated this run</strong>, or it
+blocks, naming the row. Measured before the sweep existed: a row naming
+an absent suite, alongside two real failures, produced
+<code>RAN=2 FAILED=2</code> — the ghost row neither blocked nor
+warned.</p>
+<p>The sweep emits <strong>nothing</strong> for an empty table, so the
+empty-table path stays byte-identical to the pre-BOB-221 rule.</p>
+<p>It also <strong>skips rows whose key matched an executed
+suite</strong>, because those were already judged by
+<code>expected_red_verdict</code> — including any shape refusal. Without
+that skip a matched malformed row is counted twice, and the gate prints
+<code>2/1 bash unit/pre_build test(s) FAILED</code>: fail-closed, but
+arithmetic that cannot be true is a §11.4.6 imprecision in the
+operator’s own message.</p>
+<h2 id="two-place-agreement-11.4.240-11.4.249">Two-place agreement
+(§11.4.240 / §11.4.249)</h2>
+<p>Silencing a failure requires <strong>two independent places to
+agree</strong>:</p>
+<ol type="1">
+<li><p><strong>A row</strong> in <code>BASH_TEST_EXPECTED_RED</code> (in
+this library) — reviewed at the gate.</p></li>
+<li><p><strong>An in-source marker</strong> in the suite itself:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># EXPECTED-RED: BOB-207</span></span></code></pre></div></li>
+</ol>
+<p>Neither the suite author alone nor the table alone can silence
+anything.</p>
+<ul>
+<li>A <strong>marker with no table row</strong> is
+<strong>inert</strong> — the table is the authority.</li>
+<li>A <strong>table row with an absent or mismatched marker</strong>
+<strong>blocks</strong>.</li>
+</ul>
+<p>The marker is matched with a line-anchored pattern
+(<code>^[[:space:]]*#[[:space:]]*EXPECTED-RED:[[:space:]]*&lt;ID&gt;[[:space:]]*$</code>),
+so prose that merely <em>mentions</em> the marker — including this
+document — is not a carrier (§11.4.201(7)(a): match the thing, never a
+token that mentions it).</p>
+<p>The <strong>left anchor</strong> is what makes that claim true, and
+it is pinned by <strong>P14</strong> on the <em>reason</em>: without it
+the same line still blocks, but with a different message (the
+substitution leaves the line’s prefix in place, so the “marker” captured
+from <code>: ok # EXPECTED-RED: BOB-901</code> is the string
+<code>: okBOB-901</code>, which then fails the id comparison). Only a
+reason-level assertion separates “there is no marker” from “the marker
+names something else”.</p>
+<p><strong>Caveat, stated because it is real:</strong> the match is
+<strong>textual</strong>, performed by <code>sed</code> over the file’s
+lines. A marker-shaped line inside a <strong>heredoc or a multi-line
+string</strong> therefore <em>does</em> count as corroboration, even
+though bash would never treat it as a comment. This is not independently
+exploitable — a reviewed table row is still required, and the row is the
+authority — but it means the marker half is a <em>corroboration</em>
+signal, not a parser-grade one.</p>
+<h2 id="exit-code-contract">Exit-code contract</h2>
+<p><strong>A declaration honours exit 1 and nothing else.</strong></p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Exit</th>
+<th>Meaning</th>
+<th>Disposition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td>The suite passed</td>
+<td><strong>XPASS → blocks</strong></td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td>The suite’s RED verdict</td>
+<td>honoured while the declaration is valid</td>
+</tr>
+<tr>
+<td><code>3</code></td>
+<td>ABORT — instrument blind</td>
+<td><strong>blocks</strong> (not a verdict)</td>
+</tr>
+<tr>
+<td><code>124</code></td>
+<td>Timeout</td>
+<td><strong>blocks</strong> (not a verdict)</td>
+</tr>
+<tr>
+<td>any other non-zero</td>
+<td>crash / error</td>
+<td><strong>blocks</strong> (not a verdict)</td>
+</tr>
+</tbody>
+</table>
+<p>A suite that aborts is reporting that <em>its instrument was
+blind</em>, and a blind instrument’s silence is never evidence
+(§11.4.201(6)). Sibling suites reserve exit 3 for exactly that — see
+<code>tests/pre_build/test_bob205_danger_roots_scope.sh</code>.
+Swallowing an abort as “the expected red” would convert a blind
+instrument into a green one: the precise bluff this mechanism exists to
+prevent. <strong>P8</strong> is the scenario that guards this clause;
+before round 2 the clause was correct but unexercised, and a reviewer
+mutation replacing its test with <code>if false</code> survived the
+suite.</p>
+<h2
+id="boundary-cases-every-way-a-declaration-can-fail-to-be-judged">Boundary
+cases — every way a declaration can fail to be judged</h2>
+<p>This list lives here, in the repository, rather than in a session
+report, because a document that <strong>binds</strong> behaviour must be
+tracked where the work happens (§11.4.215).</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Situation</th>
+<th>Disposition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>No table row names the suite</td>
+<td><code>UNDECLARED</code> — the gate’s pre-existing rule applies
+untouched</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Two or more rows name the same path</td>
+<td><strong>BLOCK</strong> — ambiguous</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Row key is not a repo-relative <code>tests/…</code> path (bare
+basename, <code>..</code>, absolute)</td>
+<td><strong>BLOCK</strong> — via the sweep; it can never match a
+file</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Row carries more than two fields</td>
+<td><strong>BLOCK</strong> — by the verdict if the path matched, by the
+sweep otherwise; <strong>never both</strong> (the sweep skips
+already-judged keys, so it is counted once)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Row’s item id is not <code>&lt;PREFIX&gt;-&lt;N&gt;</code></td>
+<td><strong>BLOCK</strong></td>
+</tr>
+<tr>
+<td>6</td>
+<td>The suite file cannot be read</td>
+<td><strong>BLOCK</strong></td>
+</tr>
+<tr>
+<td>7</td>
+<td>Marker absent / duplicated / naming a different id</td>
+<td><strong>BLOCK</strong></td>
+</tr>
+<tr>
+<td>8</td>
+<td>Item id absent from <code>docs/workable_items.db</code></td>
+<td><strong>BLOCK</strong></td>
+</tr>
+<tr>
+<td>9</td>
+<td>Store unreadable, query tool absent, or query tool
+<em>fails</em></td>
+<td><strong>BLOCK</strong> — the failing-tool case is distinguished from
+“id not found”</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Item’s stored status is <strong>empty</strong></td>
+<td><strong>BLOCK</strong>, without asserting a class that was never
+derived</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Item’s status is outside §11.4.33’s closed set</td>
+<td><strong>BLOCK</strong> — <code>UNKNOWN</code> is a refusal, not a
+default</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Item is CLOSED (any of the <strong>four</strong> terminal
+statuses)</td>
+<td><strong>BLOCK</strong> — stale</td>
+</tr>
+<tr>
+<td>13</td>
+<td>The declared suite <strong>passes</strong></td>
+<td><strong>BLOCK</strong> — XPASS</td>
+</tr>
+<tr>
+<td>14</td>
+<td>The declared suite exits anything other than 0 or 1</td>
+<td><strong>BLOCK</strong> — not a verdict</td>
+</tr>
+<tr>
+<td>15</td>
+<td>The declared suite was <strong>deleted or renamed</strong></td>
+<td><strong>BLOCK</strong> — via the sweep; it is never executed, so it
+can never self-clear</td>
+</tr>
+<tr>
+<td>16</td>
+<td>The declared suite is <strong>quarantined or
+self-recursive</strong></td>
+<td><strong>BLOCK</strong> — via the sweep; the loop
+<code>continue</code>s before the verdict call, so its declaration would
+never self-clear either</td>
+</tr>
+<tr>
+<td>17</td>
+<td><code>scripts/lib/expected_red.sh</code> is
+<strong>missing</strong></td>
+<td>The gate reports the absence loudly and installs a stub that
+declares nothing — every failure blocks exactly as before BOB-221</td>
+</tr>
+<tr>
+<td>18</td>
+<td>Nested gate invocation (<code>BOBA_PREBUILD_NESTED</code>)</td>
+<td>Loop <strong>and</strong> sweep are both skipped — an honest SKIP,
+never a pass</td>
+</tr>
+<tr>
+<td>19</td>
+<td>Row is <strong>whitespace-only</strong></td>
+<td><strong>IGNORED as inert</strong> — the one case that is not a
+refusal. It names nothing, matches nothing, and cannot silence anything.
+Stated explicitly rather than left as an unexplained exception to “every
+unresolvable input refuses” (§11.4.6)</td>
+</tr>
+</tbody>
+</table>
+<p>Cases 15 and 16 were the two the round-1 review found beyond the
+reported set; both are closed by the same sweep, and case 16 is verified
+separately (a quarantined declared suite yields
+<code>RAN=0 FAILED=1 HONOURED=0</code>). Case 19 was added in round 3.
+The sweep-side dispositions of cases 3, 4 and 5 are pinned by
+<strong>P15–P17</strong> — round 3 found them documented but untested,
+and a silent <code>continue</code> in the sweep’s shape branch left a
+legacy bare-basename row inert (<code>FAILED=0</code>, no message) with
+the suite still green.</p>
+<h2 id="fail-closed-branches-11.4.252">Fail-closed branches
+(§11.4.252)</h2>
+<p>Every unresolvable input <strong>refuses</strong> rather than
+defaulting to “declared” — the full enumeration is the boundary table
+above. The gate additionally fail-closes on the <strong>library itself
+being missing</strong> (case 17).</p>
+<h2 id="item-status-is-read-from-the-ssot-never-a-parallel-list">Item
+status is read from the SSoT, never a parallel list</h2>
+<p>Open/closed is resolved from
+<code>${PROJECT_ROOT}/docs/workable_items.db</code> — the
+§11.4.93/§11.4.95 single source of truth — never from a hand-maintained
+list of open tickets that would rot independently.</p>
+<ul>
+<li><strong>CLOSED</strong> — any status ending <code>Fixed.md)</code>.
+§11.4.33’s terminal vocabulary has <strong>four</strong> members —
+<code>Fixed</code>, <code>Implemented</code>, <code>Completed</code>,
+<code>Obsolete</code> — all sharing that suffix. Matching the suffix
+covers all four at once <em>and</em> keeps this free of any assumption
+about the UTF-8 arrow’s encoding. Recognising only one of the four would
+let a declaration rot into cover behind the other three;
+<strong>P9</strong> is the scenario that guards it.</li>
+<li><strong>OPEN</strong> — <code>Queued</code>,
+<code>In progress</code>, <code>Ready for testing</code>,
+<code>In testing</code>, <code>Reopened</code>,
+<code>Operator-blocked</code>.</li>
+<li><strong>anything else</strong> — <code>UNKNOWN</code>, which is a
+<strong>refusal</strong>, not a default.</li>
+<li><strong>an empty status</strong> — refused explicitly. The aggregate
+<em>seeds</em> at CLOSED and empty lines are skipped, so reporting that
+seed would state a cause that was never derived (§11.4.6).
+<strong>P11</strong> guards it.</li>
+</ul>
+<h3 id="why-the-store-is-opened-modero-measured-not-inferred">Why the
+store is opened <code>mode=ro</code> — measured, not inferred</h3>
+<p>The read-only URI is the protection because <strong>it cannot write
+by construction</strong>. Measured 2026-08-27 on a scratch copy of the
+real WAL-mode store: an <code>UPDATE</code> through such a connection
+raises
+<code>OperationalError: attempt to write a readonly database</code>.
+That matters because <code>docs/workable_items.db</code> <strong>is
+tracked</strong> (<code>git ls-files --error-unmatch</code> succeeds),
+so it <strong>is</strong> inside invariant 30’s own NO-TRACE corpus, and
+a real write would be caught there as a §11.4.84 quiescence
+violation.</p>
+<p>An earlier revision of this document gave a
+<strong>sidecar-based</strong> rationale (“a read-write open would
+create <code>-wal</code>/<code>-shm</code> sidecars and move the tracked
+<code>.db</code> file’s mtime, and the NO-TRACE scan would then report
+the library’s read”). That causal story is <strong>refuted in both
+directions</strong>. Measured on pristine scratch copies:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>open mode</th>
+<th>sidecars while open</th>
+<th>sidecars after clean close</th>
+<th><code>.db</code> mtime</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>read-write</td>
+<td>created</td>
+<td><strong>removed</strong></td>
+<td>unchanged</td>
+</tr>
+<tr>
+<td><code>mode=ro</code></td>
+<td>created</td>
+<td><strong>left behind</strong></td>
+<td>unchanged</td>
+</tr>
+</tbody>
+</table>
+<p>So sidecars are created in <em>both</em> modes, and it is the
+<strong>read-only</strong> open that leaves them — the reverse of the
+old claim. Either way they are invisible to the NO-TRACE scan, which
+enumerates <strong>tracked</strong> paths only: the sidecars are
+untracked and gitignored (<code>.gitignore</code>
+<code>docs/*.db-wal</code>, <code>docs/*.db-shm</code>). Neither open
+mode moved the <code>.db</code> file’s own mtime.</p>
+<p>The original <em>conclusion</em> stands and is separately measured:
+<strong>12 uncached <code>mode=ro</code> reads through this library left
+the real store’s mtime ns-identical</strong>
+(<code>2026-08-26 23:11:35.767155574 +0200</code> before and after).</p>
+<p>One further caveat, for precision rather than for this library
+(§11.4.6): the claim “a real write would be caught by the NO-TRACE scan”
+holds for the <strong>clean-close</strong> path, where the checkpoint
+moves the <code>.db</code> file’s own mtime. A write that ends in an
+<strong>unclean close</strong> lands only in the untracked
+<code>-wal</code> sidecar, which a tracked-paths-only scan cannot see.
+That is moot here — <code>mode=ro</code> cannot write at all — but the
+scan is not a universal write-detector, and saying so keeps the
+guarantee honest.</p>
+<p>Results are cached per item id — the store path derives from
+<code>PROJECT_ROOT</code>, which is fixed for a gate run, so
+<code>(store, id)</code> collapses to <code>id</code> — and the store is
+not touched at all when the declaration table is empty.</p>
+<h2 id="public-interface">Public interface</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Function</th>
+<th>Contract</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>expected_red_verdict &lt;suite-path&gt; &lt;rc&gt;</code></td>
+<td>The single per-suite entry point the gate calls. Always exits 0;
+prints exactly one of <code>UNDECLARED</code>, <code>HONOURED</code>,
+<code>BLOCK:&lt;reason&gt;</code>. The <strong>basename is not a
+parameter</strong> — rows key on the repo-relative path.</td>
+</tr>
+<tr>
+<td><code>expected_red_unmatched_rows</code></td>
+<td>The post-loop table sweep. Prints one line per row this run could
+not evaluate; prints nothing when every row was judged, and nothing at
+all for an empty table.</td>
+</tr>
+<tr>
+<td><code>expected_red_row_shape_problem &lt;row&gt;</code></td>
+<td>Shared row-shape validator. Echoes the problem and returns
+<code>0</code> when the row is malformed; returns <code>1</code>
+silently when its shape is fine.</td>
+</tr>
+<tr>
+<td><code>expected_red_item_status &lt;ITEM-ID&gt;</code></td>
+<td>Statuses on stdout. <code>rc 0</code> found, <code>rc 1</code>
+unknown id, <code>rc 2</code> store/tool unusable.</td>
+</tr>
+<tr>
+<td><code>expected_red_status_class &lt;status&gt;</code></td>
+<td><code>OPEN</code> | <code>CLOSED</code> | <code>UNKNOWN</code>.</td>
+</tr>
+<tr>
+<td><code>expected_red_note_append &lt;label&gt; &lt;reason&gt;</code></td>
+<td>Appends a block reason to <code>BASH_TEST_STALE_NOTE</code> (capped
+at 3, then <code>(+more)</code>).</td>
+</tr>
+</tbody>
+</table>
+<p><code>BLOCK:&lt;reason&gt;</code> text reaches the operator verbatim
+in the gate’s blocking line, so it names the remedy, not just the
+symptom.</p>
+<p><code>_EXPECTED_RED_SEEN</code> is the associative array of
+repo-relative paths the gate actually executed. <strong>The gate loop
+writes it, not this library</strong> — <code>expected_red_verdict</code>
+is called inside a command substitution, so anything it assigned would
+die with that subshell.</p>
+<h2 id="adding-a-declaration">Adding a declaration</h2>
+<ol type="1">
+<li>Confirm the suite genuinely exits <strong>1</strong> (a RED verdict,
+not an abort).</li>
+<li>Confirm the tracked item exists and is <strong>open</strong>.</li>
+<li>Add the in-source marker to the suite:
+<code># EXPECTED-RED: &lt;ITEM-ID&gt;</code>.</li>
+<li>Add the row to <code>BASH_TEST_EXPECTED_RED</code> in
+<code>scripts/lib/expected_red.sh</code>, keyed on the suite’s
+<strong>repo-relative path</strong>.</li>
+</ol>
+<h2 id="removing-one">Removing one</h2>
+<p>The mechanism forces this — you do not have to remember:</p>
+<ul>
+<li>the item closes → <strong>P3</strong> blocks, naming the stale
+declaration;</li>
+<li>the suite starts passing → <strong>P4</strong> blocks as an
+XPASS;</li>
+<li>the suite stops being executed at all → <strong>P7</strong> blocks,
+naming the dead row.</li>
+</ul>
+<p>Remove <strong>both</strong> halves (the row <em>and</em> the marker)
+in the same commit.</p>
+<h2 id="the-table-is-a-ratchet">The table is a ratchet</h2>
+<p><code>BASH_TEST_EXPECTED_RED</code> must only <strong>shrink</strong>
+(§11.4.135 / §11.4.248). It ships <strong>empty</strong>, deliberately:
+an empty table means invariant 30 blocks on exactly the same set of
+failures it blocked on before this library landed, so landing the
+mechanism silences nothing by itself. Every silence is opt-in,
+two-place, and self-expiring.</p>
+<h2 id="related">Related</h2>
+<ul>
+<li><code>scripts/pre_build_verification.sh</code> — invariant 30, the
+only consumer.</li>
+<li><code>tests/pre_build/test_bob221_expected_red_declaration.sh</code>
+— the RED that specified this mechanism; it extracts invariant 30’s real
+loop, the real post-loop sweep, and the real blocking predicate by
+content marker and runs them, so it cannot drift into asserting on a
+private copy. It carries <strong>no</strong> in-source marker: retaining
+one while the suite is green is a latent XPASS trap and contradicts the
+removal rule above.</li>
+<li>§11.4.115(F), §11.4.120, §11.4.135, §11.4.201, §11.4.215, §11.4.224,
+§11.4.226, §11.4.227, §11.4.240, §11.4.248, §11.4.249, §11.4.252.</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-08-27 — BOB-221 suite <strong>GREEN 19/19</strong> (P-CONTROL +
+P1..P18), deterministic across 3 consecutive runs (identical
+verdict-line hash). <strong>Empty-table parity</strong> re-verified
+<code>diff</code>-identical against
+<code>HEAD:scripts/pre_build_verification.sh</code> (which contains zero
+<code>expected_red</code> references — genuinely the pre-BOB-221 rule)
+across three scratch scenarios.</p>
+<p><strong>Seventeen paired §1.1 mutations, each md5-delta-confirmed
+applied, each killed.</strong> Round 2 (10): basename re-key (P6),
+silencing the sweep (P7), honouring any non-zero exit (P8), narrowing
+CLOSED to the <code>Fixed</code> literal (P9), dropping the extra-field
+refusal (P10/P16), reporting the CLOSED seed (P11), honouring every
+undeclared suite (control needle), dropping marker/table agreement (P5),
+deleting the sweep from the gate, deleting the seen-set write from the
+loop (P1/P6). Round 3 (7): <strong>prefix instead of exact path match
+(P13)</strong>, gutting the exit-code reason text (P8), dropping the
+absent-marker refusal (P12), silencing the sweep’s shape branch
+(P15/P16/P17), dropping the marker’s left anchor (P14), dropping the
+duplicate-row check (P18), and removing the sweep’s already-judged skip
+(caught by every counter assertion). The round-2 battery was re-run
+against the round-3 code: all ten still kill.</p>
+<p><strong>Two single-edit resistance probes</strong> on the status
+vocabulary confirm the property the round-1 review asked to keep:
+inserting a terminal status into the OPEN list is <strong>inert</strong>
+(the suffix branch is first in the <code>case</code> and shadows it),
+and altering the suffix literal degrades every terminal to
+<strong>UNKNOWN</strong>, which is a refusal and still blocks.</p>
+<h3 id="the-carrier-lesson-and-why-it-is-now-structural">The carrier
+lesson, and why it is now structural</h3>
+<p>Three separate rounds each found a §11.4.201(7)(a) carrier, and the
+third one was in the <em>oracle</em>, not the product:</p>
+<ul>
+<li>round 2 — the UNKNOWN branch’s message contains “closed set”, which
+satisfied P3/P9’s case-insensitive <code>closed</code> alternation;</li>
+<li>round 3 — P8’s <code>abort</code> alternative was satisfied by its
+own scenario <strong>filename</strong>
+<code>test_zz_declared_abort.sh</code>, so <em>any</em> declared-branch
+block passed P8 whatever the reason.</li>
+</ul>
+<p>Renaming the file would have fixed the instance and left the class
+open. The suite now enforces the class mechanically, before any scenario
+runs: every reason alternative must be <strong>multi-word</strong>, and
+every scenario path must be <strong>space-free</strong>. A filename
+carrier is then impossible by construction rather than by vigilance, and
+a future single-word alternative aborts the run with its own
+diagnosis.</p>
+</body>
+</html>

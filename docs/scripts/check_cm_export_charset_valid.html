@@ -247,8 +247,8 @@
 <h1
 id="check_cm_export_charset_valid.sh-cm-export-charset-valid">check_cm_export_charset_valid.sh
 — CM-EXPORT-CHARSET-VALID</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-08-26T10:12:00Z <strong>Authority:</strong> §11.4.238 (automated QA
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-08-26T13:05:00Z <strong>Authority:</strong> §11.4.238 (automated QA
 is the discoverer) · §11.4.135 (monotone ratchet) · §11.4.249 (role
 separation) · §11.4.18 (script documentation) <strong>Scope:</strong>
 pre-build invariant 50 and the two scripts that surround it</p>
@@ -316,6 +316,12 @@ thresholds</td>
 <td>no</td>
 </tr>
 <tr>
+<td><code>scripts/pre_build/lib/cm_export_charset_baseline_read.sh</code></td>
+<td><strong>READER</strong> — the single validator of what a baseline
+may be</td>
+<td><strong>no — read-only by construction</strong></td>
+</tr>
+<tr>
 <td><code>scripts/pre_build/check_cm_export_charset_valid.sh</code></td>
 <td><strong>GATE</strong> — compares the count to the persisted
 baseline</td>
@@ -340,9 +346,11 @@ gate</td>
 </tr>
 </tbody>
 </table>
-<p>The gate and the tightener share <strong>one</strong> oracle, so the
-number the tightener records and the number the gate later enforces
-cannot diverge.</p>
+<p>The gate and the tightener share <strong>one</strong> oracle
+<em>and</em> <strong>one</strong> baseline reader, so neither the number
+they act on nor the rule for what counts as a valid threshold can
+diverge between them. The reader exists because the round-1 BLOCKING was
+exactly that: one parse rule written twice and fixed once.</p>
 <p>The separation is a <strong>capability</strong>, not an instruction
 (§11.4.240(B)): the gate source has no line that could write the
 baseline, and the test suite asserts this both structurally (the source
@@ -422,6 +430,12 @@ not follow; run the tightener</td>
 </tr>
 </tbody>
 </table>
+<p>These codes are a <strong>contract</strong>, not incidental
+non-zeros: invariant 50 branches on <code>{0,1,3}</code> to name the
+cause, so collapsing <code>3</code> into <code>1</code> would make it
+report “a NEW charset-less export landed” for a corpus that is merely
+un-ratcheted. The paired mutations assert each code exactly, so that
+collapse cannot land silently.</p>
 <h3 id="tightener-exit-codes">Tightener exit codes</h3>
 <table>
 <colgroup>
@@ -503,6 +517,23 @@ strict: <code>^baseline=(0|[1-9][0-9]*)$</code>.</li>
 closed, and the tightener refuses rather than reporting a write it did
 not perform (<code>mv</code> would otherwise succeed by depositing the
 temp file <em>inside</em> the directory).</li>
+<li><strong>Baseline over 18 digits (e.g. 2⁶⁴+3 =
+<code>18446744073709551619</code>)</strong> → refuses. The
+no-leading-zero rule alone accepts it, and bash arithmetic then wraps
+mod 2⁶⁴: measured 2026-08-26, that value with <strong>3 violations
+present</strong> returned <code>exit 0</code>, “at baseline”. The
+sibling 2⁶⁴+1 refused but printed a resolved-evidence line that was
+false. The accepted range is now <code>0</code>, or 1–18 digits.</li>
+<li><strong>More than one <code>baseline=</code> line</strong> → refuses
+as ambiguous. <code>sed …p | tail -1</code> silently resolved such a
+file to its last <em>matching</em> line, so <code>baseline=3</code>
+followed by <code>baseline=08</code> — plausibly an operator’s intended
+correction — resolved to 3 and passed; two conflicting well-formed lines
+resolved just as quietly. Ambiguity is not a value (§11.4.252).</li>
+<li><strong>Baseline path is a symlink</strong> → refuses.
+<code>-f</code> follows symlinks, so a link to a target outside the tree
+reads normally and every later raise edits that target with no diff at
+all.</li>
 </ul>
 <h2 id="known-gaps">Known gaps</h2>
 <ul>

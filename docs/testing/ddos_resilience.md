@@ -1,7 +1,7 @@
 # DDoS Resilience Testing
 
-**Revision:** 4
-**Last modified:** 2026-08-26T00:00:00Z
+**Revision:** 5
+**Last modified:** 2026-08-26T12:00:00Z
 
 Documents `challenges/scripts/ddos_resilience_challenge.sh` — the DDoS-class
 testing scaffold added by **BOB-074** to close a gap in boba's §11.4.27
@@ -72,8 +72,11 @@ in the run that caught the boba-jackett cold-start finding below. Both are
 comfortably inside `run_all_challenges.sh`'s 180s per-script timeout.
 
 The challenge never targets anything but `127.0.0.1`, never issues a
-destructive command, and its `--self-validate` mode exercises two THROWAWAY
-local `python3` HTTP servers — never the real boba stack.
+destructive command, and its `--self-validate` mode exercises six THROWAWAY
+local `python3` HTTP servers — never the real boba stack. (Two when this line
+was written; the rate-limit detector added three in BOB-114 and the sibling
+detector one in BOB-163, the last serving all nine of its cases from one
+process via distinct paths.)
 
 ## RED/GREEN polarity (§11.4.115)
 
@@ -83,17 +86,25 @@ checks regardless of `RED_MODE` — see "Findings" for what they actually
 caught).
 
 - **`RED_MODE=1`** (reproduce the defect): asserts the **absence** of any
-  429 response under the heaviest tier. This currently `PASS`es for all
-  three endpoints — proving the challenge correctly reproduces boba's real,
-  current, verified state: **no rate-limit middleware, no `slowapi`-style
-  Python limiter, no throttle in either Go service, and no
-  nginx/reverse-proxy layer exists anywhere in the stack** (grepped
-  2026-08-18 across `download-proxy/src/`, `qBitTorrent-go/internal/`, and
-  `docker-compose.yml`).
-- **`RED_MODE=0`** (default, GREEN guard): the **same** absence-of-429
-  observation is honestly `SKIP`ped (reason `extension_absent`) rather than
-  bluffed as a `PASS` or unfairly marked `FAIL` — §11.4.6 forbids inventing
-  a threshold nothing in the codebase enforces.
+  429 response under the heaviest tier. **State as of 2026-08-26 (measured,
+  not assumed):** it now `PASS`es on `:7185` and `:7189` only, and **`FAIL`s
+  on `merge_search :7187`** — that endpoint enforces a limiter
+  (`x-ratelimit-limit: 120`, 32–33 × 429 at c=50), and the detector's own
+  truth table maps `engaged` + `RED_MODE=1` → `FAIL`. That FAIL is the
+  designed polarity flip, not a regression: RED reproduces a defect that no
+  longer exists on `:7187`.
+  *(Superseded: through 2026-08-18 this read "`PASS`es for all three
+  endpoints … no rate-limit middleware, no `slowapi`-style Python limiter, no
+  throttle in either Go service, and no nginx/reverse-proxy layer exists
+  anywhere in the stack", grepped across `download-proxy/src/`,
+  `qBitTorrent-go/internal/` and `docker-compose.yml`. True when written;
+  false now.)*
+- **`RED_MODE=0`** (default, GREEN guard): where a limiter **is** present the
+  429s are asserted and `PASS` (`:7187` today); where it is absent the same
+  absence-of-429 observation is honestly `SKIP`ped (reason
+  `extension_absent`) rather than bluffed as a `PASS` or unfairly marked
+  `FAIL` — §11.4.6 forbids inventing a threshold nothing in the codebase
+  enforces.
 
 **Real polarity going forward:** the day a rate limiter is configured for
 any of the three endpoints, `RED_MODE=0` starts asserting 429s actually
@@ -210,21 +221,48 @@ a detector that merely checks for a non-empty header passes them all. Only a
 real parse separates them — which is what the M1 mutation below flips.
 
 The **decision** is fixture-covered too, not just the classification:
-`sibling_isolation_report` is driven through all three polarities —
-all-responsive (`rc=0`), one-degraded (`rc=1`), and **empty log** (`rc=1`,
-fail-closed: zero observations is not evidence of isolation, the
-§11.4.201(6) false-null where a blind probe and a healthy stack return the
-same quiet zero).
+`sibling_isolation_report` takes an `<expected-count>` — how many sibling
+probes were LAUNCHED — and may report "isolation held" only when it parsed an
+observation for **every** probe it fired. It is driven through nine polarities:
+
+| Decision fixture | Log shape | Expect |
+|---|---|---|
+| `all-responsive` | 3 real responsive observations | `rc=0` |
+| `one-degraded` | 5 observations, 2 of them degraded | `rc=1` |
+| `empty-log` | 0 bytes | `rc=1`, `NO SIBLING OBSERVATIONS` |
+| `blank-line` | 1 byte, one empty line | `rc=1`, `NO SIBLING OBSERVATIONS` |
+| `whitespace-only` | 6 bytes, no parseable field | `rc=1`, `NO SIBLING OBSERVATIONS` |
+| `torn-degraded` | one degraded observation, trailing newline lost | `rc=1`, and it must name the sibling `DEGRADED` |
+| `torn-mixed` | one responsive + one torn degraded | `rc=1`, and it must name the sibling `DEGRADED` |
+| `partial` | 1 observation where 2 probes fired | `rc=1`, `INCOMPLETE SIBLING OBSERVATIONS` |
+| `complete-2of2` | 2 observations, 2 probes | `rc=0` — the false-positive guard |
+
+The last row is load-bearing: a count contract that refuses a *complete* log
+would be the §11.4.201(1) false-positive refusal, as forbidden as a false pass.
+The two torn rows assert `DEGRADED` rather than the count message on purpose —
+that is what proves the torn observation was **parsed** (via the
+`|| [ -n "$sname" ]` guard) rather than merely counted-missing; without the
+guard they would still return `rc=1`, but for the wrong reason.
+
+Why this is wider than a zero-byte check (§11.4.201(6)): a log can be non-empty
+and still carry fewer parsed observations than probes launched. A blank or
+whitespace-only log has bytes and no observations; a complete observation whose
+trailing newline was lost is **silently dropped** by `while read`, so the one
+sibling that *was* degraded vanishes and the run reads "isolation held"; and a
+partial log — one probe subshell died before appending — reads "proven" on half
+the evidence. None is reachable from this file's own writers under POSIX append
+semantics, so the contract is defence in depth against a future writer, a full
+disk or a killed subshell — never a claim that the current writers tear.
 
 #### Mutation evidence (2026-08-26)
 
 | Mutation | Effect | Result |
 |---|---|---|
-| **M1** — `retry_after_wellformed` accepts any non-empty value | the parse degrades to a presence check | all four carrier fixtures flip to `responsive` → **FAIL** (6 assertions) |
-| **M2** — the decision seam reverted to the pre-fix `^2`-only rule | classifier intact but unconsulted | `decision 'all-responsive'` flips to `rc=1` → **FAIL** (3 assertions) |
-| **M3** — drop the 429 branch entirely | every 429 is degraded | both well-formed-429 fixtures flip to `degraded` → **FAIL** (5 assertions) |
+| **M1** — `retry_after_wellformed` accepts any non-empty value | the parse degrades to a presence check | all four carrier fixtures flip to `responsive` → **FAIL** (7 assertions at 32/32) |
+| **M2** — the decision seam reverted to the pre-fix `^2`-only rule | classifier intact but unconsulted | `decision 'all-responsive'` flips to `rc=1` → **FAIL** (4 assertions at 32/32) |
+| **M3** — drop the 429 branch entirely | every 429 is degraded | both well-formed-429 fixtures flip to `degraded` → **FAIL** (7 assertions at 32/32) |
 | **M-DATE** (reviewer-authored, §11.4.194(6)(d)) — PATH-shim a `date` that refuses `-d` | the documented portability branch engages | pre-fix: the whole challenge exited `1` accusing the detector; now: `NOT EXERCISED (reason=no_date_parser_on_host)` → **honest refusal naming its cause** |
-| **M-SEAM** (reviewer-authored) — delete the live call site, inline `isolation_bad=0` | live verdict bypasses the oracle | **undetected, 16/16 green** — see "Residual risks" below |
+| **M-SEAM** (reviewer-authored) — delete the live call site, inline `isolation_bad=0` | live verdict bypasses the oracle | **undetected — suite fully green at every size it has been measured: 16/16 when first demonstrated, 22/22 after round-2 hardening, 32/32 as of 2026-08-26** — see "Residual risks" below |
 
 #### Residual risks (§11.4.6 — stated, not closed)
 
@@ -243,7 +281,7 @@ same quiet zero).
    fixture-covered, but deleting or bypassing the one
    `sibling_isolation_report` call — inlining a different rule, or hardcoding
    `isolation_bad=0` — is not detected by any test (measured: M-SEAM above
-   left the unit test fully green — 16/16 when first demonstrated, 22/22 after the review-round hardening). Guarding it needs the real
+   left the unit test fully green at every size measured: 16/16, then 22/22, then 32/32 on 2026-08-26). Guarding it needs the real
    `:7185`/`:7187`/`:7189` topology under real load, which no localhost
    fixture can own. A grep-gate asserting the call site "looks right" is
    **not** the closure — that is the §11.4.201(7)(a) substring check this
@@ -447,9 +485,13 @@ process itself never died.
 
 ## How to interpret a `FAIL`
 
-- If **only** the rate-limiting assertion is `SKIP` (not `FAIL`) for all
-  three endpoints, that is the expected, honest, currently-committed state
-  — it reflects the real absence of rate limiting, not a broken challenge.
+- The expected rate-limiting result as of **2026-08-26** is
+  **`PASS` on `merge_search :7187`, `SKIP` on `:7185` and `:7189`** — `:7187`
+  enforces a limiter, the other two do not, and a `SKIP` there reflects that
+  real absence rather than a broken challenge. *(Superseded: this previously
+  read "`SKIP` for all three endpoints … the currently-committed state",
+  which was true only while no endpoint enforced a limiter.)* A `SKIP` on
+  `:7187` would now be a **regression signal** — its limiter stopped firing.
 - If `boba_jackett`'s crash-resistance assertion `FAIL`s occasionally, that
   is the tracked, real, cold-start amplification finding above — not the
   challenge itself being flaky. Re-run it; if it now `PASS`es, the endpoint
@@ -472,13 +514,18 @@ process itself never died.
 bash challenges/scripts/ddos_resilience_challenge.sh
 
 # RED mode — reproduce the "no rate limiting configured" defect state
-# explicitly (should PASS today; will start FAILing once a rate limiter is
-# wired and later stripped).
+# explicitly. As of 2026-08-26 this PASSes on :7185 and :7189 and FAILs on
+# merge_search :7187, because RED starts FAILing for an endpoint the moment a
+# limiter is WIRED there (the defect it reproduces is fixed) — it does not
+# require the limiter to be stripped again.
 RED_MODE=1 bash challenges/scripts/ddos_resilience_challenge.sh
 
-# Self-validation — prove the crash-resistance detector distinguishes a
-# genuinely broken (golden-bad) backend from a genuinely healthy
-# (golden-good) one, using throwaway local fixtures only.
+# Self-validation — prove all THREE detectors distinguish their golden-good
+# from their golden-bad fixtures: crash resistance, rate limiting (including
+# the advertises-but-never-enforces carrier), and sibling responsiveness
+# (including four 429s that DO carry a Retry-After whose value is not
+# well-formed, both polarities of the isolation decision, and its
+# fail-closed count contract). Throwaway local fixtures only.
 bash challenges/scripts/ddos_resilience_challenge.sh --self-validate
 
 # --healthz — BOB-112 regression guard (added task #74): a bounded 2-thread

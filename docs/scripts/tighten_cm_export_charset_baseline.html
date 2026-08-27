@@ -247,8 +247,8 @@
 <h1
 id="tighten_cm_export_charset_baseline.sh-the-cm-export-charset-valid-producer">tighten_cm_export_charset_baseline.sh
 — the CM-EXPORT-CHARSET-VALID producer</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-08-26T10:14:00Z <strong>Authority:</strong> §11.4.135 (monotone
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-08-26T13:07:00Z <strong>Authority:</strong> §11.4.135 (monotone
 ratchet) · §11.4.249 (producer ≠ gate) · §11.4.240(B) (capability, not
 instruction) · §11.4.18 (script documentation)
 <strong>Companion:</strong> <a
@@ -266,8 +266,12 @@ a script that is explicitly invoked by a human and never runs during a
 build. The gate contains no line that could call it and no line that
 could write the baseline.</p>
 <p>The two share <strong>one</strong> oracle
-(<code>lib/cm_export_charset_scan.py</code>), so the number this script
-records and the number the gate later enforces cannot diverge.</p>
+(<code>lib/cm_export_charset_scan.py</code>) and <strong>one</strong>
+baseline reader (<code>lib/cm_export_charset_baseline_read.sh</code>),
+so neither the number this script records nor the rule for what counts
+as a valid threshold can diverge from what the gate later enforces. The
+shared reader exists because the round-1 BLOCKING was that same parse
+rule written twice and fixed once.</p>
 <h2 id="usage">Usage</h2>
 <div class="sourceCode" id="cb1"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Lower the baseline to the live count. Refuses unless strictly lower.</span></span>
@@ -338,6 +342,25 @@ the guards fell through and the script wrote <code>baseline=9</code>
 while printing “lowered 08 -&gt; 9” (a raise, mislabelled).</td>
 </tr>
 <tr>
+<td>stored baseline over 18 digits</td>
+<td>Same class one ring out: the no-leading-zero rule accepts a 20-digit
+value and bash arithmetic wraps it mod 2⁶⁴, so
+<code>18446744073709551619</code> silently became 3. A number this
+script cannot faithfully evaluate is one it refuses to act on.</td>
+</tr>
+<tr>
+<td>more than one <code>baseline=</code> line</td>
+<td>An ambiguous threshold is an unresolvable signal, not something to
+resolve by picking the last matching line.</td>
+</tr>
+<tr>
+<td>baseline path is a symlink</td>
+<td>Refuses rather than silently replacing it with a regular file. A
+symlink can be re-pointed outside the tree, where later raises leave no
+diff — and quietly “healing” one would destroy whatever the operator
+meant by it.</td>
+</tr>
+<tr>
 <td>baseline path is not a regular file</td>
 <td><code>mv</code> onto a directory succeeds by depositing the temp
 file <em>inside</em> it, leaving nothing at the path — while the script
@@ -376,7 +399,9 @@ nothing measured (§11.4.201(7)(b)).</td>
 impossible. Delete the baseline and re-run <code>--adopt</code>, or edit
 the number by hand, and you have a higher bar. The
 <code>--adopt</code>-when-present refusal blocks the careless route, not
-the determined one.</p>
+the determined one. The <strong>symlink</strong> route is the exception
+— that one is refused outright, because it is the only route that goes
+trace-free after a single diff.</p>
 <p>The actual defence is that <strong>every one of those routes leaves a
 diff in a tracked file</strong> for a reviewer to see (§11.4.142). Which
 means the defence exists only once the baseline file is
@@ -397,6 +422,8 @@ the gate (read-only over the baseline)</li>
 shared oracle</li>
 <li><code>tests/pre_build/test_cm_export_charset_valid.sh</code> — §1.1
 paired mutations covering both scripts</li>
+<li><code>scripts/pre_build/lib/cm_export_charset_baseline_read.sh</code>
+— the shared read-only validator</li>
 <li>BOB-182 — the ratchet that did not ratchet</li>
 </ul>
 </body>
