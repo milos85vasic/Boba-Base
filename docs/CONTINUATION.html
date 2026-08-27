@@ -181,8 +181,8 @@
 </header>
 <h1 id="continue-project-status-snapshot">Continue — Project Status
 Snapshot</h1>
-<p><strong>Revision:</strong> 29 <strong>Last modified:</strong>
-2026-08-27T18:20:00Z</p>
+<p><strong>Revision:</strong> 30 <strong>Last modified:</strong>
+2026-08-27T18:40:00Z</p>
 <h2
 id="commit-record-correction-read-this-before-trusting-git-log">COMMIT-RECORD
 CORRECTION — read this before trusting <code>git log</code></h2>
@@ -256,6 +256,26 @@ and stamped <code>[skip-ci]</code> into the commit — the §11.4.234(D)
 recorded-deferral path, chosen because T042 is a known-open failure and
 the commit/push mechanism must stay unblocked. Clear it with:</p>
 <pre><code>bash scripts/commit-push-all.sh &quot;catch-up long gate&quot;</code></pre>
+<h2 id="merged-to-main-2026-08-27">MERGED TO MAIN — 2026-08-27</h2>
+<p><code>main</code> now carries this feature’s work. Operator decision,
+taken after the merge was held back once and the trade-off put to them
+explicitly.</p>
+<pre><code>main = 1444367   (was 79c00b9, fast-forwarded 100 commits)</code></pre>
+<p>Landed on <code>git@github.com:milos85vasic/Boba-Base.git</code> and
+<code>git@github.com:milos85vasic/qBitTorrent.git</code>, both verified
+at <code>1444367</code> by <code>git ls-remote</code> against the
+servers directly, not by local tracking refs. Fast-forward only, no
+force, no rewrite (§11.4.113); pre-op <code>79c00b9</code> remains
+reachable, zero conflict markers (control-needled), 42 submodule
+pointers intact, <code>constitution</code> at <code>a09b1ea</code>.</p>
+<p><strong>What this means for the next session:</strong>
+<code>main</code> and <code>002-user-owned-downloads</code> are the same
+commit. The merge happened BEFORE T041 and T042 closed, so
+<code>main</code> currently carries 3 known-RED suites and has no
+§11.4.185 manual-QA confirmation — that is a recorded, operator-owned
+deviation from §11.4.195(B), not an oversight. Continue T041/T042 on the
+feature branch and fast-forward <code>main</code> again when they
+close.</p>
 <h2 id="how-to-resume-this-work">HOW TO RESUME THIS WORK</h2>
 <p>Point a fresh session at this file, then run the SpecKit execute
 command for feature <code>002-user-owned-downloads</code>. Everything

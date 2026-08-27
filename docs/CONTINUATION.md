@@ -1,7 +1,7 @@
 # Continue — Project Status Snapshot
 
-**Revision:** 29
-**Last modified:** 2026-08-27T18:20:00Z
+**Revision:** 30
+**Last modified:** 2026-08-27T18:40:00Z
 
 ## COMMIT-RECORD CORRECTION — read this before trusting `git log`
 
@@ -34,6 +34,27 @@ skipped via `BOBA_SYNC_SKIP_CI=1` and stamped `[skip-ci]` into the commit — th
 and the commit/push mechanism must stay unblocked. Clear it with:
 
     bash scripts/commit-push-all.sh "catch-up long gate"
+
+## MERGED TO MAIN — 2026-08-27
+
+`main` now carries this feature's work. Operator decision, taken after the
+merge was held back once and the trade-off put to them explicitly.
+
+    main = 1444367   (was 79c00b9, fast-forwarded 100 commits)
+
+Landed on `git@github.com:milos85vasic/Boba-Base.git` and
+`git@github.com:milos85vasic/qBitTorrent.git`, both verified at `1444367` by
+`git ls-remote` against the servers directly, not by local tracking refs.
+Fast-forward only, no force, no rewrite (§11.4.113); pre-op `79c00b9` remains
+reachable, zero conflict markers (control-needled), 42 submodule pointers
+intact, `constitution` at `a09b1ea`.
+
+**What this means for the next session:** `main` and
+`002-user-owned-downloads` are the same commit. The merge happened BEFORE
+T041 and T042 closed, so `main` currently carries 3 known-RED suites and has
+no §11.4.185 manual-QA confirmation — that is a recorded, operator-owned
+deviation from §11.4.195(B), not an oversight. Continue T041/T042 on the
+feature branch and fast-forward `main` again when they close.
 
 ## HOW TO RESUME THIS WORK
 
