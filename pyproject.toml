@@ -93,7 +93,20 @@ line-length = 120
 # fix. `.worktrees` is a scratch dir for parallel git worktrees (already
 # gitignored, excluded here for defense-in-depth); `.venv` is the local
 # Python virtualenv.
-extend-exclude = ["submodules", "constitution", ".worktrees", ".venv"]
+# docs/qa holds FROZEN EVIDENCE — captured RED snapshots and deliberately
+# mutated `*_RED_mutated_*` / `*_deployed_*` artifacts whose whole value is
+# that they preserve a broken state verbatim. Linting them is meaningless
+# (a clean evidence snapshot would be a falsified one) and inflates boba's
+# own violation count with 123 findings that are not defects. Verified
+# 2026-09-01: no Python module imports from docs/qa — the only references
+# are documentation pointers inside comments.
+# `superspec` is ALSO an independently-governed submodule (.gitmodules:
+# superspec -> git@github.com:WangX0111/superspec.git). It sits at the repo
+# ROOT rather than under submodules/, which is the only reason it was missed
+# here — `git ls-files superspec/` is empty, so none of its files are boba's
+# to edit, exactly like `constitution` (the other root-level submodule already
+# excluded). Verified 2026-09-02.
+extend-exclude = ["submodules", "constitution", "superspec", ".worktrees", ".venv", "docs/qa"]
 
 [tool.ruff.lint]
 # ASYNC (flake8-async) rules catch blocking I/O inside async funcs — key
@@ -134,6 +147,16 @@ ignore = [
     "C401", "C408", "C416", "C417",
     "PT018",
 ]
+# FROZEN EVIDENCE fixtures (§11.4.107(10) golden-bad set). Each `real-*.py`
+# is a verbatim reproduction of a defect the CM-NO-PRODUCTION-MUTATION-RESIDUE
+# gate MUST detect, driven byte-for-byte by
+# challenges/fixtures/mutation_marker_scan/polarity_check.sh. real-mutation.py
+# computes `result = x + y` and then `return 0` — the dead assignment IS the
+# mutation, so F841 here is a report of the fixture working, not a defect.
+# Repairing it would delete the fixture's whole value. Scoped to this one
+# directory so accidental issues in fixture HARNESS code stay visible.
+"challenges/fixtures/mutation_marker_scan/*.py" = ["F841"]
+
 "tools/**/*.py" = [
     "S", "S324",  # security audit handled separately
     "I001", "W293", "W291", "W292",

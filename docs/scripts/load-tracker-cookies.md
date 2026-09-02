@@ -1,9 +1,9 @@
 # `scripts/load-tracker-cookies.sh` — Tracker Cookies Autoload
 
-**Revision:** 2
-**Last modified:** 2026-08-18T00:00:00Z
+**Revision:** 3
+**Last modified:** 2026-09-01T00:00:00Z
 **Purpose:** External operator guide for the per-tracker cookies autoload primitive.
-**Last verified:** 2026-08-18
+**Last verified:** 2026-09-01
 
 ---
 
@@ -161,6 +161,7 @@ $ TRACKER_COOKIE_DIR=/media/usb/browser-export bash scripts/load-tracker-cookies
 | **1** | §11.4.10.A leak audit failure — value already appears in tracked files or recent git history; **store blocked**, rotate the cookie in your browser and re-export. |
 | **2** | Parse error — a cookie file failed the extractor's required-session-cookie check (was not exported from a logged-in browser). |
 | **3** | Invocation error — bad flag, missing arg, extractor not executable. |
+| **4** | `.env` write aborted — the validated rewrite failed a safety invariant (grep error, line-count, or key-set). **`.env` was left byte-for-byte unchanged; nothing was lost.** Ranks above 1 and 2 because `BOBA_MASTER_KEY` lives in `.env` and its loss is unrecoverable. Read the `FATAL:` line for the specific invariant, fix the underlying condition (disk full, permissions, corrupt `.env`), and re-run. |
 
 ## Edge cases
 

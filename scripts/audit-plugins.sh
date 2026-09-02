@@ -13,7 +13,7 @@ CANONICAL_TRACKERS=(
 )
 
 INFRASTRUCTURE=(
-    helpers nova2 novaprinter socks download_proxy env_loader theme_injector
+    helpers nova2 novaprinter socks download_proxy env_loader
 )
 
 is_canonical() {

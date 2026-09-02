@@ -871,9 +871,40 @@
             });
         }
 
+        // F1 (review #3): this helper was previously defined INSIDE
+        // generateMagnet() while being called from three SIBLING functions
+        // (doSchedule / doDownload / doDownloadTorrent). A function declaration
+        // nested in another function is invisible to its siblings, so every
+        // one of those buttons threw `ReferenceError: _tagFacts is not defined`
+        // before its fetch even fired. It landed there because the edit was
+        // applied at a text anchor whose first match happened to be inside
+        // generateMagnet, and no test covers this template — so nothing caught
+        // it. Hoisted to top-level script scope.
+        // Content facts for qBittorrent tagging, taken from the clicked result.
+        //
+        // Added 2026-09-01. The backend accepts title/content_type/year/genres
+        // and derives quality from the name itself, but NO client sent these —
+        // so three of the four operator-chosen tag dimensions were unreachable
+        // and every download landed with only a quality tag. The search result
+        // already carries all of it; it was simply discarded here.
+        //
+        // Every field is optional: an absent value is omitted so the backend
+        // emits no tag for it rather than guessing one.
+        function _tagFacts(r) {
+            var meta = (r && r.metadata) || {};
+            var facts = {};
+            if (r && r.name) { facts.title = r.name; }
+            var ct = meta.content_type || (r && r.content_type);
+            if (ct) { facts.content_type = ct; }
+            if (meta.year) { facts.year = meta.year; }
+            if (meta.genres && meta.genres.length) { facts.genres = meta.genres; }
+            return facts;
+        }
+
         async function generateMagnet(results, index) {
             var r = results[index];
             var name = r.name || 'download';
+
             var urls = r.download_urls || [];
             try {
                 var resp = await fetch('/api/v1/magnet', {
@@ -1016,7 +1047,7 @@
             fetch('/api/v1/download', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ result_id: String(index), download_urls: urls })
+                body: JSON.stringify(Object.assign({ result_id: String(index), download_urls: urls }, _tagFacts(r)))
             })
             .then(function(resp) { return resp.json(); })
             .then(function(data) {
@@ -1062,7 +1093,7 @@
             fetch('/api/v1/download', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ result_id: String(index), download_urls: r.download_urls })
+                body: JSON.stringify(Object.assign({ result_id: String(index), download_urls: r.download_urls }, _tagFacts(r)))
             })
             .then(function(resp) { return resp.json(); })
             .then(function(data) {
@@ -1112,7 +1143,7 @@
             fetch('/api/v1/download/file', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ result_id: String(index), download_urls: r.download_urls })
+                body: JSON.stringify(Object.assign({ result_id: String(index), download_urls: r.download_urls }, _tagFacts(r)))
             })
             .then(function(resp) {
                 if (!resp.ok) {

@@ -15,6 +15,12 @@ import subprocess
 import pytest
 import requests
 
+from tests.integration.qbit_login_oracle import (
+    describe_login,
+    qbit_login_succeeded,
+    qbit_session_cookie_names,
+)
+
 
 def _container_runtime() -> str:
     env = os.environ.get("CONTAINER_RUNTIME")
@@ -38,34 +44,64 @@ class TestQbitDefaultPassword:
         self.qbit_url = all_services_live["qbittorrent"]
 
     def test_admin_admin_login_succeeds(self):
-        """qBittorrent must accept admin/admin credentials."""
+        """qBittorrent must accept admin/admin credentials.
+
+        Judged by the version-independent oracle, not by a literal body: the
+        running qBittorrent 5.2.3 answers a GOOD login with ``204`` + an EMPTY
+        body + ``Set-Cookie: QBT_SID_7185=…`` (measured 2026-09-01). See
+        ``tests/integration/qbit_login_oracle`` for the captured transcript.
+        """
         resp = requests.post(
             f"{self.qbit_url}/api/v2/auth/login",
             data={"username": "admin", "password": "admin"},
             timeout=30,
         )
-        assert resp.status_code == 200
-        assert resp.text.strip() == "Ok.", f"Unexpected response: {resp.text!r}"
+        assert qbit_login_succeeded(resp), f"admin/admin login was NOT accepted: {describe_login(resp)}"
+        # Positive evidence, not merely "no error": a session cookie really was
+        # issued (or the legacy Ok. body really was returned).
+        assert qbit_session_cookie_names(resp) or resp.text.strip() == "Ok.", describe_login(resp)
 
     def test_wrong_password_rejected(self):
-        """Wrong password must be rejected."""
+        """Wrong password must be rejected — the negative control.
+
+        This is what keeps ``test_admin_admin_login_succeeds`` honest: if the
+        oracle waved anything through, this test would pass a BAD password too.
+        Measured reality: ``401 Unauthorized``, no ``Set-Cookie``.
+        """
         resp = requests.post(
             f"{self.qbit_url}/api/v2/auth/login",
-            data={"username": "admin", "password": "wrong"},
+            data={"username": "admin", "password": "wrongwrong"},
             timeout=30,
         )
-        assert resp.status_code == 200
-        assert resp.text.strip() == "Fails."
+        assert not qbit_login_succeeded(resp), f"a WRONG password was accepted: {describe_login(resp)}"
+        # Strictly stronger than "not success": no session cookie may be minted
+        # for a rejected credential, whatever status the server chose.
+        assert not qbit_session_cookie_names(resp), (
+            f"qBittorrent issued a session cookie for a REJECTED password: {describe_login(resp)}"
+        )
 
     def test_auth_grants_api_access(self):
-        """Successful login must grant access to protected API."""
+        """Successful login must grant access to a protected API.
+
+        Carries its own negative control: a FRESH, unauthenticated session must
+        be REFUSED by the same endpoint, so the authenticated 200 proves the
+        cookie did the work rather than the endpoint simply being open.
+        """
+        anon = requests.Session()
+        anon_version = anon.get(f"{self.qbit_url}/api/v2/app/version", timeout=30)
+        assert anon_version.status_code in (401, 403), (
+            "/api/v2/app/version answered an UNAUTHENTICATED session with "
+            f"{anon_version.status_code} — the endpoint is not auth-gated, so a "
+            "200 after login would prove nothing"
+        )
+
         session = requests.Session()
         login = session.post(
             f"{self.qbit_url}/api/v2/auth/login",
             data={"username": "admin", "password": "admin"},
             timeout=30,
         )
-        assert login.text.strip() == "Ok."
+        assert qbit_login_succeeded(login), f"login failed: {describe_login(login)}"
 
         version = session.get(f"{self.qbit_url}/api/v2/app/version", timeout=30)
         assert version.status_code == 200

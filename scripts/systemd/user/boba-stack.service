@@ -56,7 +56,7 @@
 
 [Unit]
 Description=Boba stack — containers via ./start.sh
-Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/CLAUDE.md
+Documentation=file://@@BOBA_REPO_ROOT@@/CLAUDE.md
 After=network-online.target
 Wants=network-online.target
 PartOf=boba.target
@@ -68,7 +68,7 @@ StartLimitBurst=3
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-WorkingDirectory=/run/media/milosvasic/DATA4TB/Projects/boba
+WorkingDirectory=@@BOBA_REPO_ROOT@@
 EnvironmentFile=-%h/.qbit.env
 # Tells start.sh that THIS unit invoked it, so its FR-009 divergence notice
 # stays quiet on the path where systemd and reality already agree. systemd's own

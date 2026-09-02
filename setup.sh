@@ -50,9 +50,12 @@ if [[ ! -f ".env" ]]; then
 PUID=1000
 PGID=1000
 TZ=Europe/Moscow
-WEBUI_PORT=7186
-WEBUI_USERNAME=admin
-WEBUI_PASSWORD=admin
+WEBUI_PORT=7185   # qBittorrent listen port; 7186 is the download-proxy in front of it
+# NOTE: WEBUI_USERNAME / WEBUI_PASSWORD are deliberately NOT written here.
+# lscr.io/linuxserver/qbittorrent implements neither variable, so setting them
+# created a false belief that credentials were configured while nothing was.
+# Credentials are written into config/qBittorrent/qBittorrent.conf by
+# start.sh's _ensure_webui_credentials — the file the image actually reads.
 
 # Data directory
 QBITTORRENT_DATA_DIR=/mnt/DATA
@@ -167,7 +170,7 @@ print_info "Waiting for qBittorrent to be ready..."
 sleep 5
 
 # Verify container is running
-if $CONTAINER_RUNTIME ps | grep -q "qbittorrent"; then
+if $CONTAINER_RUNTIME ps --format '{{.Names}}' | grep -qx 'qbittorrent'; then
     print_success "qBittorrent is running!"
 else
     print_error "Container failed to start"

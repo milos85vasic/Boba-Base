@@ -15,6 +15,7 @@ from typing import Any
 from cachetools import TTLCache
 
 from .retry import retry_policy
+from .trackers import PRIVATE_TRACKER_BASE_URLS
 
 # Configurable outbound proxy for tracker-bound egress (BOBA_UPSTREAM_PROXY /
 # *_PROXY). `apply_proxy_env()` maps the knob onto HTTP(S)_PROXY/NO_PROXY (the
@@ -605,12 +606,13 @@ DEAD_PUBLIC_TRACKERS = frozenset(
 )
 
 
-PRIVATE_TRACKERS = {
-    "rutracker": "https://rutracker.org",
-    "kinozal": "https://kinozal.tv",
-    "nnmclub": "https://nnmclub.to",
-    "iptorrents": "https://iptorrents.com",
-}
+# The private-tracker base URLs are DERIVED from the ONE roster
+# (``merge_service.trackers``), never re-typed here. Each value is
+# ``https://<PRIMARY domain>``, and the roster's primary is by construction the
+# VERIFIED-LIVE host — which is what the §11.4.111 dead-domain guard
+# (tests/unit/merge_service/test_nnmclub_domain_live.py) now asserts against
+# the roster instead of against a literal in this file.
+PRIVATE_TRACKERS = dict(PRIVATE_TRACKER_BASE_URLS)
 
 
 class EncryptedSessionStore:

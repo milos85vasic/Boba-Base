@@ -136,7 +136,7 @@ download-proxy/src/
     hooks.py             # Hook registration / invocation
     auth.py              # Auth state + credential management
     scheduler.py         # Scheduled search API
-    theme_state.py       # Cross-app theme injection state
+    theme_state.py       # Cross-app theme state (:7187 dashboard only)
   merge_service/
     __init__.py          # Package init
     search.py            # Search orchestration + tracker parsing
@@ -181,7 +181,7 @@ tests/                   # All tests (NOT in download-proxy/tests/)
   unit/                  # Unit tests (heavily mocked)
     merge_service/       # Core logic tests
     api_layer/           # API layer tests
-  contract/              # API contract tests (OpenAPI, cross-app theme)
+  contract/              # API contract tests (OpenAPI)
   property/              # Hypothesis property-based tests
   concurrency/           # Semaphore / concurrency tests
   memory/                # Memory leak tests (tracemalloc)
@@ -314,7 +314,7 @@ Tests live in `./tests/`, NOT in `download-proxy/tests/`.
 | `tests/unit/` | Unit tests (heavily mocked) | Nothing |
 | `tests/unit/merge_service/` | Core logic: dedup, search, hooks, validator, enricher, scheduler | Nothing |
 | `tests/unit/api_layer/` | API layer unit tests | Nothing |
-| `tests/contract/` | API contract tests (OpenAPI, cross-app theme) | Nothing |
+| `tests/contract/` | API contract tests (OpenAPI) | Nothing |
 | `tests/property/` | Hypothesis property-based | Nothing |
 | `tests/concurrency/` | Semaphore / concurrency | Nothing |
 | `tests/memory/` | Memory leak (tracemalloc) | Nothing |
@@ -421,7 +421,9 @@ Key variables:
 - `MAX_CONCURRENT_SEARCHES` -- default `5`
 - `MAX_CONCURRENT_TRACKERS` -- default `10`
 - `PUBLIC_TRACKER_DEADLINE_SECONDS` -- default `15`
-- `DISABLE_THEME_INJECTION` -- set to `1` to disable cross-app dark mode
+- `DISABLE_THEME_INJECTION` -- obsolete no-op in the Python stack (2026-09-01): the
+  themed qBittorrent-WebUI overlay was removed and the stock vanilla WebUI is now
+  served byte-for-byte. Still read by the Go backend.
 - `LOG_LEVEL` -- default `INFO`
 - `OMDB_API_KEY`, `TMDB_API_KEY`, `TVDB_API_KEY` -- metadata enrichment
 - `ANILIST_CLIENT_ID` -- anime metadata

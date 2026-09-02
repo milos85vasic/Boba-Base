@@ -11,33 +11,33 @@ import (
 type Config struct {
 	QBittorrentHost       string
 	QBittorrentPort       int
-	QBittorrentUsername  string
-	QBittorrentPassword string
-	ServerPort           int
-	BridgePort           int
-	ProxyPort            int
-	LogLevel             string
-	SSETimeout           int
-	PluginTimeout        int
+	QBittorrentUsername   string
+	QBittorrentPassword   string
+	ServerPort            int
+	BridgePort            int
+	ProxyPort             int
+	LogLevel              string
+	SSETimeout            int
+	PluginTimeout         int
 	MaxConcurrentSearches int
 
-	RutrackerUsername   string
-	RutrackerPassword   string
-	KinozalUsername     string
-	KinozalPassword     string
+	RutrackerUsername  string
+	RutrackerPassword  string
+	KinozalUsername    string
+	KinozalPassword    string
 	NNMClubCookies     string
 	RutrackerCookies   string
 	IPTorrentsUsername string
 	IPTorrentsPassword string
 
-	OMDBAPIKey       string
-	TMDBAPIKey       string
+	OMDBAPIKey      string
+	TMDBAPIKey      string
 	AniListClientID string
 
-	AllowedOrigins            string
-	MergeServicePort          int
-	QBittorrentDataDir      string
-	DisableThemeInjection    bool
+	AllowedOrigins        string
+	MergeServicePort      int
+	QBittorrentDataDir    string
+	DisableThemeInjection bool
 
 	// UpstreamProxy is the single configurable outbound proxy for
 	// tracker-bound egress (BOBA_UPSTREAM_PROXY: socks5:// | http:// |
@@ -53,8 +53,8 @@ func Load() *Config {
 	return &Config{
 		QBittorrentHost:       getEnv("QBITTORRENT_HOST", "localhost"),
 		QBittorrentPort:       getEnvAsInt("QBITTORRENT_PORT", 7185),
-		QBittorrentUsername:  getEnv("QBITTORRENT_USER", getEnv("QBITTORRENT_USERNAME", "admin")),
-		QBittorrentPassword:  getEnv("QBITTORRENT_PASS", getEnv("QBITTORRENT_PASSWORD", "admin")),
+		QBittorrentUsername:   getEnv("QBITTORRENT_USER", getEnv("QBITTORRENT_USERNAME", "admin")),
+		QBittorrentPassword:   getEnv("QBITTORRENT_PASS", getEnv("QBITTORRENT_PASSWORD", "admin")),
 		ServerPort:            getEnvAsInt("MERGE_SERVICE_PORT", getEnvAsInt("SERVER_PORT", 7187)),
 		BridgePort:            getEnvAsInt("BRIDGE_PORT", 7188),
 		ProxyPort:             getEnvAsInt("PROXY_PORT", 7186),
@@ -63,22 +63,30 @@ func Load() *Config {
 		PluginTimeout:         getEnvAsInt("PLUGIN_TIMEOUT", 10),
 		MaxConcurrentSearches: getEnvAsInt("MAX_CONCURRENT_SEARCHES", 5),
 
-		RutrackerUsername:   getEnv("RUTRACKER_USERNAME", ""),
-		RutrackerPassword:   getEnv("RUTRACKER_PASSWORD", ""),
-		KinozalUsername:     getEnv("KINOZAL_USERNAME", getEnv("IPTORRENTS_USERNAME", "")),
-		KinozalPassword:     getEnv("KINOZAL_PASSWORD", getEnv("IPTORRENTS_PASSWORD", "")),
+		RutrackerUsername:  getEnv("RUTRACKER_USERNAME", ""),
+		RutrackerPassword:  getEnv("RUTRACKER_PASSWORD", ""),
+		KinozalUsername:    getEnv("KINOZAL_USERNAME", getEnv("IPTORRENTS_USERNAME", "")),
+		KinozalPassword:    getEnv("KINOZAL_PASSWORD", getEnv("IPTORRENTS_PASSWORD", "")),
 		NNMClubCookies:     getEnv("NNMCLUB_COOKIES", ""),
 		RutrackerCookies:   getEnv("RUTRACKER_COOKIES", ""),
 		IPTorrentsUsername: getEnv("IPTORRENTS_USERNAME", ""),
 		IPTorrentsPassword: getEnv("IPTORRENTS_PASSWORD", ""),
 
-		OMDBAPIKey:       getEnv("OMDB_API_KEY", ""),
-		TMDBAPIKey:       getEnv("TMDB_API_KEY", ""),
-		AniListClientID:   getEnv("ANILIST_CLIENT_ID", ""),
+		OMDBAPIKey:      getEnv("OMDB_API_KEY", ""),
+		TMDBAPIKey:      getEnv("TMDB_API_KEY", ""),
+		AniListClientID: getEnv("ANILIST_CLIENT_ID", ""),
 
-		AllowedOrigins:         getEnv("ALLOWED_ORIGINS", "http://localhost:7186,http://localhost:7187"),
-		MergeServicePort:       getEnvAsInt("MERGE_SERVICE_PORT", 7187),
-		QBittorrentDataDir:   getEnv("QBITTORRENT_DATA_DIR", "/mnt/DATA"),
+		// Empty when unset, so "the operator configured nothing" reaches the
+		// CORS middleware as an ABSENCE and it applies its own default
+		// allowlist. This previously defaulted to a 2-entry literal
+		// ("http://localhost:7186,http://localhost:7187"), which shadowed the
+		// middleware's default set entirely: the ng-serve origin :4200 and every
+		// 127.0.0.1 literal were silently denied whenever ALLOWED_ORIGINS was
+		// unset, yet granted when it was set to an empty string. See
+		// internal/corsorigins.
+		AllowedOrigins:        getEnv("ALLOWED_ORIGINS", ""),
+		MergeServicePort:      getEnvAsInt("MERGE_SERVICE_PORT", 7187),
+		QBittorrentDataDir:    getEnv("QBITTORRENT_DATA_DIR", "/mnt/DATA"),
 		DisableThemeInjection: getEnv("DISABLE_THEME_INJECTION", "") == "1",
 
 		UpstreamProxy: getEnv("BOBA_UPSTREAM_PROXY", ""),

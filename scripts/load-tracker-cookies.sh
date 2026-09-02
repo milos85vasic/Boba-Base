@@ -95,6 +95,11 @@
 #   2  parse error — a cookie file failed the extractor's own
 #      required-session-cookie check.
 #   3  invocation error — bad flag / missing arg / not in repo root.
+#   4  .env write aborted — the validated rewrite failed a safety
+#      invariant (grep error, line-count, or key-set). .env was left
+#      byte-for-byte UNCHANGED; nothing was lost. Ranks above 1 and 2
+#      because BOBA_MASTER_KEY lives in .env (CLAUDE.md: "Loss = total
+#      credential loss") and the operator must see this first.
 
 set -euo pipefail
 
@@ -205,6 +210,35 @@ _leak_audit() {
 # temp+chmod-600+rename. Preserves ordering + comments of existing
 # lines. Never leaves .env world-readable, never leaves it in a
 # half-written state.
+#
+# ROOT CAUSE (fixed 2026-09-01). The filter step used to read
+#     grep -vE ... "$ENV_FILE" > "$tmp" 2>/dev/null || true
+# then unconditionally `mv -f "$tmp" "$ENV_FILE"`. `|| true` swallows EVERY
+# grep failure — unreadable source, ENOSPC on the write, a malformed pattern
+# (grep exit 2) — and `2>/dev/null` hides the reason. On any of those the
+# temp file is empty or truncated and the `mv` publishes it OVER .env.
+# .env holds BOBA_MASTER_KEY, and per CLAUDE.md "Loss = total credential
+# loss": the AES-256-GCM key for `tracker_credentials` in config/boba.db is
+# unrecoverable, so this single unchecked `|| true` could destroy every
+# stored credential in the system.
+#
+# The rewrite is now VALIDATED BEFORE it is published, not merely atomic:
+#   (a) grep's real exit status is honoured — 0 (lines kept) and 1 (all lines
+#       matched / empty source) are the only legal outcomes; >=2 is an error
+#       and ABORTS. Its stderr is captured, and any diagnostic ABORTS too.
+#   (b) LINE COUNT invariant: the temp file must hold exactly
+#       (original lines - lines removed for this var) + 1 appended line.
+#       A truncated or empty temp file cannot satisfy it.
+#   (c) KEY-NAME invariant: the set of variable names in the temp file must
+#       equal the original set with $var guaranteed present. This catches
+#       content loss a line count alone would miss (e.g. a partial write
+#       that happens to land on the right number of lines). Names only are
+#       compared and printed — values NEVER leave this function (11.4.10).
+# Any failed check removes the temp file, leaves .env byte-for-byte
+# untouched, prints a loud diagnostic, and returns 1 so the caller can
+# record it and exit non-zero. A backup alone was rejected as the fix: a
+# backup nobody verifies is not a safeguard.
+#
 _write_env_var() {
     local var="$1"
     local value="$2"
@@ -213,18 +247,92 @@ _write_env_var() {
     tmp="$(mktemp "${ENV_FILE}.load-tracker-cookies.XXXXXX")"
     chmod 600 "$tmp"
 
+    local err
+    err="$(mktemp)"
+
+    # Abort helper — never publishes $tmp, never touches $ENV_FILE.
+    _abort_write() {
+        echo "[load-tracker-cookies] FATAL: refusing to rewrite $ENV_FILE — $1" >&2
+        echo "[load-tracker-cookies]        $ENV_FILE left UNCHANGED. No data was lost." >&2
+        if [[ -s "$err" ]]; then
+            echo "[load-tracker-cookies]        scanner diagnostics:" >&2
+            sed 's/^/[load-tracker-cookies]          /' "$err" >&2
+        fi
+        rm -f "$tmp" "$err"
+        unset -f _abort_write
+        return 1
+    }
+
+    local orig_lines=0 kept_lines=0 removed=0 rc=0
+    local -a orig_keys=() tmp_keys=()
+
     if [[ -f "$ENV_FILE" ]]; then
+        [[ -r "$ENV_FILE" ]] || { _abort_write "$ENV_FILE exists but is not readable"; return 1; }
+
+        # awk counts a final line lacking its newline as a record; wc -l does not.
+        orig_lines="$(awk 'END{print NR+0}' "$ENV_FILE")"
+        mapfile -t orig_keys < <(sed -n 's/^[[:space:]]*\(export[[:space:]]\{1,\}\)\{0,1\}\([A-Za-z_][A-Za-z0-9_]*\)=.*/\2/p' "$ENV_FILE" | sort -u)
+
         # Reproduce every line except the target var, then append the new one.
-        grep -vE "^[[:space:]]*(export[[:space:]]+)?${var}=" "$ENV_FILE" > "$tmp" 2>/dev/null || true
+        set +e
+        grep -vE "^[[:space:]]*(export[[:space:]]+)?${var}=" "$ENV_FILE" > "$tmp" 2>"$err"
+        rc=$?
+        set -e
+        # 0 = lines kept, 1 = nothing kept (legal: file empty or only the var).
+        # >=2 = grep itself failed: THE case the old `|| true` erased.
+        if [[ $rc -ge 2 ]]; then
+            _abort_write "grep exited $rc while filtering $ENV_FILE"
+            return 1
+        fi
+        if [[ -s "$err" ]]; then
+            _abort_write "grep emitted diagnostics while filtering $ENV_FILE"
+            return 1
+        fi
+
+        kept_lines="$(awk 'END{print NR+0}' "$tmp")"
+        removed="$(grep -cE "^[[:space:]]*(export[[:space:]]+)?${var}=" "$ENV_FILE" || true)"
+        if [[ "$kept_lines" -ne $(( orig_lines - removed )) ]]; then
+            _abort_write "line-count invariant violated: kept=$kept_lines expected=$(( orig_lines - removed )) (original=$orig_lines, removed=$removed for ${var})"
+            return 1
+        fi
     fi
+
     # Single-quoted value — cookie headers contain `=` and `;` freely,
     # never single quotes (cookie tokens are RFC-6265 token+value with
     # apostrophes forbidden in the token set). The extractor never
     # emits values containing `'`, so single-quote wrapping is safe.
-    printf "%s='%s'\n" "$var" "$value" >> "$tmp"
+    if ! printf "%s='%s'\n" "$var" "$value" >> "$tmp" 2>"$err"; then
+        _abort_write "could not append ${var} to the temp file (disk full?)"
+        return 1
+    fi
+
+    # Post-append invariants, checked against the file that is about to
+    # become .env — not against what we intended to write.
+    if [[ "$(awk 'END{print NR+0}' "$tmp")" -ne $(( kept_lines + 1 )) ]]; then
+        _abort_write "post-append line count is $(awk 'END{print NR+0}' "$tmp"), expected $(( kept_lines + 1 ))"
+        return 1
+    fi
+
+    mapfile -t tmp_keys < <(sed -n 's/^[[:space:]]*\(export[[:space:]]\{1,\}\)\{0,1\}\([A-Za-z_][A-Za-z0-9_]*\)=.*/\2/p' "$tmp" | sort -u)
+    local expected_keys actual_keys
+    expected_keys="$(printf '%s\n' "${orig_keys[@]+"${orig_keys[@]}"}" "$var" | sed '/^$/d' | sort -u)"
+    actual_keys="$(printf '%s\n' "${tmp_keys[@]+"${tmp_keys[@]}"}" | sed '/^$/d' | sort -u)"
+    if [[ "$expected_keys" != "$actual_keys" ]]; then
+        echo "[load-tracker-cookies] key-set diff (NAMES only, never values):" >&2
+        diff <(printf '%s\n' "$expected_keys") <(printf '%s\n' "$actual_keys") >&2 || true
+        _abort_write "key-set invariant violated: the rewrite would drop or invent variables in $ENV_FILE"
+        return 1
+    fi
+
     sync
-    mv -f "$tmp" "$ENV_FILE"
+    if ! mv -f "$tmp" "$ENV_FILE"; then
+        _abort_write "atomic rename onto $ENV_FILE failed"
+        return 1
+    fi
     chmod 600 "$ENV_FILE"
+    rm -f "$err"
+    unset -f _abort_write
+    return 0
 }
 
 # ─── read existing var value from .env ────────────────────────────
@@ -248,6 +356,7 @@ UNCHANGED=0
 ABSENT=0
 BLOCKED=0
 PARSE_ERR=0
+WRITE_ERR=0
 
 # Build the effective tracker set — either --only-restricted or all.
 declare -a EFFECTIVE=()
@@ -352,14 +461,21 @@ for tracker in "${EFFECTIVE[@]}"; do
         continue
     fi
 
-    _write_env_var "$var" "$header"
+    if ! _write_env_var "$var" "$header"; then
+        _info "$tracker: WRITE ABORTED — $ENV_FILE left untouched (see FATAL above)"
+        WRITE_ERR=$((WRITE_ERR+1))
+        continue
+    fi
     _info "$tracker: $(printf '%s' "$header" | tr ';' '\n' | grep -c '=') cookie(s) — LOADED into .env as $var"
     LOADED=$((LOADED+1))
 done
 
-_info "summary: loaded=$LOADED unchanged=$UNCHANGED absent=$ABSENT blocked=$BLOCKED parse_err=$PARSE_ERR (dir=$COOKIE_DIR)"
+_info "summary: loaded=$LOADED unchanged=$UNCHANGED absent=$ABSENT blocked=$BLOCKED parse_err=$PARSE_ERR write_err=$WRITE_ERR (dir=$COOKIE_DIR)"
 
-# Exit rank: leak blocks > parse errs > success (per header contract).
+# Exit rank: write aborts > leak blocks > parse errs > success.
+# A write abort ranks highest: it means .env could not be safely rewritten,
+# which the operator must see before anything else (BOBA_MASTER_KEY lives there).
+if [[ $WRITE_ERR -gt 0 ]]; then exit 4; fi
 if [[ $BLOCKED -gt 0 ]]; then exit 1; fi
 if [[ $PARSE_ERR -gt 0 ]]; then exit 2; fi
 exit 0

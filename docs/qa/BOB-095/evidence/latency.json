@@ -1,13 +1,13 @@
 {
   "clients_after_cycle": 0,
-  "evidence_recorded_at_ns": 1787332317963039756,
+  "evidence_recorded_at_ns": 1788295793118072160,
   "feature_class": "sse_broker",
   "goroutine_delta": 0,
   "goroutines_after": 2,
   "goroutines_before": 2,
   "iterations": 1000,
-  "p50_ns": 1620,
-  "p95_ns": 2837,
-  "p99_ns": 10380,
+  "p50_ns": 3450,
+  "p95_ns": 5580,
+  "p99_ns": 10470,
   "scenario": "sustained_subscribe_unsubscribe"
 }

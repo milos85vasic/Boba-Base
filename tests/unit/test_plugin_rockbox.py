@@ -272,7 +272,13 @@ class TestSearch:
         mock_retrieve.side_effect = [RB_SINGLE, RB_EMPTY]
         self.mod.search("test query", "all")
         called_url = mock_retrieve.call_args_list[0][0][0]
-        assert "search=test%20query" in called_url or "search=test query" in called_url
+        # §11.4.120 reconciled (2026-09-02): this asserted the PRE-ae387b2
+        # behaviour, when the community twin still interpolated the raw query.
+        # rockbox puts the query in a ?search= QUERY PARAM, where the encoding
+        # for a space is '+' (quote_plus) — %20 and a raw space are both wrong
+        # there, and a raw space is what urllib rejects outright.
+        assert "search=test+query" in called_url
+        assert " " not in called_url
         assert "page=0" in called_url
         assert called_url.startswith("https://rawkbawx.rocks/torrents.php")
 

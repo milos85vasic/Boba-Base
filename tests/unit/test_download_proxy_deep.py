@@ -5,42 +5,21 @@ DownloadHandler HTTP flow, proxy_to_qbittorrent, and run_server.
 
 from __future__ import annotations
 
-import importlib.util
-import io
 import os
 import sys
-import urllib.parse
-from http.server import BaseHTTPRequestHandler
-from unittest.mock import MagicMock, patch, mock_open
+from unittest.mock import MagicMock, patch
 
-import pytest
+# The suite runs under --import-mode=importlib (pyproject.toml), so a
+# sibling helper module is not implicitly importable — put this directory
+# on sys.path first, exactly as the plugins/ dir is handled inside the
+# harness itself.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-_DP_PATH = os.path.join(_REPO_ROOT, "plugins", "download_proxy.py")
-
-sys.path.insert(0, os.path.join(_REPO_ROOT, "plugins"))
-
-if "download_proxy" not in sys.modules:
-    _dp_spec = importlib.util.spec_from_file_location("download_proxy", _DP_PATH)
-    _dp_mod = importlib.util.module_from_spec(_dp_spec)
-    sys.modules["download_proxy"] = _dp_mod
-    _dp_spec.loader.exec_module(_dp_mod)
-else:
-    _dp_mod = sys.modules["download_proxy"]
-
-download_via_nova2dl = _dp_mod.download_via_nova2dl
-DownloadHandler = _dp_mod.DownloadHandler
-identify_plugin = _dp_mod.identify_plugin
-run_server = _dp_mod.run_server
-rewrite_csp = _dp_mod.rewrite_csp
-inject_theme_assets = _dp_mod.inject_theme_assets
-serve_theme_asset = _dp_mod.serve_theme_asset
-rebrand_html = _dp_mod.rebrand_html
-_maybe_decode_body = _dp_mod._maybe_decode_body
-_is_boba_logo_request = _dp_mod.is_boba_logo_request
-serve_boba_logo = _dp_mod.serve_boba_logo
-_load_boba_logo = _dp_mod._load_boba_logo
-_BOBA_LOGO_PATH_ON_DISK = _dp_mod._BOBA_LOGO_PATH_ON_DISK
+from _download_proxy_harness import (  # noqa: E402
+    _make_handler,
+    download_via_nova2dl,
+    run_server,
+)
 
 
 # --------------------------------------------------------------------------
@@ -116,135 +95,6 @@ class TestDownloadViaNova2dl:
             assert result is None
 
 
-# --------------------------------------------------------------------------
-# _load_boba_logo — lines 717-725
-# --------------------------------------------------------------------------
-
-
-class TestLoadBobaLogo:
-    def test_load_success(self):
-        """Lines 719-722: logo loaded from disk."""
-        _dp_mod._BOBA_LOGO_BYTES = None
-        with patch("builtins.open", mock_open(read_data=b"fake-logo-bytes")):
-            result = _load_boba_logo()
-            assert result == b"fake-logo-bytes"
-
-    def test_load_file_not_found(self):
-        """Lines 723-724: file not found returns empty bytes."""
-        _dp_mod._BOBA_LOGO_BYTES = None
-        with patch("builtins.open", side_effect=FileNotFoundError):
-            result = _load_boba_logo()
-            assert result == b""
-
-    def test_load_cached(self):
-        """Lines 719: cached value returned."""
-        _dp_mod._BOBA_LOGO_BYTES = b"cached-logo"
-        result = _load_boba_logo()
-        assert result == b"cached-logo"
-        _dp_mod._BOBA_LOGO_BYTES = None
-
-
-# --------------------------------------------------------------------------
-# serve_boba_logo — lines 732-752
-# --------------------------------------------------------------------------
-
-
-class TestServeBobaLogo:
-    def test_no_logo_returns_404(self):
-        """Lines 734-743: no logo returns 404."""
-        _dp_mod._BOBA_LOGO_BYTES = b""
-        status, headers, payload = serve_boba_logo()
-        assert status == 404
-        assert payload == b"Not Found"
-
-    def test_with_logo_returns_200(self):
-        """Lines 744-752: logo present returns 200."""
-        _dp_mod._BOBA_LOGO_BYTES = b"fake-jpeg"
-        status, headers, payload = serve_boba_logo()
-        assert status == 200
-        assert headers["Content-Type"] == "image/jpeg"
-        assert payload == b"fake-jpeg"
-        _dp_mod._BOBA_LOGO_BYTES = None
-
-
-# --------------------------------------------------------------------------
-# DownloadHandler — _serve_boba_logo (lines 786-803)
-# --------------------------------------------------------------------------
-
-
-def _make_handler(path="/test", method="GET", body=None, headers=None):
-    """Create a DownloadHandler with mocked socket streams."""
-    handler = DownloadHandler.__new__(DownloadHandler)
-    handler.path = path
-    handler.command = method
-    handler.headers = headers or {}
-    handler.wfile = io.BytesIO()
-    handler.rfile = io.BytesIO(body or b"")
-    handler.requestline = f"{method} {path} HTTP/1.1"
-    handler.request_version = "HTTP/1.1"
-    handler.client_address = ("127.0.0.1", 12345)
-    handler.send_response = MagicMock()
-    handler.send_header = MagicMock()
-    handler.end_headers = MagicMock()
-    handler.send_error = MagicMock()
-    handler.address_string = MagicMock(return_value="127.0.0.1")
-    return handler
-
-
-class TestHandlerServeBobaLogo:
-    def test_serves_logo(self):
-        """Lines 786-803: _serve_boba_logo returns True for logo path."""
-        _dp_mod._BOBA_LOGO_BYTES = b"fake-jpeg"
-        handler = _make_handler(path="/images/boba-logo.jpeg")
-        result = handler._serve_boba_logo()
-        assert result is True
-        handler.send_response.assert_called_with(200)
-        _dp_mod._BOBA_LOGO_BYTES = None
-
-    def test_non_logo_path(self):
-        """Lines 792-793: non-logo path returns False."""
-        handler = _make_handler(path="/api/v2/torrents/add")
-        result = handler._serve_boba_logo()
-        assert result is False
-
-    def test_broken_pipe(self):
-        """Lines 800-802: BrokenPipeError on wfile.write is caught."""
-        _dp_mod._BOBA_LOGO_BYTES = b"fake-jpeg"
-        handler = _make_handler(path="/images/boba-logo.jpeg")
-        handler.wfile.write = MagicMock(side_effect=BrokenPipeError)
-        result = handler._serve_boba_logo()
-        assert result is True
-        _dp_mod._BOBA_LOGO_BYTES = None
-
-
-class TestHandlerServeThemeBridge:
-    def test_serves_css(self):
-        """Lines 805-822: _serve_theme_bridge serves CSS."""
-        handler = _make_handler(path="/__qbit_theme__/skin.css")
-        result = handler._serve_theme_bridge()
-        assert result is True
-        handler.send_response.assert_called_with(200)
-
-    def test_serves_js(self):
-        """Lines 805-822: _serve_theme_bridge serves JS."""
-        handler = _make_handler(path="/__qbit_theme__/bootstrap.js")
-        result = handler._serve_theme_bridge()
-        assert result is True
-
-    def test_non_theme_path(self):
-        """Lines 811-812: non-theme path returns False."""
-        handler = _make_handler(path="/api/v2/torrents/add")
-        result = handler._serve_theme_bridge()
-        assert result is False
-
-    def test_broken_pipe_on_theme(self):
-        """Lines 818-821: BrokenPipeError on theme asset write is caught."""
-        handler = _make_handler(path="/__qbit_theme__/skin.css")
-        handler.wfile.write = MagicMock(side_effect=BrokenPipeError)
-        result = handler._serve_theme_bridge()
-        assert result is True
-
-
 class TestHandlerIsMultipart:
     def test_multipart(self):
         """Lines 824-826: multipart/form-data detected."""
@@ -265,20 +115,6 @@ class TestHandlerIsTorrentField:
 
 
 class TestHandlerDoGet:
-    def test_do_get_serves_logo(self):
-        """Lines 774-776: do_GET serves logo."""
-        _dp_mod._BOBA_LOGO_BYTES = b"fake-jpeg"
-        handler = _make_handler(path="/images/boba-logo.jpeg")
-        handler.do_GET()
-        handler.send_response.assert_called_with(200)
-        _dp_mod._BOBA_LOGO_BYTES = None
-
-    def test_do_get_serves_theme(self):
-        """Lines 777-778: do_GET serves theme bridge."""
-        handler = _make_handler(path="/__qbit_theme__/skin.css")
-        handler.do_GET()
-        handler.send_response.assert_called_with(200)
-
     def test_do_get_proxies_other(self):
         """Lines 779: do_GET proxies other requests."""
         handler = _make_handler(path="/api/v2/app/version")
@@ -434,18 +270,24 @@ class TestHandlerProxyToQbittorrent:
             handler.proxy_to_qbittorrent(None)
             handler.send_response.assert_called_with(200)
 
-    def test_proxy_html_response_injects_theme(self):
-        """Lines 908-920: HTML response gets theme injection."""
+    def test_proxy_html_response_passed_through_unmodified(self):
+        """HTML is relayed byte-for-byte — the themed-WebUI overlay was
+        removed 2026-09-01 (see tests/integration/
+        test_vanilla_webui_unmodified.py)."""
         handler = _make_handler(path="/")
+        upstream = b"<html><head><script>window.qBittorrent={};</script></head></html>"
         mock_response = MagicMock()
         mock_response.status = 200
         mock_response.headers = {"Content-Type": "text/html; charset=utf-8"}
-        mock_response.read = MagicMock(return_value=b"<html><head></head><body></body></html>")
+        mock_response.read = MagicMock(return_value=upstream)
         mock_response.__enter__ = MagicMock(return_value=mock_response)
         mock_response.__exit__ = MagicMock(return_value=False)
         with patch("urllib.request.urlopen", return_value=mock_response):
             handler.proxy_to_qbittorrent(None)
             handler.send_response.assert_called_with(200)
+            sent = handler.wfile.getvalue()
+            assert upstream in sent
+            assert b"__qbit_theme__" not in sent
 
     def test_proxy_http_error(self):
         """Lines 941-946: HTTPError handled."""
@@ -469,8 +311,9 @@ class TestHandlerProxyToQbittorrent:
             handler.proxy_to_qbittorrent(None)
             handler.send_error.assert_called_with(502, "Bad Gateway")
 
-    def test_proxy_csp_rewrite(self):
-        """Lines 933-934: CSP header rewritten for HTML responses."""
+    def test_proxy_csp_forwarded_verbatim(self):
+        """qBittorrent's CSP is forwarded untouched (no connect-src
+        relaxation for a theme bridge that no longer exists)."""
         handler = _make_handler(path="/")
         mock_response = MagicMock()
         mock_response.status = 200
@@ -483,10 +326,10 @@ class TestHandlerProxyToQbittorrent:
         mock_response.__exit__ = MagicMock(return_value=False)
         with patch("urllib.request.urlopen", return_value=mock_response):
             handler.proxy_to_qbittorrent(None)
-            # Verify send_header was called with a CSP header
             header_calls = [c for c in handler.send_header.call_args_list]
             csp_calls = [c for c in header_calls if c[0][0].lower() == "content-security-policy"]
-            assert len(csp_calls) > 0
+            assert len(csp_calls) == 1
+            assert csp_calls[0][0][1] == "default-src 'self'"
 
     def test_proxy_skips_transfer_encoding(self):
         """Lines 925-926: transfer-encoding skipped, content-length rewritten."""
@@ -506,8 +349,9 @@ class TestHandlerProxyToQbittorrent:
             header_names = [c[0][0].lower() for c in handler.send_header.call_args_list]
             assert "transfer-encoding" not in header_names
 
-    def test_proxy_content_encoding_stripped_for_html(self):
-        """Lines 928-929: content-encoding stripped when body decoded."""
+    def test_proxy_content_encoding_preserved_for_html(self):
+        """Content-Encoding is forwarded untouched — nothing decodes the
+        body any more, so gzip bodies relay exactly as compressed."""
         handler = _make_handler(path="/")
         mock_response = MagicMock()
         mock_response.status = 200
@@ -522,7 +366,7 @@ class TestHandlerProxyToQbittorrent:
         with patch("urllib.request.urlopen", return_value=mock_response):
             handler.proxy_to_qbittorrent(None)
             header_names = [c[0][0].lower() for c in handler.send_header.call_args_list]
-            assert "content-encoding" not in header_names
+            assert "content-encoding" in header_names
 
 
 # --------------------------------------------------------------------------
@@ -539,45 +383,3 @@ class TestRunServer:
                 run_server()
                 mock_server.serve_forever.assert_called_once()
                 mock_server.shutdown.assert_called_once()
-
-
-# --------------------------------------------------------------------------
-# _maybe_decode_body — additional edge cases
-# --------------------------------------------------------------------------
-
-
-class TestMaybeDecodeBodyEdge:
-    def test_gzip_roundtrip(self):
-        """Lines 617-618: gzip decompress."""
-        import gzip as _gzip
-        original = b"<html>test content</html>"
-        compressed = _gzip.compress(original)
-        result, flag = _maybe_decode_body(compressed, "gzip")
-        assert result == original
-        assert flag is True
-
-    def test_deflate_roundtrip(self):
-        """Lines 619-623: deflate decompress."""
-        import zlib as _zlib
-        original = b"<html>test content</html>"
-        compressed = _zlib.compress(original)
-        result, flag = _maybe_decode_body(compressed, "deflate")
-        assert result == original
-        assert flag is True
-
-    def test_raw_deflate(self):
-        """Lines 622-623: raw deflate (no zlib header)."""
-        import zlib as _zlib
-        original = b"<html>test content</html>"
-        compressor = _zlib.compressobj(level=9, wbits=-_zlib.MAX_WBITS)
-        compressed = compressor.compress(original) + compressor.flush()
-        result, flag = _maybe_decode_body(compressed, "deflate")
-        assert result == original
-        assert flag is True
-
-    def test_unknown_encoding(self):
-        """Lines 626: unknown encoding returns False."""
-        original = b"<html>test</html>"
-        result, flag = _maybe_decode_body(original, "br")
-        assert result == original
-        assert flag is False

@@ -52,6 +52,7 @@ reversion of the RD2-22 fix.
 import logging
 import sys
 import uuid
+import warnings
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -138,11 +139,43 @@ def client_factory(tmp_path, monkeypatch):
 
     yield _build
 
+    # TEARDOWN — every client is closed even if an earlier one fails, and every
+    # failure is REPORTED. This is deliberately a WARNING, not a test failure.
+    #
+    # WHY NOT FAIL (§11.4.1): a teardown error is not a product defect. The
+    # assertions above have already passed or failed on their own merits; turning
+    # a lifespan-shutdown error into a red test would report a defect in the
+    # feature under test that does not exist — a FAIL-bluff, and one that would
+    # also mask which assertion actually mattered.
+    #
+    # WHY NOT SILENCE (§11.4): a teardown that quietly stops working leaves real
+    # state behind — a live scheduler thread, an unclosed handle, a temp file —
+    # with NOTHING observing it, and every later test in the session inherits
+    # that state while the suite still reports green. That is the accumulation
+    # pattern that let 18 stray tags pile up in the operator's qBittorrent
+    # unnoticed: each individual leak was invisible, so the total was too.
+    #
+    # A ``pytest.PytestUnhandledThreadExceptionWarning``-style warning lands in
+    # pytest's warnings summary on every run, is attributable to this fixture,
+    # and cannot be mistaken for a passing teardown — loud, without lying about
+    # what failed.
+    teardown_errors: list[str] = []
     for c in created_clients:
         try:
             c.__exit__(None, None, None)
-        except Exception:
-            pass
+        except Exception as exc:  # noqa: BLE001 - every client must still close
+            teardown_errors.append(f"{type(exc).__name__}: {exc}")
+    if teardown_errors:
+        warnings.warn(
+            "client_factory TEARDOWN FAILED for "
+            f"{len(teardown_errors)}/{len(created_clients)} TestClient(s): "
+            + "; ".join(teardown_errors)
+            + ". The app lifespan did not shut down cleanly, so state (scheduler "
+            "threads, open handles, temp files) may have LEAKED into the rest of "
+            "this session. Test results above are unaffected; this is a harness "
+            "defect, not a product defect — but it is not nothing.",
+            stacklevel=2,
+        )
 
 
 def _allowed_script(hooks_dir: Path) -> str:

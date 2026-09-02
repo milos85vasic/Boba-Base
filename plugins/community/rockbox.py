@@ -6,7 +6,7 @@ from datetime import datetime
 from helpers import retrieve_url
 from time import sleep
 from novaprinter import prettyPrinter
-from urllib.parse import quote, unquote
+from urllib.parse import quote, quote_plus, unquote, unquote_plus
 
 
 class rockbox(object):
@@ -72,7 +72,11 @@ class rockbox(object):
         print(unquoted_magnet + " " + unquoted_magnet)
 
     def search(self, what, cat="all"):
-        what = what.replace("%20", "+")
+        # ?search= param: percent-encode (space -> +, UTF-8 percent-encoded).
+        # unquote_plus first decodes the nova2 (%20-encoded) caller so a Cyrillic
+        # query is encoded exactly once (no double-encoding); quote_plus then
+        # makes the value ASCII-safe so a non-ASCII char never reaches urllib.
+        what = quote_plus(unquote_plus(what))
         parser = self.HTMLParser(self.url)
         counter: int = 0
         while True:

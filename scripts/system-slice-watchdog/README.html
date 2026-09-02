@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.10" />
+  <meta name="generator" content="pandoc 3.11" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>README</title>
   <style>
@@ -41,7 +41,6 @@
       body {
         background-color: transparent;
         color: black;
-        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -172,7 +171,6 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
     /* CSS for syntax highlighting */
     html { -webkit-text-size-adjust: 100%; }
     pre > code.sourceCode { white-space: pre; position: relative; }
@@ -364,8 +362,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="
 verification (§11.4.108 + §11.4.115)</h2>
 <p>Run the challenge WITHOUT root — verifies structural correctness:</p>
 <div class="sourceCode" id="cb2"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/user1000-watchdog-challenge.sh              <span class="co"># GREEN mode</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="va">POLARITY_MODE</span><span class="op">=</span>red <span class="fu">bash</span> challenges/scripts/user1000-watchdog-challenge.sh  <span class="co"># golden-bad polarity</span></span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/user1000_watchdog_challenge.sh              <span class="co"># GREEN mode</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="va">POLARITY_MODE</span><span class="op">=</span>red <span class="fu">bash</span> challenges/scripts/user1000_watchdog_challenge.sh  <span class="co"># golden-bad polarity</span></span></code></pre></div>
 <p>The challenge asserts:</p>
 <ol type="1">
 <li>All source files exist + parseable (<code>bash -n</code>, systemd

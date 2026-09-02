@@ -145,7 +145,7 @@ NNMCLUB_COOKIES="uid=123456; pass=abcdef1234567890abcdef1234567890"
 | `LOG_LEVEL` | `INFO` | Logging level |
 | `ALLOWED_ORIGINS` | — | CORS origins (comma-separated, no wildcards in prod) |
 | `MAX_CONCURRENT_SEARCHES` | `5` | Concurrent tracker search cap |
-| `DISABLE_THEME_INJECTION` | — | Set to `1` to disable cross-app theme |
+| `DISABLE_THEME_INJECTION` | — | Obsolete no-op (2026-09-01): the themed-WebUI overlay was removed; the qBittorrent WebUI is now always served stock |
 | `OMDB_API_KEY` | — | OMDb metadata API key |
 | `TMDB_API_KEY` | — | TMDB metadata API key |
 | `ANILIST_CLIENT_ID` | — | AniList API client ID |

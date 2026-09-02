@@ -35,13 +35,13 @@
 
 [Unit]
 Description=Boba resource-pressure signature probe (proactive forced-logout-precursor detector, task #77/BOB-076)
-Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/docs/incidents/2026-08-18-perceived-forced-logout-2nd.md
-Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/challenges/scripts/resource_pressure_signature_challenge.sh
+Documentation=file://@@BOBA_REPO_ROOT@@/docs/incidents/2026-08-18-perceived-forced-logout-2nd.md
+Documentation=file://@@BOBA_REPO_ROOT@@/challenges/scripts/resource_pressure_signature_challenge.sh
 
 [Service]
 Type=oneshot
-WorkingDirectory=/run/media/milosvasic/DATA4TB/Projects/boba
-ExecStart=/usr/bin/env bash /run/media/milosvasic/DATA4TB/Projects/boba/challenges/scripts/resource_pressure_signature_challenge.sh
+WorkingDirectory=@@BOBA_REPO_ROOT@@
+ExecStart=/usr/bin/env bash @@BOBA_REPO_ROOT@@/challenges/scripts/resource_pressure_signature_challenge.sh
 StandardOutput=journal
 StandardError=journal
 TimeoutStartSec=60

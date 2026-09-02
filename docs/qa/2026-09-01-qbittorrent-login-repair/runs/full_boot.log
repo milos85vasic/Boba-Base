@@ -1,0 +1,147 @@
+[INFO] Refreshing per-tracker cookies from ${TRACKER_COOKIE_DIR:-$HOME/Downloads}...
+[load-tracker-cookies] rutracker: file absent (/home/milosvasic/Downloads/cookies_rutracker.txt) — SKIP
+[load-tracker-cookies] nnmclub: file absent (/home/milosvasic/Downloads/cookies_nnmclub.txt) — SKIP
+[load-tracker-cookies] rutor: file absent (/home/milosvasic/Downloads/cookies_rutor.txt) — SKIP
+[load-tracker-cookies] kinozal: file absent (/home/milosvasic/Downloads/cookies_kinozal.txt) — SKIP
+[load-tracker-cookies] iptorrents: file absent (/home/milosvasic/Downloads/cookies_iptorrents.txt) — SKIP
+[load-tracker-cookies] summary: loaded=0 unchanged=0 absent=5 blocked=0 parse_err=0 (dir=/home/milosvasic/Downloads)
+[INFO] Loading environment from: /home/milosvasic/Projects/boba/.env
+[INFO] Data directory: /home/milosvasic/Share/Misc
+[INFO] Using Podman with podman-compose
+[INFO] Using boba-ctl for container orchestration
+[INFO] Creating necessary directories...
+[SUCCESS] Directories created
+[INFO] Active qBittorrent config present; settings will be enforced in place
+[INFO] Ensuring WebUI credentials and port in: /home/milosvasic/Projects/boba/config/qBittorrent/config/qBittorrent.conf
+[INFO] Ensuring WebUI credentials and port in: /home/milosvasic/Projects/boba/config/qBittorrent/qBittorrent.conf
+[SUCCESS] qBittorrent configuration ready
+[INFO] Creating data directories...
+[SUCCESS] Data directories verified
+[INFO] Ownership precondition: probing every declared location (FR-010)...
+Ownership precondition: scope /home/milosvasic/Projects/boba/config/owned_paths.yaml, operator uid 1000
+  runtime: podman measured ROOTLESS — container uid 0 is the operator, PUID=0 grants no host privilege
+  - /home/milosvasic/Share/Misc: OK (P2 host write and P1 in-container write both landed at uid 1000)
+  - /home/milosvasic/Projects/boba/config: OK (P2 host write and P1 in-container write both landed at uid 1000)
+  - /home/milosvasic/Projects/boba/config/boba.db: OK (declared file, owned by uid 1000; no write probe applies)
+  - /home/milosvasic/Projects/boba/tmp: OK (P2 host write and P1 in-container write both landed at uid 1000)
+  - /home/milosvasic/Projects/boba/download-proxy: OK (P2 host write and P1 in-container write both landed at uid 1000)
+  - /home/milosvasic/Projects/boba/.env: OK (declared file, owned by uid 1000; no write probe applies)
+OWNERSHIP-PRECONDITION: OK
+[SUCCESS] Ownership precondition OK — every declared location produces operator-owned files
+[INFO] Ownership repair: bringing any pre-existing content under the operator (FR-004d)...
+[ownership-repair] already complete for this scope (marker: logs/ownership/repair-marker.json) — nothing to do
+[SUCCESS] Ownership repair complete — every in-scope item is operator-owned
+[WARNING] Angular CLI not found, skipping frontend build
+[INFO] Installing search plugins...
+[SUCCESS] Installed: anilibra.py
+[SUCCESS] Installed: bitsearch.py
+[SUCCESS] Installed: download_proxy.py
+[SUCCESS] Installed: env_loader.py
+[SUCCESS] Installed: eztv.py
+[SUCCESS] Installed: gamestorrents.py
+[SUCCESS] Installed: glotorrents.py
+[SUCCESS] Installed: helpers.py
+[SUCCESS] Installed: iptorrents.py
+[SUCCESS] Installed: kickass.py
+[SUCCESS] Installed: kinozal.py
+[SUCCESS] Installed: limetorrents.py
+[SUCCESS] Installed: linuxtracker.py
+[SUCCESS] Installed: megapeer.py
+[SUCCESS] Installed: nnmclub.py
+[SUCCESS] Installed: nova2.py
+[SUCCESS] Installed: novaprinter.py
+[SUCCESS] Installed: nyaa.py
+[SUCCESS] Installed: piratebay.py
+[SUCCESS] Installed: pirateiro.py
+[SUCCESS] Installed: rockbox.py
+[SUCCESS] Installed: rutor.py
+[SUCCESS] Installed: rutracker.py
+[SUCCESS] Installed: snowfl.py
+[SUCCESS] Installed: socks.py
+[SUCCESS] Installed: solidtorrents.py
+[SUCCESS] Installed: tokyotoshokan.py
+[SUCCESS] Installed: torlock.py
+[SUCCESS] Installed: torrentdownload.py
+[SUCCESS] Installed: torrentgalaxy.py
+[SUCCESS] Installed: torrentkitty.py
+[SUCCESS] Installed: torrentproject.py
+[SUCCESS] Installed: torrentscsv.py
+[SUCCESS] Installed: yourbittorrent.py
+[SUCCESS] Installed: yts.py
+[SUCCESS] Installed framework module at nova3 root: novaprinter.py
+[SUCCESS] Installed framework module at nova3 root: helpers.py
+[SUCCESS] Installed: jackett.json
+[SUCCESS] Installed: kinozal.json
+[SUCCESS] Installed: nnmclub.json
+[SUCCESS] Installed: academictorrents.py
+[SUCCESS] Installed: ali213.py
+[SUCCESS] Installed: anilibra.py
+[SUCCESS] Installed: audiobookbay.py
+[SUCCESS] Installed: bitru.py
+[SUCCESS] Installed: bt4g.py
+[SUCCESS] Installed: btsow.py
+[SUCCESS] Installed: extratorrent.py
+[SUCCESS] Installed: gamestorrents.py
+[SUCCESS] Installed: glotorrents.py
+[SUCCESS] Installed: jackett.py
+[SUCCESS] Installed: kickass.py
+[SUCCESS] Installed: linuxtracker.py
+[SUCCESS] Installed: megapeer.py
+[SUCCESS] Installed: one337x.py
+[SUCCESS] Installed: pctorrent.py
+[SUCCESS] Installed: pirateiro.py
+[SUCCESS] Installed: rockbox.py
+[SUCCESS] Installed: snowfl.py
+[SUCCESS] Installed: therarbg.py
+[SUCCESS] Installed: tokyotoshokan.py
+[SUCCESS] Installed: torlock.py
+[SUCCESS] Installed: torrentdownload.py
+[SUCCESS] Installed: torrentfunk.py
+[SUCCESS] Installed: torrentkitty.py
+[SUCCESS] Installed: torrentproject.py
+[SUCCESS] Installed: torrentscsv.py
+[SUCCESS] Installed: xfsub.py
+[SUCCESS] Installed: yihua.py
+[SUCCESS] Installed: yourbittorrent.py
+[SUCCESS] Installed: jackett.json
+[INFO] Starting qBitTorrent container...
+2026/09/01 17:54:18 [INFO]  boba-ctl: compose up: podman-compose -f /home/milosvasic/Projects/boba/docker-compose.yml --project-name boba up -d
+2026/09/01 17:54:18 [DEBUG] boba-ctl: executing: podman-compose -f /home/milosvasic/Projects/boba/docker-compose.yml --project-name boba up -d (dir: /home/milosvasic/Projects/boba)
+2026/09/01 17:54:50 [DEBUG] boba-ctl: compose command completed successfully
+Services started [runtime: podman]
+[SUCCESS] Container started successfully
+[INFO] Waiting for Jackett to be ready...
+[SUCCESS] Jackett is ready
+[INFO] Waiting for container to be ready...
+[SUCCESS] Container is ready
+[INFO] Waiting for WebUI to be ready...
+[SUCCESS] WebUI login with admin/admin verified
+[SUCCESS] Credential store /home/milosvasic/Projects/boba/config/boba.db mode 600 owner milosvasic:milosvasic — no non-owner access, no special bits (FR-015)
+
+[INFO] Container Status:
+NAME                      STATE        HEALTH         PORTS
+-------------------------------------------------------------------------------------
+qbittorrent               running      -              
+jackett                   running      -              
+boba-jackett              running      -              
+download-proxy            running      -              
+
+[SUCCESS] qBitTorrent Web UI: http://localhost:7185
+[SUCCESS] Боба Dashboard: http://localhost:7187/
+[SUCCESS] Jackett Admin: http://localhost:9117/UI/Dashboard
+[INFO] Default credentials: admin / admin
+[WARNING] Remember to change the default password!
+
+[INFO] Data Directory: /home/milosvasic/Share/Misc
+[INFO]   Downloads:     /home/milosvasic/Share/Misc
+[INFO]   Incomplete:    /home/milosvasic/Share/Misc/Incomplete
+[INFO]   Torrents:      /home/milosvasic/Share/Misc/Torrents
+
+[INFO] RuTracker plugin installed
+[SUCCESS] RuTracker credentials configured
+[WARNING] systemd state DIVERGES from the running stack (FR-009):
+[WARNING]   reality  : the stack was just started by ./start.sh and its containers are up
+[WARNING]   systemd  : boba-stack.service = inactive
+[WARNING]   The containers are the source of truth. systemd cannot observe a stack it did
+[WARNING]   not start, so this is reported rather than hidden.
+[WARNING]   Reconcile with:  bash scripts/boba-svc.sh up      (re-runs this same start.sh)

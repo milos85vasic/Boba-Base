@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.10" />
+  <meta name="generator" content="pandoc 3.11" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>load-tracker-cookies</title>
   <style>
@@ -41,7 +41,6 @@
       body {
         background-color: transparent;
         color: black;
-        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -172,7 +171,6 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
 </head>
 <body>
@@ -182,10 +180,10 @@
 <h1
 id="scriptsload-tracker-cookies.sh-tracker-cookies-autoload"><code>scripts/load-tracker-cookies.sh</code>
 — Tracker Cookies Autoload</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-08-18T00:00:00Z <strong>Purpose:</strong> External operator guide
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-09-01T00:00:00Z <strong>Purpose:</strong> External operator guide
 for the per-tracker cookies autoload primitive. <strong>Last
-verified:</strong> 2026-08-18</p>
+verified:</strong> 2026-09-01</p>
 <hr />
 <h2 id="overview">Overview</h2>
 <p><code>scripts/load-tracker-cookies.sh</code> is boba’s <strong>single
@@ -394,6 +392,17 @@ browser).</td>
 <td><strong>3</strong></td>
 <td>Invocation error — bad flag, missing arg, extractor not
 executable.</td>
+</tr>
+<tr>
+<td><strong>4</strong></td>
+<td><code>.env</code> write aborted — the validated rewrite failed a
+safety invariant (grep error, line-count, or key-set).
+<strong><code>.env</code> was left byte-for-byte unchanged; nothing was
+lost.</strong> Ranks above 1 and 2 because <code>BOBA_MASTER_KEY</code>
+lives in <code>.env</code> and its loss is unrecoverable. Read the
+<code>FATAL:</code> line for the specific invariant, fix the underlying
+condition (disk full, permissions, corrupt <code>.env</code>), and
+re-run.</td>
 </tr>
 </tbody>
 </table>

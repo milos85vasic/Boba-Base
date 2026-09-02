@@ -341,9 +341,10 @@ container by `install-plugin.sh`. Three counts, each answering a different quest
 - **43 distinct engine modules** on disk <!-- CM-PLUGIN-COUNT: engines -->
   across `plugins/`, `plugins/community/` and `plugins/webui_compatible/`; measured
   2026-08-21, this is exactly the curated array.
-- **36 `*.py` files** sit directly in `plugins/` <!-- CM-PLUGIN-COUNT: toplevel -->
+- **35 `*.py` files** sit directly in `plugins/` <!-- CM-PLUGIN-COUNT: toplevel -->
   — the engines plus support modules (`nova2`, `novaprinter`, `socks`, `helpers`,
-  `env_loader`, `theme_injector`, `download_proxy`), which are NOT plugins.
+  `env_loader`, `download_proxy`), which are NOT plugins. (Was 36 until
+  2026-09-01, when `theme_injector.py` was deleted with the themed-WebUI overlay.)
 
 Corrected per BOB-149: the previous revision stated 44 and 27, said "3 support" while
 listing 7, and claimed "many curated names have NO matching file in this repo tree".

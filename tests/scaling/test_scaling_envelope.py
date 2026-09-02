@@ -823,9 +823,13 @@ class TestRateLimitAdmissionEnvelope:
     """
 
     @pytest.mark.timeout(60)
-    def test_limiter_is_enforced_and_headers_are_coherent(self):
-        if not _port_open(7187):
-            pytest.skip("SKIP-OK BOB-109: merge service :7187 not reachable")
+    def test_limiter_is_enforced_and_headers_are_coherent(
+        self, merge_service_live_or_skip
+    ):
+        # Service gate delegated to the shared fixture
+        # (tests/fixtures/services.py): named, countable, SKIPs rather
+        # than errors, and never boots the compose stack.
+        assert merge_service_live_or_skip
         requests = pytest.importorskip("requests")
 
         observed: dict[str, dict] = {}
@@ -914,7 +918,9 @@ class TestRateLimitAdmissionEnvelope:
         ),
     )
     @pytest.mark.timeout(60)
-    def test_sse_shaped_routes_serve_a_consistent_limit_class(self):
+    def test_sse_shaped_routes_serve_a_consistent_limit_class(
+        self, merge_service_live_or_skip
+    ):
         """§11.4.196(F) CONFIGURED != IN USE, in its policy-neutral form.
 
         A CORRECTION WORTH KEEPING (§11.4.6). This test first asserted
@@ -938,8 +944,9 @@ class TestRateLimitAdmissionEnvelope:
         (a)), and this test deliberately does not presume it. What it
         refuses to let pass silently is the DIVERGENCE.
         """
-        if not _port_open(7187):
-            pytest.skip("SKIP-OK BOB-109: merge service :7187 not reachable")
+        # Service gate delegated to the shared fixture — see the sibling
+        # test above.
+        assert merge_service_live_or_skip
         requests = pytest.importorskip("requests")
 
         declared = _declared_limits()

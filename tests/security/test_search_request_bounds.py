@@ -51,7 +51,7 @@ def _no_real_tracker_fanout(monkeypatch):
     monkeypatch.setattr(SearchOrchestrator, "_run_search", _no_fanout)
 
 
-@pytest.fixture()
+@pytest.fixture
 def client():
     # Generous limits: these tests are about VALIDATION, not rate limiting.
     os.environ["RATE_LIMIT_SEARCH"] = "1000/minute"

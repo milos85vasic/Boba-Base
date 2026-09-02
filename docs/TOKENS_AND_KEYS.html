@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.10" />
+  <meta name="generator" content="pandoc 3.11" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>TOKENS_AND_KEYS</title>
   <style>
@@ -41,7 +41,6 @@
       body {
         background-color: transparent;
         color: black;
-        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -172,7 +171,6 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
     /* CSS for syntax highlighting */
     html { -webkit-text-size-adjust: 100%; }
     pre > code.sourceCode { white-space: pre; position: relative; }
@@ -700,9 +698,9 @@ production</strong> to avoid the wildcard warning.</td>
 <tr>
 <td><code>MERGE_SERVICE_URL</code></td>
 <td><code>http://localhost:7187</code></td>
-<td>Where the download-proxy (and the injected theme bridge) find the
-merge service. Embedded verbatim into
-<code>/__qbit_theme__/bootstrap.js</code>.</td>
+<td>Base URL of the merge service. (No longer consumed by the
+download-proxy: the themed-WebUI overlay it fed was removed
+2026-09-01.)</td>
 </tr>
 <tr>
 <td><code>PROXY_PORT</code></td>
@@ -723,11 +721,11 @@ mode (see <code>docs/CROSS_APP_THEME_PLAN.md</code>).</td>
 <tr>
 <td><code>DISABLE_THEME_INJECTION</code></td>
 <td><em>(unset)</em></td>
-<td>Escape hatch for the cross-app theme bridge. Set to <code>1</code>
-to make the download proxy stop injecting <code>/__qbit_theme__/*</code>
-into qBittorrent’s HTML responses and stop rewriting CSP. Useful if a
-qBittorrent upgrade ever breaks the bridge and you need to fall back to
-the untouched WebUI.</td>
+<td><strong>OBSOLETE / NO-OP in the Python stack (2026-09-01).</strong>
+The themed-WebUI overlay it disabled was removed entirely — the
+download-proxy now always serves qBittorrent’s HTML untouched, so there
+is nothing left to switch off. Still read by the Go backend
+(<code>qBitTorrent-go/internal/config/config.go</code>).</td>
 </tr>
 </tbody>
 </table>

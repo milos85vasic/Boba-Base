@@ -1699,7 +1699,7 @@ def extract_gin(root, svc, markers):
         _gin_pkg = _pkg_local_name(code, GIN_IMPORT_PATH, "gin")
         if _gin_pkg is None:
             unmodelled.append(_unmod(
-                svc["id"], f"{rel}:1", 'import . "%s"' % GIN_IMPORT_PATH,
+                svc["id"], f"{rel}:1", f'import . "{GIN_IMPORT_PATH}"',
                 "the gin package is DOT-imported, so an engine is constructed "
                 "as a bare `New()`/`Default()` with no selector this model can "
                 "key on; the multi-engine refusal that gates file-scoped "
@@ -1715,7 +1715,7 @@ def extract_gin(root, svc, markers):
         # same carrier class as a comment proving a wrap (§11.4.201(7)(a)).
         # Reproduced 2026-08-26: that one log line flipped the gate to PASS
         # while its innocuous-content control correctly FAILED.
-        for i, (ln, bln) in enumerate(zip(code, bare), 1):
+        for i, (ln, bln) in enumerate(zip(code, bare, strict=True), 1):
             # ROUND 13 (BLOCKING) — every legal spelling of an engine
             # declaration feeds the SAME two refusal counters, so the split and
             # whitespace forms behave byte-for-byte like Control A instead of
@@ -1853,7 +1853,7 @@ def extract_gin(root, svc, markers):
                 return covered(parent, created, seen)
             return False
 
-        for i, (ln, bln) in enumerate(zip(code, bare), 1):
+        for i, (ln, bln) in enumerate(zip(code, bare, strict=True), 1):
             # Detected on `bare` too: a doc string that merely MENTIONS `.Any(`
             # must not mint a refusal either (§11.4.201(1) — a gate that cries
             # wolf gets bypassed, which is how the whole class comes back).
@@ -2181,7 +2181,7 @@ def extract_gomux(root, svc, markers):
     """
     routes, unmodelled = [], []
     for p in _walk_files(root, svc, ".go", skip_test=True):
-        raw, code, bare, lex_gaps = _go_lexical(p)
+        _raw, code, bare, lex_gaps = _go_lexical(p)
         rel = os.path.relpath(p, root)
         for gap_line, gap_what in lex_gaps:
             unmodelled.append(_unmod(

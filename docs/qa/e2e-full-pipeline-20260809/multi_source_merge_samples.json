@@ -14,28 +14,8 @@
       },
       {
         "tracker": "bitsearch",
-        "seeds": 5186,
-        "leechers": 3456
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 4934,
-        "leechers": 3287
-      },
-      {
-        "tracker": "bitsearch",
         "seeds": 4525,
         "leechers": 3015
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 4488,
-        "leechers": 2992
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 4404,
-        "leechers": 2936
       },
       {
         "tracker": "bitsearch",
@@ -49,43 +29,8 @@
       },
       {
         "tracker": "bitsearch",
-        "seeds": 4049,
-        "leechers": 2697
-      },
-      {
-        "tracker": "bitsearch",
         "seeds": 3973,
         "leechers": 2644
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 3822,
-        "leechers": 2552
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 3812,
-        "leechers": 2542
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 3705,
-        "leechers": 2471
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 3692,
-        "leechers": 2464
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 3483,
-        "leechers": 2321
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 3386,
-        "leechers": 2253
       },
       {
         "tracker": "bitsearch",
@@ -103,8 +48,359 @@
         "leechers": 203
       }
     ],
-    "seeds": 79915,
-    "leechers": 53259
+    "seeds": 34954,
+    "leechers": 23288
+  },
+  {
+    "name": "Kubuntu Linux 13 04 Raring Ringtail 64 Bit",
+    "sources": [
+      {
+        "tracker": "limetorrents",
+        "seeds": 1552,
+        "leechers": 21
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 1260,
+        "leechers": 8
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 1248,
+        "leechers": 39
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 1205,
+        "leechers": 75
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 1153,
+        "leechers": 52
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 1065,
+        "leechers": 16
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 1062,
+        "leechers": 15
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 1052,
+        "leechers": 15
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 1051,
+        "leechers": 30
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 1029,
+        "leechers": 36
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 1019,
+        "leechers": 11
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 994,
+        "leechers": 28
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 942,
+        "leechers": 30
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 937,
+        "leechers": 6
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 919,
+        "leechers": 11
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 911,
+        "leechers": 44
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 897,
+        "leechers": 8
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 888,
+        "leechers": 37
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 877,
+        "leechers": 41
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 859,
+        "leechers": 71
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 770,
+        "leechers": 13
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 726,
+        "leechers": 14
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 710,
+        "leechers": 9
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 633,
+        "leechers": 14
+      }
+    ],
+    "seeds": 23759,
+    "leechers": 644
+  },
+  {
+    "name": "Opensuse Linux 12 3 Kde 64 Bit",
+    "sources": [
+      {
+        "tracker": "limetorrents",
+        "seeds": 3211,
+        "leechers": 3126
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 2087,
+        "leechers": 95
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 1526,
+        "leechers": 42
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 1282,
+        "leechers": 9
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 1146,
+        "leechers": 7
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 1053,
+        "leechers": 34
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 924,
+        "leechers": 9
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 889,
+        "leechers": 22
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 845,
+        "leechers": 33
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 833,
+        "leechers": 25
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 801,
+        "leechers": 16
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 773,
+        "leechers": 16
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 763,
+        "leechers": 22
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 746,
+        "leechers": 17
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 746,
+        "leechers": 12
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 736,
+        "leechers": 18
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 712,
+        "leechers": 9
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 709,
+        "leechers": 2
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 672,
+        "leechers": 20
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 665,
+        "leechers": 7
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 632,
+        "leechers": 6
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 627,
+        "leechers": 12
+      },
+      {
+        "tracker": "torrentdownload",
+        "seeds": 159,
+        "leechers": 35
+      }
+    ],
+    "seeds": 22537,
+    "leechers": 3594
+  },
+  {
+    "name": "Kubuntu Linux 12 10 Quantal Quetzal 32 Bit",
+    "sources": [
+      {
+        "tracker": "limetorrents",
+        "seeds": 1795,
+        "leechers": 36
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 1692,
+        "leechers": 256
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 1434,
+        "leechers": 17
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 1355,
+        "leechers": 38
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 1090,
+        "leechers": 22
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 989,
+        "leechers": 21
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 984,
+        "leechers": 37
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 871,
+        "leechers": 9
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 841,
+        "leechers": 37
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 821,
+        "leechers": 4
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 773,
+        "leechers": 13
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 771,
+        "leechers": 10
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 764,
+        "leechers": 8
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 752,
+        "leechers": 25
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 749,
+        "leechers": 13
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 712,
+        "leechers": 7
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 702,
+        "leechers": 31
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 694,
+        "leechers": 22
+      },
+      {
+        "tracker": "limetorrents",
+        "seeds": 637,
+        "leechers": 9
+      }
+    ],
+    "seeds": 18426,
+    "leechers": 615
   },
   {
     "name": "Factorio 0.16.51 - windows linux mac",
@@ -116,43 +412,13 @@
       },
       {
         "tracker": "bitsearch",
-        "seeds": 4548,
-        "leechers": 3029
-      },
-      {
-        "tracker": "bitsearch",
         "seeds": 4076,
         "leechers": 2712
       },
       {
         "tracker": "bitsearch",
-        "seeds": 3873,
-        "leechers": 2581
-      },
-      {
-        "tracker": "bitsearch",
         "seeds": 3536,
         "leechers": 2356
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 3150,
-        "leechers": 2099
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 2740,
-        "leechers": 1821
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 2383,
-        "leechers": 1590
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 2349,
-        "leechers": 1563
       },
       {
         "tracker": "torrentdownload",
@@ -163,158 +429,15 @@
         "tracker": "torrentdownload",
         "seeds": 359,
         "leechers": 310
+      },
+      {
+        "tracker": "torrentdownload",
+        "seeds": 129,
+        "leechers": 88
       }
     ],
-    "seeds": 33334,
-    "leechers": 22280
-  },
-  {
-    "name": "VPN Unlimited for Pc (v8.4.1) macOS (v8.3) Linux (v8.5) Android (v8.4.1)+ New Promo Code",
-    "sources": [
-      {
-        "tracker": "bitsearch",
-        "seeds": 13565,
-        "leechers": 9025
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 9120,
-        "leechers": 6075
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 9076,
-        "leechers": 6056
-      },
-      {
-        "tracker": "torrentscsv",
-        "seeds": 28,
-        "leechers": 5
-      }
-    ],
-    "seeds": 31789,
-    "leechers": 21161
-  },
-  {
-    "name": "DEFT Linux - Computer Forensics Live CD",
-    "sources": [
-      {
-        "tracker": "bitsearch",
-        "seeds": 8106,
-        "leechers": 5403
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 4380,
-        "leechers": 2923
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 3794,
-        "leechers": 2525
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 3461,
-        "leechers": 2311
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 2615,
-        "leechers": 1747
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 798,
-        "leechers": 533
-      }
-    ],
-    "seeds": 23154,
-    "leechers": 15442
-  },
-  {
-    "name": "XMind 7 Pro Update 1 + Crack (Windows and Linux)",
-    "sources": [
-      {
-        "tracker": "bitsearch",
-        "seeds": 6524,
-        "leechers": 4348
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 4264,
-        "leechers": 2841
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 3322,
-        "leechers": 2214
-      },
-      {
-        "tracker": "torrentdownload",
-        "seeds": 627,
-        "leechers": 418
-      },
-      {
-        "tracker": "torrentdownload",
-        "seeds": 533,
-        "leechers": 357
-      },
-      {
-        "tracker": "torrentdownload",
-        "seeds": 476,
-        "leechers": 317
-      },
-      {
-        "tracker": "torrentdownload",
-        "seeds": 383,
-        "leechers": 253
-      },
-      {
-        "tracker": "torrentdownload",
-        "seeds": 358,
-        "leechers": 239
-      },
-      {
-        "tracker": "torrentdownload",
-        "seeds": 344,
-        "leechers": 230
-      },
-      {
-        "tracker": "torrentdownload",
-        "seeds": 271,
-        "leechers": 181
-      },
-      {
-        "tracker": "torrentdownload",
-        "seeds": 208,
-        "leechers": 139
-      }
-    ],
-    "seeds": 17310,
-    "leechers": 11537
-  },
-  {
-    "name": "EVERYTHING ABOUT THE LINUX KERNEL",
-    "sources": [
-      {
-        "tracker": "bitsearch",
-        "seeds": 5412,
-        "leechers": 3606
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 4934,
-        "leechers": 3284
-      },
-      {
-        "tracker": "bitsearch",
-        "seeds": 4177,
-        "leechers": 2784
-      }
-    ],
-    "seeds": 14523,
-    "leechers": 9674
+    "seeds": 14420,
+    "leechers": 9685
   },
   {
     "name": "Paragon Linux File Systems for Windows 615 Crack",
@@ -330,11 +453,6 @@
         "leechers": 3144
       },
       {
-        "tracker": "bitsearch",
-        "seeds": 2300,
-        "leechers": 1531
-      },
-      {
         "tracker": "torrentdownload",
         "seeds": 1808,
         "leechers": 1205
@@ -343,19 +461,88 @@
         "tracker": "pirateiro",
         "seeds": 36,
         "leechers": 2
+      },
+      {
+        "tracker": "torlock",
+        "seeds": 0,
+        "leechers": 0
+      },
+      {
+        "tracker": "torlock",
+        "seeds": 0,
+        "leechers": 0
       }
     ],
-    "seeds": 14513,
-    "leechers": 9651
+    "seeds": 12213,
+    "leechers": 8120
+  },
+  {
+    "name": "KSP Kerbal Space Program 1 2 2 1622 [Win Mac Linux]",
+    "sources": [
+      {
+        "tracker": "torrentdownload",
+        "seeds": 8046,
+        "leechers": 5365
+      },
+      {
+        "tracker": "torrentdownload",
+        "seeds": 2764,
+        "leechers": 1841
+      }
+    ],
+    "seeds": 10810,
+    "leechers": 7206
+  },
+  {
+    "name": "kali linux 2026 2 live amd64 iso",
+    "sources": [
+      {
+        "tracker": "linuxtracker",
+        "seeds": 2562,
+        "leechers": 191
+      },
+      {
+        "tracker": "linuxtracker",
+        "seeds": 1826,
+        "leechers": 46
+      },
+      {
+        "tracker": "linuxtracker",
+        "seeds": 1528,
+        "leechers": 8
+      },
+      {
+        "tracker": "linuxtracker",
+        "seeds": 1185,
+        "leechers": 4
+      },
+      {
+        "tracker": "linuxtracker",
+        "seeds": 1007,
+        "leechers": 10
+      },
+      {
+        "tracker": "linuxtracker",
+        "seeds": 1004,
+        "leechers": 0
+      },
+      {
+        "tracker": "linuxtracker",
+        "seeds": 1003,
+        "leechers": 0
+      },
+      {
+        "tracker": "torrentdownload",
+        "seeds": 364,
+        "leechers": 242
+      }
+    ],
+    "seeds": 10479,
+    "leechers": 501
   },
   {
     "name": "EasyBCD 8.9 Dual-Boot Win10 9.1 9 8 XP Mac Linux etc",
     "sources": [
-      {
-        "tracker": "bitsearch",
-        "seeds": 4522,
-        "leechers": 3017
-      },
       {
         "tracker": "bitsearch",
         "seeds": 3933,
@@ -397,101 +584,24 @@
         "leechers": 137
       }
     ],
-    "seeds": 14257,
-    "leechers": 9508
+    "seeds": 9735,
+    "leechers": 6491
   },
   {
-    "name": "kali linux 2026 1 live amd64 iso",
+    "name": "VPN Unlimited for Pc (v8.4.1) macOS (v8.3) Linux (v8.5) Android (v8.4.1)+ New Promo Code",
     "sources": [
       {
-        "tracker": "linuxtracker",
-        "seeds": 2141,
-        "leechers": 8
+        "tracker": "bitsearch",
+        "seeds": 9076,
+        "leechers": 6056
       },
       {
-        "tracker": "linuxtracker",
-        "seeds": 1951,
-        "leechers": 100
-      },
-      {
-        "tracker": "linuxtracker",
-        "seeds": 1801,
-        "leechers": 11
-      },
-      {
-        "tracker": "linuxtracker",
-        "seeds": 1700,
-        "leechers": 57
-      },
-      {
-        "tracker": "linuxtracker",
-        "seeds": 1295,
-        "leechers": 4
-      },
-      {
-        "tracker": "linuxtracker",
-        "seeds": 1007,
-        "leechers": 0
-      },
-      {
-        "tracker": "linuxtracker",
-        "seeds": 632,
-        "leechers": 4
-      },
-      {
-        "tracker": "linuxtracker",
-        "seeds": 516,
-        "leechers": 39
-      },
-      {
-        "tracker": "linuxtracker",
-        "seeds": 336,
-        "leechers": 4
-      },
-      {
-        "tracker": "linuxtracker",
-        "seeds": 272,
-        "leechers": 2
-      },
-      {
-        "tracker": "linuxtracker",
-        "seeds": 153,
-        "leechers": 0
-      },
-      {
-        "tracker": "linuxtracker",
-        "seeds": 151,
-        "leechers": 5
-      },
-      {
-        "tracker": "linuxtracker",
-        "seeds": 124,
-        "leechers": 0
-      },
-      {
-        "tracker": "torrentkitty",
+        "tracker": "torlock",
         "seeds": 0,
-        "leechers": 0
+        "leechers": 1
       }
     ],
-    "seeds": 12079,
-    "leechers": 234
-  },
-  {
-    "name": "KSP Kerbal Space Program 1 2 2 1622 [Win Mac Linux]",
-    "sources": [
-      {
-        "tracker": "torrentdownload",
-        "seeds": 8046,
-        "leechers": 5365
-      },
-      {
-        "tracker": "torrentdownload",
-        "seeds": 2764,
-        "leechers": 1841
-      }
-    ],
-    "seeds": 10810,
-    "leechers": 7206
+    "seeds": 9076,
+    "leechers": 6057
   }
 ]

@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.10" />
+  <meta name="generator" content="pandoc 3.11" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Status</title>
   <style>
@@ -41,7 +41,6 @@
       body {
         background-color: transparent;
         color: black;
-        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -172,7 +171,6 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
 </head>
 <body>
@@ -2306,12 +2304,13 @@ canonical managed roster.</li>
 <code>plugins/community/</code> and
 <code>plugins/webui_compatible/</code>; measured 2026-08-21, this is
 exactly the curated array.</li>
-<li><strong>36 <code>*.py</code> files</strong> sit directly in
+<li><strong>35 <code>*.py</code> files</strong> sit directly in
 <code>plugins/</code> <!-- CM-PLUGIN-COUNT: toplevel --> — the engines
 plus support modules (<code>nova2</code>, <code>novaprinter</code>,
 <code>socks</code>, <code>helpers</code>, <code>env_loader</code>,
-<code>theme_injector</code>, <code>download_proxy</code>), which are NOT
-plugins.</li>
+<code>download_proxy</code>), which are NOT plugins. (Was 36 until
+2026-09-01, when <code>theme_injector.py</code> was deleted with the
+themed-WebUI overlay.)</li>
 </ul>
 <p>Corrected per BOB-149: the previous revision stated 44 and 27, said
 “3 support” while listing 7, and claimed “many curated names have NO

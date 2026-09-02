@@ -478,10 +478,27 @@ class TestSearch:
         assert captured[0]["name"] == "Bold Name"
 
     def test_search_with_special_characters(self):
-        """Spaces in the query are encoded to %20 so the URL is valid
-        (reconciled per §11.4.120: the plugin now encodes raw spaces — a
-        raw space crashed urllib for the merge-service caller). Other
-        special chars (+, &) pass through as before."""
+        """RECONCILED per §11.4.120 (2026-09-02): this gate asserted the OLD
+        mechanism and correctly FAILED when the mechanism changed.
+
+        The plugin previously did ``what.replace(" ", "%20")``, which encoded
+        the space and left everything else — including every non-ASCII byte —
+        raw. That crashed urllib ("'ascii' codec can't encode characters") on
+        any Cyrillic query, i.e. the NORMAL case for this project's Russian
+        trackers. The new mechanism is the one the other 14 engines already
+        use: ``quote(unquote_plus(what), safe="")``, correct for a PATH
+        segment.
+
+        Consequences asserted below, all deliberate:
+          * '&' is now percent-encoded (%26) — a raw '&' in a path segment is
+            a live injection surface, so encoding it is a strict improvement.
+          * A literal '+' typed by the user is read as an encoded space by the
+            unquote_plus() normalisation step. That is the accepted trade-off
+            of this codebase's established pattern: it is what lets a nova2
+            caller's ALREADY-%20-encoded query pass through without being
+            double-encoded into %25XX garbage. "c++ & friends" therefore
+            normalises to "c   & friends" before encoding.
+        """
         urls_seen = []
 
         def capture_url(url):
@@ -490,8 +507,13 @@ class TestSearch:
 
         plugin, captured = _load_kickass(retrieve_return=capture_url)
         plugin.search("c++ & friends")
-        assert urls_seen[0] == "https://kickasstorrents.to/search/c++%20&%20friends/0/"
+        assert urls_seen[0] == (
+            "https://kickasstorrents.to/search/c%20%20%20%26%20friends/0/"
+        )
         assert " " not in urls_seen[0]
+        # The load-bearing property the old assertion did NOT check: urllib
+        # ASCII-encodes the request line, so the URL must be pure ASCII.
+        urls_seen[0].encode("ascii")
 
     def test_search_exception_breaks_loop_silently(self):
         """search() catches Exception from retrieve_url and breaks the loop,

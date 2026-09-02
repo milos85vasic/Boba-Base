@@ -20,9 +20,14 @@ class TestAuthBypass:
     """Authentication bypass attempts must fail."""
 
     @pytest.fixture(autouse=True)
-    def _services_up(self, all_services_live):
+    def _services_up(self, all_services_live, merge_service_client):
         self.base_url = all_services_live["merge_service"]
         self.qbit_url = all_services_live["qbittorrent"]
+        # BOB-152: merge-service calls go through the rate-limit-aware
+        # client so a shared-window 429 cannot masquerade as a product
+        # failure. `all_services_live` is kept because this class also
+        # needs the qBittorrent proxy, which that fixture owns.
+        self.client = merge_service_client
 
     def test_brute_force_protection(self):
         """Multiple failed auth attempts should not crash the service."""
@@ -83,8 +88,8 @@ class TestAuthBypass:
         Live multi-tracker search; budget raised to cover fan-out.
         """
         # Try to access admin functionality with normal user parameters
-        resp = requests.post(
-            f"{self.base_url}/api/v1/search",
+        resp = self.client.post(
+            "/api/v1/search",
             json={"query": "test", "is_admin": True, "role": "admin"},
             timeout=60,
         )

@@ -27,7 +27,14 @@ from urllib.parse import quote_plus, unquote_plus
 try:
     from novaprinter import prettyPrinter
     from helpers import retrieve_url
-except:
+except ImportError:
+    # §11.4.252: narrowed from a bare `except:`, which also caught
+    # KeyboardInterrupt and SystemExit — so a Ctrl-C during module import was
+    # silently turned into "loaded fine" instead of terminating. These modules
+    # are supplied by the qBittorrent nova3 host; ImportError is the ONLY real
+    # failure here, and it is the EXPECTED out-of-container condition
+    # (§11.4.3 topology-absent), not a swallowed error — so no diagnostic is
+    # emitted: it would fire on every unit-test import and be noise, not signal.
     pass
 
 
@@ -48,8 +55,14 @@ class linuxtracker(object):
         def __init__(self, res, url):
             try:
                 super().__init__()
-            except:
+            except TypeError:
                 # See: http://stackoverflow.com/questions/9698614/
+                # §11.4.252: narrowed from a bare `except:`. The zero-argument
+                # `super()` form is a Python-3 construct; on the Python-2
+                # old-style HTMLParser it raises TypeError, which is the ONLY
+                # real failure here. No diagnostic: the fallback SUCCEEDS, so
+                # nothing is lost or hidden — this is a supported code path,
+                # not a swallowed error.
                 HTMLParser.__init__(self)
             self.results = res
             self.engine_url = url
@@ -100,14 +113,42 @@ class linuxtracker(object):
                     # Get seeds
                     try:
                         self.curr["seeds"] = int(data.strip())
-                    except:
-                        pass
+                    except ValueError as e:
+                        # §11.4.252: narrowed from a bare `except:`, which also
+                        # caught KeyboardInterrupt and SystemExit — so Ctrl-C
+                        # mid-parse was silently dropped instead of terminating.
+                        # int() on a non-numeric seeds cell is the ONLY real
+                        # failure here, and it raises ValueError.
+                        # Not silent either: `pass` leaves "seeds" unset, so the
+                        # row renders with a wrong/absent count and the previous
+                        # bare handler left no trace of why.
+                        # stderr, NOT stdout: nova3 parses plugin STDOUT
+                        # (novaprinter writes the result stream to raw fd 1), so
+                        # a diagnostic printed there would corrupt the results.
+                        print(
+                            f"Seeds parse error ({data.strip()!r}): {e}",
+                            file=__import__("sys").stderr,
+                        )
                 elif self.strong_count == 5 and self.curr:
                     # Get leechers
                     try:
                         self.curr["leech"] = int(data.strip())
-                    except:
-                        pass
+                    except ValueError as e:
+                        # §11.4.252: narrowed from a bare `except:`, which also
+                        # caught KeyboardInterrupt and SystemExit — so Ctrl-C
+                        # mid-parse was silently dropped instead of terminating.
+                        # int() on a non-numeric leech cell is the ONLY real
+                        # failure here, and it raises ValueError.
+                        # Not silent either: `pass` leaves "leech" unset, so the
+                        # row renders with a wrong/absent count and the previous
+                        # bare handler left no trace of why.
+                        # stderr, NOT stdout: nova3 parses plugin STDOUT
+                        # (novaprinter writes the result stream to raw fd 1), so
+                        # a diagnostic printed there would corrupt the results.
+                        print(
+                            f"Leech parse error ({data.strip()!r}): {e}",
+                            file=__import__("sys").stderr,
+                        )
                 elif self.strong_count == 6:
                     # Reset strong counter
                     self.strong_count = 0

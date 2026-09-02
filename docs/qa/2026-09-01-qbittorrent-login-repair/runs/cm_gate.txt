@@ -1,0 +1,11 @@
+  OK: start.sh does not gate credential writes behind a presence grep
+  OK: username and password hash are written insert-or-replace
+  OK: compose does not rely on the inert WEBUI_USERNAME/WEBUI_PASSWORD vars
+  OK: localhost authentication is not disabled
+  OK: subnet auth-whitelist is not enabled
+  OK: brute-force lockout still relaxed via MaxAuthenticationFailCount (check kept, lockout loosened)
+  OK: live config carries WebUI\Username=admin
+  OK: live config carries a WebUI\Password_PBKDF2 hash
+  OK: live config does not bypass authentication
+
+CM-QBITTORRENT-WEBUI-CREDENTIALS: PASS (credentials enforced insert-or-replace; authentication not bypassed)

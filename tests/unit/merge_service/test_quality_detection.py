@@ -43,11 +43,34 @@ sys.modules["merge_service.validator"] = _validator_mod
 _validator_spec.loader.exec_module(_validator_mod)
 
 _routes_path = os.path.join(_SRC_PATH, "api", "routes.py")
-_spec = importlib.util.spec_from_file_location("api_routes", _routes_path)
-_routes_mod = importlib.util.module_from_spec(_spec)
 sys.modules.setdefault("api", type(sys)("api"))
 sys.modules["api"].__path__ = [os.path.join(_SRC_PATH, "api")]
-_spec.loader.exec_module(_routes_mod)
+
+# BOB-129 isolation leak (fixed 2026-09-01): this block used to exec routes.py
+# under the ALIAS "api_routes". `routes.py` decorates `search_stream` with
+# `@_rl("sse_stream")`, which — when `api.rate_limit`'s module-global Limiter
+# singleton already exists (i.e. any earlier-collected test module imported
+# `api`) — registers the handler a SECOND time in slowapi's shared
+# `Limiter.__marked_for_limiting` map, keyed `api_routes.search_stream`.
+# `tests/unit/test_bob129_slowapi_response_contract.py` keys its reviewed
+# always-returns-Response exemptions on `api.routes.search_stream`, so the
+# aliased duplicate slipped past the allowlist and failed the guard on the
+# SAME function the allowlist had already cleared — an order-dependent
+# false-positive refusal (§11.4.201(1)) with no product defect behind it.
+# Reproducer (RED before this fix):
+#   pytest tests/unit/merge_service/test_merged_update_streaming.py \
+#          tests/unit/merge_service/test_quality_detection.py \
+#          tests/unit/test_bob129_slowapi_response_contract.py
+# Fix: load under the CANONICAL name `api.routes` and reuse an already-loaded
+# copy, so this module can never mint a second registration of a production
+# endpoint no matter where it lands in collection order.
+if "api.routes" in sys.modules:
+    _routes_mod = sys.modules["api.routes"]
+else:
+    _spec = importlib.util.spec_from_file_location("api.routes", _routes_path)
+    _routes_mod = importlib.util.module_from_spec(_spec)
+    sys.modules["api.routes"] = _routes_mod
+    _spec.loader.exec_module(_routes_mod)
 _detect_quality = _routes_mod._detect_quality
 _parse_size_to_bytes = _routes_mod._parse_size_to_bytes
 

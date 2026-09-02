@@ -3,7 +3,7 @@
 
 import re
 from datetime import datetime
-from urllib.parse import quote, unquote
+from urllib.parse import quote, quote_plus, unquote, unquote_plus
 
 from helpers import retrieve_url
 from novaprinter import prettyPrinter
@@ -74,6 +74,12 @@ class bt4g(object):
             print("{0} {1}".format(magnet_match.groups()[0], info))
 
     def search(self, what, cat="all"):
+        # ?q= is a QUERY parameter -> quote_plus (space -> '+'). unquote_plus()
+        # first normalises the nova2 (%20-encoded) caller so the encode happens
+        # exactly once. Previously `what` was interpolated RAW, so a literal
+        # space made urllib reject the URL and a Cyrillic character crashed its
+        # ASCII encode.
+        what = quote_plus(unquote_plus(what))
         cat = "" if cat == "all" else "&category={0}".format(self.supported_categories[cat])
         parser = self.HTMLParser(self.url)
         current_page = 1

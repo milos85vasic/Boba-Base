@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/milos85vasic/qBitTorrent-go/internal/api"
 	"github.com/milos85vasic/qBitTorrent-go/internal/client"
 	"github.com/milos85vasic/qBitTorrent-go/internal/config"
+	"github.com/milos85vasic/qBitTorrent-go/internal/corsorigins"
 	"github.com/milos85vasic/qBitTorrent-go/internal/httpx"
 	"github.com/milos85vasic/qBitTorrent-go/internal/middleware"
 	"github.com/milos85vasic/qBitTorrent-go/internal/service"
@@ -125,22 +125,15 @@ func main() {
 }
 
 // parseAllowedOrigins splits the comma-separated ALLOWED_ORIGINS config value
-// into a trimmed slice for middleware.CORS. An empty value yields nil, so CORS
-// falls back to its secure default allowlist. "*" passes through as a single
-// "*" entry, enabling the wildcard-but-echoed policy (never the forbidden
+// into a trimmed slice for middleware.CORS. A value that parses to nothing
+// yields nil, so CORS falls back to its default allowlist. "*" passes through
+// as an entry, enabling the wildcard-but-echoed policy (never the forbidden
 // Allow-Origin:* + credentials combination).
+//
+// The splitting rule lives in internal/corsorigins so this call site, the merge
+// middleware, and boba-jackett all parse the variable identically (§11.4.251).
 func parseAllowedOrigins(raw string) []string {
-	if strings.TrimSpace(raw) == "" {
-		return nil
-	}
-	parts := strings.Split(raw, ",")
-	out := make([]string, 0, len(parts))
-	for _, p := range parts {
-		if t := strings.TrimSpace(p); t != "" {
-			out = append(out, t)
-		}
-	}
-	return out
+	return corsorigins.Split(raw)
 }
 
 func parseLogLevel(level string) zerolog.Level {

@@ -4,23 +4,50 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/milos85vasic/qBitTorrent-go/internal/corsorigins"
 )
 
-// defaultAllowedOrigins are the dashboard origins permitted by CORS when no
-// explicit allowlist is supplied. Mirrors the Python merge service
-// (download-proxy/src/api/__init__.py _DEFAULT_ORIGINS) for parity: the ng
-// serve dev server and the merge-service SPA on :7187, on both localhost and
-// the 127.0.0.1 IPv4 literal.
-var defaultAllowedOrigins = []string{
-	"http://localhost:4200", // ng serve dev server
-	"http://127.0.0.1:4200", // ng serve dev server (IPv4)
-	"http://localhost:7187", // merge service Angular SPA
-	"http://127.0.0.1:7187", // merge service Angular SPA (IPv4)
-	"http://localhost:7186", // download proxy
-	"http://127.0.0.1:7186", // download proxy (IPv4)
+// proxyPort returns the download-proxy port, mirroring the way
+// corsorigins.MergeServicePort derives the merge port, so neither is hardcoded.
+func proxyPort() string {
+	if v := strings.TrimSpace(os.Getenv("PROXY_PORT")); v != "" {
+		return v
+	}
+	return "7186"
+}
+
+// defaultAllowedOrigins is the merge service's default allowlist.
+//
+// PARITY, STATED EXACTLY (this comment previously claimed a parity the code did
+// not have — a hardcoded :7187 and two extra :7186 entries described as
+// "mirrors the Python merge service", which is what kept the divergence
+// invisible):
+//
+//   - The first four entries ARE the Python reference's _DEFAULT_ORIGINS
+//     (download-proxy/src/api/__init__.py), including its port DERIVATION from
+//     MERGE_SERVICE_PORT. They come from corsorigins.Defaults(), the single
+//     definition both Go services share.
+//
+//   - The last two are a DELIBERATE, GO-ONLY SUPERSET: the download-proxy
+//     origin on PROXY_PORT, which the Go merge service has granted since
+//     RW-04. The Python reference does not grant it. It is kept because
+//     dropping it would silently revoke an origin operators may rely on
+//     (§11.4.122 — no silent removal of an existing capability); an operator
+//     who wants strict Python parity sets ALLOWED_ORIGINS explicitly. The port
+//     is derived from PROXY_PORT rather than hardcoded, matching the
+//     derivation mechanism the reference uses for its own port.
+//
+// Evaluated per call, never cached, so the derived ports track the environment.
+func defaultAllowedOrigins() []string {
+	port := proxyPort()
+	return append(corsorigins.Defaults(),
+		"http://localhost:"+port, // download proxy
+		"http://127.0.0.1:"+port, // download proxy (IPv4)
+	)
 }
 
 // sameHost reports whether the Origin header and the request's Host refer to
@@ -70,33 +97,47 @@ func sameHost(origin, reqHost string) bool {
 // CORS headers are emitted, so the browser blocks the cross-origin response per
 // same-origin policy.
 //
-// Passing "*" as the only allowlist entry enables a wildcard policy that still
-// echoes the specific request Origin (never the literal "*"), so credentials
-// keep working without the forbidden wildcard+credentials combination. Supplying
-// no origins falls back to defaultAllowedOrigins.
+// Any entry equal to "*" enables a wildcard policy that still echoes the
+// specific request Origin (never the literal "*"), so credentials keep working
+// without the forbidden wildcard+credentials combination.
+//
+// ALLOWED_ORIGINS: when no explicit origins are supplied, resolution falls
+// through to the ALLOWED_ORIGINS environment variable and then to the defaults,
+// via corsorigins.Resolve — the SHARED resolver that also backs boba-jackett,
+// with the Python reference's exact semantics (comma-separated; each entry
+// trimmed; a value that parses to nothing falls back to the defaults rather
+// than revoking every origin; "*" detected PER ELEMENT so "a,*" is a wildcard).
+//
+// Browser-extension origins (chrome-extension:// / moz-extension://) are
+// admitted by pattern, matching the reference's allow_origin_regex, because the
+// per-install extension id cannot be allowlisted ahead of time.
 func CORS(allowedOrigins ...string) gin.HandlerFunc {
-	wildcard := false
-	allow := make(map[string]bool)
-	origins := allowedOrigins
-	if len(origins) == 0 {
-		origins = defaultAllowedOrigins
-	}
-	for _, o := range origins {
-		if strings.TrimSpace(o) == "*" {
-			wildcard = true
-			continue
-		}
-		allow[strings.ToLower(strings.TrimRight(strings.TrimSpace(o), "/"))] = true
-	}
+	origins, wildcard := corsorigins.ResolveWithDefaults(allowedOrigins, defaultAllowedOrigins())
+	allow := corsorigins.Index(origins)
 
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
 		matched := false
+		// Tracked separately because an extension origin is admitted by
+		// PATTERN, not by an operator naming it: the per-install id is
+		// unknowable in advance, so the grant necessarily covers EVERY
+		// installed extension. Handing that open set
+		// Access-Control-Allow-Credentials:true would let any extension the
+		// user has installed read this service's responses with their
+		// credentials attached. The Python reference cannot leak that way
+		// because it sets allow_credentials=False globally; this service sets
+		// it true (RW-04), so the credential grant is withheld on this path
+		// specifically, keeping the extension grant no wider than the
+		// reference's (§11.4.252 — the narrowest grant that still works).
+		matchedByExtensionPattern := false
 		if origin != "" {
 			if wildcard {
 				matched = true
 			} else {
-				matched = allow[strings.ToLower(strings.TrimRight(origin, "/"))]
+				matched = allow[corsorigins.Key(origin)]
+				if !matched && corsorigins.IsExtensionOrigin(origin) {
+					matched, matchedByExtensionPattern = true, true
+				}
 				if !matched {
 					matched = sameHost(origin, c.Request.Host)
 				}
@@ -108,7 +149,9 @@ func CORS(allowedOrigins ...string) gin.HandlerFunc {
 			// requests work safely.
 			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
 			c.Writer.Header().Set("Vary", "Origin")
-			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+			if !matchedByExtensionPattern {
+				c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+			}
 			c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 			c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
 		}

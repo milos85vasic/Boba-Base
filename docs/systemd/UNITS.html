@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.10" />
+  <meta name="generator" content="pandoc 3.11" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>UNITS</title>
   <style>
@@ -41,7 +41,6 @@
       body {
         background-color: transparent;
         color: black;
-        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -172,7 +171,6 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
     /* CSS for syntax highlighting */
     html { -webkit-text-size-adjust: 100%; }
     pre > code.sourceCode { white-space: pre; position: relative; }
@@ -245,8 +243,8 @@
 <h1 class="title">UNITS</h1>
 </header>
 <h1 id="boba-systemd-user-units">Boba systemd user units</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-08-21T00:00:00Z <strong>Scope:</strong>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-09-01T15:43:15Z <strong>Scope:</strong>
 <code>scripts/systemd/user/**</code> — the <code>systemctl --user</code>
 start path and how it relates to <code>./start.sh</code>.
 <strong>Authority:</strong> feature
@@ -397,7 +395,7 @@ occurrences of those words under <code>scripts/systemd/user/</code> are
 in prose comments, never in a directive.</p>
 <h2 id="operating-the-units">Operating the units</h2>
 <div class="sourceCode" id="cb1"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/boba-svc.sh install    <span class="co"># symlink every unit into ~/.config/systemd/user/</span></span>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/boba-svc.sh install    <span class="co"># render + copy every unit into ~/.config/systemd/user/</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/boba-svc.sh enable     <span class="co"># autostart at login/boot (reports linger state)</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/boba-svc.sh up         <span class="co"># systemctl --user start boba.target</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/boba-svc.sh status     <span class="co"># systemd view</span></span>
@@ -407,5 +405,181 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="
 login additionally needs linger
 (<code>loginctl enable-linger &lt;user&gt;</code>), which
 <code>boba-svc</code> reports but never runs itself.</p>
+<h2 id="unit-templating-boba_repo_root-2026-09-01">Unit templating —
+<code>@@BOBA_REPO_ROOT@@</code> (2026-09-01)</h2>
+<p>The units under <code>scripts/systemd/user/</code> are
+<strong>templates</strong>, not final files. Every reference to the
+repository root is written as the token <code>@@BOBA_REPO_ROOT@@</code>;
+<code>boba-svc install</code> substitutes this checkout’s real root and
+installs the result as a <strong>copy</strong>.</p>
+<p><strong>The defect this fixes.</strong> Every unit previously
+hardcoded the absolute prefix
+<code>/run/media/milosvasic/DATA4TB/Projects/boba</code> — <strong>14
+references</strong> across <code>WorkingDirectory=</code>,
+<code>ExecStart=</code>, <code>ExecStop=</code>,
+<code>EnvironmentFile=</code> and <code>Documentation=</code>. That
+directory does not exist on this host; the real checkout is
+<code>/home/milosvasic/Projects/boba</code>. Nothing checked it. Such a
+unit installs clean, enables clean, passes
+<code>systemd-analyze verify</code>, and then dies at
+<strong>activation</strong> on the next boot with a bare
+<code>CHDIR</code> failure — the §11.4.108 source-looks-fine /
+runtime-broken gap.</p>
+<p><strong>Why templating rather than correcting the constant.</strong>
+A hardcoded path <em>is</em> the defect. Replacing one wrong constant
+with one right constant leaves the same trap armed for the next checkout
+location — a worktree, a second track under <code>/mnt/trackN</code>, a
+clone on another host. The token removes the class.</p>
+<p><strong>The tradeoff, stated plainly.</strong> Substitution requires
+a real file, so a symlink is impossible: systemd would read the raw
+token and fail.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr>
+<td><strong>Cost</strong></td>
+<td>Installed units no longer track repo edits live. After editing any
+unit, or after a <code>git pull</code> that changes one, you must re-run
+<code>boba-svc install</code>.</td>
+</tr>
+<tr>
+<td><strong>Benefit</strong></td>
+<td>Units are checkout-location-independent. The same repo works from
+any path with no edit.</td>
+</tr>
+</tbody>
+</table>
+<p>The cost is one idempotent command; the benefit is that the defect
+class cannot recur. The drift is not left to vigilance:
+<code>install</code> reports <code>changed</code> vs
+<code>already current</code> per unit, and
+<code>tests/pre_build/test_systemd_unit_paths.sh</code> <strong>ARM
+2</strong> asserts against the <em>installed</em> copies — the bytes
+systemd actually reads — not merely the repo templates.
+<code>install</code> also <strong>fails closed</strong>: if any token
+survives substitution, it refuses to install that unit rather than
+shipping one that dies at activation.</p>
+<h2 id="the-orphaned-timer-found-and-fixed-2026-09-01">The orphaned
+timer (found and fixed 2026-09-01)</h2>
+<p><code>boba-resource-pressure-check.timer</code> was wired to
+<strong>nothing</strong>. It is deliberately absent from
+<code>boba.target</code>’s <code>Wants=</code> (so monitoring survives
+<code>boba-svc down</code>), but <code>boba-svc enable</code> only
+enabled <code>boba.target</code>, so the timer’s own
+<code>WantedBy=timers.target</code> was never realised — verified by the
+absence of any symlink in
+<code>~/.config/systemd/user/timers.target.wants/</code>. The hourly
+forced-logout-precursor probe that task #77 / BOB-076 exists to run
+would never have fired after a reboot: exactly the monitoring gap that
+incident argued was self-defeating.</p>
+<p><code>boba-svc enable</code> now enables an <code>ENABLE_UNITS</code>
+list — <code>boba.target</code> <strong>and</strong> the timer. The
+timer stays outside <code>boba.target</code>, so <code>down</code> still
+leaves monitoring running.</p>
+<p><code>boba-stack.service</code> and
+<code>boba-webui-bridge.service</code> correctly remain
+<code>disabled</code>: the target’s <code>Wants=</code> is what starts
+them, and enabling them individually would only add a redundant second
+path to the same thing.</p>
+<h2 id="proven-vs-unproven-reboot-survival-11.4.6">PROVEN vs UNPROVEN —
+reboot survival (§11.4.6)</h2>
+<p>This distinction is load-bearing. <strong>Reboot survival has NOT
+been verified</strong>, because verifying it requires a reboot, and
+rebooting this host is forbidden (CONST-033).</p>
+<p><strong>PROVEN</strong> — observed directly on 2026-09-01, each with
+captured command output:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Claim</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Units installed</td>
+<td><code>boba-svc install</code> → 5 changed; re-run →
+<code>0 changed, 5 already current</code> (idempotent)</td>
+</tr>
+<tr>
+<td>Substitution correct in what systemd reads</td>
+<td><code>systemctl --user cat boba.target</code> shows
+<code>/home/milosvasic/Projects/boba</code>, no token</td>
+</tr>
+<tr>
+<td>Units are syntactically valid</td>
+<td><code>systemd-analyze --user verify</code> → <code>rc=0</code> for
+all five</td>
+</tr>
+<tr>
+<td><code>boba.target</code> enabled</td>
+<td><code>systemctl --user is-enabled boba.target</code> →
+<code>enabled</code>; symlink in <code>default.target.wants/</code></td>
+</tr>
+<tr>
+<td>Timer enabled</td>
+<td><code>is-enabled</code> → <code>enabled</code>; symlink in
+<code>timers.target.wants/</code></td>
+</tr>
+<tr>
+<td>Linger enabled</td>
+<td><code>loginctl show-user milosvasic --property=Linger</code> →
+<code>Linger=yes</code></td>
+</tr>
+<tr>
+<td>Every referenced path exists</td>
+<td><code>test_systemd_unit_paths.sh</code> → 38 paths, 0 failures, exit
+0</td>
+</tr>
+<tr>
+<td>The guard genuinely catches the defect</td>
+<td>Paired mutation: reintroduced bad path → FAIL; unsubstituted token →
+FAIL; unmutated → PASS</td>
+</tr>
+<tr>
+<td><code>ExecStart</code> referents resolve</td>
+<td><code>start.sh</code>, <code>stop.sh</code>,
+<code>webui-bridge</code>, challenge script all exist and are
+executable; <code>./start.sh</code> resolves from
+<code>WorkingDirectory</code>; <code>--no-build</code> is a real flag
+(<code>start.sh:1244</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>UNPROVEN</strong> — requires an operator-attended reboot:</p>
+<ol type="1">
+<li><strong>That the stack actually comes up after a host
+reboot.</strong> Every <em>precondition</em> is proven; the end-to-end
+boot path is not. Enabled + valid + linger-on is necessary, not
+sufficient.</li>
+<li><strong>That <code>boba-stack.service</code> succeeds when systemd
+runs it.</strong> The unit is valid and
+<code>./start.sh --no-build</code> resolves, but it was deliberately
+<strong>not executed</strong> — another work stream was actively editing
+<code>start.sh</code>. Static resolution is not execution.</li>
+<li><strong>That the ordering holds under real boot conditions</strong>
+— <code>network-online.target</code> readiness, the container runtime
+being up when <code>start.sh</code> runs, first-boot image pulls inside
+<code>TimeoutStartSec=300</code>.</li>
+<li><strong>That the timer fires on its <code>OnBootSec=5min</code>
+schedule.</strong></li>
+</ol>
+<p>To close these, an operator reboots and then runs:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> status boba.target boba-stack.service boba-webui-bridge.service</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">systemctl</span> <span class="at">--user</span> list-timers <span class="st">&#39;boba*&#39;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">journalctl</span> <span class="at">--user</span> <span class="at">-u</span> boba-stack.service <span class="at">-b</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/boba-svc.sh health</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> tests/pre_build/test_systemd_unit_paths.sh</span></code></pre></div>
+<p>Until that output exists, the honest claim is: <strong>the units are
+installed, enabled, valid, and every path they reference resolves —
+reboot survival itself is untested.</strong></p>
 </body>
 </html>

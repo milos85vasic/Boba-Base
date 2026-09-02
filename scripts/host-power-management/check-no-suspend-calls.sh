@@ -60,6 +60,39 @@ EXCLUDE_PATHS=(
   "/docs/superpowers/plans/"
   "anthropic-quickstarts/"
   "tests/hooks/"
+  # The INHERITED constitution submodule ships its own copy of the guard-hook
+  # test suite; the project-local "tests/hooks/" entry above does NOT cover it
+  # (different path), so the submodule copy was scanned and FAILed the gate —
+  # a §11.4.201(1) false-positive refusal (FAIL-bluff). Verified 2026-09-02 by
+  # reading the file: every forbidden literal there is (a) deliberately SPLIT
+  # so it cannot be matched or executed as one token
+  # (`SYSCTL_SUSP=$'systemctl susp''end'`), and (b) fed to the hook as JSON
+  # *data* on stdin (`printf '%s' "$body" | bash "$HOOK"`) for CLASSIFICATION —
+  # never eval'd, never exec'd. The scanner's 6 hits are the trailing
+  # explanatory comments and the human-readable run_case labels
+  # ("real systemctl suspend"), i.e. §11.4.201(7)(a) CARRIERS, not the thing.
+  # Scoped to the single fixture FILE, not to the hooks/ directory, so the
+  # guard hook itself stays in scope.
+  "/constitution/scripts/hooks/test_guard_forbidden_commands.sh"
+  # spec-kit keeps a lowercase mirror of the project constitution at
+  # .specify/memory/constitution.md. The "CONSTITUTION.md"/"Constitution.md"
+  # entries above did NOT match it because the awk index() test below is
+  # case-SENSITIVE. That case-sensitivity is CORRECT and is deliberately kept:
+  # a case-insensitive allowlist would silently broaden EVERY entry in this
+  # list (e.g. "AGENTS.md" would start excusing an "agents.md" nobody
+  # audited) — a weakening of the detector, which CONST-033 forbids. The
+  # narrow fix is this exact path. Verified 2026-09-02: line 515 is Markdown
+  # prose enumerating the ban ("STRICTLY FORBIDDEN: ... `systemctl
+  # {suspend,...}`"); a Markdown bullet cannot fork/exec.
+  "/.specify/memory/constitution.md"
+  # qa-results/ is the gitignored (.gitignore:273) run-evidence corpus. A
+  # challenge-run transcript that captured THIS scanner's own FAIL output
+  # thereby contains the very lines the scanner greps for, so every recorded
+  # failure would permanently re-break the gate on the next run — the exact
+  # self-referential carrier class already allowlisted for /docs/incidents/
+  # and /scratchpad/ above. Verified 2026-09-02: qa-results holds .log files
+  # only, zero executable files (`find qa-results -type f -perm -u+x` empty).
+  "/qa-results/"
   # This doc documents/enforces the forbidden verbs (guard-forbidden-commands
   # hook reference) — it quotes them, it does not invoke them. GA-24.
   "/constitution/docs/scripts/guard-forbidden-commands.md"

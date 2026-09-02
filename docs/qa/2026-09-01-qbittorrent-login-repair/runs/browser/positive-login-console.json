@@ -1,0 +1,75 @@
+{
+  "capturedAt": "2026-09-01T16:16:54.125Z",
+  "target": "http://localhost:7186",
+  "consoleErrorCount": 1,
+  "pageErrorCount": 0,
+  "consoleErrors": [
+    "[error] BOBA_CONTROL_NEEDLE_c7f21a"
+  ],
+  "pageErrors": [],
+  "failedRequests": [
+    "GET http://localhost:7186/ -> net::ERR_ABORTED",
+    "POST http://localhost:7186/api/v2/auth/login -> net::ERR_ABORTED"
+  ],
+  "allConsoleMessages": [
+    "[error] BOBA_CONTROL_NEEDLE_c7f21a"
+  ],
+  "verdict": "logged in",
+  "qBittorrentNamespace": {
+    "type": "object",
+    "isObject": true,
+    "keys": [
+      "Cache",
+      "Client",
+      "ClientData",
+      "ColorScheme",
+      "ContextMenu",
+      "Dialog",
+      "DynamicTable",
+      "FileTree",
+      "Filesystem",
+      "Filters",
+      "LocalPreferences",
+      "Misc",
+      "MonkeyPatch",
+      "MultiRename",
+      "PiecesBar",
+      "ProgressBar",
+      "PropFiles",
+      "PropGeneral",
+      "PropPeers",
+      "PropTrackers",
+      "PropWebseeds",
+      "Rss",
+      "Search",
+      "Statistics",
+      "TorrentContent",
+      "TransferList",
+      "pathAutofill"
+    ],
+    "clientMemberTypes": {
+      "setup": "function",
+      "initializeCaches": "function",
+      "initializeClientData": "function",
+      "closeWindow": "function",
+      "closeFrameWindow": "function",
+      "getSyncMainDataInterval": "function",
+      "isStopped": "function",
+      "stop": "function",
+      "mainTitle": "function",
+      "showSearchEngine": "function",
+      "showRssReader": "function",
+      "showLogViewer": "function",
+      "isShowSearchEngine": "function",
+      "isShowRssReader": "function",
+      "isShowLogViewer": "function",
+      "createAddTorrentWindow": "function",
+      "uploadTorrentFiles": "function",
+      "categoryMap": "object",
+      "tagMap": "object"
+    }
+  },
+  "controlNeedleObserved": true,
+  "realConsoleErrors": [],
+  "screenshot": "/home/milosvasic/Projects/boba/docs/qa/2026-09-01-qbittorrent-login-repair/runs/browser/qbittorrent-webui-logged-in.png"
+}

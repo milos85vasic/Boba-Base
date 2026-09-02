@@ -220,10 +220,16 @@ class TestSearch:
             assert called_url == "https://bt4gprx.com/search?q=album&category=audio&p=1"
 
     def test_search_books_category_url(self):
+        """RECONCILED per §11.4.120 (2026-09-02): asserted the OLD mechanism
+        (raw query in the URL) and correctly FAILED when it was fixed.
+
+        The old expected URL carried a RAW space, which urllib rejects, so it
+        was never fetchable. ``?q=`` is a QUERY parameter -> quote_plus.
+        """
         with patch("bt4g.retrieve_url", return_value=BT4G_EMPTY) as mock:
             self.inst.search("python cookbook", "books")
             called_url = mock.call_args[0][0]
-            assert called_url == "https://bt4gprx.com/search?q=python cookbook&category=doc&p=1"
+            assert called_url == "https://bt4gprx.com/search?q=python+cookbook&category=doc&p=1"
 
     def test_search_software_category_url(self):
         with patch("bt4g.retrieve_url", return_value=BT4G_EMPTY) as mock:
@@ -278,10 +284,26 @@ class TestSearch:
             assert len(self.cap) == 1
 
     def test_search_special_chars_in_query(self):
+        """RECONCILED per §11.4.120 (2026-09-02).
+
+        The old assertion required the query to appear RAW and UNENCODED in the
+        URL — it asserted the defect as the contract. That URL was not merely
+        ugly, it was wrong twice over: the raw space made urllib reject it, and
+        the raw '&' terminated the ``q`` parameter early, so the site would have
+        received ``q=c++`` and a bogus ``python`` parameter.
+
+        The fix percent-encodes the value, which is what makes '&' safe INSIDE
+        the parameter. As in the kickass twin, a literal '+' normalises to a
+        space via unquote_plus — the accepted trade-off that keeps nova2's
+        pre-encoded queries from being double-encoded.
+        """
         with patch("bt4g.retrieve_url", return_value=BT4G_EMPTY) as mock:
             self.inst.search("c++ & python", "all")
             called_url = mock.call_args[0][0]
-            assert "c++ & python" in called_url
+            assert "q=c+++%26+python&" in called_url, called_url
+            # The '&' must NOT survive raw — that would split the query string.
+            assert "& python" not in called_url
+            called_url.encode("ascii")  # urllib requires ASCII
 
     def test_search_key_error_on_bad_category(self):
         with patch("bt4g.retrieve_url", return_value=BT4G_EMPTY):

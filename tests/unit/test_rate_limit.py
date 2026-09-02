@@ -139,7 +139,7 @@ def test_green_11th_call_returns_429_with_minimal_body():
         "429 body must be MINIMAL — the exact opaque token, no client IP, no "
         "limit value, no bucket internals leaked (§11.4.10). Got: " + repr(body)
     )
-    assert "retry-after" in {k.lower() for k in r11.headers.keys()}, "Retry-After header required"
+    assert "retry-after" in {k.lower() for k in r11.headers}, "Retry-After header required"
     _reset_env()
 
 

@@ -24,7 +24,6 @@ Output: one line — "<total> <bad> <compliant> <sample_basename>"
 Exit:   0 always on a completed scan. Deciding what the numbers MEAN is the
         caller's job; an oracle that also refuses is an oracle=gate collapse.
 """
-import io
 import os
 import re
 import sys
@@ -54,7 +53,12 @@ def scan(root):
     bad = []
     for html in pairs:
         try:
-            head = io.open(html, encoding='utf-8', errors='replace').read(HEAD_BYTES)
+            # `with` + builtin open: the previous `io.open(...).read()` left one
+            # unclosed handle PER HTML PAIR for the whole walk (this scanner is
+            # run over the full export tree), and pyproject turns ResourceWarning
+            # into an error under pytest. io.open IS the builtin open on py3.
+            with open(html, encoding='utf-8', errors='replace') as fh:
+                head = fh.read(HEAD_BYTES)
         except OSError:
             continue
         if not META_CHARSET.search(head):

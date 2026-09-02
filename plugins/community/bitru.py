@@ -76,6 +76,13 @@ class bitru:
                 }
                 prettyPrinter(result)
             except Exception as e:
+                # §11.4.252(3): a per-row parse failure must NOT abort the whole
+                # search, but it must NOT be silent either — the previous
+                # `continue` swallowed every row error, so a site-layout change
+                # rendered as a quietly short result set with no reason anywhere.
+                # stderr, NOT stdout: nova3 parses plugin STDOUT, so a diagnostic
+                # printed there would corrupt the result stream it explains.
+                print(f"Row parse error: {e}", file=__import__("sys").stderr)
                 continue
 
     def _parse_size(self, size_str):
@@ -88,7 +95,18 @@ class bitru:
                 try:
                     num = float(size_str.replace(unit, "").replace(",", "").strip())
                     return int(num * mult)
-                except:
+                except ValueError as e:
+                    # §11.4.252: narrowed from a bare `except:`, which also caught
+                    # KeyboardInterrupt and SystemExit — so Ctrl-C or an interpreter
+                    # shutdown inside this loop was silently converted into a bogus
+                    # "size 0" result instead of terminating. float() on a non-numeric
+                    # size token is the ONLY real failure here, and it raises ValueError.
+                    # Not silent either: an unparseable size still renders as a 0-byte
+                    # torrent in the WebUI, so its reason must be recoverable somewhere.
+                    # stderr, NOT stdout: nova3 parses plugin STDOUT (novaprinter writes
+                    # the result stream to raw fd 1), so a diagnostic printed there would
+                    # corrupt the very results it explains.
+                    print(f"Size parse error ({size_str!r}): {e}", file=__import__("sys").stderr)
                     return 0
         return 0
 

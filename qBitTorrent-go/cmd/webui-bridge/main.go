@@ -63,11 +63,38 @@ func proxyToQBittorrent(c *gin.Context, cfg *config.Config) {
 		return
 	}
 
+	// Header hygiene — mirrors webui-bridge.py:proxy_to_qbittorrent.
+	//
+	// Host and Content-Length are recomputed by net/http from the request
+	// URL and ContentLength, so forwarding the client's copies would either
+	// be ignored or actively conflict with the recomputed values.
+	//
+	// Referer and Origin MUST be rewritten to the upstream qBittorrent
+	// origin. qBittorrent enforces same-origin on state-changing endpoints:
+	// a login carrying the browser's own Referer (e.g.
+	// "http://localhost:7188/") is refused with 401 even when the
+	// credentials are correct, so without this rewrite nobody can log in
+	// through the bridge at all. Measured against qBittorrent 5.2.3
+	// (2026-09-01): mismatched Referer + correct password -> 401;
+	// matching Referer + correct password -> 204 + QBT_SID cookie.
+	//
+	// This rewrite touches ONLY the same-origin check. Authentication
+	// itself is untouched: the client's Cookie header is forwarded as-is
+	// and no session is ever injected, so a wrong password is still
+	// rejected and an unauthenticated request is still refused upstream.
 	for k, values := range c.Request.Header {
+		if strings.EqualFold(k, "Host") || strings.EqualFold(k, "Content-Length") {
+			continue
+		}
+		if strings.EqualFold(k, "Referer") || strings.EqualFold(k, "Origin") {
+			req.Header.Set(k, target)
+			continue
+		}
 		for _, v := range values {
 			req.Header.Add(k, v)
 		}
 	}
+	req.ContentLength = c.Request.ContentLength
 
 	resp, err := client.Do(req)
 	if err != nil {

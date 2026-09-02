@@ -191,6 +191,15 @@ class audiobookbay(object):
         return retrieve_url(request_url)
 
     def search(self, what, cat="all"):
+        # ?s= is a QUERY parameter -> quote_plus (space -> '+'). unquote_plus()
+        # first normalises the nova2 (%20-encoded) caller so the encode happens
+        # exactly once. Previously `what` reached request() RAW and was
+        # concatenated straight into the URL, so a literal space made urllib
+        # reject it and a Cyrillic character crashed its ASCII encode
+        # (§11.4.238 coverage escape from commit ae387b2 — masked until now
+        # because find_healthy_url() short-circuits before the search URL is
+        # ever built when no mirror answers).
+        what = urllib.parse.quote_plus(urllib.parse.unquote_plus(what))
         category = self.supported_categories[cat]
 
         url = self.find_healthy_url()

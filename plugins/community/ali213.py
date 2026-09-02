@@ -11,6 +11,7 @@
 import re
 import threading
 import time
+from urllib.parse import quote_plus, unquote_plus
 
 # qBt
 from novaprinter import prettyPrinter
@@ -80,6 +81,12 @@ class ali213(object):
             print(url + " " + self.url)
 
     def search(self, what, cat="all"):
+        # ?kw= is a QUERY parameter, so quote_plus (space -> '+') is correct.
+        # unquote_plus() first normalises the nova2 (%20-encoded) caller so the
+        # encode happens exactly once. Previously the query was interpolated
+        # RAW: a literal space made urllib reject the URL outright and a
+        # Cyrillic character crashed its ASCII encode.
+        what = quote_plus(unquote_plus(what))
 
         query = "http://down.ali213.net/search?kw=" + what + "&submit="
         data = retrieve_url(query)

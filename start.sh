@@ -127,23 +127,43 @@ create_data_directories() {
 }
 
 cleanup_stale_config() {
-    local stale_config="$SCRIPT_DIR/config/qBittorrent/qBittorrent.conf"
+    local active_config="$SCRIPT_DIR/config/qBittorrent/qBittorrent.conf"
 
-    if [[ -f "$stale_config" ]] && [[ ! -L "$stale_config" ]]; then
-        if grep -q "SavePath=/downloads/" "$stale_config" 2>/dev/null || \
-           grep -q "DefaultSavePath=/downloads/" "$stale_config" 2>/dev/null; then
-            print_warning "Found stale config with incorrect paths: $stale_config"
-            print_info "Backing up and removing stale config..."
-            
-            if mv "$stale_config" "${stale_config}.backup.$(date +%s)" 2>/dev/null; then
-                print_success "Stale config backed up and removed"
-            elif rm -f "$stale_config" 2>/dev/null; then
-                print_success "Stale config removed"
-            else
-                print_warning "Could not remove stale config (permission denied)"
-                print_info "The correct config is being used at: config/qBittorrent/config/qBittorrent.conf"
-            fi
-        fi
+    # BOB-LOGIN-FIX (2026-09-01): this function used to DELETE the active
+    # config on every boot. Its staleness predicate was
+    #     grep -q "SavePath=/downloads/"
+    # but qBittorrent NORMALISES SavePath to a trailing slash when it writes
+    # its own config, while the template writes it without one. The predicate
+    # therefore matched qBittorrent's OWN CORRECT OUTPUT — a §11.4.201
+    # false-positive: a guard whose condition is satisfied by the system
+    # working properly. Measured 2026-09-01: the live config matched twice and
+    # three .backup.* files had accumulated from repeated boots.
+    #
+    # The destruction was self-healing (update_qbittorrent_config re-copied the
+    # template right after), which is why it went unnoticed — but it silently
+    # discarded every operator setting on each start.
+    #
+    # Deleting is no longer needed at all: _ensure_webui_credentials is now
+    # insert-or-replace, so the active config is corrected IN PLACE.
+    # This function is now non-destructive; it only prunes stale backups the
+    # old behaviour left behind.
+    if [[ -f "$active_config" ]]; then
+        print_info "Active qBittorrent config present; settings will be enforced in place"
+    fi
+
+    # Prune backups produced by the old destructive path, keeping the 3 newest
+    # so nothing an operator may still want is removed without trace.
+    local -a backups=()
+    while IFS= read -r b; do
+        [[ -n "$b" ]] && backups+=("$b")
+    done < <(ls -1t "${active_config}".backup.* 2>/dev/null || true)
+
+    if (( ${#backups[@]} > 3 )); then
+        local i
+        for (( i = 3; i < ${#backups[@]}; i++ )); do
+            rm -f "${backups[$i]}" 2>/dev/null || true
+        done
+        print_info "Pruned $(( ${#backups[@]} - 3 )) old qBittorrent config backup(s)"
     fi
 }
 
@@ -151,32 +171,64 @@ _ensure_webui_credentials() {
     local config_file="$1"
     local webui_port="${WEBUI_PORT:-7185}"
 
+    # M5 (review): setup.sh once wrote WEBUI_PORT=7186 into .env — but 7186 is
+    # the download-proxy that sits IN FRONT of qBittorrent, not qBittorrent's
+    # own listen port. A legacy .env still carrying it would make this function
+    # enforce WebUI\\Port=7186 and collide with the proxy. Newly generated .env
+    # files are fixed; an existing one is surfaced rather than silently obeyed.
+    if [[ "$webui_port" == "7186" ]]; then
+        print_warning "WEBUI_PORT=7186 in your .env is the DOWNLOAD-PROXY port, not qBittorrent's"
+        print_warning "  Using 7185 for qBittorrent's WebUI\\Port instead. Fix .env to silence this."
+        webui_port=7185
+    fi
+
     if [[ ! -f "$config_file" ]]; then
         return 0
     fi
 
+    # N3 (review): qBittorrent PERSISTS its in-memory settings to this file when
+    # it shuts down. So a warm `./start.sh` over an already-running stack edits
+    # the config underneath a live process, and those edits are overwritten at
+    # the next container stop — enforcement takes effect only from the following
+    # container START. This is self-healing on the normal cold path (main()
+    # writes the config well before start_container), but it is why editing
+    # qBittorrent.conf by hand while the container runs appears to do nothing.
     print_info "Ensuring WebUI credentials and port in: $config_file"
 
-    if grep -q "^WebUI\\\\Port=" "$config_file" 2>/dev/null; then
-        sed_inplace "s/^WebUI\\\\Port=.*/WebUI\\\\Port=${webui_port}/" "$config_file"
-    fi
-
-    if grep -q "^WebUI\\\\Username=" "$config_file" 2>/dev/null; then
-        sed_inplace 's/^WebUI\\Username=.*/WebUI\\Username=admin/' "$config_file"
-    fi
-
+    # BOB-LOGIN-FIX (2026-09-01): these three keys were previously written with
+    # grep-then-sed, i.e. REPLACE-ONLY. On a config that LACKS the key — which
+    # is exactly the shape qBittorrent 5.x writes on a fresh install — the sed
+    # never fired and the function still returned 0, so the credentials were
+    # silently never written and qBittorrent minted a random temporary password
+    # on every boot. _enforce_config_line is insert-or-replace, so a fresh
+    # config now gets the credentials it needs. Measured RED->GREEN in
+    # tests/unit/test_start_sh_boot_integrity.sh.
     local pbkdf2_hash='@ByteArray(XGCniD5hOQPEcE510BED2Q==:jLIBnLj5eCBZjRCvtE7dTSutDtS8mBQNKQ6rq/W3MszKNsKBjM2/8Ur9fxsADvQeh1wntKorznkorETYAFZawQ==)'
-    if grep -q "^WebUI\\\\Password_PBKDF2=" "$config_file" 2>/dev/null; then
-        sed_inplace "s|^WebUI\\\\Password_PBKDF2=.*|WebUI\\\\Password_PBKDF2=${pbkdf2_hash}|" "$config_file"
-    fi
+    _enforce_config_line "$config_file" "WebUI\\\\Port" "${webui_port}" "[Preferences]"
+    _enforce_config_line "$config_file" "WebUI\\\\Username" "admin" "[Preferences]"
+    _enforce_config_line "$config_file" "WebUI\\\\Password_PBKDF2" "${pbkdf2_hash}" "[Preferences]"
+    _enforce_config_line "$config_file" "WebUI\\\\Enabled" "true" "[Preferences]"
 
-    # Migrate existing configs to the auth-ban-disabled settings.
-    # qBittorrent's default (5 failed attempts → IP ban) trips the
-    # test suite's repeated login probes and leaves every subsequent
-    # connection 403'd. Force the settings in even on configs that
-    # predate them.
-    _enforce_config_line "$config_file" "WebUI\\\\LocalHostAuth" "false" "[Preferences]"
-    _enforce_config_line "$config_file" "WebUI\\\\AuthSubnetWhitelistEnabled" "true" "[Preferences]"
+    # Brute-force lockout relaxation, WITHOUT disabling authentication.
+    #
+    # SECURITY FIX (2026-09-01). This block used to force:
+    #     WebUI\LocalHostAuth=false
+    #     WebUI\AuthSubnetWhitelistEnabled=true    (whitelist = loopback + ALL RFC1918)
+    # to stop the test suite's repeated login probes tripping qBittorrent's
+    # 5-failures-then-ban default. But those two settings do not relax the ban —
+    # they DISABLE AUTHENTICATION outright for every listed subnet. Combined
+    # with `network_mode: host` and WebUI\Address=*, that left the WebUI
+    # unauthenticated across the entire LAN.
+    #
+    # MEASURED 2026-09-01: with the old settings a deliberately WRONG password
+    # returned HTTP 204 (accepted). With the settings below, admin/admin
+    # returns 204 while a wrong password returns 401 and an unauthenticated
+    # API call returns Forbidden — i.e. auth genuinely works.
+    #
+    # The lockout concern is addressed by MaxAuthenticationFailCount and
+    # BanDuration below, which relax the LOCKOUT without removing the CHECK.
+    _enforce_config_line "$config_file" "WebUI\\\\LocalHostAuth" "true" "[Preferences]"
+    _enforce_config_line "$config_file" "WebUI\\\\AuthSubnetWhitelistEnabled" "false" "[Preferences]"
     _enforce_config_line "$config_file" "WebUI\\\\AuthSubnetWhitelist" "127.0.0.1/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" "[Preferences]"
     _enforce_config_line "$config_file" "WebUI\\\\MaxAuthenticationFailCount" "1000000" "[Preferences]"
     _enforce_config_line "$config_file" "WebUI\\\\BanDuration" "1" "[Preferences]"
@@ -195,6 +247,18 @@ _enforce_config_line() {
     local key="$2"     # backslash-escaped for sed regex
     local value="$3"
     local section="$4"
+
+    # N2 (review): the value is interpolated raw into a sed replacement, so a
+    # value containing `|` (the delimiter) or `&` (the whole-match backref)
+    # would corrupt the file. Every value this project passes is safe (base64
+    # alphabet, digits, commas, slashes), but refuse loudly rather than corrupt
+    # a config if that ever changes.
+    case "$value" in
+        *"|"*|*"&"*|*"\\"*)
+            print_error "_enforce_config_line: value for ${key} contains '|', '&' or a backslash, which would corrupt the sed replacement"
+            return 1
+            ;;
+    esac
 
     if grep -qE "^${key}=" "$config_file" 2>/dev/null; then
         sed_inplace -E "s|^${key}=.*|${key}=${value}|" "$config_file"
@@ -273,8 +337,8 @@ WebUI\Port=${WEBUI_PORT:-7185}
 WebUI\Address=*
 WebUI\Username=admin
 WebUI\Password_PBKDF2="@ByteArray(XGCniD5hOQPEcE510BED2Q==:jLIBnLj5eCBZjRCvtE7dTSutDtS8mBQNKQ6rq/W3MszKNsKBjM2/8Ur9fxsADvQeh1wntKorznkorETYAFZawQ==)"
-WebUI\LocalHostAuth=false
-WebUI\AuthSubnetWhitelistEnabled=true
+WebUI\LocalHostAuth=true
+WebUI\AuthSubnetWhitelistEnabled=false
 WebUI\AuthSubnetWhitelist=127.0.0.1/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
 WebUI\MaxAuthenticationFailCount=1000000
 WebUI\BanDuration=1
@@ -583,7 +647,9 @@ start_container() {
 
 wait_for_container() {
     print_info "Waiting for container to be ready..."
-    local max_attempts=30
+    # M1 (review): overridable so the boot-integrity unit test can exercise the
+    # loop without burning the full production budget. Defaults unchanged.
+    local max_attempts="${BOBA_WAIT_MAX_ATTEMPTS:-30}"
     local attempt=0
     
     while [[ $attempt -lt $max_attempts ]]; do
@@ -592,7 +658,7 @@ wait_for_container() {
             print_success "Container is ready"
             return 0
         fi
-        ((attempt++))
+        attempt=$((attempt + 1))
         sleep 1
     done
     
@@ -602,7 +668,7 @@ wait_for_container() {
 
 wait_for_jackett() {
     print_info "Waiting for Jackett to be ready..."
-    local max_attempts=60
+    local max_attempts="${BOBA_WAIT_MAX_ATTEMPTS:-60}"
     local attempt=0
     
     while [[ $attempt -lt $max_attempts ]]; do
@@ -610,7 +676,7 @@ wait_for_jackett() {
             print_success "Jackett is ready"
             return 0
         fi
-        ((attempt++))
+        attempt=$((attempt + 1))
         sleep 1
     done
     
@@ -633,6 +699,13 @@ ensure_boba_master_key() {
         chmod 0600 "$env_file"
     fi
     if grep -qE '^BOBA_MASTER_KEY=[0-9a-fA-F]{64}$' "$env_file"; then
+        # BOB-LOGIN-FIX (2026-09-01): this early return used to skip BOTH
+        # chmod sites, so on an already-provisioned host .env stayed at the
+        # umask default (measured: 664 — world-readable) while holding
+        # BOBA_MASTER_KEY (which decrypts config/boba.db) plus every tracker
+        # password. The function's own docstring claimed "forced to 0600".
+        # Enforce it unconditionally on the path actually taken (§11.4.10).
+        chmod 0600 "$env_file" 2>/dev/null || print_warning "Could not chmod 0600 $env_file"
         return 0
     fi
     print_info "Generating BOBA_MASTER_KEY (32-byte hex) for boba-jackett credential encryption..."
@@ -690,76 +763,207 @@ update_env_jackett_key() {
     
     # only update if missing or still placeholder
     if grep -q "^JACKETT_API_KEY=YOUR_API_KEY_HERE" "$env_file" 2>/dev/null || ! grep -q "^JACKETT_API_KEY=" "$env_file" 2>/dev/null; then
+        # ATTEMPT. Neither writer's exit status is trustworthy on its own:
+        # `sed_inplace` ends in `rm -f "${file}.bobabak"`, which SUCCEEDS after a
+        # failed `sed -i` and masks it (MEASURED 2026-09-01: with the .env
+        # directory read-only, sed printed "Permission denied", sed_inplace still
+        # returned 0, and this function printed [SUCCESS] on a write that never
+        # landed). So the attempt is best-effort and the VERIFY below — not the
+        # writer's rc — decides what the operator is told (§11.4.201: assert the
+        # REAL condition from the authoritative source, which is the file).
         if grep -q "^JACKETT_API_KEY=" "$env_file" 2>/dev/null; then
-            sed_inplace "s|^JACKETT_API_KEY=.*|JACKETT_API_KEY=$key|" "$env_file"
+            sed_inplace "s|^JACKETT_API_KEY=.*|JACKETT_API_KEY=$key|" "$env_file" || true
         else
-            echo "JACKETT_API_KEY=$key" >> "$env_file"
+            echo "JACKETT_API_KEY=$key" >> "$env_file" || true
         fi
-        print_success "Jackett API key auto-configured in .env"
+
+        # VERIFY the key actually landed by READING IT BACK. The comparison is
+        # done in-shell against $key so the value never reaches a command line,
+        # an argv visible in `ps`, or any log line (§11.4.10 — names only).
+        #
+        # The `|| true` is load-bearing, not decoration: this whole function is
+        # called UNGUARDED from main() under `set -euo pipefail`, so a bare
+        # assignment whose command substitution exits non-zero ABORTS THE BOOT.
+        # MEASURED 2026-09-01: with .env mode 0000 the first draft of this fix
+        # killed start.sh at exit 2 before the container came up — trading a
+        # silent failure for a total one, which is strictly worse. An unreadable
+        # .env must yield an EMPTY read that the check below reports LOUDLY, and
+        # boot must continue. Same reasoning as the arithmetic-increment repair
+        # that removed the unsafe post-increment sites from this file.
+        local env_now
+        env_now="$(sed -n 's/^JACKETT_API_KEY=//p' "$env_file" 2>/dev/null | tail -n1 || true)"
+        if [[ "$env_now" == "$key" ]]; then
+            print_success "Jackett API key auto-configured in .env"
+        else
+            print_error "JACKETT_API_KEY was NOT written to $env_file"
+            print_warning "  The write was attempted and did not land (check permissions on"
+            print_warning "  $env_file and its directory)."
+            print_warning "  CONSEQUENCE: an EMPTY JACKETT_API_KEY is injected into the proxy and"
+            print_warning "  every Jackett-backed search will fail at runtime with no other signal."
+            print_warning "  Boot continues; fix the file and re-run ./start.sh to retry."
+        fi
     fi
-    
+
     # also update plugins/jackett.json for local installs
     local plugin_json="$SCRIPT_DIR/config/qBittorrent/nova3/engines/jackett.json"
     if [[ -f "$plugin_json" ]]; then
-        python3 -c "
-import json, sys
-with open('$plugin_json') as f:
+        # The key is passed through the ENVIRONMENT, never interpolated into the
+        # python source: interpolation put the secret on the command line (argv
+        # is world-readable via `ps`, §11.4.10) and broke on any quote in the key.
+        local py_err=""
+        if ! py_err="$(BOBA_JACKETT_KEY="$key" PLUGIN_JSON="$plugin_json" python3 -c '
+import json, os, sys
+path = os.environ["PLUGIN_JSON"]
+with open(path) as f:
     data = json.load(f)
-if data.get('api_key') in (None, '', 'YOUR_API_KEY_HERE'):
-    data['api_key'] = '$key'
-    with open('$plugin_json', 'w') as f:
+if data.get("api_key") in (None, "", "YOUR_API_KEY_HERE"):
+    data["api_key"] = os.environ["BOBA_JACKETT_KEY"]
+    with open(path, "w") as f:
         json.dump(data, f, indent=4, sort_keys=True)
-" 2>/dev/null || true
+' 2>&1)"; then
+            print_error "Jackett API key was NOT written to $plugin_json"
+            # py_err is python diagnostics (path/errno), never the key value.
+            [[ -n "$py_err" ]] && print_warning "  ${py_err##*$'\n'}"
+            print_warning "  CONSEQUENCE: the local jackett plugin keeps its placeholder key and"
+            print_warning "  its searches will fail. Boot continues; re-run ./start.sh after fixing."
+        fi
     fi
+    return 0
+}
+
+# Decide whether a qBittorrent WebUI login SUCCEEDED.
+#
+# MEASURED 2026-09-01 against the real image (qBittorrent v5.2.3, WebAPI
+# 2.15.1): a SUCCESSFUL login returns HTTP 204 with an EMPTY body and sets
+# cookie QBT_SID_<port>. qBittorrent 4.x returned HTTP 200 with body "Ok.".
+# The previous code compared the body to the literal "Ok." and therefore read
+# every real 5.x success as a failure — then `return 0`'d anyway, so the
+# failure was invisible. Accept BOTH signals, and treat the session cookie as
+# authoritative (the repo's own download-proxy already does: see
+# download-proxy/src/api/routes.py and tests/unit/test_qbit_login_compat.py).
+#
+# Args: $1 = http status, $2 = response body, $3 = cookie-jar path
+_qbit_login_succeeded() {
+    local http_code="$1" body="$2" jar="$3"
+
+    # Authoritative: the server issued a session cookie.
+    if [[ -f "$jar" ]] && grep -q 'QBT_SID' "$jar" 2>/dev/null; then
+        return 0
+    fi
+    # qBittorrent 5.x: 204 No Content, empty body.
+    if [[ "$http_code" == "204" ]]; then
+        return 0
+    fi
+    # qBittorrent 4.x: 200 with the literal body "Ok.".
+    if [[ "$http_code" == "200" && "$body" == "Ok." ]]; then
+        return 0
+    fi
+    return 1
+}
+
+# POST a login and report success via _qbit_login_succeeded.
+# Args: $1 = port, $2 = username, $3 = password, $4 = cookie-jar path
+_qbit_try_login() {
+    local port="$1" user="$2" pass="$3" jar="$4"
+    local body_file http_code body
+    body_file="$(mktemp)"
+    rm -f "$jar" 2>/dev/null || true
+
+    http_code=$(curl -s -o "$body_file" -w '%{http_code}' \
+        -c "$jar" \
+        -H "Referer: http://localhost:${port}" \
+        --data-urlencode "username=${user}" \
+        --data-urlencode "password=${pass}" \
+        "http://localhost:${port}/api/v2/auth/login" 2>/dev/null || echo "000")
+    body="$(cat "$body_file" 2>/dev/null || true)"
+    rm -f "$body_file" 2>/dev/null || true
+
+    _qbit_login_succeeded "$http_code" "$body" "$jar"
 }
 
 ensure_webui_password() {
     local webui_port="${WEBUI_PORT:-7185}"
-    local max_attempts=30
+    local max_attempts="${BOBA_WAIT_MAX_ATTEMPTS:-30}"
     local attempt=0
+    local jar
+    jar="$(mktemp -t qbit_setup.XXXXXX)"
 
     print_info "Waiting for WebUI to be ready..."
     while [[ $attempt -lt $max_attempts ]]; do
-        if curl -s -o /dev/null -w "%{http_code}" "http://localhost:${webui_port}/" 2>/dev/null | grep -q "200"; then
+        local probe
+        probe=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:${webui_port}/" 2>/dev/null || echo "000")
+        if [[ "$probe" == "200" || "$probe" == "401" || "$probe" == "403" ]]; then
             break
         fi
-        ((attempt++))
+        attempt=$((attempt + 1))
         sleep 1
     done
 
     if [[ $attempt -ge $max_attempts ]]; then
-        print_warning "WebUI not ready, skipping password setup"
+        print_warning "WebUI not ready after ${max_attempts}s, skipping password setup"
+        rm -f "$jar" 2>/dev/null || true
         return 0
     fi
 
+    # Happy path: the config already carries admin/admin.
+    if _qbit_try_login "$webui_port" "admin" "admin" "$jar"; then
+        print_success "WebUI login with admin/admin verified"
+        rm -f "$jar" 2>/dev/null || true
+        return 0
+    fi
+
+    # Fallback: qBittorrent minted a temporary password because the config
+    # carried no WebUI\Password_PBKDF2. Recover it from the container log and
+    # set the intended password through the API.
     local temp_pass
-    temp_pass=$($CONTAINER_RUNTIME logs qbittorrent 2>&1 | grep "temporary password" | tail -1 | grep -oP 'temporary password is provided for this session: \K.*' || true)
+    temp_pass=$($CONTAINER_RUNTIME logs qbittorrent 2>&1 \
+        | grep "temporary password" | tail -1 \
+        | grep -oP 'temporary password is provided for this session: \K.*' || true)
 
     if [[ -z "$temp_pass" ]]; then
-        print_info "No temporary password found, trying direct login"
-        local login_result
-        login_result=$(curl -s -c /tmp/qbit_setup -X POST "http://localhost:${webui_port}/api/v2/auth/login" -d "username=admin&password=admin" 2>/dev/null || true)
-        if [[ "$login_result" == "Ok." ]]; then
-            print_success "WebUI login with admin/admin successful"
-            return 0
-        fi
-        print_warning "Could not determine WebUI password"
+        print_warning "admin/admin login failed and no temporary password was found in the container log"
+        print_warning "The WebUI config may be missing WebUI\\Password_PBKDF2 — check ${SCRIPT_DIR}/config/qBittorrent/qBittorrent.conf"
+        rm -f "$jar" 2>/dev/null || true
         return 0
     fi
 
-    local login_result
-    login_result=$(curl -s -c /tmp/qbit_setup -X POST "http://localhost:${webui_port}/api/v2/auth/login" -d "username=admin&password=${temp_pass}" 2>/dev/null || true)
+    # M2 (review): the temporary password is a live credential. `./start.sh -v`
+    # turns on `set -x`, which would trace it as argv to stderr and into the
+    # journal. Disable tracing across the credential-bearing call, then restore
+    # whatever the caller had (§11.4.10 — credentials never enter logs).
+    local _xtrace_was_on=0
+    case "$-" in *x*) _xtrace_was_on=1 ;; esac
+    set +x
+    if ! _qbit_try_login "$webui_port" "admin" "$temp_pass" "$jar"; then
+        [[ "$_xtrace_was_on" == 1 ]] && set -x
+        print_warning "Could not log in with the recovered temporary password"
+        rm -f "$jar" 2>/dev/null || true
+        return 0
+    fi
+    [[ "$_xtrace_was_on" == 1 ]] && set -x
 
-    if [[ "$login_result" != "Ok." ]]; then
-        print_warning "Could not login with temp password"
+    local set_code
+    set_code=$(curl -s -o /dev/null -w '%{http_code}' -b "$jar" \
+        -H "Referer: http://localhost:${webui_port}" \
+        -X POST "http://localhost:${webui_port}/api/v2/app/setPreferences" \
+        -d 'json={"web_ui_password":"admin"}' 2>/dev/null || echo "000")
+
+    rm -f "$jar" 2>/dev/null || true
+
+    if [[ "$set_code" != "200" ]]; then
+        print_warning "setPreferences returned HTTP ${set_code} — password may not have been changed"
         return 0
     fi
 
-    curl -s -b /tmp/qbit_setup -X POST "http://localhost:${webui_port}/api/v2/app/setPreferences" \
-        -d 'json={"web_ui_password":"admin"}' 2>/dev/null || true
-
-    rm -f /tmp/qbit_setup 2>/dev/null
-    print_success "WebUI password set to admin"
+    # Anti-bluff (§11.4): do not claim success — re-login and PROVE it.
+    local verify_jar
+    verify_jar="$(mktemp -t qbit_verify.XXXXXX)"
+    if _qbit_try_login "$webui_port" "admin" "admin" "$verify_jar"; then
+        print_success "WebUI password set to admin (verified by re-login)"
+    else
+        print_warning "Password was set but the admin/admin re-login did NOT succeed"
+    fi
+    rm -f "$verify_jar" 2>/dev/null || true
 }
 
 show_status() {
@@ -790,24 +994,74 @@ show_status() {
 }
 
 build_frontend() {
-    if [[ ! -d "$SCRIPT_DIR/frontend" ]]; then
+    local fe="$SCRIPT_DIR/frontend"
+
+    if [[ ! -d "$fe" ]]; then
         print_warning "frontend/ directory not found, skipping Angular build"
         return 0
     fi
 
-    if ! command -v ng &> /dev/null; then
-        print_warning "Angular CLI not found, skipping frontend build"
-        return 0
+    # The merge service serves the Angular SPA from
+    #   download-proxy/src/ui/dist/frontend/browser/index.html
+    # (frontend/angular.json outputPath = ../download-proxy/src/ui/dist/frontend).
+    # If that file is absent, api/__init__.py sets _angular_available=False and
+    # http://localhost:7187/ answers with the stub {"dashboard":"not found"}
+    # instead of the dashboard.
+    #
+    # BOB-DASHBOARD-FIX (2026-09-01): this function used to test ONLY for a
+    # GLOBAL `ng` and skip with a non-actionable warning. Angular CLI is a
+    # PROJECT dependency, not a global one, so on a fresh clone `ng` is never
+    # on PATH, the build never ran, and the dashboard was dead while :7187
+    # still answered HTTP 200 — a §11.4.201 false-null (a healthy status code
+    # over an empty page). Resolve the CLI the way the project actually
+    # provides it, and install dependencies if they are missing.
+    local expected_index="$SCRIPT_DIR/download-proxy/src/ui/dist/frontend/browser/index.html"
+
+    local ng_cmd=""
+    if [[ -x "$fe/node_modules/.bin/ng" ]]; then
+        ng_cmd="$fe/node_modules/.bin/ng"
+    elif command -v ng &> /dev/null; then
+        ng_cmd="ng"
     fi
 
-    print_info "Building Angular frontend..."
-    cd "$SCRIPT_DIR/frontend"
-    if ng build --configuration production 2>&1; then
-        print_success "Angular frontend built successfully"
-    else
-        print_warning "Angular build failed — container will serve fallback or old assets"
+    if [[ -z "$ng_cmd" ]]; then
+        if ! command -v npm &> /dev/null; then
+            print_warning "Angular frontend NOT built: neither a local nor global 'ng', and npm is unavailable."
+            print_warning "  Consequence: http://localhost:${MERGE_SERVICE_PORT:-7187}/ will serve {\"dashboard\":\"not found\"}."
+            print_warning "  Fix: install Node.js + npm, then re-run ./start.sh"
+            return 0
+        fi
+        print_info "Angular CLI not present locally — installing frontend dependencies (npm)..."
+        # Host-safety: keep the install off the interactive scheduler's back
+        # (§12.6/§12.11) — it is a heavy, bursty job.
+        if ! ( cd "$fe" && nice -n 19 ionice -c 3 npm install --no-audit --no-fund ); then
+            print_warning "npm install failed in frontend/ — dashboard will be unavailable"
+            print_warning "  Fix manually: cd frontend && npm install && npm run build"
+            return 0
+        fi
+        if [[ -x "$fe/node_modules/.bin/ng" ]]; then
+            ng_cmd="$fe/node_modules/.bin/ng"
+        else
+            print_warning "npm install completed but node_modules/.bin/ng is still absent"
+            return 0
+        fi
     fi
-    cd "$SCRIPT_DIR"
+
+    print_info "Building Angular frontend (this can take a few minutes)..."
+    if ( cd "$fe" && nice -n 19 ionice -c 3 "$ng_cmd" build --configuration production ); then
+        # ANTI-BLUFF (§11.4.108 SOURCE->ARTIFACT): a zero exit from the builder
+        # is not proof the artifact landed where the server reads it. Assert the
+        # actual file the merge service will open.
+        if [[ -f "$expected_index" ]]; then
+            print_success "Angular frontend built and present at download-proxy/src/ui/dist/frontend/browser/index.html"
+        else
+            print_warning "Angular build reported success but $expected_index is MISSING"
+            print_warning "  The dashboard will still be unavailable — check frontend/angular.json outputPath"
+        fi
+    else
+        print_warning "Angular build failed — the dashboard at :${MERGE_SERVICE_PORT:-7187} will be unavailable"
+        print_warning "  Reproduce with: cd frontend && npm run build"
+    fi
 }
 
 # Maintenance subcommand — restart level 1 (see CLAUDE.md "Pick the right

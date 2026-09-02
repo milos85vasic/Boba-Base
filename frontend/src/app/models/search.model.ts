@@ -83,6 +83,19 @@ export interface TrackerStatus {
 export interface DownloadRequest {
   result_id: string;
   download_urls: string[];
+
+  // Content facts forwarded so the backend can tag the torrent in qBittorrent
+  // (type / quality / year / genre, plus the Boba promotion tags).
+  //
+  // Added 2026-09-01. The backend gained these fields but NO client sent them,
+  // so three of the four operator-chosen tag dimensions were unreachable and
+  // every download landed with only a name-derived quality tag. The search
+  // result the user clicked already carries all of this — it was simply being
+  // discarded at the download call.
+  title?: string;
+  content_type?: string;
+  year?: number;
+  genres?: string[];
 }
 
 export interface DownloadResponse {

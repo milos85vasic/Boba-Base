@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.10" />
+  <meta name="generator" content="pandoc 3.11" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>QA_DISCOVERY_LEDGER</title>
   <style>
@@ -41,7 +41,6 @@
       body {
         background-color: transparent;
         color: black;
-        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -172,7 +171,6 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
     /* CSS for syntax highlighting */
     html { -webkit-text-size-adjust: 100%; }
     pre > code.sourceCode { white-space: pre; position: relative; }
@@ -1514,8 +1512,7 @@ plain <code>cp</code> produced
 <code>FAIL: a bash test MUTATED the real tree (mtime moved): docs/Issues.md (1787213787 -&gt; 1787215890)</code>,
 gate exit=1; restoring <code>cp -p</code> returned
 <code>no-trace verified</code>, gate exit=0, 32 passed / 0 failed.
-<ol start="3" type="1">
-<li>A <strong>control needle</strong> in the diff-check suite now
+(3) A <strong>control needle</strong> in the diff-check suite now
 requires the extracted invariant to emit one of its own
 <code>PASS_MARKER:</code>/<code>FAIL_MARKER:</code> lines before “no
 divergence” may be read as good news — the exact guard that would have
@@ -1525,7 +1522,6 @@ caught the false pass. Post-fix: all three suites green
 <code>constitution_inheritance</code> runtime fell from a &gt;840s
 timeout to 143s once its three nested gate invocations were tagged
 <code>BOBA_PREBUILD_NESTED=1</code>.</li>
-</ol></li>
 <li><strong>Honest boundary (§11.4.6):</strong> the no-trace assertion
 covers the THREE files these suites are known to mutate, not every
 tracked file — a suite that mutates something else would still slip

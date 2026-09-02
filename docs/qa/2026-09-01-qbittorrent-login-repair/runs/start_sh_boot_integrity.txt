@@ -1,0 +1,23 @@
+=== test_start_sh_boot_integrity (RED_MODE=0) ===
+
+control needle: instrument CAN see the ((var++)) shape — readings below are meaningful
+
+--- D1: retry loops must not abort the boot under set -euo pipefail ---
+PASS: D1: wait_for_jackett survives an unhealthy service (rc=0)
+PASS: D1: wait_for_container survives a missing container (rc=0)
+PASS: D1: no unsafe ((var++)) remains in start.sh
+
+--- D2: credentials must be written into a config that lacks the keys ---
+PASS: D2: WebUI\Username=admin inserted into a config lacking it
+PASS: D2: WebUI\Password_PBKDF2 inserted into a config lacking it
+PASS: D2(neg-control): an already-correct config keeps exactly one Username line
+
+--- D3: login success detection must handle 204 + empty body ---
+PASS: D3: no bare body=="Ok." success check remains
+PASS: D3: start.sh consults HTTP status and/or the QBT_SID cookie
+
+--- D4: start.sh must not disable WebUI authentication ---
+PASS: D4: start.sh does not disable localhost auth or enable the subnet-auth whitelist
+PASS: D4: brute-force lockout is still relaxed via MaxAuthenticationFailCount (the check is kept, the lockout is loosened)
+
+=== summary: PASS=10 FAIL=0 ===

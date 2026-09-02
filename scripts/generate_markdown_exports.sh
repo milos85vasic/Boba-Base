@@ -7,10 +7,40 @@
 # and the same "only regenerate when .md is newer than the sibling"
 # idempotency rule as HTML/PDF.
 #
-# Usage: bash scripts/generate_markdown_exports.sh
-# Idempotent: only regenerates when .md is newer than its sibling.
+# Usage:
+#   bash scripts/generate_markdown_exports.sh                # full in-scope sweep
+#   bash scripts/generate_markdown_exports.sh FILE.md [...]   # only these files
 #
-# Constitution: §11.4.65 Universal Markdown export mandate
+# Inputs:
+#   $@ (optional)  Explicit .md paths. When given, ONLY those files are
+#                  converted and the root/docs/scripts discovery sweep is
+#                  skipped entirely. Absent -> the historical full sweep.
+#                  Added so a session touching 9 docs can resync exactly those
+#                  9 twins without re-rendering ~350 unrelated exports (which
+#                  would churn the CM-EXPORT-CHARSET-VALID ratchet baseline).
+#   $BOBA_EXPORT_PYTHON (optional)  Interpreter to use for the python-markdown
+#                  leg. Absent -> auto-resolved (see PY_MD below).
+#
+# Outputs:
+#   <name>.html  always (pandoc --standalone, or python-markdown + charset head)
+#   <name>.pdf   when the weasyprint CLI is on PATH
+#   <name>.docx  when pandoc is on PATH (no pure-python fallback exists)
+#
+# Dependencies (all optional, each leg SKIPs honestly when absent — §11.4.3):
+#   pandoc      -> HTML + DOCX.        weasyprint (CLI) -> PDF.
+#   python3 with the `markdown` module -> HTML fallback when pandoc is absent.
+#   Neither pandoc nor a markdown-capable interpreter -> hard error, no output.
+#   NEVER emits a blank or placeholder file: a leg that cannot run writes nothing.
+#
+# Side-effects: writes .html/.pdf/.docx siblings next to each source .md.
+# Idempotent: only regenerates when the source is newer than its sibling (plus
+#             the charset self-heal rule documented in convert_file below).
+#
+# Cross-references: docs/scripts/generate_markdown_exports.md (companion guide),
+#   scripts/pre_build/check_cm_export_charset_valid.sh (the gate over its output),
+#   tests/unit/test_export_pdf_charset_integrity.sh (the paired §1.1 guard).
+#
+# Constitution: §11.4.65 Universal Markdown export mandate, §11.4.18 script docs
 
 set -euo pipefail
 
@@ -22,17 +52,46 @@ PDF_MISSING=0
 DOCX_GENERATED=0
 DOCX_MISSING=0
 
+# PY_MD — an interpreter that can actually `import markdown`, resolved by
+# TRYING THE IMPORT, never by assuming a path exists (§11.4.6 no-guessing).
+# WHY MORE THAN system python3 (measured 2026-09-01): this host's /usr/bin/python3
+# has no pip and is PEP-668 EXTERNALLY-MANAGED, so `markdown` cannot live there
+# without root — but the repo's own .venv (the interpreter CLAUDE.md already
+# prescribes for pytest) can hold it with no privilege at all. Probing only
+# system python3 declared the whole HTML leg unavailable on a host that was
+# fully capable of it — the §11.4.201(11) prerequisite-vs-artifact false
+# negative. Order: explicit override, then repo venv, then system.
+PY_MD=""
+for _cand in "${BOBA_EXPORT_PYTHON:-}" "${PROJECT_ROOT}/.venv/bin/python" python3; do
+    [[ -n "$_cand" ]] || continue
+    if command -v "$_cand" &>/dev/null && "$_cand" -c "import markdown" &>/dev/null 2>&1; then
+        PY_MD="$_cand"
+        break
+    fi
+done
+
 if command -v pandoc &>/dev/null; then
     CONVERTER="pandoc"
-elif python3 -c "import markdown" &>/dev/null 2>&1; then
+elif [[ -n "$PY_MD" ]]; then
     CONVERTER="python-markdown"
 else
     echo "Error: neither pandoc nor python-markdown is available" >&2
+    echo "  probed for \`import markdown\`: ${BOBA_EXPORT_PYTHON:+\$BOBA_EXPORT_PYTHON, }${PROJECT_ROOT}/.venv/bin/python, python3" >&2
+    echo "  remedy (no root needed): uv pip install --python .venv/bin/python markdown" >&2
     exit 1
 fi
 
+# PROBE THE ARTIFACT THROUGH ITS REAL INVOCATION PATH, not a prerequisite
+# (§11.4.201(11)). This previously ALSO required `python3 -c "from weasyprint
+# import HTML"` to succeed — but the code below never imports weasyprint, it
+# execs the `weasyprint` CLI. A CLI installed into its own isolated environment
+# (uv tool install, pipx, a venv on PATH) is fully working and yet invisible to
+# a system-interpreter import probe, so the gate answered "no PDF support" on a
+# host that renders PDFs correctly — the false-negative half of §11.4.201, and
+# the exact shape §11.4.201(11) names. `weasyprint --version` exercises the real
+# entry point, so it cannot claim a capability the render path does not have.
 HAS_WEASYPRINT=false
-if command -v weasyprint &>/dev/null && python3 -c "from weasyprint import HTML" &>/dev/null 2>&1; then
+if command -v weasyprint &>/dev/null && weasyprint --version &>/dev/null 2>&1; then
     HAS_WEASYPRINT=true
 fi
 
@@ -72,13 +131,17 @@ convert_file() {
             # tests/unit/test_export_pdf_charset_integrity.sh.
             pandoc -f markdown -t html5 --standalone -o "$html" "$md" --metadata title="$(basename "$md" .md)" 2>/dev/null
         else
-            python3 -c "
+            # Encoding is PINNED on both legs (§11.4.6): the corpus carries
+            # Cyrillic ("Боба") and §, and open() would otherwise inherit the
+            # ambient locale — a C/POSIX locale silently mangles the read and
+            # the charset meta tag below would then be advertising a lie.
+            "$PY_MD" -c "
 import markdown, sys
-md = open(sys.argv[1]).read()
-html = markdown.markdown(md)
+md = open(sys.argv[1], encoding='utf-8').read()
+html = markdown.markdown(md, extensions=['tables', 'fenced_code'])
 title = sys.argv[3] if len(sys.argv) > 3 else 'Document'
 out = f'<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>{title}</title></head><body>{html}</body></html>'
-open(sys.argv[2], 'w').write(out)
+open(sys.argv[2], 'w', encoding='utf-8').write(out)
 " "$md" "$html" "$(basename "$md" .md)"
         fi
         HTML_GENERATED=$((HTML_GENERATED + 1))
@@ -117,21 +180,42 @@ echo "Converter: $CONVERTER"
 $HAS_WEASYPRINT && echo "PDF support: weasyprint available" || echo "PDF support: not available"
 $HAS_PANDOC_DOCX && echo "DOCX support: pandoc available" || echo "DOCX support: not available"
 
-# Project root .md files
-for md in "$PROJECT_ROOT"/*.md; do
-    [[ -f "$md" ]] || continue
-    convert_file "$md"
-done
+if (( $# > 0 )); then
+    # EXPLICIT SCOPE. Every argument must be a real, readable .md file; an
+    # unresolvable one is a hard error, never a silent skip, so a typo'd path
+    # cannot masquerade as "nothing to do" (§11.4.201(6): a quiet zero from a
+    # blind instrument reads exactly like a clean corpus).
+    echo "Scope: ${#} explicitly named file(s)"
+    for md in "$@"; do
+        if [[ ! -f "$md" ]]; then
+            echo "Error: not a file: $md" >&2
+            exit 1
+        fi
+        if [[ "$md" != *.md ]]; then
+            echo "Error: not a .md source: $md" >&2
+            exit 1
+        fi
+        convert_file "$md"
+    done
+else
+    echo "Scope: full sweep (root + docs/ + scripts/)"
 
-# docs/ recursively
-while IFS= read -r -d '' md; do
-    convert_file "$md"
-done < <(find "$PROJECT_ROOT/docs" -name '*.md' -type f -print0 2>/dev/null)
+    # Project root .md files
+    for md in "$PROJECT_ROOT"/*.md; do
+        [[ -f "$md" ]] || continue
+        convert_file "$md"
+    done
 
-# scripts/ recursively
-while IFS= read -r -d '' md; do
-    convert_file "$md"
-done < <(find "$PROJECT_ROOT/scripts" -name '*.md' -type f -print0 2>/dev/null)
+    # docs/ recursively
+    while IFS= read -r -d '' md; do
+        convert_file "$md"
+    done < <(find "$PROJECT_ROOT/docs" -name '*.md' -type f -print0 2>/dev/null)
+
+    # scripts/ recursively
+    while IFS= read -r -d '' md; do
+        convert_file "$md"
+    done < <(find "$PROJECT_ROOT/scripts" -name '*.md' -type f -print0 2>/dev/null)
+fi
 
 echo "Generated $HTML_GENERATED of $HTML_MISSING missing HTML files"
 $HAS_WEASYPRINT && echo "Generated $PDF_GENERATED of $PDF_MISSING missing PDF files"

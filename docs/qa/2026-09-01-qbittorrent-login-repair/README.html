@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>README</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">README</h1>
+</header>
+<h1
+id="qa-evidence-qbittorrent-webui-login-repair-themed-overlay-removal">QA
+evidence — qBittorrent WebUI login repair + themed-overlay removal</h1>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-09-02T05:50:00Z</p>
+<p>Captured evidence for the 2026-09-01 repair of “cannot log in to the
+qBittorrent WebUI with admin/admin”, plus the boot failure, the
+themed-WebUI overlay removal, and the systemd reboot-survival work.</p>
+<p>Revision 2 (2026-09-02) adds the round-2 exhaustive root-cause sweep
+— see the final section. The original round-1 text above is preserved
+unedited; every status change is recorded as a change rather than
+rewritten in place, so the document shows what was believed when
+(§11.4.6).</p>
+<p>Image under test: <code>lscr.io/linuxserver/qbittorrent:latest</code>
+→ <strong>qBittorrent v5.2.3 / WebAPI 2.15.1</strong> (measured, not
+assumed).</p>
+<h2 id="the-defect-chain-all-proven-none-inferred">The defect chain (all
+proven, none inferred)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Defect</th>
+<th>How it was proven</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RC-1</td>
+<td>Credentials authored into
+<code>config/qBittorrent/config/qBittorrent.conf</code>, but the image
+reads <code>/config/qBittorrent/qBittorrent.conf</code> and launches
+<code>qbittorrent-nox</code> with <strong>no
+<code>--profile</code></strong></td>
+<td>Read the image’s own <code>init-qbittorrent-config/run</code> and
+<code>svc-qbittorrent/run</code></td>
+</tr>
+<tr>
+<td>RC-2</td>
+<td><code>WEBUI_USERNAME</code> / <code>WEBUI_PASSWORD</code> in compose
+are <strong>inert</strong> — the image implements neither</td>
+<td>Control needle: same grep over the image found
+<code>WEBUI_PORT</code>, found nothing for those two</td>
+</tr>
+<tr>
+<td>RC-3</td>
+<td>qBittorrent 5.x therefore mints a random temporary password every
+boot</td>
+<td><code>runs/RED_temporary_password_capture.log</code></td>
+</tr>
+<tr>
+<td>RC-4</td>
+<td><code>start.sh</code> <code>_ensure_webui_credentials</code> was
+<strong>replace-only</strong> (<code>grep -q … &amp;&amp; sed</code>),
+so it wrote nothing into a config lacking the keys</td>
+<td><code>runs/start_sh_boot_integrity.txt</code> (D2), RED then
+GREEN</td>
+</tr>
+<tr>
+<td>RC-5</td>
+<td>Every password path detected success by body <code>== "Ok."</code>;
+5.2.3 returns <strong>204 + empty body +
+<code>QBT_SID_&lt;port&gt;</code></strong></td>
+<td>Measured live; <code>runs/live_verification.txt</code></td>
+</tr>
+<tr>
+<td>RC-6</td>
+<td>Go client required 200 <strong>and</strong> <code>"Ok."</code>
+<strong>and</strong> cookie <code>SID</code> — could never
+authenticate</td>
+<td><code>qBitTorrent-go/internal/client/auth_qbt5_test.go</code>, RED
+then GREEN</td>
+</tr>
+<tr>
+<td>RC-7</td>
+<td><strong>Boot abort</strong>: <code>((attempt++))</code> with
+<code>attempt=0</code> returns exit 1 under
+<code>set -euo pipefail</code>, killing <code>start.sh</code> at the
+first retry</td>
+<td><code>runs/start_sh_boot_integrity.txt</code> (D1)</td>
+</tr>
+<tr>
+<td>RC-8</td>
+<td><code>cleanup_stale_config</code> deleted the live config every boot
+— its predicate matched qBittorrent’s own normalised
+<code>SavePath=/downloads/</code></td>
+<td>3 accumulated <code>.backup.*</code> files; predicate matched
+twice</td>
+</tr>
+<tr>
+<td>RC-9</td>
+<td><strong>Security regression caught during the repair</strong>:
+enforcing <code>LocalHostAuth=false</code> +
+<code>AuthSubnetWhitelistEnabled=true</code> disables auth for loopback
+and all RFC1918. A wrong password returned <strong>204
+(accepted)</strong></td>
+<td>Negative control in <code>runs/live_verification.txt</code></td>
+</tr>
+<tr>
+<td>RC-10</td>
+<td>Angular dashboard never built →
+<code>_angular_available=False</code> → <code>:7187/</code> served
+<code>{"dashboard":"not found"}</code> under HTTP 200</td>
+<td><code>runs/final_verification.txt</code> before/after</td>
+</tr>
+</tbody>
+</table>
+<h2 id="files">Files</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>What it holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>runs/RED_temporary_password_capture.log</code></td>
+<td>The original qBittorrent boot log showing the temporary password
+being minted</td>
+</tr>
+<tr>
+<td><code>runs/start_sh_boot_integrity.txt</code></td>
+<td>GREEN run of the D1–D4 boot-integrity guard</td>
+</tr>
+<tr>
+<td><code>runs/cm_gate.txt</code></td>
+<td><code>CM-QBITTORRENT-WEBUI-CREDENTIALS</code> gate result</td>
+</tr>
+<tr>
+<td><code>runs/cm_gate_mutation.txt</code></td>
+<td>Paired §1.1 mutation meta-test — gate fires on 4 broken arms, clean
+on 3 good arms</td>
+</tr>
+<tr>
+<td><code>runs/full_boot.log</code></td>
+<td>Complete <code>./start.sh</code> boot, ANSI-stripped, with every
+warning</td>
+</tr>
+<tr>
+<td><code>runs/live_verification.txt</code></td>
+<td>Login matrix + vanilla-WebUI integrity immediately after the
+fix</td>
+</tr>
+<tr>
+<td><code>runs/final_verification.txt</code></td>
+<td>Full-stack sweep: containers, ports, login, dashboard, security
+posture, systemd</td>
+</tr>
+</tbody>
+</table>
+<h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
+<p><strong>PROVEN by captured runtime evidence:</strong> -
+<code>admin</code>/<code>admin</code> authenticates on both
+<code>:7185</code> and <code>:7186</code> (HTTP 204 +
+<code>QBT_SID</code>) - A wrong password is <strong>rejected</strong>
+(401) and an unauthenticated API call is Forbidden — authentication is
+real, not bypassed - No temporary password is minted - All four
+containers healthy; vanilla qBittorrent WebUI served with zero overlay -
+Angular dashboard serves with assets resolving - systemd units
+installed, <code>boba.target</code> enabled, <code>Linger=yes</code></p>
+<p><strong>NOT PROVEN — stated as owed, not claimed:</strong> -
+<strong>Reboot survival end-to-end.</strong> Units are installed,
+enabled, valid, and linger is on — necessary, <em>not sufficient</em>. A
+real reboot is the only proof and host power operations are hard-banned
+here (CONST-033). Operator-attended verification required. -
+<strong>Firefox / WebKit.</strong> The browser proof ran on Chromium
+only. - <strong><code>docs/qa/</code> historical twins.</strong> 698
+<code>.html</code>/<code>.pdf</code> files were re-rendered by a
+<code>pandoc 3.10 → 3.11</code> upgrade even though their
+<code>.md</code> sources never changed; 320 of those are historical
+evidence artifacts. Included at operator instruction after the
+alternative was raised.</p>
+<p><strong>RESOLVED SINCE THIS FILE WAS FIRST WRITTEN</strong> (recorded
+rather than silently edited, so the record shows what was true when): -
+<del>pytest not installed</del> — <code>uv</code> was available all
+along; a venv exists at <code>.venv</code> and the full unit sweep runs.
+My earlier “needs <code>python3-venv</code> + sudo” conclusion was
+wrong: I had checked one mechanism, not the alternatives. -
+<del>Playwright not installed</del> — it arrived with the frontend
+<code>npm install</code>. The vanilla-WebUI claim now rests on a REAL
+Chromium render: <code>window.qBittorrent</code> live with 27 members
+and 17 <code>Client</code> functions, zero console errors, and live sync
+data (<code>Free space: 1.533 TiB</code>, <code>DHT: 122 nodes</code>)
+visible in the captured screenshot — not on HTML-integrity assertions. -
+<del>doc-twin exporter not runnable</del> —
+<code>scripts/generate_markdown_exports.sh</code> existed and was
+already wired into pre-build; it was gated on a
+<code>from weasyprint import HTML</code> import while execing the
+weasyprint <strong>CLI</strong>, so it printed “PDF support: not
+available” and exited 0 having written nothing.</p>
+<hr />
+<h2
+id="owed-tracked-items-11.4.197-all-three-now-resolved-2026-09-02">Owed
+tracked items (§11.4.197) — ALL THREE NOW RESOLVED (2026-09-02)</h2>
+<p><strong>Status change.</strong> These three were staged here on
+2026-09-01 because the mandated minting path was unavailable (no built
+<code>workable-items</code> binary, no consumer config for
+<code>constitution/scripts/reporting/report_item.sh</code>), and
+hand-writing rows into <code>docs/Issues.md</code> would desynchronise
+the SQLite single-source-of-truth (§11.4.93/§11.4.95).</p>
+<p>On 2026-09-02 the operator directed that <strong>everything
+discovered be systematically investigated and fixed at root cause —
+nothing parked as a ticket.</strong> All three were therefore closed
+rather than tracked. Their original text is preserved below unedited,
+each followed by its resolution, so the record shows what was true when
+(§11.4.6 — resolution recorded, not silently rewritten).</p>
+<p>The <code>workable-items</code> binary was subsequently built during
+this work (it is gitignored), which is also why the docs-sync commit
+seam’s CHECK 1-3 had not been running at all.</p>
+<p><strong>Resolution summary:</strong></p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Item</th>
+<th>Resolution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OWED-1 shared add-success predicate</td>
+<td><strong>CLOSED</strong> —
+<code>download-proxy/src/merge_service/qbit_add.py</code>; one mutation
+now fails BOTH consumers (5 tests across the bridge and routes halves),
+verified and <code>sha256</code>-restored</td>
+</tr>
+<tr>
+<td>OWED-2 stress-suite torrent purge</td>
+<td><strong>CLOSED</strong> — diff-scoped to
+<code>after - before</code>; loud on failure; blocking gate 55
+<code>CM-NO-UNSCOPED-LIVE-DESTRUCTION</code> + 11-arm meta-test + 5
+hermetic regression tests</td>
+</tr>
+<tr>
+<td>OWED-3 two standing test reds</td>
+<td><strong>CLOSED</strong> — <code>test_no_runtime_service_skips</code>
+(3 fixture gates + 2 <code># allow-skip:</code> annotations, the latter
+carrier-matched <code>merge_service/</code> as a service);
+<code>test_bob129_slowapi_response_contract</code> (import-alias
+duplicate registration under <code>api_routes</code>, fixed in two
+independent layers)</td>
+</tr>
+</tbody>
+</table>
+<h3
+id="owed-1-extract-a-shared-_qbit_add_succeeded-predicate-type-task">OWED-1
+— Extract a shared <code>_qbit_add_succeeded</code> predicate (Type:
+Task)</h3>
+<p>Two implementations of qBittorrent’s add-success contract now exist:
+<code>download-proxy/src/api/routes.py:_qbit_add_succeeded</code> and
+<code>webui-bridge.py:_qbit_add_succeeded</code>. Review #3 findings
+F2/F3/F4 all trace to that duplication — the two copies drifted and
+briefly recorded <em>opposite</em> 409 verdicts. Extract one
+dependency-free module both import (§11.4.251).</p>
+<p>Acceptance: a single mutation of the shared logic must make BOTH
+sites’ tests fail. Today a mutation of either copy leaves the other’s
+tests green, which is exactly how the divergence went unnoticed.</p>
+<p>Measured contract the shared predicate must encode (qBittorrent
+v5.2.3 / WebAPI 2.15.1, 2026-09-01):</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>case</th>
+<th>response</th>
+<th>meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>valid file add</td>
+<td><code>200 {"success_count":1}</code></td>
+<td>added</td>
+</tr>
+<tr>
+<td><code>.torrent</code> URL add</td>
+<td><code>202 {"pending_count":1}</code></td>
+<td>added, fetching async</td>
+</tr>
+<tr>
+<td>magnet add</td>
+<td><code>200 {"success_count":1}</code></td>
+<td>added</td>
+</tr>
+<tr>
+<td>duplicate add</td>
+<td><code>409 Conflict</code></td>
+<td>already present (success)</td>
+</tr>
+<tr>
+<td><strong>no payload</strong></td>
+<td><code>409 Conflict</code></td>
+<td><strong>nothing added (failure)</strong></td>
+</tr>
+<tr>
+<td>corrupt/truncated/empty file</td>
+<td><code>415</code></td>
+<td>rejected</td>
+</tr>
+</tbody>
+</table>
+<p>The 409 ambiguity is the load-bearing part: it means success OR
+failure depending on whether a payload was sent, and the status alone
+cannot tell. Empty URLs are now rejected at <code>DownloadRequest</code>
+validation so a 409 reaching the predicate implies a genuine duplicate —
+the shared version must preserve that invariant or restore the ambiguity
+explicitly.</p>
+<h3 id="owed-2-scope-the-stress-suites-torrent-purge-type-bug">OWED-2 —
+Scope the stress suite’s torrent purge (Type: Bug)</h3>
+<p><code>tests/stress/test_search_stress.py:18-54</code>
+<code>_purge_qbittorrent_torrents()</code> lists <strong>every torrent
+in the instance</strong> via <code>torrents/info</code> — not
+diff-scoped — and deletes them all with <code>deleteFiles=false</code>,
+from an <code>autouse</code> fixture that runs before every stress test.
+On an operator’s live instance that silently de-registers their entire
+library (files survive; the session does not).</p>
+<p>Pre-existing (landed <code>a684b2f</code>, 2026-04-20), so not caused
+by this batch, and it did NOT cause the 2026-09-01 incident — that one’s
+log signature is staggered single removals with a WebUI page-load six
+seconds prior, whereas this purge issues one batched delete. But the
+hazard is real and standing.</p>
+<p>Fix: scope to test-added hashes only, as the bridge suite already
+does (<code>added = hashes_after - before</code>). Never “delete
+everything the operator owns”.</p>
+<p>Also a §11.4.238 coverage escape: an agent found this, no gate
+did.</p>
+<h3 id="owed-3-two-standing-test-reds-type-task">OWED-3 — Two standing
+test reds (Type: Task)</h3>
+<ul>
+<li><code>tests/unit/test_no_runtime_service_skips.py</code> — 5
+service-availability skips in <code>tests/scaling/</code> and
+<code>tests/unit/test_plugin_rutracker.py</code> need converting to
+fixture gates. Pre-existing; fails at HEAD too.</li>
+<li><code>tests/unit/test_bob129_slowapi_response_contract.py</code> —
+fails in the full sweep, PASSES in isolation. Order-dependent or flaky;
+cause UNKNOWN, needs §11.4.102 systematic debugging. §11.4.248
+quarantine-or-stabilise candidate.</li>
+</ul>
+<hr />
+<h2 id="round-2-2026-09-02-exhaustive-root-cause-sweep">Round 2
+(2026-09-02) — exhaustive root-cause sweep</h2>
+<p>Operator instruction: <em>“everything discovered MUST BE exhaustively
+and systhematically investigated, debugged and fixed by addressing the
+real root causes of all issues!”</em></p>
+<p>Every item below was found DURING this work, not reported by the
+operator — which per §11.4.238 makes each one a coverage escape in its
+own right. Each was root-caused, fixed, and paired with a mutation
+proving the fix load-bearing.</p>
+<h3 id="security-data-safety">Security / data-safety</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Defect</th>
+<th>Root cause</th>
+<th>Proof</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ci.sh</code> secret scan structurally blind</td>
+<td>PCRE <code>(?:…)</code> under <code>grep -E</code> (ERE), warning
+eaten by <code>2&gt;/dev/null</code>; ALSO <code>["\x27]</code> in a
+bracket expression is five literal chars, so <code>'</code>-quoted
+secrets could never match</td>
+<td>planted needle FAILs the step; both quote styles now detected;
+control needle assembled at runtime so ci.sh cannot match itself</td>
+</tr>
+<tr>
+<td><code>.env</code> truncation → master-key loss</td>
+<td><code>grep … \|\| true</code> then unconditional <code>mv -f</code>;
+empty temp published over <code>.env</code></td>
+<td>line-count + key-NAME-set invariants; aborts loudly,
+<code>.env</code> byte-identical; proven against the silent-drop case an
+exit-code check misses</td>
+</tr>
+<tr>
+<td>Unscoped live destruction</td>
+<td><code>"\|".join(t["hash"] for t in torrents)</code> from an
+<code>autouse</code> fixture — every operator torrent,
+<code>deleteFiles=false</code></td>
+<td>diff-scoped to <code>after - before</code>; gate 55 + 11-arm
+meta-test; <code>None</code> baseline deliberately disarms teardown
+rather than degrading to <code>set()</code> (which would delete
+everything)</td>
+</tr>
+<tr>
+<td>Jackett API key in <code>ps</code>-visible argv</td>
+<td>key interpolated into a python <code>-c</code> command line</td>
+<td>moved to <code>BOBA_JACKETT_KEY</code> env; key value appears 0
+times in all output</td>
+</tr>
+<tr>
+<td><code>start.sh</code> two silent write paths</td>
+<td><code>\|\| true</code> on the plugin JSON, AND
+<code>sed_inplace</code> ending in <code>rm -f …bobabak</code> which
+succeeds after a failed <code>sed -i</code></td>
+<td>attempt → verify by read-back → report; <code>[SUCCESS]</code> no
+longer printable on a write that never landed</td>
+</tr>
+</tbody>
+</table>
+<h3 id="correctness">Correctness</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Defect</th>
+<th>Root cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7 rutracker tests order-dependent</td>
+<td><code>_load_rutracker()</code> set
+<code>sys.modules["rutracker"]</code> as a SIDE EFFECT;
+<code>plugins/</code> is not on <code>sys.path</code>, so bare imports
+resolved only by luck of the <code>pytest-randomly</code> seed. 12-seed
+swept after fix</td>
+</tr>
+<tr>
+<td><code>search_stream</code> false-positive</td>
+<td>a test loaded <code>routes.py</code> under alias
+<code>api_routes</code>, re-running the rate-limit decorator and
+registering the SAME function twice; the allowlist keyed on module path
+missed the duplicate. Isolation saw 3 endpoints, sweep saw 4 — the 4th a
+duplicate, not a new endpoint</td>
+</tr>
+<tr>
+<td>Tracker roster diverged 3 ways</td>
+<td><code>nnm-club.me</code> in the bridge only → merge service fell
+through to the UNAUTHENTICATED path, saving an HTML 401 body as a
+<code>.torrent</code></td>
+</tr>
+<tr>
+<td>4 CORS defects</td>
+<td>unset vs <code>""</code> took different code paths (unset DENIED
+<code>:4200</code> and all <code>127.0.0.1</code>);
+<code>MERGE_SERVICE_PORT</code> hardcoded; wildcard matched whole-string
+so an operator’s <code>*</code> did nothing; whitespace input failed
+CLOSED to an empty allowlist</td>
+</tr>
+<tr>
+<td>11 bare <code>except:</code> across 8 live plugin files</td>
+<td>caught <code>KeyboardInterrupt</code>/<code>SystemExit</code>;
+diagnostics now on stderr — fd 1 is the nova3 result stream</td>
+</tr>
+<tr>
+<td>Cyrillic decode untested</td>
+<td>existing tests fed cp1251 bytes but asserted only ASCII titles;
+<code>nnmclub</code> decodes <code>errors="ignore"</code>. 25 tests now
+assert exact equality against a real library title</td>
+</tr>
+</tbody>
+</table>
+<h3
+id="instrument-integrity-detectors-that-could-not-do-their-job">Instrument
+integrity (detectors that could not do their job)</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Defect</th>
+<th>Root cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Verdict extractor substring-matched</td>
+<td><code>^</code> bound only the first alternation group;
+<code>tail -n1</code> then took a prose line. Measured: it flipped a
+PASS into a SKIP. <strong>Blast radius corrected: 9 wired gates, 0
+currently misreported, 19/267 latent</strong> — not the 267 first
+claimed</td>
+</tr>
+<tr>
+<td>Propagation gate bare-literal</td>
+<td><code>grep -qF '11.4.238'</code> satisfied by any mention; mirrors
+had 0 block-starts</td>
+</tr>
+<tr>
+<td>Credentials clause prefix collision</td>
+<td><code>§11.4.109</code> CONTAINS <code>§11.4.10</code>, so the check
+passed even with §11.4.10 deleted</td>
+</tr>
+<tr>
+<td>My own D1 check carrier-blind</td>
+<td>grepped the raw file, so a truthful comment about the historical
+defect read as live code — it had already forced another agent to reword
+accurate documentation</td>
+</tr>
+</tbody>
+</table>
+<h3 id="gates-validated-rather-than-assumed">Gates validated rather than
+assumed</h3>
+<p><code>check_cm_no_production_mutation_residue</code> (16 arms) and
+<code>check_cm_healthcheck_covers_served_ports</code> (15 arms) both
+proved SOUND under mutation, gates left byte-identical. Notable: a
+mutation stripping the residue scanner’s string mask initially SURVIVED
+all five carrier arms — none had a comment introducer inside a string
+literal. Five arms no mutation could break were decoration; a sixth with
+the right shape now catches it (§11.4.194(6)(d)).</p>
+<h3 id="honest-boundaries-carried-forward">Honest boundaries carried
+forward</h3>
+<ul>
+<li><strong>Reboot survival</strong> remains UNPROVEN end-to-end. Units
+installed, enabled, valid, linger on — necessary, not sufficient. Host
+power operations are hard-banned (CONST-033); operator-attended
+verification required.</li>
+<li><strong>Firefox / WebKit</strong>: Playwright’s bundled browsers
+were never installed (<code>~/.cache/ms-playwright</code> empty); the
+Chromium proof used the host snap via <code>executablePath</code>.
+Driving host Firefox HUNG for 120s, consistent with Playwright requiring
+its own patched build. Measured, not assumed.</li>
+<li><strong>Roster presence</strong> is asserted by consumer-agreement,
+which cannot prove a domain is PRESENT (the test iterates the roster it
+validates). Being closed.</li>
+<li><strong><code>tests/security/</code> tally is not
+deterministic</strong> — 9 failed/14 failed/0 failed across three runs,
+flipping with live-stack availability. A §11.4.50 issue, proven NOT
+caused by this batch (stash-and-rerun gave an identical tally).</li>
+</ul>
+</body>
+</html>

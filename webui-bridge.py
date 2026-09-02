@@ -13,26 +13,13 @@ License: Apache 2.0
 
 import json
 import os
+import secrets
 import subprocess
 import sys
-import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-
-# Share the theme-bridge helpers with the sibling download-proxy so
-# the qBittorrent WebUI picks up our Darcula (or whatever is active)
-# palette regardless of which proxy served the page.
-_REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
-_PLUGINS_DIR = os.path.join(_REPO_ROOT, "plugins")
-if _PLUGINS_DIR not in sys.path:
-    sys.path.insert(0, _PLUGINS_DIR)
-try:
-    import theme_injector  # type: ignore[import-untyped]
-except Exception as _exc:  # pragma: no cover — defensive
-    theme_injector = None  # type: ignore[assignment]
-    print(f"[WebUI-Bridge] theme_injector unavailable: {_exc}")
 
 # Configuration
 #
@@ -73,13 +60,186 @@ QBITTORRENT_HOST = _parsed_qbit.hostname or "localhost"
 QBITTORRENT_PORT = _parsed_qbit.port or 7186
 BRIDGE_PORT = int(os.environ.get("BRIDGE_PORT", "7188"))
 
-# Private tracker URL patterns
-PRIVATE_TRACKERS = {
-    "rutracker": ["rutracker.org", "rutracker.net", "rutracker.nl"],
-    "kinozal": ["kinozal.tv"],
-    "nnmclub": ["nnmclub.to", "nnmclub.ro", "nnm-club.me"],
-    "iptorrents": ["iptorrents.com", "iptorrents.me"],
-}
+
+# ---------------------------------------------------------------------------
+# Content tagging (§11.4.251 — import the shared builder, never fork it).
+#
+# The tag ALGORITHM has exactly one implementation:
+# ``download-proxy/src/merge_service/tagging.py``. The Python proxy reaches it
+# through ``routes.py:_build_tag_field``; this bridge reaches the SAME module
+# here. Reimplementing the dimensions (content type / quality / year / genre +
+# the Boba/Боба promo pair) would be the byte-identical fork §11.4.251
+# forbids, and would drift the instant either copy learned a new codec.
+#
+# Only the sys.path bootstrap is bridge-local, and it has to be: this bridge is
+# a HOST process started as ``python3 webui-bridge.py`` from the repository
+# root, so ``download-proxy/src`` is not importable until it is put on the
+# path. The location is derived from ``__file__`` rather than a hardcoded
+# absolute path, so a relocated checkout still resolves (§11.4.177).
+# ---------------------------------------------------------------------------
+_MERGE_SERVICE_SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "download-proxy", "src")
+
+# ---------------------------------------------------------------------------
+# Shared, dependency-free contracts (§11.4.251 — import, never fork).
+#
+# Both modules below are STDLIB-ONLY by contract, precisely so this host
+# process — whose entire dependency set is the standard library — can import
+# them. Unlike the tagging import above (lazy + guarded, because a missing tag
+# is cosmetic), these are imported EAGERLY and are allowed to fail loudly:
+#
+#   * ``trackers`` decides whether a download is fetched WITH credentials. A
+#     silently-empty roster would send every private-tracker URL down the
+#     anonymous path and save login pages as ``.torrent`` files. Failing to
+#     start is the honest outcome; degrading is the bluff (§11.4.252).
+#   * ``qbit_add`` decides whether an add SUCCEEDED. A missing predicate must
+#     not degrade into an optimistic default.
+#
+# The path is derived from ``__file__``, so a relocated checkout still resolves
+# (§11.4.177).
+# ---------------------------------------------------------------------------
+if _MERGE_SERVICE_SRC not in sys.path:
+    sys.path.insert(0, _MERGE_SERVICE_SRC)
+from merge_service.qbit_add import qbit_add_succeeded as _qbit_add_succeeded_shared  # noqa: E402
+from merge_service.trackers import PRIVATE_TRACKER_DOMAINS as _PRIVATE_TRACKER_DOMAINS  # noqa: E402
+from merge_service.trackers import identify_tracker_in_text as _identify_tracker_in_text  # noqa: E402
+
+
+def _bridge_tag_field(name):
+    """Return qBittorrent's comma-separated ``tags`` value for ``name``.
+
+    ``name`` is the downloaded ``.torrent`` filename — the only input the
+    shared builder REQUIRES, and the one that needs no network: quality is
+    parsed out of it offline. The bridge has no enriched metadata (it never
+    performed a merge-service search), so content type / year / genres are
+    genuinely absent and are therefore omitted rather than invented
+    (§11.4.6 — the builder emits no placeholder for what did not resolve).
+
+    Tagging must NEVER block or fail a download: any error returns an empty
+    string, which qBittorrent treats as "no tags". An untagged torrent is a
+    cosmetic loss; a failed add is a real one. This mirrors the contract of
+    ``download-proxy/src/api/routes.py:_build_tag_field`` exactly.
+    """
+    try:
+        if _MERGE_SERVICE_SRC not in sys.path:
+            sys.path.insert(0, _MERGE_SERVICE_SRC)
+        from merge_service.tagging import build_tags, tags_to_qbittorrent_field
+
+        return tags_to_qbittorrent_field(build_tags(name=os.path.basename(name or "")))
+    except Exception as exc:  # pragma: no cover - defensive
+        print(f"[WebUI-Bridge] Tagging skipped ({type(exc).__name__}: {exc})")
+        return ""
+
+
+def _qbit_base_url():
+    """Current qBittorrent base URL, read from the LIVE module globals.
+
+    Deliberately not a constant: ``QBITTORRENT_HOST`` / ``QBITTORRENT_PORT``
+    are documented as overridable by callers and tests (see the note above
+    their definition), so every request must re-read them rather than bake
+    the value in at import time.
+    """
+    return f"http://{QBITTORRENT_HOST}:{QBITTORRENT_PORT}"
+
+
+def _qbit_credentials():
+    """Resolve the qBittorrent WebUI credentials from the environment.
+
+    Mirrors ``download-proxy/src/config/__init__.py`` exactly so the bridge
+    and the proxy can never disagree about which account they use:
+    ``QBITTORRENT_USER`` then ``QBITTORRENT_USERNAME``, defaulting to
+    ``admin`` (and the same shape for the password).
+    """
+    username = os.environ.get("QBITTORRENT_USER", os.environ.get("QBITTORRENT_USERNAME", "admin"))
+    password = os.environ.get("QBITTORRENT_PASS", os.environ.get("QBITTORRENT_PASSWORD", "admin"))
+    return username, password
+
+
+def qbittorrent_login():
+    """Log in to the qBittorrent WebUI and return the session cookie.
+
+    Success detection is by SESSION COOKIE, never by response body.
+    qBittorrent 5.2.3 answers a successful login with **HTTP 204 and an
+    EMPTY body** plus ``Set-Cookie: QBT_SID_<port>=...``; the legacy
+    ``200 Ok.`` shape does not appear on this build, so a body check would
+    reject every valid login. A wrong password answers 401 with no cookie.
+
+    Returns:
+        The ``QBT_SID_<port>=<value>`` cookie pair as a string, or None when
+        authentication failed for any reason. The caller MUST treat None as
+        a hard failure — there is no anonymous fallback (§11.4.252
+        fail-closed: the previous anonymous path is exactly the defect this
+        function exists to close).
+    """
+    base = _qbit_base_url()
+    username, password = _qbit_credentials()
+    payload = urllib.parse.urlencode({"username": username, "password": password}).encode()
+    req = urllib.request.Request(  # noqa: S310
+        f"{base}/api/v2/auth/login",
+        data=payload,
+        headers={
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Referer": base,
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:  # noqa: S310
+            if resp.status not in (200, 204):
+                print(f"[WebUI-Bridge] Login rejected: HTTP {resp.status}")
+                return None
+            for header, value in resp.headers.items():
+                if header.lower() == "set-cookie" and "QBT_SID" in value:
+                    return value.split(";", 1)[0]
+            print("[WebUI-Bridge] Login returned no session cookie — treating as failure")
+            return None
+    except urllib.error.HTTPError as e:
+        print(f"[WebUI-Bridge] Login failed: HTTP {e.code}")
+        return None
+    except Exception as e:
+        print(f"[WebUI-Bridge] Login error: {e}")
+        return None
+
+
+def _qbit_add_succeeded(status, body):
+    """Did qBittorrent really ACCEPT this ``/api/v2/torrents/add``?
+
+    THIN DELEGATION (§11.4.251). This was a hand-maintained SECOND
+    implementation of the predicate in ``api/routes.py``, and the two drifted
+    until they recorded OPPOSITE verdicts for ``409``: ``routes`` read it as a
+    duplicate (success), this file read it as a malformed request (failure).
+    Three separate review findings traced back to that one duplication, and a
+    mutation of either copy left the other's tests green — which is exactly how
+    it went unnoticed.
+
+    The divergence was argued from a claim that a duplicate add returns ``200``
+    with a success summary. That claim is FALSE: re-measured 2/2 against
+    qBittorrent v5.2.3 / WebAPI 2.15.1, a duplicate add returns ``409``. The
+    clause is therefore not preserved — it is deleted, and the single measured
+    contract now lives in :mod:`merge_service.qbit_add`, which this function
+    delegates to unconditionally.
+
+    The ``409`` reading is sound here for the same reason it is sound in
+    ``routes``: the payload invariant holds. ``upload_to_qbittorrent`` reads the
+    ``.torrent`` file from disk and always writes a ``torrents`` multipart part,
+    so this bridge structurally cannot emit the no-payload add that draws the
+    other ``409``. (An EMPTY file is still a payload part, and this build
+    answers that with ``415``.)
+    """
+    return _qbit_add_succeeded_shared(status, body)
+
+
+# Private tracker URL patterns — DERIVED from the ONE roster
+# (``merge_service.trackers``), never re-typed here.
+#
+# This dict used to be a hand-kept fourth copy and had drifted: it carried
+# ``rutracker.net`` and ``nnm-club.me`` that the merge service's roster lacked,
+# and lacked ``kinozal.guru`` / ``kinozal.me`` / ``iptorrents.org`` that others
+# carried. The drift is not cosmetic — a domain this bridge auth-routes but the
+# merge service does not gets fetched ANONYMOUSLY there, and the tracker's HTML
+# login page is saved as the user's ``.torrent``.
+#
+# Kept as a module-level name (and as ``{name: [domains]}``) because it is part
+# of this module's public surface — tests and operators read it.
+PRIVATE_TRACKERS = {name: list(domains) for name, domains in _PRIVATE_TRACKER_DOMAINS.items()}
 
 
 class WebUIBridgeHandler(BaseHTTPRequestHandler):
@@ -140,31 +300,6 @@ class WebUIBridgeHandler(BaseHTTPRequestHandler):
                 self.wfile.write(payload)
                 return
 
-            # Serve the theme-bridge assets locally (skin.css + bootstrap.js)
-            # so the user-visible theme is identical to what the
-            # download-proxy at :7186 serves. Must come BEFORE the
-            # qBittorrent passthrough — these paths do not exist on the
-            # qBittorrent WebUI side.
-            # Serve the Boba logo locally so it replaces qBittorrent's
-            # default SVG/PNG logos on both :7186 and :7188.
-            if theme_injector is not None and theme_injector.is_boba_logo_request(path):
-                status, headers, payload = theme_injector.serve_boba_logo()
-                self.send_response(status)
-                for k, v in headers.items():
-                    self.send_header(k, v)
-                self.end_headers()
-                self.wfile.write(payload)
-                return
-
-            if path.startswith("/__qbit_theme__/") and theme_injector is not None:
-                status, headers, payload = theme_injector.serve_theme_asset(path)
-                self.send_response(status)
-                for k, v in headers.items():
-                    self.send_header(k, v)
-                self.end_headers()
-                self.wfile.write(payload)
-                return
-
             # Check if this is a torrent download
             if "urls" in query:
                 urls = query.get("urls", [""])[0]
@@ -193,8 +328,19 @@ class WebUIBridgeHandler(BaseHTTPRequestHandler):
             torrent_file = self.download_via_nova2dl(plugin, url)
 
             if torrent_file:
-                # Upload to qBittorrent
-                success = self.upload_to_qbittorrent(torrent_file)
+                # Upload to qBittorrent WITH content tags (IMPORTANT-2).
+                #
+                # This call site is the bridge's whole reason to exist — a
+                # private-tracker download — and it used to pass no tags at
+                # all, so every torrent the bridge added landed with
+                # ``tags=''``: not even the ``Boba``/``Боба`` promo pair, even
+                # though the downloaded filename carries everything the
+                # offline quality detector needs. The ``tags=`` parameter had
+                # existed since the auth fix but only the test ever filled it
+                # (§11.4.108 — the capability was present at the SOURCE layer
+                # and dead at the RUNTIME layer).
+                tags = _bridge_tag_field(torrent_file)
+                success = self.upload_to_qbittorrent(torrent_file, tags=tags)
 
                 if success:
                     self.send_response(200)
@@ -213,13 +359,17 @@ class WebUIBridgeHandler(BaseHTTPRequestHandler):
         self.proxy_to_qbittorrent()
 
     def identify_plugin(self, url):
-        """Identify which plugin to use."""
-        url_lower = url.lower()
-        for plugin, patterns in PRIVATE_TRACKERS.items():
-            for pattern in patterns:
-                if pattern in url_lower:
-                    return plugin
-        return None
+        """Identify which nova3 plugin owns ``url``, else ``None``.
+
+        Delegates to the shared roster's substring matcher. The SUBSTRING
+        (rather than host) semantics are this consumer's deliberate policy and
+        are preserved: the bridge intercepts a WebUI "add by URL" whose payload
+        can legitimately carry a tracker address inside a parameter, and
+        over-matching here routes through AUTHENTICATION — the safe direction.
+        Under-matching is the defect this change removes. The merge-service API
+        uses the stricter host matcher because it gates credential spend.
+        """
+        return _identify_tracker_in_text(url)
 
     def download_via_nova2dl(self, plugin, url):
         """Download using nova2dl.py."""
@@ -240,18 +390,98 @@ class WebUIBridgeHandler(BaseHTTPRequestHandler):
             print(f"[WebUI-Bridge] Error: {e}")
             return None
 
-    def upload_to_qbittorrent(self, filepath):
-        """Upload torrent file to qBittorrent."""
-        try:
-            url = f"http://{QBITTORRENT_HOST}:{QBITTORRENT_PORT}/api/v2/torrents/add"
+    def upload_to_qbittorrent(self, filepath, tags=None, stopped=False):
+        """Upload a torrent file to qBittorrent as an AUTHENTICATED client.
 
-            # Create multipart request
-            boundary = "----WebKitFormBoundary" + str(int(time.time()))
+        ``/api/v2/torrents/add`` is a state-changing endpoint and qBittorrent
+        rejects it with **403** when the caller carries no session (measured
+        against qBittorrent 5.2.3, 2026-09-01). This bridge previously POSTed
+        with no login and no cookie, which only ever worked because the WebUI
+        config carried an authentication BYPASS
+        (``WebUI\\LocalHostAuth=false`` + a subnet whitelist covering loopback
+        and all RFC1918). That bypass ACCEPTED a deliberately wrong password
+        and has been removed; the terminal step of ``handle_torrent_download``
+        must therefore log in for itself.
+
+        Sequence: ``qbittorrent_login()`` -> session cookie -> multipart POST
+        carrying that cookie plus a ``Referer`` matching the upstream origin
+        (see ``proxy_to_qbittorrent`` for why the Referer is load-bearing).
+
+        Args:
+            filepath: path to the ``.torrent`` file to add.
+            tags: optional comma-separated tag string attached to the torrent.
+            stopped: when True the torrent is added in a stopped/paused state
+                (both the qBittorrent 5.x ``stopped`` and the legacy
+                ``paused`` field are sent, so the flag works on either build).
+
+        Returns:
+            True only when qBittorrent really accepted the torrent, decided by
+            :func:`_qbit_add_succeeded` against the measured add contract — the
+            2xx status AND the response body, because this server answers a
+            rejected add with 200 shapes as well as with 4xx ones. Any
+            authentication failure, transport error, rejecting status, or 2xx
+            body reporting nothing added returns False — never an optimistic
+            default, and never a bare status check.
+        """
+        try:
+            session = qbittorrent_login()
+            if not session:
+                print(
+                    "[WebUI-Bridge] Upload aborted: qBittorrent login failed "
+                    "(check QBITTORRENT_USER / QBITTORRENT_PASS)"
+                )
+                return False
+
+            base = _qbit_base_url()
+            url = f"{base}/api/v2/torrents/add"
+
+            # Create multipart request.
+            #
+            # N-b: the boundary is drawn from a CSPRNG, never from the clock.
+            # It used to be `str(int(time.time()))` — one second of resolution,
+            # so any observer who knows roughly when an upload happened can
+            # reproduce the exact delimiter. Nothing in this body is
+            # attacker-controlled today, but a predictable boundary is the
+            # precondition for a body-splitting attack, and the `tags` field
+            # added alongside this fix is the first content here that is
+            # DERIVED rather than hardcoded — so the hygiene is bought before
+            # it is needed, not after.
+            #
+            # `secrets.token_hex` yields [0-9a-f] only, which is a strict
+            # subset of the RFC 2046 `bcharsnospace` set, and the assembled
+            # delimiter (22 + 32 = 54 chars) stays inside the 70-char limit.
+            #
+            # CRLF / delimiter injection through `tags` (§11.4.251 — relied
+            # upon, NOT re-implemented): the tag string reaching this function
+            # always comes from `merge_service.tagging._sanitise`, which does
+            # `" ".join(text.split())` — collapsing \r, \n and \t — and caps
+            # each tag at `MAX_TAG_LENGTH`. A tag therefore cannot contain the
+            # CRLF a forged part needs, nor a comma that would split the field.
+            # Duplicating that scrubbing here would fork the sanitiser; the
+            # contract is pinned instead by
+            # `test_shared_sanitiser_strips_the_crlf_this_body_relies_on`, so
+            # if the dependency ever stops scrubbing, this file's guard fails.
+            boundary = "----WebKitFormBoundary" + secrets.token_hex(16)
 
             with open(filepath, "rb") as f:
                 file_data = f.read()
 
+            fields = {}
+            if tags:
+                fields["tags"] = tags
+            if stopped:
+                # qBittorrent >= 5.0 renamed `paused` to `stopped`; sending
+                # both keeps the flag effective across builds and an unknown
+                # field is ignored rather than rejected.
+                fields["stopped"] = "true"
+                fields["paused"] = "true"
+
             body = []
+            for name, value in fields.items():
+                body.append(f"------{boundary}".encode())
+                body.append(f'Content-Disposition: form-data; name="{name}"'.encode())
+                body.append(b"")
+                body.append(str(value).encode())
             body.append(f"------{boundary}".encode())
             body.append(b'Content-Disposition: form-data; name="torrents"; filename="torrent.torrent"')
             body.append(b"Content-Type: application/x-bittorrent")
@@ -267,11 +497,36 @@ class WebUIBridgeHandler(BaseHTTPRequestHandler):
                 headers={
                     "Content-Type": f"multipart/form-data; boundary=----{boundary}",
                     "Content-Length": len(body),
+                    "Cookie": session,
+                    "Referer": base,
                 },
             )
 
-            with urllib.request.urlopen(req, timeout=30) as response:  # noqa: S310
-                return response.status == 200
+            # The success DECISION is delegated to `_qbit_add_succeeded`, which
+            # implements the measured cross-version add contract (IMPORTANT-3).
+            # The previous `response.status == 200` could not tell a 200 that
+            # ADDED the torrent from a 200 that added NOTHING — so this
+            # function's own docstring promise ("True only when qBittorrent
+            # really accepted the torrent") was false, and a rejected add was
+            # reported to `handle_torrent_download` as OK.
+            try:
+                with urllib.request.urlopen(req, timeout=30) as response:  # noqa: S310
+                    status = response.status
+                    payload = response.read().decode("utf-8", "replace")
+            except urllib.error.HTTPError as http_exc:
+                # Read the error response instead of discarding it: 409 / 415
+                # carry qBittorrent's own reason, and printing it makes a
+                # refusal diagnosable in one step (§11.4.201(5)).
+                status = http_exc.code
+                payload = (http_exc.read() or b"").decode("utf-8", "replace")
+
+            accepted = _qbit_add_succeeded(status, payload)
+            if not accepted:
+                print(
+                    f"[WebUI-Bridge] qBittorrent did NOT accept the torrent: "
+                    f"HTTP {status} {payload[:200]!r}"
+                )
+            return accepted
 
         except Exception as e:
             print(f"[WebUI-Bridge] Upload error: {e}")
@@ -350,7 +605,7 @@ class WebUIBridgeHandler(BaseHTTPRequestHandler):
                 if length > 0:
                     body = self.rfile.read(length)
 
-            req = urllib.request.Request(target, data=body, method=self.command)  # noqa: S310
+            req = urllib.request.Request(target, data=body, method=self.command)
 
             qbit_origin = f"http://localhost:{QBITTORRENT_PORT}"
             for header, value in self.headers.items():
@@ -363,49 +618,23 @@ class WebUIBridgeHandler(BaseHTTPRequestHandler):
 
             with urllib.request.urlopen(req, timeout=30) as resp:  # noqa: S310
                 raw_body = resp.read()
-                # Collect upstream headers so we can rewrite them before
-                # echoing. We need to strip transfer-encoding and rewrite
-                # content-length after any mutation.
                 upstream_headers = list(resp.headers.items())
-                content_type = resp.headers.get("Content-Type") or ""
-                content_encoding = resp.headers.get("Content-Encoding") or ""
 
-                # Theme bridge: on text/html, decompress (if gzipped),
-                # inject the two bridge tags, rebrand qBittorrent → Боба,
-                # drop the encoding header, rewrite CSP so bootstrap.js
-                # can reach the merge service, and update Content-Length.
+                # BYTE-FOR-BYTE PASS-THROUGH. The themed-WebUI overlay
+                # that used to mutate this body was removed 2026-09-01 by
+                # operator decision (see plugins/download_proxy.py and
+                # tests/integration/test_vanilla_webui_unmodified.py):
+                # it shipped zero qBittorrent features and its
+                # qBittorrent -> Боба rebrand rewrote the token inside
+                # inline <script> blocks, killing the WebUI's JS.
+                # Content-Encoding is forwarded untouched.
                 body = raw_body
-                mutated = False
-                stripped_encoding = False
-                if theme_injector is not None and content_type.lower().startswith("text/html"):
-                    decoded, ok = theme_injector.maybe_decode_body(raw_body, content_encoding)
-                    if ok:
-                        new_body = theme_injector.inject_theme_assets(decoded, content_type)
-                        new_body = theme_injector.rebrand_html(new_body, content_type)
-                        if new_body is not decoded and new_body != decoded:
-                            body = new_body
-                            mutated = True
-                        elif content_encoding:
-                            body = decoded
-                            mutated = True
-                        if content_encoding:
-                            stripped_encoding = True
 
                 self.send_response(resp.status)
                 for header, value in upstream_headers:
-                    header_lower = header.lower()
-                    if header_lower == "transfer-encoding":
+                    if header.lower() == "transfer-encoding":
                         continue
-                    if header_lower == "content-encoding" and stripped_encoding:
-                        continue
-                    if header_lower == "content-length" and mutated:
-                        # Recomputed below.
-                        continue
-                    if header_lower == "content-security-policy" and theme_injector is not None:
-                        value = theme_injector.rewrite_csp(value)
                     self.send_header(header, value)
-                if mutated:
-                    self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
 

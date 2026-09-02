@@ -6,6 +6,8 @@ These tests verify buttons trigger correct API calls
 import pytest
 import requests
 
+from tests.integration.qbit_login_oracle import describe_login, qbit_login_succeeded
+
 
 class TestMagnetButton:
     """Test Magnet button functionality."""
@@ -67,7 +69,9 @@ class TestDownloadButton:
             data={"username": "admin", "password": "admin"},
             timeout=300,
         )
-        assert login.text == "Ok.", f"qBittorrent login failed: {login.text}"
+        # qBittorrent 5.x answers a good login with 204 + empty body + QBT_SID
+        # cookie; the oracle accepts that AND the legacy 200 "Ok.".
+        assert qbit_login_succeeded(login), f"qBittorrent login failed: {describe_login(login)}"
 
     def test_download_api_accepts_valid_request(self):
         """/api/v1/download should accept download request."""
@@ -152,13 +156,22 @@ class TestQBitLoginButton:
         self.session = requests.Session()
 
     def test_qbit_login_api_works(self):
-        """qBittorrent login API should work."""
+        """qBittorrent login API must work — and must still reject a bad password."""
         resp = self.session.post(
             f"{self.qbit_url}/api/v2/auth/login",
             data={"username": "admin", "password": "admin"},
             timeout=300,
         )
-        assert resp.text == "Ok.", f"qBittorrent login failed: {resp.text}"
+        assert qbit_login_succeeded(resp), f"qBittorrent login failed: {describe_login(resp)}"
+
+        # Negative control in the same test: the oracle must not wave through a
+        # wrong password, otherwise the assertion above proves nothing.
+        bad = requests.Session().post(
+            f"{self.qbit_url}/api/v2/auth/login",
+            data={"username": "admin", "password": "wrongwrong"},
+            timeout=300,
+        )
+        assert not qbit_login_succeeded(bad), f"a WRONG password was accepted: {describe_login(bad)}"
 
     def test_merge_service_auth_endpoint_works(self):
         """Merge service /auth/qbittorrent endpoint should work."""

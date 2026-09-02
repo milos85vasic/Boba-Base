@@ -1,80 +1,23 @@
 {
-  "search_id": "9f37946e-7169-4557-b37a-0062c00eceff",
+  "search_id": "987d657b-b7c7-4936-a1a8-829526b8c5dd",
   "query": "debian",
   "status": "completed",
   "results": [
     {
       "name": "debian 13 6 0 amd64 netinst iso",
       "size": "755.00 MB",
-      "seeds": 10871,
-      "leechers": 65,
+      "seeds": 5226,
+      "leechers": 39,
       "download_urls": [
         "magnet:?xt=urn:btih:JANW4NQXXZGIR6LMWJPEPSOYE4QTABY6",
         "magnet:?xt=urn:btih:EBHAFN3DPD6G45XYWCOS5XROGMZBG2Z4",
         "magnet:?xt=urn:btih:LCCGQYHQU5TPRJBLBOZBJWGHCP67DMLH",
         "magnet:?xt=urn:btih:HMO6TS3QCE2Q7IKS5RDUDFRAVIKT4GPH",
         "magnet:?xt=urn:btih:Q33DKA2IHHY6X2A2XFV64SWFT5Q5XHO6",
+        "magnet:?xt=urn:btih:HUKOTMKTSDF4VG2WM6G6OY5WS6MA2W3P",
         "magnet:?xt=urn:btih:CVNFDNCLGN6TWFD4RWJ5S5SN6SDQL74J",
         "magnet:?xt=urn:btih:WI4H2GS6WSELRNQO2HXL5RUY7IQN7LBU",
-        "magnet:?xt=urn:btih:HUKOTMKTSDF4VG2WM6G6OY5WS6MA2W3P",
         "magnet:?xt=urn:btih:FTWYMGLG5EM6LSU6GXJH3QR6BMBPW77Y",
-        "magnet:?xt=urn:btih:GJMCW3WOIKUKHIXOAEVT4XYFO7LI4TWE",
-        "magnet:?xt=urn:btih:SQEI2XSXYOQS472Y5I5DJIRSU7WBHDGJ",
-        "magnet:?xt=urn:btih:UGQFKAT3EFMN4B4OPZNLZLRJJYN5O36R",
-        "magnet:?xt=urn:btih:N5BXBX2DARQJVB4TZYVVSF4NZSH6X5PC",
-        "magnet:?xt=urn:btih:PVJBBJYRFEOXDAOW4B2M4XV5K3Z75XLA",
-        "magnet:?xt=urn:btih:TCHTDBRSFNC2JAKNTJGE7472K4WOOLZE",
-        "magnet:?xt=urn:btih:YH635EVDIMXN2OKLPVW7462HG6AV63EI",
-        "magnet:?xt=urn:btih:MOK67HDDOTPKEVQPLKLNPXGKPTNCZFGZ",
-        "magnet:?xt=urn:btih:FNTJQAETXQIYA35LKDFTZNAYGW4VUA3C",
-        "magnet:?xt=urn:btih:WSBAPEWJHOT7LWWLXBHAOMOLVZRIGPLG",
-        "magnet:?xt=urn:btih:6ZYZ3QYECNXW367FG7JXG2Y5VYXBWH52",
-        "magnet:?xt=urn:btih:IXALNWCY6XGHWMOBXEGK4UZPUQBJKJ4P",
-        "magnet:?xt=urn:btih:H4CKY245CTFXGQP275PYZPBQ2VS3VRAW",
-        "magnet:?xt=urn:btih:LIWW5ISLN6N3UPPADPJII2HIMC65UWXN",
-        "magnet:?xt=urn:btih:3LTGSJYHOS5IXOWIE4TFNYREO7QBWXMJ",
-        "magnet:?xt=urn:btih:DAY2NGNHDAZR63SBY254KXDWDQ3DO6UL",
-        "magnet:?xt=urn:btih:HFJH3VUFWTTC55LFIM2J6ZO5RSTS74VW",
-        "magnet:?xt=urn:btih:NYQCEFY2RLGLBODFETKDEOVRSXAZLYWC",
-        "magnet:?xt=urn:btih:C5BUMPS5RJBCVOSEQL36DFIAHLPIGODZ",
-        "magnet:?xt=urn:btih:W2PTUBMCDPEPZGOOVP7QOJC2SLKHWWKP",
-        "magnet:?xt=urn:btih:DPIIR3URM2QGFT2K6COPTFZA7JXBUMJT",
-        "magnet:?xt=urn:btih:2FMKBRUT5YQP5ZSBADLQNUPPH2GL6VCF",
-        "magnet:?xt=urn:btih:PVEI2M5JHL7AWQE6KUIWEZK3QJ5MMKV7",
-        "magnet:?xt=urn:btih:3R4EIZOLCF6HYBMRXI4YZPR7PKPFSK56",
-        "magnet:?xt=urn:btih:IMA6INTQ6DHSVTBO6BOWUV2GH2L3DJ7S",
-        "magnet:?xt=urn:btih:7F7RBTXTE2X4X4T3Y426TBKX5BGTHOP6",
-        "magnet:?xt=urn:btih:RTNBH3JDGPZLYBWZACSO7VVTDBZEJWDF",
-        "magnet:?xt=urn:btih:KQ7WLVVU2F4A4E2D6B56HVOAB4URT2ZV",
-        "magnet:?xt=urn:btih:YUX4A6NYZFPUTNNA75CCWXWLD7RNSGO3",
-        "magnet:?xt=urn:btih:2LZA3GR6FDHKAKPUEEXV2LLX3YSLZJAQ",
-        "magnet:?xt=urn:btih:ZQWSJN7SN3XJ56AIMWCHNPH6GMFN4I62",
-        "magnet:?xt=urn:btih:U2TSJWE24D4KCB3JT2264HIUK7HCXO6K",
-        "magnet:?xt=urn:btih:YJG67KSSBG2XGCYJZRODH55YXDSWPRVR",
-        "magnet:?xt=urn:btih:C5W6FZTSJF3KHDKR2CRU2PAFAORDAXTD",
-        "magnet:?xt=urn:btih:QJB6WEDHSDAELDMB4G74DDWB6HXFJIRV",
-        "magnet:?xt=urn:btih:4UXWQO3T2TNCORH4XRLFH6HULFCLEMHH",
-        "magnet:?xt=urn:btih:55MSO5VAGK4UZJ23SOKAVCYZ2VFYJMMN",
-        "magnet:?xt=urn:btih:ICMVS6JVTRZ6D3EICRTJPOQDI2ZUEOX4",
-        "magnet:?xt=urn:btih:BUMNI7B3HGB2VHBVNBWPU3NARMVKK4NO",
-        "magnet:?xt=urn:btih:77V5F24AYQCJDKVFEAIVK76PYN4GZ3UR",
-        "magnet:?xt=urn:btih:PFIX3ECMJZCV3MQEBLM5LWPKVSLLWHYA",
-        "magnet:?xt=urn:btih:7ZKU6TKV7OLV7V44KOCZYRRCAVBQ5P64",
-        "magnet:?xt=urn:btih:XBIUOS3U6ZONDH4YDRZDLEHD4UQCIK4X",
-        "magnet:?xt=urn:btih:IWRQVIUGV2S3T2TVCRYKTXQ2QHZHTRZ7",
-        "magnet:?xt=urn:btih:WYFSAAFE56NM22LSN3RBI3OLHYNHWEKY",
-        "magnet:?xt=urn:btih:UWKN6OVZWTJZKYWMAX4TDGDJUIMBEH2H",
-        "magnet:?xt=urn:btih:3GTUNY5IU66OVOHPTNPMDHDG66QF7C5B",
-        "magnet:?xt=urn:btih:UZ7WDKZJREMSYEQNNZKE5FSXL75YTCRG",
-        "magnet:?xt=urn:btih:TN2HPDPYHTL2NIGTXYQJDUKHLJL4GD72",
-        "magnet:?xt=urn:btih:7UFQNGSX34WV7QXROUU3HBGLCLXLPZW2",
-        "magnet:?xt=urn:btih:HWBXABWVLJLPZ25ZP56TROZDT26ET4JD",
-        "magnet:?xt=urn:btih:SMBB5Q7HG32CAQEC3FLNI3OMLG4IOPEU",
-        "magnet:?xt=urn:btih:FKKH4HB3NGKLWHVZZWHTQZLXD3RUYLYT",
-        "magnet:?xt=urn:btih:TZ7BK32ZO6TYMVC4PU5IU4N7CBOXDJYI",
-        "magnet:?xt=urn:btih:57TAXEXVABSQVXRKKHM4OLAWOL7QIFS4",
-        "magnet:?xt=urn:btih:FIJBVAWN444NFGWM37HOK6AGC6NOQFUP",
-        "magnet:?xt=urn:btih:MXWRNXTIKM6IILSYFOKDENSZKVJBZDMP",
         "magnet:?xt=urn:btih:22BD1E913064E3F70FE2518C13D9A42EDFFED3DF&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:32fba9c3c96bf060d195d4d454009d6bacaaf577&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:C3E36BB32D7B8F1B89DCB003575F89EC859CF198&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
@@ -88,8 +31,8 @@
       "sources": [
         {
           "tracker": "linuxtracker",
-          "seeds": 1032,
-          "leechers": 2
+          "seeds": 1030,
+          "leechers": 4
         },
         {
           "tracker": "linuxtracker",
@@ -98,18 +41,23 @@
         },
         {
           "tracker": "linuxtracker",
-          "seeds": 737,
+          "seeds": 736,
           "leechers": 15
         },
         {
           "tracker": "linuxtracker",
-          "seeds": 601,
+          "seeds": 598,
           "leechers": 0
         },
         {
           "tracker": "linuxtracker",
-          "seeds": 420,
+          "seeds": 412,
           "leechers": 1
+        },
+        {
+          "tracker": "linuxtracker",
+          "seeds": 355,
+          "leechers": 2
         },
         {
           "tracker": "linuxtracker",
@@ -118,308 +66,13 @@
         },
         {
           "tracker": "linuxtracker",
-          "seeds": 348,
+          "seeds": 345,
           "leechers": 5
         },
         {
           "tracker": "linuxtracker",
-          "seeds": 344,
-          "leechers": 7
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 328,
+          "seeds": 326,
           "leechers": 2
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 288,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 246,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 232,
-          "leechers": 2
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 221,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 189,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 165,
-          "leechers": 3
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 157,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 153,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 151,
-          "leechers": 3
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 150,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 143,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 140,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 139,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 137,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 132,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 129,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 126,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 121,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 118,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 107,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 102,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 97,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 93,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 91,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 91,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 89,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 87,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 79,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 79,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 76,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 74,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 72,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 71,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 70,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 68,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 63,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 60,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 59,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 56,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 54,
-          "leechers": 2
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 54,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 53,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 53,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 52,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 52,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 50,
-          "leechers": 2
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 49,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 49,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 48,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 47,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 47,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 47,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 45,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 45,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 44,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 43,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 42,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 42,
-          "leechers": 0
         },
         {
           "tracker": "torrentdownload",
@@ -459,158 +112,69 @@
       "freeleech": false
     },
     {
-      "name": "debian 8 0 0 amd64 DVD 1 iso",
-      "size": "3.7 GB",
-      "seeds": 8367,
-      "leechers": 753,
+      "name": "debian 13 5 0 amd64 DVD 1 iso",
+      "size": "3.72 GB",
+      "seeds": 3214,
+      "leechers": 528,
       "download_urls": [
-        "magnet:?xt=urn:btih:57E159A58261C8D2F42A64980D2B808E3901FCF6&dn=debian+8+0+0+amd64+DVD+1+iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce&tr=http%3A%2F%2Flinuxtracker.org%3A2710%2F00000000000000000000000000000000%2Fannounce&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A80&tr=udp%3A%2F%2F9.rarbg.com%3A2710%2Fannounce&tr=http%3A%2F%2Ftracker.best-torrents.net%3A6969%2Fannounce&tr=http%3A%2F%2Fannounce.torrentsmd.com%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.windsormetalbattery.com%2Fannounce&tr=http%3A%2F%2Ftracker.winglai.com%2Fannounce&tr=http%3A%2F%2Ftorrent.gresille.org%2Fannounce&tr=http%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.nwps.ws%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.trackerfix.com%2Fannounce&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
-        "magnet:?xt=urn:btih:57E159A58261C8D2F42A64980D2B808E3901FCF6&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.dler.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:E6AA7BHHBSO7KYTTBD5DZ26GLEMQYUD4",
         "magnet:?xt=urn:btih:N6FSLRIIWZRCYGCZR5GK27XR7POUD7D7",
         "magnet:?xt=urn:btih:Y3XCAUEZBE534LP7UTQ3E6KLPWXA4YCG",
-        "magnet:?xt=urn:btih:EMXS4Q7LNNPMDVGMKRZ5GOXHAFWFZBTU",
         "magnet:?xt=urn:btih:IUOIWNNTBRKLQFO4M6L3EPL2C3FI6BYG",
         "magnet:?xt=urn:btih:P4R3M3V4OY7W3EY6TGKYHLP5EKT5PFX2",
-        "magnet:?xt=urn:btih:7E4CMHTVLKQD2VQSIR3GQYCZPJT32HVR",
-        "magnet:?xt=urn:btih:JU4BPC4PBBCH5KDAT2CEWADRGVHNMWEH",
-        "magnet:?xt=urn:btih:6ZUXMRDARDUTRBRA672AVKLFQRJKBK36",
-        "magnet:?xt=urn:btih:QPSTZNEMJL2JRHGRUU5FWRTR3KBBWH7U",
-        "magnet:?xt=urn:btih:KY7HFAOAADQYBEPFYDJZ2CMM74JV3KZG",
-        "magnet:?xt=urn:btih:RJUGZPRMZPAE7Q6BYLLOEE72NEEQV2RW",
-        "magnet:?xt=urn:btih:SIHS6B7Q6SCOP2C2FGU46STBUNF6AFF3",
         "magnet:?xt=urn:btih:722DF82052FF0E070608370D7039D44C4F016867&dn=debian+8+1+0+amd64+kde+CD+1+iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.pomf.se%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A80&tr=udp%3A%2F%2F9.rarbg.to%3A2710%2Fannounce&tr=udp%3A%2F%2Ftracker4.piratux.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fglotorrents.pw%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.trackerfix.com%3A80%2Fannounce&tr=http%3A%2F%2Ftorrent.gresille.org%2Fannounce&tr=http%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.nwps.ws%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.trackerfix.com%2Fannounce&tr=udp%3A%2F%2F9.rarbg.com%3A2710%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:722DF82052FF0E070608370D7039D44C4F016867&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.dler.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
-        "magnet:?xt=urn:btih:0DAB97A256CB5C1AE7B023B5D1855DAAA19DD0EE&dn=debian+8+1+0+amd64+xfce+CD+1+iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.pomf.se%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A80&tr=udp%3A%2F%2F9.rarbg.to%3A2710%2Fannounce&tr=udp%3A%2F%2Ftracker4.piratux.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fglotorrents.pw%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.trackerfix.com%3A80%2Fannounce&tr=http%3A%2F%2Ftorrent.gresille.org%2Fannounce&tr=http%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.nwps.ws%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.trackerfix.com%2Fannounce&tr=udp%3A%2F%2F9.rarbg.com%3A2710%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
-        "magnet:?xt=urn:btih:0DAB97A256CB5C1AE7B023B5D1855DAAA19DD0EE&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.dler.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:DC5BD6AFE9E89E93ECC825D0CD4CB9291CD1DF32&dn=debian+7+7+0+amd64+DVD+1+iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.istole.it%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.publicbt.com%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:DC5BD6AFE9E89E93ECC825D0CD4CB9291CD1DF32&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.dler.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
-        "magnet:?xt=urn:btih:GI7DQCWCLDLGIBY254B6FEVZUZ2M6V7Z",
-        "magnet:?xt=urn:btih:ANVPGM3D4ZNRGISPWT7S3QB47PMGXAFK",
-        "magnet:?xt=urn:btih:6GKKCCADW6Q5FM2LYC2MFLCHOYNB66JH",
         "magnet:?xt=urn:btih:42197C89651A8055AC29B73DDBBAFAF58ADED850&dn=debian+8+1+0+amd64+lxde+CD+1+iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.pomf.se%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A80&tr=udp%3A%2F%2F9.rarbg.to%3A2710%2Fannounce&tr=udp%3A%2F%2Ftracker4.piratux.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fglotorrents.pw%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.trackerfix.com%3A80%2Fannounce&tr=http%3A%2F%2Ftorrent.gresille.org%2Fannounce&tr=http%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.nwps.ws%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.trackerfix.com%2Fannounce&tr=udp%3A%2F%2F9.rarbg.com%3A2710%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:42197C89651A8055AC29B73DDBBAFAF58ADED850&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.dler.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
-        "magnet:?xt=urn:btih:42D7ZP5LO2LBPJUXY4M7V52VCIWX4EYL",
-        "magnet:?xt=urn:btih:3QIVT6Q7XL6V7NWV4Q5X5X72AKQZ3NWL",
-        "magnet:?xt=urn:btih:MJVZPVDLBD73K5H43ODBJYXBY5GIK6RJ",
-        "magnet:?xt=urn:btih:QCLQENCWTHYPVKWEIOMQ2EFMS5OU7DHR",
-        "magnet:?xt=urn:btih:UBX4TEKGESIMR2KBYZOHMD74T4GJU6VQ",
-        "magnet:?xt=urn:btih:NKU3BJDQTIGWYSMC7UBWGYKNSADIO4RD",
-        "magnet:?xt=urn:btih:EZ6WH76TC5YOIZ7Y3GC2QZRT6BKQFQIN",
-        "magnet:?xt=urn:btih:A5R3OVZUDFLLTP2ZSTSKTEWDMRXZ6GN5",
-        "magnet:?xt=urn:btih:MUYPONDZW7OULUJCVZMEI33SJ4HWG4L3",
-        "magnet:?xt=urn:btih:RO5SXIDNGFO5EO2YBDL4NL3XYA4YYRXK",
-        "magnet:?xt=urn:btih:KLKKECR6K2M6Q3AELRQJSJW5HUVWN44F",
-        "magnet:?xt=urn:btih:NMCFR7W5QS3AWFNTDPFHXZQAXBSNGHFB",
-        "magnet:?xt=urn:btih:QBTRRY4I65RROPQ44DK62H3WR34BD65I",
-        "magnet:?xt=urn:btih:25CY3NWMPMWDZHDVR4JS7ABZ7EZQBMLG",
-        "magnet:?xt=urn:btih:LNDXAQFI2UMV5Z3IIJHD5IN6ACCLFDPO",
-        "magnet:?xt=urn:btih:QC3FRKYGTS3CUM335WSEP6326BLQTB2J",
-        "magnet:?xt=urn:btih:5UIG3FKIA7SAMW2GRVTT6O2IAA33QVJ3",
         "magnet:?xt=urn:btih:7C724626F1E15261BEC29CD8FAAC76FA673ECD03&dn=debian+update+7+7+0+amd64+DVD+1+iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce&tr=http%3A%2F%2Ftorrent.gresille.org%2Fannounce&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A80&tr=http%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.nwps.ws%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.trackerfix.com%2Fannounce&tr=udp%3A%2F%2F9.rarbg.com%3A2710%2Fannounce&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:7C724626F1E15261BEC29CD8FAAC76FA673ECD03&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.dler.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
-        "magnet:?xt=urn:btih:322049E3110A56A256DF0F7231D34B7632023E33&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
-        "magnet:?xt=urn:btih:007A26BAD9D6E0A9142E42BAF14966227D02972B&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
-        "magnet:?xt=urn:btih:0DAB97A256CB5C1AE7B023B5D1855DAAA19DD0EE&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:22C541883EEDC640E7CABD22E4B814A1CBA6D8AD&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
-        "magnet:?xt=urn:btih:38923CA2519F7DBE4A38A63E260C95DD3F7D231B&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:42197C89651A8055AC29B73DDBBAFAF58ADED850&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:57E159A58261C8D2F42A64980D2B808E3901FCF6&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:5D0DD1A28F362F3FEE2B495693193991C04855CA&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:6608C463A9A158D065B167B351D2F738D611BA96&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:722DF82052FF0E070608370D7039D44C4F016867&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:7d34c392b5a0f7f4903cd7ff509740fdc45fb784&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
-        "magnet:?xt=urn:btih:A2C54BB84FCFEAB5EDD4D1B5AEC8B6A2A3BFB2B0&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:A437B3AF39FC5368C6806B4080B47252B8A888F5&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
-        "magnet:?xt=urn:btih:B631745A819EDD3B3C8CEAF982200A3D2105419B&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
-        "magnet:?xt=urn:btih:B97996C39C98B5946D3E9C84523FF9C1886389DE&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:C388A78F357C70232AE3007D506BB6BC5CC43505&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:CD8158937344B2A066446BED7E7A0C45214F1245&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:E508E5F1C7AD6650EB41D38F29AA567923B3934F&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:FB77C39F2F2658460C3473F3D47938A7A30BB713&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:185726992F5D24E041C8800E81AD23AA108E3F4E&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
-        "magnet:?xt=urn:btih:40F90995A1C16A1BF454D09907F57700F3E8BD64&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
         "magnet:?xt=urn:btih:b4fb50eaf23aa91616e129d47c0f14caa5b62dc6&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
-        "magnet:?xt=urn:btih:F0C3D663CF288640AF145349E1E242EC750A0342&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce"
+        "magnet:?xt=urn:btih:F0C3D663CF288640AF145349E1E242EC750A0342&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
+        "magnet:?xt=urn:btih:57E159A58261C8D2F42A64980D2B808E3901FCF6&dn=debian+8+0+0+amd64+DVD+1+iso&tr=http%3A%2F%2Flinuxtracker.org%3A2710%2F00000000000000000000000000000000%2Fannounce&tr=udp%3A%2F%2F9.rarbg.com%3A2710%2Fannounce&tr=http%3A%2F%2Ftracker.best-torrents.net%3A6969%2Fannounce&tr=http%3A%2F%2Fannounce.torrentsmd.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dler.org%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.windsormetalbattery.com%2Fannounce&tr=http%3A%2F%2Ftracker.winglai.com%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.nwps.ws%3A6969%2Fannounce&tr=http%3A%2F%2Ftorrent.gresille.org%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce"
       ],
       "quality": "sd",
       "content_type": "software",
-      "desc_link": "https://www.limetorrents.lol/debian-8-0-0-amd64-DVD-1-iso-torrent-6164389.html",
-      "tracker": "limetorrents",
+      "desc_link": "http://linuxtracker.org/index.php?page=torrent-details&id=27800f84e70c9df5627308fa3cebc659190c507c",
+      "tracker": "linuxtracker",
       "sources": [
         {
-          "tracker": "limetorrents",
-          "seeds": 818,
-          "leechers": 54
-        },
-        {
-          "tracker": "snowfl",
-          "seeds": 818,
-          "leechers": 54
+          "tracker": "linuxtracker",
+          "seeds": 644,
+          "leechers": 0
         },
         {
           "tracker": "linuxtracker",
-          "seeds": 677,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 603,
-          "leechers": 3
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 468,
-          "leechers": 3
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 323,
+          "seeds": 559,
           "leechers": 2
         },
         {
           "tracker": "linuxtracker",
-          "seeds": 323,
+          "seeds": 439,
+          "leechers": 3
+        },
+        {
+          "tracker": "linuxtracker",
+          "seeds": 325,
           "leechers": 173
         },
         {
           "tracker": "linuxtracker",
-          "seeds": 318,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 216,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 195,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 188,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 169,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 157,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 155,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 149,
+          "seeds": 317,
           "leechers": 0
         },
         {
@@ -625,16 +189,6 @@
         },
         {
           "tracker": "limetorrents",
-          "seeds": 139,
-          "leechers": 55
-        },
-        {
-          "tracker": "snowfl",
-          "seeds": 139,
-          "leechers": 55
-        },
-        {
-          "tracker": "limetorrents",
           "seeds": 126,
           "leechers": 55
         },
@@ -642,21 +196,6 @@
           "tracker": "snowfl",
           "seeds": 126,
           "leechers": 55
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 123,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 117,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 116,
-          "leechers": 0
         },
         {
           "tracker": "limetorrents",
@@ -669,96 +208,6 @@
           "leechers": 54
         },
         {
-          "tracker": "linuxtracker",
-          "seeds": 101,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 93,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 93,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 87,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 76,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 73,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 65,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 61,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 60,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 57,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 56,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 52,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 47,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 46,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 46,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 45,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 45,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 43,
-          "leechers": 0
-        },
-        {
           "tracker": "limetorrents",
           "seeds": 21,
           "leechers": 0
@@ -766,26 +215,6 @@
         {
           "tracker": "snowfl",
           "seeds": 21,
-          "leechers": 0
-        },
-        {
-          "tracker": "torrentdownload",
-          "seeds": 11,
-          "leechers": 0
-        },
-        {
-          "tracker": "torrentdownload",
-          "seeds": 10,
-          "leechers": 0
-        },
-        {
-          "tracker": "torrentdownload",
-          "seeds": 10,
-          "leechers": 0
-        },
-        {
-          "tracker": "torrentdownload",
-          "seeds": 10,
           "leechers": 0
         },
         {
@@ -812,11 +241,6 @@
           "tracker": "torrentdownload",
           "seeds": 10,
           "leechers": 2
-        },
-        {
-          "tracker": "torrentdownload",
-          "seeds": 10,
-          "leechers": 0
         },
         {
           "tracker": "torrentdownload",
@@ -832,16 +256,6 @@
           "tracker": "torrentdownload",
           "seeds": 10,
           "leechers": 1
-        },
-        {
-          "tracker": "torrentdownload",
-          "seeds": 10,
-          "leechers": 2
-        },
-        {
-          "tracker": "torrentdownload",
-          "seeds": 10,
-          "leechers": 0
         },
         {
           "tracker": "torrentdownload",
@@ -871,720 +285,23 @@
         {
           "tracker": "torrentdownload",
           "seeds": 9,
-          "leechers": 0
-        },
-        {
-          "tracker": "torrentdownload",
-          "seeds": 9,
           "leechers": 2
         },
         {
           "tracker": "torrentdownload",
           "seeds": 6,
           "leechers": 3
-        }
-      ],
-      "metadata": {
-        "source": "MusicBrainz",
-        "title": "1 8 0 0",
-        "year": 2021,
-        "content_type": "music",
-        "poster_url": null,
-        "overview": null,
-        "genres": []
-      },
-      "freeleech": false
-    },
-    {
-      "name": "debian live 13 6 0 amd64 xfce iso",
-      "size": "3.56 GB",
-      "seeds": 5986,
-      "leechers": 10,
-      "download_urls": [
-        "magnet:?xt=urn:btih:CR6I7ABWP7ZPSNA6IREOACKUG6MBM73M",
-        "magnet:?xt=urn:btih:IA3CXSNXT5LDPHZCW7MRMOK7GTZREPUS",
-        "magnet:?xt=urn:btih:VJBEGKZTEVB2VTJFF74G4QU4VEDOLTQI",
-        "magnet:?xt=urn:btih:T4EIV2XSTJB7YIXQJCUP4EHX2XRGLWJS",
-        "magnet:?xt=urn:btih:QSIBZIOKIEQ3F6OEJBBFOKEBXZDMEYYN",
-        "magnet:?xt=urn:btih:IPNEI7KUXTHMJMKORISXB5ASHJQAPL6N",
-        "magnet:?xt=urn:btih:5WMBOBXZBBUAP55I5PK3C2TP5XUWPEPD",
-        "magnet:?xt=urn:btih:HUBF4WYTMD2QT7SUCJQXGQV7GLF23EIC",
-        "magnet:?xt=urn:btih:U7QMPZGTFNFB57CH3M6VJ75JPJLPEUXY",
-        "magnet:?xt=urn:btih:FWMZVLPLBY7D5HJOKXRJF6WJATMG43VV",
-        "magnet:?xt=urn:btih:WNT43DYQDLO2Q4TATO7KUZF7AKQDRRYS",
-        "magnet:?xt=urn:btih:JHYJFLE5SXPMMUHWO46V3ZFA4YLMKIJ6",
-        "magnet:?xt=urn:btih:JTVP73SMA3QLSMOCEOZTBXAXZN3ILD2E",
-        "magnet:?xt=urn:btih:6IQMLZERGILVNSKEGIRSWQAIDQJBL26K",
-        "magnet:?xt=urn:btih:GJOUSANCNKEEGLJ6EDAGYXJ3PQCQXKNT",
-        "magnet:?xt=urn:btih:4LOXFVRNJUEZUKFZD3L76TCOZ2YJ5ZBQ",
-        "magnet:?xt=urn:btih:N5ZHA557TUQE52VLACG3IPMX26RVNFKJ",
-        "magnet:?xt=urn:btih:QWDSUGIIF6X56S3HOREO3BXVLGAYQYE3",
-        "magnet:?xt=urn:btih:24BL3Z7JJP67TYXKLPAOBCXI37UZ6RMN",
-        "magnet:?xt=urn:btih:J7GWWFUEE47XB5C4YLHVR4ZNMYK3FQMB",
-        "magnet:?xt=urn:btih:EBZ4IB57KIG6TB5EUM2GWY3R2GISUJ6K",
-        "magnet:?xt=urn:btih:NFIRCKUCUXUTXOILDBVU3FP7QSCL3G7P",
-        "magnet:?xt=urn:btih:LLYCI4D7K3RNZZBQI5QPVJT6N3LXTWTX",
-        "magnet:?xt=urn:btih:4AOJEJXMRBN6D6BJ6RMUG3GJ4ANCZ6N2",
-        "magnet:?xt=urn:btih:UEHNGXPKHH3RHSDKB43GVLOJ4RJ7SR3I",
-        "magnet:?xt=urn:btih:4W2EL7W63HMAJACNRDYVLIFLQJ24LBGU",
-        "magnet:?xt=urn:btih:SHPAQCB4I4VQ7BQRP46D7M4BUOACJMFC",
-        "magnet:?xt=urn:btih:C7O547ENQD6DNXAE2BJ4TLDRPK2T3J23",
-        "magnet:?xt=urn:btih:RLM2NT7CNNGYJBYPIIHATF5JTCAHFY5A",
-        "magnet:?xt=urn:btih:52UBMX3SWO5DHN5ULMUNWGUVCISGHURT",
-        "magnet:?xt=urn:btih:FIAA3MUS4ZY2CVC2Q4JWQNAMRZD74NCA",
-        "magnet:?xt=urn:btih:VHSDZF3K3XWSULFBK7IQZCUJLJS6TKOA",
-        "magnet:?xt=urn:btih:RBCOTN3EZXY54NF4QVY7UHZBR7WK47JX",
-        "magnet:?xt=urn:btih:6EKJUK4H5JVI4UBYDDKPCVVXKBHK3QTK",
-        "magnet:?xt=urn:btih:ECJEFBROLBQLXHAMYQ5K4BPGYMHBGQFG",
-        "magnet:?xt=urn:btih:OL7T7F4CJNC3Y7ET32UQOPMQYEZOLXLS",
-        "magnet:?xt=urn:btih:2TCSMD6NAOXAHCHOBYV55I4DOHSVH3XB",
-        "magnet:?xt=urn:btih:SNFRGM7AUDRTO6QJB3LUWDMUL2OTQQNS",
-        "magnet:?xt=urn:btih:4EFQIMGDXAWTDOWCQISJZA6OLPQNVGBG",
-        "magnet:?xt=urn:btih:DRRD7XVKSY4M5WK4EXBKPLKYCNKJDLL6",
-        "magnet:?xt=urn:btih:7CUEKWAKHYDLKFIOSJR7WHVIW4WJQ46F",
-        "magnet:?xt=urn:btih:6RUAI5VQL64SGN4ZDTOBVTFWMIBP6IXR",
-        "magnet:?xt=urn:btih:43EGNTDQC2YESI7PVX2JIRA4XFATSPKG",
-        "magnet:?xt=urn:btih:2QUKVLI6DCWCGAUK2ZBTOE35I7LJPZVE",
-        "magnet:?xt=urn:btih:5FWARY2KNK545Q6W7YWDCHZOGAG2TAFP",
-        "magnet:?xt=urn:btih:ORLKRP3TYBWUZQYAEP2SJAHALQIKKT2K",
-        "magnet:?xt=urn:btih:Z4MHWRAQHT6BFHWQX2GYSO2PNS7PYBTR",
-        "magnet:?xt=urn:btih:XNWXQDR6YSMQ7IKPCN44W5XLNJM4S7KR",
-        "magnet:?xt=urn:btih:D6V2RJKL6WYUT7BZUSAPOWTKV3PGPXXZ",
-        "magnet:?xt=urn:btih:4HPP5IQJKFG7FL2IFR4XM4TYBNLU6HPE",
-        "magnet:?xt=urn:btih:XIA5CXDDT3ZM7MY3VKH6HWEEZXDOKZQB",
-        "magnet:?xt=urn:btih:6OPGQTYY7ROC3NAGXHMU5MBL3LQTSHZA",
-        "magnet:?xt=urn:btih:7W5KMABPLW4PKQIES2XIS27AFOYFF343",
-        "magnet:?xt=urn:btih:WOOSUBENDECDHZ2RL4FIUREXYGDQYBOK",
-        "magnet:?xt=urn:btih:2ZOCZA6I7E6P6V4HCR7IPHQS4PB5ICWR",
-        "magnet:?xt=urn:btih:7CXFJKV2QDHL5L35BK5MKJYDTLDFRW2R",
-        "magnet:?xt=urn:btih:WK2ED7MZOQVWKNO2P4TMCMYRN47LN6R7",
-        "magnet:?xt=urn:btih:XJSQRXZ7ILDENPZENZWA6QWTKEGJKZY2",
-        "magnet:?xt=urn:btih:XPBAW27XKE45A7FV6OHYELJU2LPZ6FFZ",
-        "magnet:?xt=urn:btih:YEHSDRNX2UCHHPV3EBUYH72DA3DLM7U3",
-        "magnet:?xt=urn:btih:ZSE66TGRWNHDWJ2W3BEW3LHYBD7M3NXF",
-        "magnet:?xt=urn:btih:2EA1D96F7C74BF446CF77273A5E112F9DA4CE1BF&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
-        "magnet:?xt=urn:btih:8532F825E249E6D27831626B7220B96C1B6AA6FF&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
-        "magnet:?xt=urn:btih:ba665480811832da9fb12072b3ef9019ba655c5a&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
-        "magnet:?xt=urn:btih:AB3BDBAD7086674930B1B313EDA78E03E9F59F2A&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce"
-      ],
-      "quality": "hd",
-      "content_type": "software",
-      "desc_link": "http://linuxtracker.org/index.php?page=torrent-details&id=147c8f80367ff2f9341e4448e009543798167f6c",
-      "tracker": "linuxtracker",
-      "sources": [
-        {
-          "tracker": "linuxtracker",
-          "seeds": 292,
-          "leechers": 0
         },
         {
-          "tracker": "linuxtracker",
-          "seeds": 278,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 251,
+          "tracker": "limetorrents",
+          "seeds": 0,
           "leechers": 2
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 221,
-          "leechers": 5
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 220,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 214,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 198,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 166,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 162,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 160,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 142,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 136,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 113,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 108,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 105,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 99,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 96,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 93,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 90,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 90,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 88,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 88,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 86,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 81,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 81,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 81,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 80,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 78,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 76,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 72,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 71,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 71,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 69,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 68,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 67,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 66,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 64,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 63,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 63,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 62,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 62,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 61,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 60,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 59,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 57,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 57,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 56,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 56,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 56,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 55,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 53,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 50,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 50,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 48,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 48,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 48,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 47,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 46,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 46,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 46,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 45,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 45,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 45,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 42,
-          "leechers": 0
-        },
-        {
-          "tracker": "torrentdownload",
-          "seeds": 13,
-          "leechers": 0
-        },
-        {
-          "tracker": "torrentdownload",
-          "seeds": 10,
-          "leechers": 0
-        },
-        {
-          "tracker": "torrentdownload",
-          "seeds": 10,
-          "leechers": 0
-        },
-        {
-          "tracker": "torrentdownload",
-          "seeds": 6,
-          "leechers": 0
         }
       ],
       "metadata": {
         "source": "MusicBrainz",
-        "title": "ナンバーワン - 6 0 0 0",
-        "year": 2015,
-        "content_type": "music",
-        "poster_url": null,
-        "overview": null,
-        "genres": []
-      },
-      "freeleech": false
-    },
-    {
-      "name": "debian 13 6 0 s390x DVD 1 iso",
-      "size": "4.37 GB",
-      "seeds": 2732,
-      "leechers": 6,
-      "download_urls": [
-        "magnet:?xt=urn:btih:KFZUIXUMNGXGQXBOEEQ5VMUWFMGISNXF",
-        "magnet:?xt=urn:btih:WHISRCHAFBO7UUO5KGSQRONHZ3JNGXZK",
-        "magnet:?xt=urn:btih:UJ7TJVKOYNIPE4NN5Q6KXTWMLL5Y2DTN",
-        "magnet:?xt=urn:btih:KXX4ZU732DPAUAPPHGCJ7ZA4Z6LZJ6WD",
-        "magnet:?xt=urn:btih:VCUZWGZCHKEBV6LYTM2M4JQ76XM72DQF",
-        "magnet:?xt=urn:btih:WHWNSZ27Q3XPKE7UOHVONF675PP5MROW",
-        "magnet:?xt=urn:btih:4YXFNSJBUWBZ426RTHTD6JDZJWXTUFAI",
-        "magnet:?xt=urn:btih:KA6WXGSSOCOGBMY7AWJBKOU37SC4TSAZ",
-        "magnet:?xt=urn:btih:AQ5ZXB3VVEUZD45D5AP4LXXRM2AQUQEL",
-        "magnet:?xt=urn:btih:N4QXENCGFSEF4SH56SZHY6RPZKGIOXDB",
-        "magnet:?xt=urn:btih:J66GRYWP6A24OKOBZN2BZ34BSSJDSBFL",
-        "magnet:?xt=urn:btih:MOZOU4YRMOHTXHVDLE7PC6BTPY3U5DJA",
-        "magnet:?xt=urn:btih:YWE6OESOAHHB4CXUMCLUOTNWKD2BNIGQ",
-        "magnet:?xt=urn:btih:JQQBMBZMNRT5K6ZASHI5KR4NAOZTLRFU",
-        "magnet:?xt=urn:btih:ORY5CE5SIYWL2CLAHZVET5R2YMNPUXYA",
-        "magnet:?xt=urn:btih:AW4OWMEDQ5EJZDUPC3BOUK34KLGV4DKI",
-        "magnet:?xt=urn:btih:UIFVUGOZ4L2KQYLLSJLIMM32D45JRAZI",
-        "magnet:?xt=urn:btih:7KSCNO77ETN7OSFCLV5EIGLQI2CNLFZN",
-        "magnet:?xt=urn:btih:UPNQFETOQ72CIIQYG6PG4BLKHVK3B74X",
-        "magnet:?xt=urn:btih:UTARQQ6GKDK5VNBDCIILGMEI527MKBAR",
-        "magnet:?xt=urn:btih:OCZSUQVEFWYOAVYCBRJ4R3462R7QU2B4",
-        "magnet:?xt=urn:btih:R5KZEC6KV27L66DYARI2U3N2C2SAZGKV",
-        "magnet:?xt=urn:btih:AVIUNITTB4W5GTH6JEHLIZN7PULRE4P3",
-        "magnet:?xt=urn:btih:I7G5DXC3BNYNZQRD62ZOOL7CDC55KVWB",
-        "magnet:?xt=urn:btih:DY5VDIDX4SB3RGWEFK3SCQ7IDP5AFAIT",
-        "magnet:?xt=urn:btih:VGDOVM7DMD7H43TGFXQUINPC5KLCSEJH",
-        "magnet:?xt=urn:btih:4HRVFJTTQVOMUQFGJMM2K4TGXPTEXSS4",
-        "magnet:?xt=urn:btih:22TZSAJEE4XWSFCLENLYKKXV3HA5ZHWT",
-        "magnet:?xt=urn:btih:UVZD2BFMD2S737VOKUUMXKY4NKHFYXLO",
-        "magnet:?xt=urn:btih:Q6EAJP6RUGZ7PMLHGLQQWL2U6EIKDSWV",
-        "magnet:?xt=urn:btih:S3CMFCGCHBAJRHRFX6YLT2RM2VA5JQYW",
-        "magnet:?xt=urn:btih:XRTXJ333IGF75S3LCX5SIDSDUSHL4OZ5",
-        "magnet:?xt=urn:btih:CHZ4P3PQOQL4YJK5MXVWKVWN3PZDVQJO",
-        "magnet:?xt=urn:btih:HI4OVEE2AAQTSV62XMT2RY5ADUKR5TYM",
-        "magnet:?xt=urn:btih:AQ7Q2S5OLQPTGNRKTHPASK43EVKXD7AV",
-        "magnet:?xt=urn:btih:VNZMGPPAQXCS6CLHJTC7UZOKJBPZ6PKD",
-        "magnet:?xt=urn:btih:2WAPZGSE73IIZK4L5ULSIZ7WCSFKCSN6",
-        "magnet:?xt=urn:btih:KHY2KGZRFYBEKEHU5VRP3PXXVGI7M3RS",
-        "magnet:?xt=urn:btih:UHGXFHL6W5CV6LGTQB64PYPLXNY62FLE"
-      ],
-      "quality": "sd",
-      "content_type": "software",
-      "desc_link": "http://linuxtracker.org/index.php?page=torrent-details&id=5173445e8c69ae685c2e2121dab2962b0c8936e5",
-      "tracker": "linuxtracker",
-      "sources": [
-        {
-          "tracker": "linuxtracker",
-          "seeds": 130,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 125,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 96,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 93,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 87,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 81,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 79,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 79,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 78,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 78,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 77,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 76,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 76,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 72,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 71,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 71,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 69,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 67,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 65,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 62,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 62,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 61,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 59,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 57,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 57,
-          "leechers": 1
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 56,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 56,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 55,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 54,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 54,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 53,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 53,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 52,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 49,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 49,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 48,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 48,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 46,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 45,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 43,
-          "leechers": 0
-        },
-        {
-          "tracker": "linuxtracker",
-          "seeds": 43,
-          "leechers": 0
-        }
-      ],
-      "metadata": {
-        "source": "MusicBrainz",
-        "title": "0 1 0 1 0 0 1",
-        "year": 2024,
+        "title": "5 0 1",
+        "year": 2014,
         "content_type": "music",
         "poster_url": null,
         "overview": null,
@@ -1667,12 +384,180 @@
           "leechers": 1
         }
       ],
+      "metadata": {
+        "source": "MusicBrainz",
+        "title": "Robin Hood",
+        "year": null,
+        "content_type": "music",
+        "poster_url": null,
+        "overview": null,
+        "genres": []
+      },
+      "freeleech": false
+    },
+    {
+      "name": "Clojure Stack for Developers (Debian based)",
+      "size": "7.32 MB",
+      "seeds": 1608,
+      "leechers": 1066,
+      "download_urls": [
+        "magnet:?xt=urn:btih:5D0C6941189AABA096C16510A0A34D6B48AA106A&dn=Clojure+Stack+for+Developers+%28Debian+based%29&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969%2Fannounce&tr=udp%3A%2F%2Feddie4.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2F9.rarbg.to%3A2710%2Fannounce&tr=udp%3A%2F%2F9.rarbg.me%3A2710%2Fannounce&tr=udp%3A%2F%2Fpublic.popcorn-tracker.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fipv4.tracker.harry.lu%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.vanitycore.co%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.zer0day.to%3A1337%2Fannounce&tr=http%3A%2F%2Ftracker.opentrackr.org%2Fannounce&tr=udp%3A%2F%2Ftracker.mgtracker.org%3A2710%2Fannounce&tr=udp%3A%2F%2Fmgtracker.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.sktorrent.net%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.x4w.co%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.internetwarriors.net%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.mg64.net%3A6881%2Fannounce&tr=udp%3A%2F%2Fasnet.pw%3A2710%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.ch%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.blackunicorn.xyz%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker4.piratux.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fglotorrents.pw%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.trackerfix.com%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.pomf.se%3A80%2Fannounce&tr=http%3A%2F%2Ftracker2.wasabii.com.tw%3A6969%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcastradio.net%3A6969%2Fannounce&tr=http%3A%2F%2Fannounce.torrentsmd.com%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.trackerfix.com%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
+        "magnet:?xt=urn:btih:5D0C6941189AABA096C16510A0A34D6B48AA106A&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.dler.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
+        "magnet:?xt=urn:btih:5D0C6941189AABA096C16510A0A34D6B48AA106A&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce"
+      ],
+      "quality": "unknown",
+      "content_type": "software",
+      "desc_link": "https://www.limetorrents.lol/Clojure-Stack-for-Developers-(Debian-based)-torrent-9996237.html",
+      "tracker": "limetorrents",
+      "sources": [
+        {
+          "tracker": "limetorrents",
+          "seeds": 569,
+          "leechers": 377
+        },
+        {
+          "tracker": "snowfl",
+          "seeds": 569,
+          "leechers": 377
+        },
+        {
+          "tracker": "torrentdownload",
+          "seeds": 470,
+          "leechers": 312
+        }
+      ],
+      "metadata": {
+        "source": "MusicBrainz",
+        "title": "Developers",
+        "year": 2011,
+        "content_type": "music",
+        "poster_url": null,
+        "overview": null,
+        "genres": []
+      },
+      "freeleech": false
+    },
+    {
+      "name": "debian live 500 i386 kde desktop iso",
+      "size": "661.12 MB",
+      "seeds": 1041,
+      "leechers": 334,
+      "download_urls": [
+        "magnet:?xt=urn:btih:811F2F24BD6056114F7F2E0154479E1E5F81D357&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
+        "magnet:?xt=urn:btih:811F2F24BD6056114F7F2E0154479E1E5F81D357&dn=debian-live-500-i386-kde-desktop+iso&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
+        "magnet:?xt=urn:btih:811F2F24BD6056114F7F2E0154479E1E5F81D357&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.dler.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
+        "magnet:?xt=urn:btih:5838919135F1FA9B8265A0F9AE8780AA96B86795&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
+        "magnet:?xt=urn:btih:F5304E251DBA29C0E60502AE82F19F30A959D4CF&dn=debian+live+7+6+0+i386+gnome+desktop+iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.publicbt.com%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.istole.it%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
+        "magnet:?xt=urn:btih:F5304E251DBA29C0E60502AE82F19F30A959D4CF&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.dler.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
+        "magnet:?xt=urn:btih:61F017A1DA3F02675AB2C90965570F516D3B3637&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
+        "magnet:?xt=urn:btih:3B356522905F3CEC1B5A38F776E8E9063DB82CE7&dn=Debian+live+7+6+0+i386+Kde+Desktop+%5BLinux+Distribution%5D+iso+%7BSality%7D&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80&tr=udp%3A%2F%2Ftracker.publicbt.com%3A80&tr=udp%3A%2F%2Ftracker.istole.it%3A80&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A80&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
+        "magnet:?xt=urn:btih:3B356522905F3CEC1B5A38F776E8E9063DB82CE7&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.dler.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
+        "magnet:?xt=urn:btih:19BCC83361D6827CDB8EB11C8814FAC5066175C0&dn=debian+live+8+2+0+i386+xfce+desktop+iso&tr=http%3A%2F%2Fbttracker.debian.org%3A6969%2Fannounce&tr=http%3A%2F%2Flinuxtracker.org%3A2710%2F00000000000000000000000000000000%2Fannounce&tr=udp%3A%2F%2Ftracker.openbittorrent.com%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.pomf.se%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A80&tr=udp%3A%2F%2F9.rarbg.to%3A2710%2Fannounce&tr=udp%3A%2F%2Ftracker4.piratux.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fglotorrents.pw%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.trackerfix.com%3A80%2Fannounce&tr=http%3A%2F%2Ftorrent.gresille.org%2Fannounce&tr=http%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.nwps.ws%3A6969%2Fannounce&tr=http%3A%2F%2Ftracker.trackerfix.com%2Fannounce&tr=udp%3A%2F%2F9.rarbg.com%3A2710%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
+        "magnet:?xt=urn:btih:19BCC83361D6827CDB8EB11C8814FAC5066175C0&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fp4p.arenabg.com%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.dler.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexplodie.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.ololosh.space%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dump.cl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker-udp.gbitt.info%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker01-msk-virt.corbina.net%3A80%2Fannounce&tr=udp%3A%2F%2Fopen.free-tracker.ga%3A6969%2Fannounce&tr=udp%3A%2F%2Fns-1.x-fins.com%3A6969%2Fannounce&tr=udp%3A%2F%2Fleet-tracker.moe%3A1337%2Fannounce&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.open-internet.nl%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.pirateparty.gr%3A6969%2Fannounce&tr=udp%3A%2F%2Fdenis.stalker.upeer.me%3A6969%2Fannounce",
+        "magnet:?xt=urn:btih:9B0CFC452F2D97901696E3D4C614BD038B3B5FA6&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
+        "magnet:?xt=urn:btih:16344c4d7cc36a00803e6a7a3503c67cbd511f5c&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
+        "magnet:?xt=urn:btih:8948fdc987b30bba02dd55c295a237566f38a38c&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
+        "magnet:?xt=urn:btih:FA6EDCE678DEC8CD503CB85240CFD9BFCF504FE5&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
+        "magnet:?xt=urn:btih:DD3028D1AB770B02C8DDA7140CD76972EF4FB1B0&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce",
+        "magnet:?xt=urn:btih:0a35eb0739f4260de15fca9c3caa4303ab24ecba&dn=&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=http%3A%2F%2Ftracker.ipv6tracker.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.hotplug.ru%3A2710%2Fannounce&tr=https%3A%2F%2Ftracker.fastdownload.xyz%3A443%2Fannounce&tr=https%3A%2F%2Fopentracker.xyz%3A443%2Fannounce&tr=http%3A%2F%2Fopen.trackerlist.xyz%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.birkenwald.de%3A6969%2Fannounce&tr=https%3A%2F%2Ft.quic.ws%3A443%2Fannounce&tr=https%3A%2F%2Ftracker.parrotsec.org%3A443%2Fannounce&tr=udp%3A%2F%2Ftracker.supertracker.net%3A1337%2Fannounce&tr=http%3A%2F%2Fgwp2-v19.rinet.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fbigfoot1942.sektori.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fcarapax.net%3A6969%2Fannounce&tr=udp%3A%2F%2Fretracker.akado-ural.ru%3A80%2Fannounce&tr=udp%3A%2F%2Fretracker.maxnet.ua%3A80%2Fannounce&tr=udp%3A%2F%2Fbt.dy20188.com%3A80%2Fannounce&tr=http%3A%2F%2F0d.kebhana.mx%3A443%2Fannounce&tr=http%3A%2F%2Ftracker.files.fm%3A6969%2Fannounce&tr=http%3A%2F%2Fretracker.joxnet.ru%3A80%2Fannounce&tr=http%3A%2F%2Ftracker.moxing.party%3A6969%2Fannounce"
+      ],
+      "quality": "sd",
+      "content_type": "software",
+      "desc_link": "https://www.torrentdownload.info/811F2F24BD6056114F7F2E0154479E1E5F81D357/debian-live-500-i386-kde-desktop-iso",
+      "tracker": "torrentdownload",
+      "sources": [
+        {
+          "tracker": "torrentdownload",
+          "seeds": 162,
+          "leechers": 82
+        },
+        {
+          "tracker": "limetorrents",
+          "seeds": 162,
+          "leechers": 82
+        },
+        {
+          "tracker": "snowfl",
+          "seeds": 162,
+          "leechers": 82
+        },
+        {
+          "tracker": "torrentdownload",
+          "seeds": 109,
+          "leechers": 40
+        },
+        {
+          "tracker": "limetorrents",
+          "seeds": 92,
+          "leechers": 5
+        },
+        {
+          "tracker": "snowfl",
+          "seeds": 92,
+          "leechers": 5
+        },
+        {
+          "tracker": "torrentdownload",
+          "seeds": 66,
+          "leechers": 26
+        },
+        {
+          "tracker": "limetorrents",
+          "seeds": 46,
+          "leechers": 3
+        },
+        {
+          "tracker": "snowfl",
+          "seeds": 46,
+          "leechers": 3
+        },
+        {
+          "tracker": "limetorrents",
+          "seeds": 25,
+          "leechers": 3
+        },
+        {
+          "tracker": "snowfl",
+          "seeds": 25,
+          "leechers": 3
+        },
+        {
+          "tracker": "torrentdownload",
+          "seeds": 13,
+          "leechers": 0
+        },
+        {
+          "tracker": "torrentdownload",
+          "seeds": 10,
+          "leechers": 0
+        },
+        {
+          "tracker": "torrentdownload",
+          "seeds": 10,
+          "leechers": 0
+        },
+        {
+          "tracker": "torrentdownload",
+          "seeds": 10,
+          "leechers": 0
+        },
+        {
+          "tracker": "torrentdownload",
+          "seeds": 6,
+          "leechers": 0
+        },
+        {
+          "tracker": "torrentdownload",
+          "seeds": 5,
+          "leechers": 0
+        }
+      ],
       "metadata": null,
       "freeleech": false
     }
   ],
-  "total_results": 1442,
-  "merged_results": 378,
+  "total_results": 1195,
+  "merged_results": 352,
   "trackers_searched": [
     "rutracker",
     "kinozal",
@@ -1718,16 +603,33 @@
     "yourbittorrent",
     "yts"
   ],
-  "errors": [],
+  "errors": [
+    "rutracker: rutracker login.php returned no session cookie — this is the rutracker anti-abuse CAPTCHA wall (gates login.php when logins spike), not a credential failure. Set RUTRACKER_COOKIES from a logged-in browser session to bypass the login round-trip.",
+    "nnmclub: nnmclub login.php is gated by a Cloudflare Turnstile JS CAPTCHA; a password POST cannot obtain a session cookie. Set NNMCLUB_COOKIES from a logged-in browser session (run scripts/nnmclub-cookie-refresh.sh).",
+    "audiobookbay: plugin exceeded the per-tracker deadline with no results",
+    "bitru: upstream returned HTTP 403 Forbidden",
+    "bt4g: upstream returned HTTP 403 Forbidden",
+    "extratorrent: upstream returned HTTP 403 Forbidden",
+    "eztv: upstream returned HTTP 403 Forbidden",
+    "kickass: upstream returned HTTP 403 Forbidden",
+    "megapeer: upstream returned HTTP 404 Not Found (domain moved?)",
+    "one337x: upstream returned HTTP 403 Forbidden",
+    "pctorrent: upstream domain does not resolve (DNS failure)",
+    "rockbox: plugin exceeded the per-tracker deadline with no results",
+    "tokyotoshokan: plugin exceeded the per-tracker deadline with no results",
+    "torrentfunk: plugin exceeded the per-tracker deadline with no results",
+    "xfsub: plugin exceeded the per-tracker deadline with no results",
+    "yihua: upstream domain does not resolve (DNS failure)"
+  ],
   "tracker_stats": [
     {
       "name": "academictorrents",
       "tracker_url": "https://academictorrents.com/",
       "status": "success",
       "results_count": 1,
-      "started_at": "2026-08-21T19:59:00.405318+00:00",
-      "completed_at": "2026-08-21T19:59:01.040939+00:00",
-      "duration_ms": 635,
+      "started_at": "2026-09-01T16:34:27.886401+00:00",
+      "completed_at": "2026-09-01T16:34:28.184509+00:00",
+      "duration_ms": 298,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -1742,9 +644,9 @@
       "tracker_url": "http://down.ali213.net/",
       "status": "empty",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:00.406419+00:00",
-      "completed_at": "2026-08-21T19:59:02.862605+00:00",
-      "duration_ms": 2456,
+      "started_at": "2026-09-01T16:34:27.887810+00:00",
+      "completed_at": "2026-09-01T16:34:30.105062+00:00",
+      "duration_ms": 2217,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -1759,9 +661,9 @@
       "tracker_url": "https://anilibria.tv",
       "status": "empty",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:00.408302+00:00",
-      "completed_at": "2026-08-21T19:59:00.825029+00:00",
-      "duration_ms": 416,
+      "started_at": "2026-09-01T16:34:27.889079+00:00",
+      "completed_at": "2026-09-01T16:34:28.114520+00:00",
+      "duration_ms": 225,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -1776,9 +678,9 @@
       "tracker_url": "http://theaudiobookbay.se/",
       "status": "error",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:00.411969+00:00",
-      "completed_at": "2026-08-21T19:59:15.421136+00:00",
-      "duration_ms": 15009,
+      "started_at": "2026-09-01T16:34:27.890352+00:00",
+      "completed_at": "2026-09-01T16:34:42.896247+00:00",
+      "duration_ms": 15005,
       "error": "plugin exceeded the per-tracker deadline with no results",
       "error_type": "deadline_timeout",
       "authenticated": false,
@@ -1796,9 +698,9 @@
       "tracker_url": "https://bitru.org",
       "status": "error",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:00.415275+00:00",
-      "completed_at": "2026-08-21T19:59:00.800106+00:00",
-      "duration_ms": 384,
+      "started_at": "2026-09-01T16:34:27.891838+00:00",
+      "completed_at": "2026-09-01T16:34:28.121413+00:00",
+      "duration_ms": 229,
       "error": "upstream returned HTTP 403 Forbidden",
       "error_type": "upstream_http_403",
       "authenticated": false,
@@ -1813,11 +715,11 @@
     {
       "name": "bitsearch",
       "tracker_url": "https://bitsearch.to",
-      "status": "empty",
-      "results_count": 0,
-      "started_at": "2026-08-21T19:59:00.495388+00:00",
-      "completed_at": "2026-08-21T19:59:01.019298+00:00",
-      "duration_ms": 523,
+      "status": "success",
+      "results_count": 80,
+      "started_at": "2026-09-01T16:34:27.907686+00:00",
+      "completed_at": "2026-09-01T16:34:42.912896+00:00",
+      "duration_ms": 15005,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -1826,7 +728,8 @@
       "category": "all",
       "query": "debian",
       "notes": {
-        "stderr_tail": "Connection error: Internal Server Error"
+        "deadline_hit": true,
+        "deadline_seconds": 15.0
       }
     },
     {
@@ -1834,9 +737,9 @@
       "tracker_url": "https://bt4gprx.com/",
       "status": "error",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:00.595935+00:00",
-      "completed_at": "2026-08-21T19:59:01.079179+00:00",
-      "duration_ms": 483,
+      "started_at": "2026-09-01T16:34:27.920495+00:00",
+      "completed_at": "2026-09-01T16:34:28.155352+00:00",
+      "duration_ms": 234,
       "error": "upstream returned HTTP 403 Forbidden",
       "error_type": "upstream_http_403",
       "authenticated": false,
@@ -1853,9 +756,9 @@
       "tracker_url": "https://btsow.motorcycles",
       "status": "empty",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:00.750045+00:00",
-      "completed_at": "2026-08-21T19:59:01.321502+00:00",
-      "duration_ms": 571,
+      "started_at": "2026-09-01T16:34:28.029645+00:00",
+      "completed_at": "2026-09-01T16:34:28.313704+00:00",
+      "duration_ms": 284,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -1870,9 +773,9 @@
       "tracker_url": "https://extratorrent.st",
       "status": "error",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:00.800163+00:00",
-      "completed_at": "2026-08-21T19:59:01.224220+00:00",
-      "duration_ms": 424,
+      "started_at": "2026-09-01T16:34:28.114571+00:00",
+      "completed_at": "2026-09-01T16:34:28.292284+00:00",
+      "duration_ms": 177,
       "error": "upstream returned HTTP 403 Forbidden",
       "error_type": "upstream_http_403",
       "authenticated": false,
@@ -1889,9 +792,9 @@
       "tracker_url": "https://eztv.re",
       "status": "error",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:00.825069+00:00",
-      "completed_at": "2026-08-21T19:59:01.159766+00:00",
-      "duration_ms": 334,
+      "started_at": "2026-09-01T16:34:28.121464+00:00",
+      "completed_at": "2026-09-01T16:34:28.315066+00:00",
+      "duration_ms": 193,
       "error": "upstream returned HTTP 403 Forbidden",
       "error_type": "upstream_http_403",
       "authenticated": false,
@@ -1908,9 +811,9 @@
       "tracker_url": "https://www.gamestorrents.app",
       "status": "empty",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:01.019345+00:00",
-      "completed_at": "2026-08-21T19:59:02.223807+00:00",
-      "duration_ms": 1204,
+      "started_at": "2026-09-01T16:34:28.155418+00:00",
+      "completed_at": "2026-09-01T16:34:29.115024+00:00",
+      "duration_ms": 959,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -1925,9 +828,9 @@
       "tracker_url": "https://glodls.to/",
       "status": "empty",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:01.033492+00:00",
-      "completed_at": "2026-08-21T19:59:01.494341+00:00",
-      "duration_ms": 460,
+      "started_at": "2026-09-01T16:34:28.170310+00:00",
+      "completed_at": "2026-09-01T16:34:28.489710+00:00",
+      "duration_ms": 319,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -1944,9 +847,9 @@
       "tracker_url": "https://iptorrents.com",
       "status": "success",
       "results_count": 49,
-      "started_at": "2026-08-21T19:59:00.403234+00:00",
-      "completed_at": "2026-08-21T19:59:00.749974+00:00",
-      "duration_ms": 346,
+      "started_at": "2026-09-01T16:34:27.884422+00:00",
+      "completed_at": "2026-09-01T16:34:28.179926+00:00",
+      "duration_ms": 295,
       "error": null,
       "error_type": null,
       "authenticated": true,
@@ -1960,10 +863,10 @@
       "name": "jackett",
       "tracker_url": "http://localhost:9117",
       "status": "success",
-      "results_count": 51,
-      "started_at": "2026-08-21T19:59:00.404137+00:00",
-      "completed_at": "2026-08-21T19:59:01.033412+00:00",
-      "duration_ms": 629,
+      "results_count": 1,
+      "started_at": "2026-09-01T16:34:27.884633+00:00",
+      "completed_at": "2026-09-01T16:34:28.170250+00:00",
+      "duration_ms": 285,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -1978,9 +881,9 @@
       "tracker_url": "https://kickasstorrents.to/",
       "status": "error",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:01.040999+00:00",
-      "completed_at": "2026-08-21T19:59:01.360168+00:00",
-      "duration_ms": 319,
+      "started_at": "2026-09-01T16:34:28.179964+00:00",
+      "completed_at": "2026-09-01T16:34:28.365642+00:00",
+      "duration_ms": 185,
       "error": "upstream returned HTTP 403 Forbidden",
       "error_type": "upstream_http_403",
       "authenticated": false,
@@ -1997,9 +900,9 @@
       "tracker_url": "https://kinozal.tv",
       "status": "empty",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:00.401629+00:00",
-      "completed_at": "2026-08-21T19:59:05.437898+00:00",
-      "duration_ms": 5036,
+      "started_at": "2026-09-01T16:34:27.883961+00:00",
+      "completed_at": "2026-09-01T16:34:27.907652+00:00",
+      "duration_ms": 23,
       "error": null,
       "error_type": null,
       "authenticated": true,
@@ -2013,10 +916,10 @@
       "name": "limetorrents",
       "tracker_url": "https://www.limetorrents.lol",
       "status": "success",
-      "results_count": 53,
-      "started_at": "2026-08-21T19:59:01.079234+00:00",
-      "completed_at": "2026-08-21T19:59:16.084555+00:00",
-      "duration_ms": 15005,
+      "results_count": 52,
+      "started_at": "2026-09-01T16:34:28.184566+00:00",
+      "completed_at": "2026-09-01T16:34:43.189418+00:00",
+      "duration_ms": 15004,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -2033,10 +936,10 @@
       "name": "linuxtracker",
       "tracker_url": "http://linuxtracker.org",
       "status": "success",
-      "results_count": 240,
-      "started_at": "2026-08-21T19:59:01.159831+00:00",
-      "completed_at": "2026-08-21T19:59:16.165628+00:00",
-      "duration_ms": 15005,
+      "results_count": 15,
+      "started_at": "2026-09-01T16:34:28.292348+00:00",
+      "completed_at": "2026-09-01T16:34:43.297288+00:00",
+      "duration_ms": 15004,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -2054,9 +957,9 @@
       "tracker_url": "https://megapeer.vip",
       "status": "error",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:01.224270+00:00",
-      "completed_at": "2026-08-21T19:59:01.655945+00:00",
-      "duration_ms": 431,
+      "started_at": "2026-09-01T16:34:28.313782+00:00",
+      "completed_at": "2026-09-01T16:34:28.671490+00:00",
+      "duration_ms": 357,
       "error": "upstream returned HTTP 404 Not Found (domain moved?)",
       "error_type": "upstream_http_404",
       "authenticated": false,
@@ -2071,13 +974,13 @@
     {
       "name": "nnmclub",
       "tracker_url": "https://nnmclub.to",
-      "status": "success",
-      "results_count": 50,
-      "started_at": "2026-08-21T19:59:00.402170+00:00",
-      "completed_at": "2026-08-21T19:59:00.595862+00:00",
-      "duration_ms": 193,
-      "error": null,
-      "error_type": null,
+      "status": "error",
+      "results_count": 0,
+      "started_at": "2026-09-01T16:34:27.884209+00:00",
+      "completed_at": "2026-09-01T16:34:28.029569+00:00",
+      "duration_ms": 145,
+      "error": "nnmclub login.php is gated by a Cloudflare Turnstile JS CAPTCHA; a password POST cannot obtain a session cookie. Set NNMCLUB_COOKIES from a logged-in browser session (run scripts/nnmclub-cookie-refresh.sh).",
+      "error_type": "upstream_captcha",
       "authenticated": true,
       "attempt": 1,
       "http_status": null,
@@ -2090,9 +993,9 @@
       "tracker_url": "https://nyaa.si",
       "status": "success",
       "results_count": 1,
-      "started_at": "2026-08-21T19:59:01.321579+00:00",
-      "completed_at": "2026-08-21T19:59:01.739810+00:00",
-      "duration_ms": 418,
+      "started_at": "2026-09-01T16:34:28.315122+00:00",
+      "completed_at": "2026-09-01T16:34:28.693628+00:00",
+      "duration_ms": 378,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -2107,9 +1010,9 @@
       "tracker_url": "https://1337x.to",
       "status": "error",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:01.360228+00:00",
-      "completed_at": "2026-08-21T19:59:01.549878+00:00",
-      "duration_ms": 189,
+      "started_at": "2026-09-01T16:34:28.365698+00:00",
+      "completed_at": "2026-09-01T16:34:28.523852+00:00",
+      "duration_ms": 158,
       "error": "upstream returned HTTP 403 Forbidden",
       "error_type": "upstream_http_403",
       "authenticated": false,
@@ -2126,9 +1029,9 @@
       "tracker_url": "https://pctorrent.ru",
       "status": "error",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:01.494405+00:00",
-      "completed_at": "2026-08-21T19:59:01.647087+00:00",
-      "duration_ms": 152,
+      "started_at": "2026-09-01T16:34:28.489758+00:00",
+      "completed_at": "2026-09-01T16:34:28.631186+00:00",
+      "duration_ms": 141,
       "error": "upstream domain does not resolve (DNS failure)",
       "error_type": "dns_failure",
       "authenticated": false,
@@ -2145,9 +1048,9 @@
       "tracker_url": "https://thepiratebay.org",
       "status": "success",
       "results_count": 100,
-      "started_at": "2026-08-21T19:59:01.549941+00:00",
-      "completed_at": "2026-08-21T19:59:01.787493+00:00",
-      "duration_ms": 237,
+      "started_at": "2026-09-01T16:34:28.523896+00:00",
+      "completed_at": "2026-09-01T16:34:28.713240+00:00",
+      "duration_ms": 189,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -2162,9 +1065,9 @@
       "tracker_url": "https://pirateiro.io/",
       "status": "success",
       "results_count": 22,
-      "started_at": "2026-08-21T19:59:01.647150+00:00",
-      "completed_at": "2026-08-21T19:59:11.662089+00:00",
-      "duration_ms": 10014,
+      "started_at": "2026-09-01T16:34:28.631231+00:00",
+      "completed_at": "2026-09-01T16:34:34.371184+00:00",
+      "duration_ms": 5739,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -2179,9 +1082,9 @@
       "tracker_url": "https://rawkbawx.rocks/",
       "status": "error",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:01.656026+00:00",
-      "completed_at": "2026-08-21T19:59:16.664000+00:00",
-      "duration_ms": 15007,
+      "started_at": "2026-09-01T16:34:28.671538+00:00",
+      "completed_at": "2026-09-01T16:34:43.676112+00:00",
+      "duration_ms": 15004,
       "error": "plugin exceeded the per-tracker deadline with no results",
       "error_type": "deadline_timeout",
       "authenticated": false,
@@ -2199,9 +1102,9 @@
       "tracker_url": "https://rutor.info/",
       "status": "success",
       "results_count": 3,
-      "started_at": "2026-08-21T19:59:01.739865+00:00",
-      "completed_at": "2026-08-21T19:59:02.014596+00:00",
-      "duration_ms": 274,
+      "started_at": "2026-09-01T16:34:28.694374+00:00",
+      "completed_at": "2026-09-01T16:34:28.903306+00:00",
+      "duration_ms": 208,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -2214,13 +1117,13 @@
     {
       "name": "rutracker",
       "tracker_url": "https://rutracker.org",
-      "status": "empty",
+      "status": "error",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:00.400845+00:00",
-      "completed_at": "2026-08-21T19:59:00.495013+00:00",
-      "duration_ms": 94,
-      "error": null,
-      "error_type": null,
+      "started_at": "2026-09-01T16:34:27.883613+00:00",
+      "completed_at": "2026-09-01T16:34:27.920425+00:00",
+      "duration_ms": 36,
+      "error": "rutracker login.php returned no session cookie — this is the rutracker anti-abuse CAPTCHA wall (gates login.php when logins spike), not a credential failure. Set RUTRACKER_COOKIES from a logged-in browser session to bypass the login round-trip.",
+      "error_type": "upstream_captcha",
       "authenticated": true,
       "attempt": 1,
       "http_status": null,
@@ -2232,10 +1135,10 @@
       "name": "snowfl",
       "tracker_url": "https://snowfl.com/",
       "status": "success",
-      "results_count": 40,
-      "started_at": "2026-08-21T19:59:01.787536+00:00",
-      "completed_at": "2026-08-21T19:59:07.155650+00:00",
-      "duration_ms": 5368,
+      "results_count": 39,
+      "started_at": "2026-09-01T16:34:28.713311+00:00",
+      "completed_at": "2026-09-01T16:34:34.025029+00:00",
+      "duration_ms": 5311,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -2250,9 +1153,9 @@
       "tracker_url": "https://solidtorrents.to",
       "status": "empty",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:02.014687+00:00",
-      "completed_at": "2026-08-21T19:59:02.509111+00:00",
-      "duration_ms": 494,
+      "started_at": "2026-09-01T16:34:28.903384+00:00",
+      "completed_at": "2026-09-01T16:34:29.770100+00:00",
+      "duration_ms": 866,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -2260,18 +1163,16 @@
       "http_status": null,
       "category": "all",
       "query": "debian",
-      "notes": {
-        "stderr_tail": "Connection error: Internal Server Error"
-      }
+      "notes": {}
     },
     {
       "name": "therarbg",
       "tracker_url": "https://therarbg.com",
       "status": "empty",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:02.223876+00:00",
-      "completed_at": "2026-08-21T19:59:02.631243+00:00",
-      "duration_ms": 407,
+      "started_at": "2026-09-01T16:34:29.115135+00:00",
+      "completed_at": "2026-09-01T16:34:29.400304+00:00",
+      "duration_ms": 285,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -2286,9 +1187,9 @@
       "tracker_url": "http://tokyotosho.info",
       "status": "error",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:02.509180+00:00",
-      "completed_at": "2026-08-21T19:59:17.523294+00:00",
-      "duration_ms": 15014,
+      "started_at": "2026-09-01T16:34:29.400381+00:00",
+      "completed_at": "2026-09-01T16:34:44.406085+00:00",
+      "duration_ms": 15005,
       "error": "plugin exceeded the per-tracker deadline with no results",
       "error_type": "deadline_timeout",
       "authenticated": false,
@@ -2306,9 +1207,9 @@
       "tracker_url": "https://torlock2.com",
       "status": "success",
       "results_count": 208,
-      "started_at": "2026-08-21T19:59:02.631296+00:00",
-      "completed_at": "2026-08-21T19:59:03.524146+00:00",
-      "duration_ms": 892,
+      "started_at": "2026-09-01T16:34:29.770198+00:00",
+      "completed_at": "2026-09-01T16:34:30.423693+00:00",
+      "duration_ms": 653,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -2323,9 +1224,9 @@
       "tracker_url": "https://www.torrentdownload.info/",
       "status": "success",
       "results_count": 249,
-      "started_at": "2026-08-21T19:59:02.862659+00:00",
-      "completed_at": "2026-08-21T19:59:17.878263+00:00",
-      "duration_ms": 15015,
+      "started_at": "2026-09-01T16:34:30.105145+00:00",
+      "completed_at": "2026-09-01T16:34:45.110315+00:00",
+      "duration_ms": 15005,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -2343,9 +1244,9 @@
       "tracker_url": "https://www.torrentfunk.com",
       "status": "error",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:03.524237+00:00",
-      "completed_at": "2026-08-21T19:59:18.529409+00:00",
-      "duration_ms": 15005,
+      "started_at": "2026-09-01T16:34:30.423738+00:00",
+      "completed_at": "2026-09-01T16:34:45.427680+00:00",
+      "duration_ms": 15003,
       "error": "plugin exceeded the per-tracker deadline with no results",
       "error_type": "deadline_timeout",
       "authenticated": false,
@@ -2363,9 +1264,9 @@
       "tracker_url": "https://torrentgalaxy.one",
       "status": "success",
       "results_count": 250,
-      "started_at": "2026-08-21T19:59:05.437943+00:00",
-      "completed_at": "2026-08-21T19:59:20.450450+00:00",
-      "duration_ms": 15012,
+      "started_at": "2026-09-01T16:34:34.025082+00:00",
+      "completed_at": "2026-09-01T16:34:49.030210+00:00",
+      "duration_ms": 15005,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -2383,9 +1284,9 @@
       "tracker_url": "https://www.torrentkitty.tv",
       "status": "success",
       "results_count": 20,
-      "started_at": "2026-08-21T19:59:07.155768+00:00",
-      "completed_at": "2026-08-21T19:59:07.497484+00:00",
-      "duration_ms": 341,
+      "started_at": "2026-09-01T16:34:34.371235+00:00",
+      "completed_at": "2026-09-01T16:34:34.553762+00:00",
+      "duration_ms": 182,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -2400,9 +1301,9 @@
       "tracker_url": "https://torrentproject.com.se",
       "status": "success",
       "results_count": 100,
-      "started_at": "2026-08-21T19:59:07.497558+00:00",
-      "completed_at": "2026-08-21T19:59:11.542631+00:00",
-      "duration_ms": 4045,
+      "started_at": "2026-09-01T16:34:34.553825+00:00",
+      "completed_at": "2026-09-01T16:34:43.061234+00:00",
+      "duration_ms": 8507,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -2417,9 +1318,9 @@
       "tracker_url": "https://torrents-csv.com",
       "status": "success",
       "results_count": 5,
-      "started_at": "2026-08-21T19:59:11.542698+00:00",
-      "completed_at": "2026-08-21T19:59:12.010769+00:00",
-      "duration_ms": 468,
+      "started_at": "2026-09-01T16:34:42.896289+00:00",
+      "completed_at": "2026-09-01T16:34:43.166928+00:00",
+      "duration_ms": 270,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -2434,9 +1335,9 @@
       "tracker_url": "https://www.xfsub.com",
       "status": "error",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:11.662155+00:00",
-      "completed_at": "2026-08-21T19:59:26.669295+00:00",
-      "duration_ms": 15007,
+      "started_at": "2026-09-01T16:34:42.912949+00:00",
+      "completed_at": "2026-09-01T16:34:57.919411+00:00",
+      "duration_ms": 15006,
       "error": "plugin exceeded the per-tracker deadline with no results",
       "error_type": "deadline_timeout",
       "authenticated": false,
@@ -2454,9 +1355,9 @@
       "tracker_url": "https://www.yihua.biz",
       "status": "error",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:12.010821+00:00",
-      "completed_at": "2026-08-21T19:59:12.239905+00:00",
-      "duration_ms": 229,
+      "started_at": "2026-09-01T16:34:43.061286+00:00",
+      "completed_at": "2026-09-01T16:34:43.215721+00:00",
+      "duration_ms": 154,
       "error": "upstream domain does not resolve (DNS failure)",
       "error_type": "dns_failure",
       "authenticated": false,
@@ -2473,9 +1374,9 @@
       "tracker_url": "https://yourbittorrent.com/",
       "status": "empty",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:12.239966+00:00",
-      "completed_at": "2026-08-21T19:59:12.826146+00:00",
-      "duration_ms": 586,
+      "started_at": "2026-09-01T16:34:43.167021+00:00",
+      "completed_at": "2026-09-01T16:34:43.664521+00:00",
+      "duration_ms": 497,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -2490,9 +1391,9 @@
       "tracker_url": "https://yts.lt",
       "status": "empty",
       "results_count": 0,
-      "started_at": "2026-08-21T19:59:12.826184+00:00",
-      "completed_at": "2026-08-21T19:59:13.599557+00:00",
-      "duration_ms": 773,
+      "started_at": "2026-09-01T16:34:43.189452+00:00",
+      "completed_at": "2026-09-01T16:34:43.946336+00:00",
+      "duration_ms": 756,
       "error": null,
       "error_type": null,
       "authenticated": false,
@@ -2503,7 +1404,7 @@
       "notes": {}
     }
   ],
-  "started_at": "2026-08-21T19:59:00.399356+00:00",
-  "completed_at": "2026-08-21T19:59:28.510652+00:00",
+  "started_at": "2026-09-01T16:34:27.882680+00:00",
+  "completed_at": "2026-09-01T16:34:58.794665+00:00",
   "stream_token": null
 }

@@ -64,3 +64,67 @@ def _serialize_live_searches():
     with _live_search_lock():
         _wait_for_idle(base_url)
         yield
+
+
+# ---------------------------------------------------------------------------
+# MISSING PLAYWRIGHT BROWSER BINARY -> HONEST SKIP (§11.4.3 / §11.4.27(11))
+#
+# Added 2026-09-01. tests/integration/test_streaming_browser.py uses the
+# pytest-playwright plugin's session-scoped `browser` fixture (parametrised
+# `[chromium]`), not a manual sync_playwright() launch — so the skip guard
+# added to tests/e2e/test_{crossapp_theme,theme_runtime}.py does not reach it,
+# and six tests ERRORED at fixture setup instead.
+#
+# A missing browser DOWNLOAD is an environment condition, not a product defect.
+# Playwright itself IS installed; on this host its bundled Chromium refuses to
+# install at all ("does not support chromium on ubuntu26.04-x64"). Reporting a
+# healthy product as ERROR is a §11.4.201(1) false-positive refusal.
+#
+# NARROW BY CONSTRUCTION: this only fires for tests that actually request the
+# `browser` fixture AND only when the resolved executable is genuinely absent
+# on disk. It cannot mask a real browser failure — if the binary exists, the
+# test runs and any failure surfaces normally.
+# ---------------------------------------------------------------------------
+
+_CHROMIUM_PRESENT: bool | None = None
+
+
+def _chromium_binary_present() -> bool:
+    """True when Playwright's Chromium executable actually exists on disk."""
+    global _CHROMIUM_PRESENT
+    if _CHROMIUM_PRESENT is not None:
+        return _CHROMIUM_PRESENT
+    try:
+        from playwright.sync_api import sync_playwright
+
+        with sync_playwright() as pw:
+            _CHROMIUM_PRESENT = os.path.exists(pw.chromium.executable_path)
+    except Exception:
+        # Playwright itself unavailable/unusable — also not a product defect.
+        _CHROMIUM_PRESENT = False
+    return _CHROMIUM_PRESENT
+
+
+def pytest_collection_modifyitems(config, items):
+    """Mark browser-driven tests SKIP at COLLECTION time when Chromium is absent.
+
+    This must run at collection, not as an autouse fixture: pytest-playwright's
+    `browser` fixture is SESSION-scoped and is therefore set up BEFORE any
+    function-scoped autouse guard, so a fixture-based check fires too late and
+    the tests still ERROR at setup. Measured: an autouse guard left all six
+    tests/integration/test_streaming_browser.py tests ERRORing unchanged.
+    """
+    if _chromium_binary_present():
+        return
+    skip_marker = pytest.mark.skip(
+        reason=(
+            "SKIP-reason=browser_binary_not_installed: Playwright's Chromium "
+            "binary is not present on this host (Playwright itself IS installed "
+            "— only the browser download is missing). Install it with: "
+            ".venv/bin/python -m playwright install chromium"
+        )
+    )
+    for item in items:
+        fixtures = getattr(item, "fixturenames", ())
+        if "browser" in fixtures or "page" in fixtures or "context" in fixtures:
+            item.add_marker(skip_marker)

@@ -297,7 +297,13 @@ class TestSearch:
         inst.search("my+query")
         third_call = mod.retrieve_url.call_args_list[2][0][0]
         assert "mytoken123" in third_call
-        assert "my+query" in third_call
+        # §11.4.120 reconciled (2026-09-02): pre-ae387b2 the raw query was
+        # interpolated verbatim. snowfl builds a URL PATH SEGMENT, where '+'
+        # is a LITERAL character (not a space), so quote(safe="") must
+        # percent-encode it to %2B — a bare '+' in the path would be read by
+        # the server as part of the search term, not as a space.
+        assert "my%2Bquery" in third_call
+        third_call.encode("ascii")  # urllib encodes the request line as ASCII
 
     def test_search_empty_results(self):
         inst, mod, captured = _load_snowfl()

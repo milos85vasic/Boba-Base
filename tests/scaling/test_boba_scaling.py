@@ -129,13 +129,25 @@ def _emit_evidence(name: str, payload: dict) -> Path:
 
 
 @pytest.fixture(scope="module", autouse=True)
-def _services_up():
+def _services_up(merge_service_live_or_skip):
+    """Gate the whole module on the services this axis measures.
+
+    The merge-service leg is delegated to the shared
+    ``merge_service_live_or_skip`` fixture (tests/fixtures/services.py)
+    rather than an inline probe: the gate then lives in ONE named,
+    countable place instead of drifting per call site — the invariant
+    ``tests/unit/test_no_runtime_service_skips.py`` enforces. That
+    fixture SKIPs (it does not error) and never boots the compose stack,
+    which is what this opt-in scaling axis needs.
+
+    The boba-jackett / jackett legs stay inline because no shared
+    fixture exists for them yet; they are the same class of gate and
+    would move the same way if one is added.
+    """
     if not _service_reachable("localhost", 7189):
         pytest.skip("boba-jackett :7189 not reachable (SKIP-OK BOB-109)")
     if not _service_reachable("localhost", 9117):
         pytest.skip("jackett :9117 not reachable (SKIP-OK BOB-109)")
-    if not _service_reachable("localhost", 7187):
-        pytest.skip("merge service :7187 not reachable (SKIP-OK BOB-109)")
     if not _healthy(JACKETT_BOBA_URL):
         pytest.skip("boba-jackett /healthz not ok (SKIP-OK BOB-109)")
 

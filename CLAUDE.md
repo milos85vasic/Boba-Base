@@ -256,12 +256,14 @@ that gate.
   the retired "canonical 12", a proper subset of the 43. That array is one-time-setup
   scope only; `./install-plugin.sh` is what installs the full roster.
 
-Neither of these is a plugin count: **36 `*.py` files** sit directly in `plugins/` <!-- CM-PLUGIN-COUNT: toplevel -->
-and **69 `*.py` files** exist recursively <!-- CM-PLUGIN-COUNT: recursive -->. Both mix
+Neither of these is a plugin count: **35 `*.py` files** sit directly in `plugins/` <!-- CM-PLUGIN-COUNT: toplevel -->
+and **68 `*.py` files** exist recursively <!-- CM-PLUGIN-COUNT: recursive -->. Both mix
 engines with non-engine utility modules (`env_loader.py`, `helpers.py`, `novaprinter.py`,
-`nova2.py`, `socks.py`, `theme_injector.py`, `download_proxy.py`), and the recursive
+`nova2.py`, `socks.py`, `download_proxy.py`), and the recursive
 figure additionally counts the `community/` and `webui_compatible/` variants of engines
-already counted once.
+already counted once. (Both figures dropped by one on 2026-09-01 when
+`theme_injector.py` was deleted with the themed-WebUI overlay — machine-re-derived
+by `scripts/pre_build/check_cm_plugin_count.sh`, never hand-edited.)
 
 Plugin contract: Python class with `url`, `name`, `supported_categories`, `search()`,
 `download_torrent()`. This is the *target* contract, not a description of every engine

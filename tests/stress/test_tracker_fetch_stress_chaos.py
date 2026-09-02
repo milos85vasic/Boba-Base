@@ -167,7 +167,7 @@ class _FakeResponse:
     async def read(self) -> bytes:
         return self._body
 
-    async def __aenter__(self) -> "_FakeResponse":
+    async def __aenter__(self) -> _FakeResponse:
         return self
 
     async def __aexit__(self, *exc: Any) -> None:
@@ -204,7 +204,7 @@ class _FakeSession:
 
         return _CM()
 
-    async def __aenter__(self) -> "_FakeSession":
+    async def __aenter__(self) -> _FakeSession:
         return self
 
     async def __aexit__(self, *exc: Any) -> None:
@@ -498,11 +498,16 @@ def test_boundary_off_by_one_content_type_edges(monkeypatch):
 
         _install_aiohttp_stub(monkeypatch, _r)
 
-        async def _run():
+        # `_i=i` binds the loop variable at definition time, exactly as `_r`
+        # above binds `_ct`/`_body`. Today `_run` is awaited on the very next
+        # line, so late binding happens to be harmless — but the moment anyone
+        # defers or collects these coroutines, every one of them would fetch
+        # the LAST url while the assertions still read per-case. Bind it now.
+        async def _run(_i=i):
             # Use a URL without a ?t= query so the rutracker redirect path
             # bails out quickly on rejection cases.
             return await orch.fetch_torrent(
-                "rutracker", f"https://rutracker.example/other/{i}"
+                "rutracker", f"https://rutracker.example/other/{_i}"
             )
 
         got = asyncio.run(_run())
@@ -548,7 +553,10 @@ def test_chaos_network_drop_20pct_categorised_as_network(monkeypatch):
     orch = _make_orchestrator_with_session("rutracker")
 
     # Deterministic RNG so the failure count is reproducible per §11.4.50.
-    rng = random.Random(20260810)
+    # Not security-relevant: this is the only `random` use in the module and it
+    # decides which injected fetches drop. It seeds no token, key, nonce, salt
+    # or id — a CSPRNG here would only make the chaos run irreproducible.
+    rng = random.Random(20260810)  # noqa: S311 — fault-injection choice, not crypto
     drop_rate = 0.20
     call_state = {"n": 0, "dropped": 0}
 

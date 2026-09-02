@@ -10,6 +10,8 @@ except ImportError:
     from HTMLParser import HTMLParser
 
 from re import compile as re_compile
+from re import escape as re_escape
+from urllib.parse import quote_plus, unquote_plus
 
 # qBt
 from novaprinter import prettyPrinter
@@ -98,13 +100,17 @@ class tokyotoshokan(object):
 
     def handle_more_pages(self, last_page_url, parser, query, skip_first=False):
         torrent_list = re_compile('(?s)<table class="listing">(.*)</table>')
-        additional_links = re_compile(r"\?lastid=[0-9]+&page=[0-9]+&terms=" + query.replace("%20", r"\+"))
+        # ``query`` is already percent-encoded (quote_plus) by search(); escape it
+        # so its '+' and '%XX' bytes match literally in the pagination regex.
+        additional_links = re_compile(r"\?lastid=[0-9]+&page=[0-9]+&terms=" + re_escape(query))
 
         data = retrieve_url(last_page_url)
+        if not data:
+            # None / empty body (network or SSL failure). Stop paging
+            # gracefully instead of crashing on re.search(None).
+            return last_page_url
         match = torrent_list.search(data)
         if not match:
-            # Empty / garbage upstream response — no listing table. Return the
-            # current page url unchanged instead of crashing with AttributeError.
             return last_page_url
         data = match.group(0)
 
@@ -119,9 +125,14 @@ class tokyotoshokan(object):
             page_count += 1
             last_page_url = res_link
             data = retrieve_url(res_link)
+            if not data:
+                # None / empty paged body — stop paging gracefully.
+                break
             match = torrent_list.search(data)
             if not match:
-                # Empty / garbage paged response — stop paging gracefully.
+                # Empty / garbage paged response (network or SSL failure, or
+                # the listing table is gone). Stop paging gracefully instead
+                # of crashing with AttributeError on a None match.
                 break
             data = match.group(0)
             parser.feed(data)
@@ -130,7 +141,11 @@ class tokyotoshokan(object):
         return last_page_url
 
     def search(self, query, cat="all"):
-        query = query.replace(" ", "+")
+        # ?terms= query param: percent-encode (space -> +, UTF-8 percent-encoded).
+        # unquote_plus first decodes the nova2 (%20-encoded) caller so a Cyrillic
+        # query is encoded exactly once (no double-encoding); quote_plus then
+        # makes the value ASCII-safe so a non-ASCII char never reaches urllib.
+        query = quote_plus(unquote_plus(query))
         parser = self.MyHtmlParseWithBlackJack(self.url)
         last_page_url = ""
         page_multiplier = 1
@@ -139,11 +154,13 @@ class tokyotoshokan(object):
             self.url, query, self.supported_categories[cat]
         )
         data = retrieve_url(request_url)
+        if not data:
+            # None / empty response body (network or SSL failure). Return
+            # 0 results instead of crashing on re.search(None).
+            return
 
         match = torrent_list.search(data)
         if not match:
-            # Empty / garbage upstream response (network or SSL failure, or no
-            # listing table). Return no results instead of crashing.
             return
         data = match.group(0)
         parser.feed(data)

@@ -1,0 +1,622 @@
+..........s.............F..F...F...........s............................ [ 22%]
+........................................................................ [ 45%]
+....................EEEEEE.............................................. [ 67%]
+...................................FFF.................................. [ 90%]
+...............................                                          [100%]
+==================================== ERRORS ====================================
+__ ERROR at setup of TestDashboardElements.test_has_angular_script[chromium] ___
+
+fixturedef = <FixtureDef argname='browser' scope='session' baseid=''>
+request = <SubRequest 'browser' for <Function test_has_angular_script[chromium]>>
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_fixture_setup(fixturedef: FixtureDef, request) -> object | None:
+        if (
+            fixturedef.argname == "event_loop_policy"
+            and fixturedef.func.__module__ != __name__
+        ):
+            warnings.warn(
+                PytestDeprecationWarning(_EVENT_LOOP_POLICY_FIXTURE_DEPRECATION_WARNING),
+            )
+        asyncio_mode = _get_asyncio_mode(request.config)
+        if not _is_asyncio_fixture_function(fixturedef.func):
+            if asyncio_mode == Mode.STRICT:
+                # Ignore async fixtures without explicit asyncio mark in strict mode
+                # This applies to pytest_trio fixtures, for example
+                return (yield)
+            if not _is_coroutine_or_asyncgen(fixturedef.func):
+>               return (yield)
+                        ^^^^^
+
+.venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:926: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/pytest_playwright/pytest_playwright.py:329: in browser
+    browser = launch_browser()
+              ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/pytest_playwright/pytest_playwright.py:321: in launch
+    browser = browser_type.launch(**launch_options)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:16702: in launch
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_browser_type.py:97: in launch
+    await self._channel.send(
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x786a9d5ee960>
+cb = <function Channel.send.<locals>.<lambda> at 0x786a9d399d00>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.Error: BrowserType.launch: Executable doesn't exist at /home/milosvasic/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell
+E           ╔════════════════════════════════════════════════════════════╗
+E           ║ Looks like Playwright was just installed or updated.       ║
+E           ║ Please run the following command to download new browsers: ║
+E           ║                                                            ║
+E           ║     playwright install                                     ║
+E           ║                                                            ║
+E           ║ <3 Playwright Team                                         ║
+E           ╚════════════════════════════════════════════════════════════╝
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: Error
+____ ERROR at setup of TestDashboardElements.test_has_angular_app[chromium] ____
+
+launch_browser = <function launch_browser.<locals>.launch at 0x786a9d39bba0>
+
+    @pytest.fixture(scope="session")
+    def browser(launch_browser: Callable[[], Browser]) -> Generator[Browser, None, None]:
+>       browser = launch_browser()
+                  ^^^^^^^^^^^^^^^^
+
+.venv/lib/python3.12/site-packages/pytest_playwright/pytest_playwright.py:329: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/pytest_playwright/pytest_playwright.py:321: in launch
+    browser = browser_type.launch(**launch_options)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:16702: in launch
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_browser_type.py:97: in launch
+    await self._channel.send(
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x786a9d5ee960>
+cb = <function Channel.send.<locals>.<lambda> at 0x786a9d399d00>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.Error: BrowserType.launch: Executable doesn't exist at /home/milosvasic/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell
+E           ╔════════════════════════════════════════════════════════════╗
+E           ║ Looks like Playwright was just installed or updated.       ║
+E           ║ Please run the following command to download new browsers: ║
+E           ║                                                            ║
+E           ║     playwright install                                     ║
+E           ║                                                            ║
+E           ║ <3 Playwright Team                                         ║
+E           ╚════════════════════════════════════════════════════════════╝
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: Error
+_ ERROR at setup of TestStreamingBrowser.test_search_returns_results[chromium] _
+
+launch_browser = <function launch_browser.<locals>.launch at 0x786a9d39bba0>
+
+    @pytest.fixture(scope="session")
+    def browser(launch_browser: Callable[[], Browser]) -> Generator[Browser, None, None]:
+>       browser = launch_browser()
+                  ^^^^^^^^^^^^^^^^
+
+.venv/lib/python3.12/site-packages/pytest_playwright/pytest_playwright.py:329: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/pytest_playwright/pytest_playwright.py:321: in launch
+    browser = browser_type.launch(**launch_options)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:16702: in launch
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_browser_type.py:97: in launch
+    await self._channel.send(
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x786a9d5ee960>
+cb = <function Channel.send.<locals>.<lambda> at 0x786a9d399d00>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.Error: BrowserType.launch: Executable doesn't exist at /home/milosvasic/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell
+E           ╔════════════════════════════════════════════════════════════╗
+E           ║ Looks like Playwright was just installed or updated.       ║
+E           ║ Please run the following command to download new browsers: ║
+E           ║                                                            ║
+E           ║     playwright install                                     ║
+E           ║                                                            ║
+E           ║ <3 Playwright Team                                         ║
+E           ╚════════════════════════════════════════════════════════════╝
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: Error
+_ ERROR at setup of TestStreamingBrowser.test_search_endpoint_works[chromium] __
+
+launch_browser = <function launch_browser.<locals>.launch at 0x786a9d39bba0>
+
+    @pytest.fixture(scope="session")
+    def browser(launch_browser: Callable[[], Browser]) -> Generator[Browser, None, None]:
+>       browser = launch_browser()
+                  ^^^^^^^^^^^^^^^^
+
+.venv/lib/python3.12/site-packages/pytest_playwright/pytest_playwright.py:329: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/pytest_playwright/pytest_playwright.py:321: in launch
+    browser = browser_type.launch(**launch_options)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:16702: in launch
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_browser_type.py:97: in launch
+    await self._channel.send(
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x786a9d5ee960>
+cb = <function Channel.send.<locals>.<lambda> at 0x786a9d399d00>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.Error: BrowserType.launch: Executable doesn't exist at /home/milosvasic/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell
+E           ╔════════════════════════════════════════════════════════════╗
+E           ║ Looks like Playwright was just installed or updated.       ║
+E           ║ Please run the following command to download new browsers: ║
+E           ║                                                            ║
+E           ║     playwright install                                     ║
+E           ║                                                            ║
+E           ║ <3 Playwright Team                                         ║
+E           ╚════════════════════════════════════════════════════════════╝
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: Error
+_ ERROR at setup of TestStreamingBrowser.test_sse_streaming_integration[chromium] _
+
+launch_browser = <function launch_browser.<locals>.launch at 0x786a9d39bba0>
+
+    @pytest.fixture(scope="session")
+    def browser(launch_browser: Callable[[], Browser]) -> Generator[Browser, None, None]:
+>       browser = launch_browser()
+                  ^^^^^^^^^^^^^^^^
+
+.venv/lib/python3.12/site-packages/pytest_playwright/pytest_playwright.py:329: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/pytest_playwright/pytest_playwright.py:321: in launch
+    browser = browser_type.launch(**launch_options)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:16702: in launch
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_browser_type.py:97: in launch
+    await self._channel.send(
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x786a9d5ee960>
+cb = <function Channel.send.<locals>.<lambda> at 0x786a9d399d00>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.Error: BrowserType.launch: Executable doesn't exist at /home/milosvasic/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell
+E           ╔════════════════════════════════════════════════════════════╗
+E           ║ Looks like Playwright was just installed or updated.       ║
+E           ║ Please run the following command to download new browsers: ║
+E           ║                                                            ║
+E           ║     playwright install                                     ║
+E           ║                                                            ║
+E           ║ <3 Playwright Team                                         ║
+E           ╚════════════════════════════════════════════════════════════╝
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: Error
+_ ERROR at setup of TestStreamingBrowser.test_dashboard_loads_with_angular_app[chromium] _
+
+launch_browser = <function launch_browser.<locals>.launch at 0x786a9d39bba0>
+
+    @pytest.fixture(scope="session")
+    def browser(launch_browser: Callable[[], Browser]) -> Generator[Browser, None, None]:
+>       browser = launch_browser()
+                  ^^^^^^^^^^^^^^^^
+
+.venv/lib/python3.12/site-packages/pytest_playwright/pytest_playwright.py:329: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/pytest_playwright/pytest_playwright.py:321: in launch
+    browser = browser_type.launch(**launch_options)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:16702: in launch
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_browser_type.py:97: in launch
+    await self._channel.send(
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x786a9d5ee960>
+cb = <function Channel.send.<locals>.<lambda> at 0x786a9d399d00>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.Error: BrowserType.launch: Executable doesn't exist at /home/milosvasic/.cache/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell
+E           ╔════════════════════════════════════════════════════════════╗
+E           ║ Looks like Playwright was just installed or updated.       ║
+E           ║ Please run the following command to download new browsers: ║
+E           ║                                                            ║
+E           ║     playwright install                                     ║
+E           ║                                                            ║
+E           ║ <3 Playwright Team                                         ║
+E           ╚════════════════════════════════════════════════════════════╝
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: Error
+=================================== FAILURES ===================================
+____________ test_private_tracker_credentials_authenticate[nnmclub] ____________
+
+live_search_stats = {'academictorrents': {'name': 'academictorrents', 'tracker_url': 'https://academictorrents.com/', 'status': 'success',...{'name': 'audiobookbay', 'tracker_url': 'http://theaudiobookbay.se/', 'status': 'error', 'results_count': 0, ...}, ...}
+tracker = 'nnmclub'
+
+    @pytest.mark.requires_credentials
+    @pytest.mark.timeout(180)
+    @pytest.mark.parametrize("tracker", _PRIVATE_TRACKERS)
+    def test_private_tracker_credentials_authenticate(live_search_stats: dict[str, dict], tracker: str) -> None:
+        """The stored credentials for a PRIVATE tracker must actually log in.
+    
+        THE credential proof: ``authenticated is True`` after the merge service
+        really attempted a login + search against the live tracker. Fails if the
+        stored credential is wrong/expired; honest-skips on CAPTCHA / transient.
+        """
+        stat = live_search_stats.get(tracker)
+        assert stat is not None, (
+            f"credentialed private tracker {tracker!r} is ABSENT from tracker_stats "
+            f"(present: {sorted(live_search_stats)}). The search did not run it — "
+            "the plugin is disabled or the fan-out dropped it."
+        )
+    
+        authenticated = stat.get("authenticated")
+        status = stat.get("status")
+        error = (stat.get("error") or "")
+    
+        if authenticated is not True:
+            lowered = error.lower()
+            if any(marker in lowered for marker in _TRANSIENT_ERROR_MARKERS):
+                pytest.skip(  # SKIP-OK: operator-blocked transient (captcha / expired cookies / upstream fault)
+                    f"{tracker}: authenticated=False with transient/operator-blocked error "
+                    f"({error!r}); RuTracker cookies expire & CAPTCHA/timeouts are not a "
+                    "credential defect (CLAUDE.md)."
+                )
+            pytest.fail(
+                f"{tracker}: authenticated={authenticated!r} (expected True) — the STORED "
+                f"credentials failed to log in. status={status!r}, error={error!r}. "
+                "This is a genuine bad/expired-credential failure, not a transient."
+            )
+    
+        # Credentials proven good. The tracker must also have RUN cleanly (not
+        # errored/timed-out) — success or empty are both legitimate logged-in states.
+>       assert status in {"success", "empty"}, (
+            f"{tracker}: authenticated=True but status={status!r} (expected success|empty). "
+            f"error={error!r} — login worked yet the search itself did not complete cleanly."
+        )
+E       AssertionError: nnmclub: authenticated=True but status='error' (expected success|empty). error='nnmclub login.php is gated by a Cloudflare Turnstile JS CAPTCHA; a password POST cannot obtain a session cookie. Set NNMCLUB_COOKIES from a logged-in browser session (run scripts/nnmclub-cookie-refresh.sh).' — login worked yet the search itself did not complete cleanly.
+E       assert 'error' in {'empty', 'success'}
+
+tests/integration/test_tracker_auth_live.py:211: AssertionError
+___________ test_private_tracker_credentials_authenticate[rutracker] ___________
+
+live_search_stats = {'academictorrents': {'name': 'academictorrents', 'tracker_url': 'https://academictorrents.com/', 'status': 'success',...{'name': 'audiobookbay', 'tracker_url': 'http://theaudiobookbay.se/', 'status': 'error', 'results_count': 0, ...}, ...}
+tracker = 'rutracker'
+
+    @pytest.mark.requires_credentials
+    @pytest.mark.timeout(180)
+    @pytest.mark.parametrize("tracker", _PRIVATE_TRACKERS)
+    def test_private_tracker_credentials_authenticate(live_search_stats: dict[str, dict], tracker: str) -> None:
+        """The stored credentials for a PRIVATE tracker must actually log in.
+    
+        THE credential proof: ``authenticated is True`` after the merge service
+        really attempted a login + search against the live tracker. Fails if the
+        stored credential is wrong/expired; honest-skips on CAPTCHA / transient.
+        """
+        stat = live_search_stats.get(tracker)
+        assert stat is not None, (
+            f"credentialed private tracker {tracker!r} is ABSENT from tracker_stats "
+            f"(present: {sorted(live_search_stats)}). The search did not run it — "
+            "the plugin is disabled or the fan-out dropped it."
+        )
+    
+        authenticated = stat.get("authenticated")
+        status = stat.get("status")
+        error = (stat.get("error") or "")
+    
+        if authenticated is not True:
+            lowered = error.lower()
+            if any(marker in lowered for marker in _TRANSIENT_ERROR_MARKERS):
+                pytest.skip(  # SKIP-OK: operator-blocked transient (captcha / expired cookies / upstream fault)
+                    f"{tracker}: authenticated=False with transient/operator-blocked error "
+                    f"({error!r}); RuTracker cookies expire & CAPTCHA/timeouts are not a "
+                    "credential defect (CLAUDE.md)."
+                )
+            pytest.fail(
+                f"{tracker}: authenticated={authenticated!r} (expected True) — the STORED "
+                f"credentials failed to log in. status={status!r}, error={error!r}. "
+                "This is a genuine bad/expired-credential failure, not a transient."
+            )
+    
+        # Credentials proven good. The tracker must also have RUN cleanly (not
+        # errored/timed-out) — success or empty are both legitimate logged-in states.
+>       assert status in {"success", "empty"}, (
+            f"{tracker}: authenticated=True but status={status!r} (expected success|empty). "
+            f"error={error!r} — login worked yet the search itself did not complete cleanly."
+        )
+E       AssertionError: rutracker: authenticated=True but status='error' (expected success|empty). error='rutracker login.php returned no session cookie — this is the rutracker anti-abuse CAPTCHA wall (gates login.php when logins spike), not a credential failure. Set RUTRACKER_COOKIES from a logged-in browser session to bypass the login round-trip.' — login worked yet the search itself did not complete cleanly.
+E       assert 'error' in {'empty', 'success'}
+
+tests/integration/test_tracker_auth_live.py:211: AssertionError
+_ TestWebUIBridge.test_qbittorrent_target_is_host_reachable_not_container_internal _
+
+self = <integration.test_webui_bridge.TestWebUIBridge object at 0x786a9e2136e0>
+
+    def test_qbittorrent_target_is_host_reachable_not_container_internal(self):
+        """The qBittorrent target MUST default to the host-reachable address.
+    
+        Root-cause regression guard (FACT 2026-06-14): the bridge previously
+        defaulted to ``localhost:7185`` — qBittorrent's WebUI port, which is
+        CONTAINER-INTERNAL and NOT published to the macOS host, so the
+        passthrough always failed with Errno 61. The host reaches qBittorrent's
+        WebUI through the download-proxy on :7186. With no env override the
+        resolved target MUST be :7186 (host-reachable), never :7185.
+        """
+>       assert webui_bridge.QBITTORRENT_PORT != 7185, (
+            "bridge default target points at container-internal :7185 — "
+            "unreachable from the host; must be the :7186 download-proxy"
+        )
+E       AssertionError: bridge default target points at container-internal :7185 — unreachable from the host; must be the :7186 download-proxy
+E       assert 7185 != 7185
+E        +  where 7185 = webui_bridge.QBITTORRENT_PORT
+
+tests/integration/test_webui_bridge.py:84: AssertionError
+_______________ test_theme_switching_applies_tokens_and_persists _______________
+
+palettes = {'darcula': {'dark': {'bgPrimary': '#2b2b2b', 'bgSecondary': '#3c3f41', 'bgTertiary': '#4e5254', 'border': '#555555', ..., 'light': {'bgPrimary': '#eceff4', 'bgSecondary': '#e5e9f0', 'bgTertiary': '#d8dee9', 'border': '#b8c0ce', ...}}, ...}
+
+    def test_theme_switching_applies_tokens_and_persists(palettes: dict[str, dict[str, dict[str, str]]]) -> None:
+        # Quick availability probe — we want a loud failure if the merge
+        # service is down, not a silent skip.
+        import json as _json
+        import urllib.request
+    
+        # Force dark mode upfront so the test compares against the dark
+        # palette tokens. Without this, whichever mode was persisted last
+        # leaks in and the bgPrimary etc. assertions fail because the
+        # bridge applied the LIGHT variant.
+        _put = urllib.request.Request(
+            f"{DASHBOARD_URL.rstrip('/')}/api/v1/theme",
+            data=_json.dumps({"paletteId": "darcula", "mode": "dark"}).encode(),
+            headers={"Content-Type": "application/json"},
+            method="PUT",
+        )
+        with urllib.request.urlopen(_put, timeout=10) as r:
+            assert r.status == 200
+    
+        try:
+            with urllib.request.urlopen(DASHBOARD_URL, timeout=10) as resp:
+                assert resp.status == 200, f"Dashboard returned {resp.status}"
+                body = resp.read().decode("utf-8", errors="ignore")
+        except Exception as exc:
+            pytest.fail(f"Merge service at {DASHBOARD_URL} not reachable: {exc}")
+    
+        # Angular SPAs serve a near-empty index.html; the theme-picker
+        # component is defined inside the compiled main-*.js bundle. To
+        # check whether the served bundle actually has the feature we
+        # must grep the bundle, not the shell.
+        m = re.search(r"main-[A-Z0-9]+\.js", body)
+        assert m, "Could not locate main-*.js in the index HTML — rebuild the frontend (`cd frontend && ng build`)"
+        try:
+            with urllib.request.urlopen(f"{DASHBOARD_URL.rstrip('/')}/{m.group(0)}", timeout=10) as r:
+                bundle = r.read().decode("utf-8", errors="ignore")
+        except Exception as exc:
+            pytest.fail(f"Dashboard bundle {m.group(0)} not reachable: {exc}")
+    
+        assert "theme-picker" in bundle or "palette-dropdown" in bundle, (
+            "Dashboard bundle does not include the theme-picker — rebuild + restart qbittorrent-proxy and re-run"
+        )
+    
+>       with sync_playwright() as pw:
+             ^^^^^^^^^^^^^^^^^
+
+tests/e2e/test_theme_runtime.py:143: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright.sync_api._context_manager.PlaywrightContextManager object at 0x786a9cb7c500>
+
+        def __enter__(self) -> SyncPlaywright:
+            try:
+                self._loop = asyncio.get_running_loop()
+            except RuntimeError:
+                self._loop = asyncio.new_event_loop()
+                self._own_loop = True
+            if self._loop.is_running():
+>               raise Error(
+                    """It looks like you are using Playwright Sync API inside the asyncio loop.
+    Please use the Async API instead."""
+                )
+E               playwright._impl._errors.Error: It looks like you are using Playwright Sync API inside the asyncio loop.
+E               Please use the Async API instead.
+
+.venv/lib/python3.12/site-packages/playwright/sync_api/_context_manager.py:47: Error
+________________ test_dashboard_theme_switch_nord_then_gruvbox _________________
+
+        return pw.chromium.launch(headless=True)
+    except PlaywrightError as exc:
+        if "executable doesn't exist" not in str(exc).lower():
+            raise
+        pytest.skip(
+            "SKIP-reason=browser_binary_not_installed: Playwright's Chromium "
+            "binary is not installed on this host (Playwright itself IS "
+            "installed — only the browser download is missing). Install it "
+            "with:\n"
+            "    .venv/bin/python -m playwright install chromium\n"
+            "(add `--with-deps` only if system libraries are also missing; "
+            "that variant needs root and is an operator action).\n"
+            f"Playwright reported: {exc}",
+            allow_module_level=False,
+>       )
+
+tests/e2e/test_crossapp_theme.py:114: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright.sync_api._context_manager.PlaywrightContextManager object at 0x786a9cb96120>
+
+        def __enter__(self) -> SyncPlaywright:
+            try:
+                self._loop = asyncio.get_running_loop()
+            except RuntimeError:
+                self._loop = asyncio.new_event_loop()
+                self._own_loop = True
+            if self._loop.is_running():
+>               raise Error(
+                    """It looks like you are using Playwright Sync API inside the asyncio loop.
+    Please use the Async API instead."""
+                )
+E               playwright._impl._errors.Error: It looks like you are using Playwright Sync API inside the asyncio loop.
+E               Please use the Async API instead.
+
+.venv/lib/python3.12/site-packages/playwright/sync_api/_context_manager.py:47: Error
+______________________ test_bridge_live_login_round_trip _______________________
+
+webui_bridge_live = 'http://localhost:7188'
+
+    def test_bridge_live_login_round_trip(webui_bridge_live: str) -> None:
+        """Live-stack smoke: POST /api/v2/auth/login through :7188 must
+        return 200 with body starting with 'Ok.', and a subsequent
+        cookie-bearing request must succeed.
+        """
+        import http.cookiejar
+        import urllib.parse
+        import urllib.request
+    
+        jar = http.cookiejar.CookieJar()
+        opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+        data = urllib.parse.urlencode({"username": "admin", "password": "admin"}).encode()
+        req = urllib.request.Request(
+            f"{webui_bridge_live}/api/v2/auth/login",
+            data=data,
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Referer": webui_bridge_live,
+            },
+            method="POST",
+        )
+        try:
+            with opener.open(req, timeout=10) as resp:
+>               assert resp.status == 200, f"login returned {resp.status}"
+E               AssertionError: login returned 204
+E               assert 204 == 200
+E                +  where 204 = <http.client.HTTPResponse object at 0x786a9cc1abf0>.status
+
+tests/integration/test_bridge_header_rewrite.py:144: AssertionError
+=========================== short test summary info ============================
+SKIPPED [1] tests/integration/test_iptorrents.py:160: IPTorrents results not in top-N for 'linux'; total_results=2029
+SKIPPED [1] tests/e2e/test_public_trackers_return_results.py:128: Dead trackers are intentionally enabled via ENABLE_DEAD_TRACKERS=1
+ERROR tests/integration/test_streaming_browser.py::TestDashboardElements::test_has_angular_script[chromium]
+ERROR tests/integration/test_streaming_browser.py::TestDashboardElements::test_has_angular_app[chromium]
+ERROR tests/integration/test_streaming_browser.py::TestStreamingBrowser::test_search_returns_results[chromium]
+ERROR tests/integration/test_streaming_browser.py::TestStreamingBrowser::test_search_endpoint_works[chromium]
+ERROR tests/integration/test_streaming_browser.py::TestStreamingBrowser::test_sse_streaming_integration[chromium]
+ERROR tests/integration/test_streaming_browser.py::TestStreamingBrowser::test_dashboard_loads_with_angular_app[chromium]
+FAILED tests/integration/test_tracker_auth_live.py::test_private_tracker_credentials_authenticate[nnmclub]
+FAILED tests/integration/test_tracker_auth_live.py::test_private_tracker_credentials_authenticate[rutracker]
+FAILED tests/integration/test_webui_bridge.py::TestWebUIBridge::test_qbittorrent_target_is_host_reachable_not_container_internal
+FAILED tests/e2e/test_theme_runtime.py::test_theme_switching_applies_tokens_and_persists
+FAILED tests/e2e/test_crossapp_theme.py::test_dashboard_theme_switch_nord_then_gruvbox
+FAILED tests/integration/test_bridge_header_rewrite.py::test_bridge_live_login_round_trip
+6 failed, 305 passed, 2 skipped, 6 errors in 2010.71s (0:33:30)

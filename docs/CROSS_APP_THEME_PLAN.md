@@ -1,7 +1,32 @@
 # Cross-app Theme Plan
 
-**Revision:** 1
-**Last modified:** 2026-06-06T00:00:00Z
+**Revision:** 2
+**Last modified:** 2026-09-01T00:00:00Z
+
+> ## STATUS: PARTIALLY SUPERSEDED (2026-09-01)
+>
+> **The `:7186` half of this plan was REMOVED by operator decision.** The
+> themed qBittorrent-WebUI overlay — the injected
+> `/__qbit_theme__/skin.css` + `/__qbit_theme__/bootstrap.js` pair, the
+> `qBittorrent` → `Боба` rebrand, the logo substitution and the CSP
+> relaxation — implemented **zero qBittorrent features** and actively
+> **broke the vanilla WebUI's JavaScript**: the rebrand rewrote the
+> `qBittorrent` token *inside inline `<script>` blocks* while external
+> `.js` files were skipped, so inline code referenced `window.Боба.*`
+> that the external scripts never define → `ReferenceError` → the WebUI
+> JS never initialised.
+>
+> The download-proxy on `:7186` and the WebUI bridge on `:7188` now serve
+> qBittorrent's HTML, headers and `Content-Encoding` **byte-for-byte
+> unmodified** (stock vanilla WebUI). Permanent regression guard:
+> `tests/integration/test_vanilla_webui_unmodified.py`.
+>
+> **STILL IN FORCE — do not remove:** Phase A, the shared theme *state*
+> used by the Angular dashboard on `:7187` —
+> `download-proxy/src/api/theme_state.py`, the `/api/v1/theme` +
+> `/api/v1/theme/stream` endpoints, `qBitTorrent-go/internal/api/theme.go`
+> and the frontend theme service + picker. Everything below that
+> describes injection into the qBittorrent WebUI is historical record.
 
 **Problem.** The Angular dashboard at `:7187` is themed end-to-end
 (Darcula + 7 other palettes, per-element drop shadows). The qBittorrent

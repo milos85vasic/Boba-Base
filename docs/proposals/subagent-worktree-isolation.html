@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.10" />
+  <meta name="generator" content="pandoc 3.11" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>subagent-worktree-isolation</title>
   <style>
@@ -41,7 +41,6 @@
       body {
         background-color: transparent;
         color: black;
-        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -172,7 +171,6 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
 </head>
 <body>
@@ -670,10 +668,8 @@ inside <code>constitution/scripts/multitrack/</code>, decoupled per
 test-first) proving: (a) two concurrent <code>spawn</code> calls for the
 SAME task-id do not double-clone, (b) <code>reap</code> refuses to
 remove a clone with uncommitted changes (§11.4.84 quiescence),
-<ol start="3" type="a">
-<li><code>reap</code>’s merge is genuinely ff-only per §11.4.113 (never
+(c) <code>reap</code>’s merge is genuinely ff-only per §11.4.113 (never
 force-push).</li>
-</ol></li>
 <li>Wire the SDD skill’s subagent-dispatch step to call
 <code>spawn</code>/<code>reap</code> around every task, replacing
 today’s shared-checkout dispatch (the literal BOB-068 remedy).</li>

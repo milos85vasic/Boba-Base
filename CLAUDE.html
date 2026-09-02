@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.10" />
+  <meta name="generator" content="pandoc 3.11" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>CLAUDE</title>
   <style>
@@ -41,7 +41,6 @@
       body {
         background-color: transparent;
         color: black;
-        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -172,7 +171,6 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
     /* CSS for syntax highlighting */
     html { -webkit-text-size-adjust: 100%; }
     pre > code.sourceCode { white-space: pre; position: relative; }
@@ -618,17 +616,21 @@ separate <code>PLUGINS=()</code> array
 one-time-setup scope only; <code>./install-plugin.sh</code> is what
 installs the full roster.</li>
 </ul>
-<p>Neither of these is a plugin count: <strong>36 <code>*.py</code>
+<p>Neither of these is a plugin count: <strong>35 <code>*.py</code>
 files</strong> sit directly in <code>plugins/</code>
-<!-- CM-PLUGIN-COUNT: toplevel --> and <strong>69 <code>*.py</code>
+<!-- CM-PLUGIN-COUNT: toplevel --> and <strong>68 <code>*.py</code>
 files</strong> exist recursively <!-- CM-PLUGIN-COUNT: recursive -->.
 Both mix engines with non-engine utility modules
 (<code>env_loader.py</code>, <code>helpers.py</code>,
 <code>novaprinter.py</code>, <code>nova2.py</code>,
-<code>socks.py</code>, <code>theme_injector.py</code>,
-<code>download_proxy.py</code>), and the recursive figure additionally
-counts the <code>community/</code> and <code>webui_compatible/</code>
-variants of engines already counted once.</p>
+<code>socks.py</code>, <code>download_proxy.py</code>), and the
+recursive figure additionally counts the <code>community/</code> and
+<code>webui_compatible/</code> variants of engines already counted once.
+(Both figures dropped by one on 2026-09-01 when
+<code>theme_injector.py</code> was deleted with the themed-WebUI overlay
+— machine-re-derived by
+<code>scripts/pre_build/check_cm_plugin_count.sh</code>, never
+hand-edited.)</p>
 <p>Plugin contract: Python class with <code>url</code>,
 <code>name</code>, <code>supported_categories</code>,
 <code>search()</code>, <code>download_torrent()</code>. This is the

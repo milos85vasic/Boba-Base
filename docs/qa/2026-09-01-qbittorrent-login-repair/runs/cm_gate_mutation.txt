@@ -1,0 +1,11 @@
+=== paired-mutation meta-test: CM-QBITTORRENT-WEBUI-CREDENTIALS ===
+
+PASS: golden-good (rc=0 as expected)
+PASS: golden-bad-1 (rc=1 as expected)
+PASS: golden-bad-2 (rc=1 as expected)
+PASS: golden-bad-3 (rc=1 as expected)
+PASS: golden-bad-4 (rc=1 as expected)
+PASS: negative-control-quoted (rc=0 as expected)
+PASS: negative-control-fresh (rc=0 as expected)
+
+=== META-TEST PASS: gate fires on every broken arm and stays clean on every good arm ===

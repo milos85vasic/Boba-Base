@@ -97,7 +97,13 @@ done
 
 TMP_FRAG="$(mktemp)"
 TMP_ERR="$(mktemp)"
-trap 'rm -f "$TMP_FRAG" "$TMP_ERR"' EXIT
+# The completed search body is passed to python via this FILE, never via argv:
+# a 50-result payload blows past ARG_MAX and the exec fails with E2BIG
+# ("Argument list too long"), which is a §11.4.1 FAIL-bluff — the script dies
+# for a script-internal reason while the product is healthy. See the call site
+# in Step 4 below.
+TMP_BODY="$(mktemp)"
+trap 'rm -f "$TMP_FRAG" "$TMP_ERR" "$TMP_BODY"' EXIT
 
 # Write the evidence JSON atomically from a python heredoc. Folds the captured
 # tracker_stats fragment (NO credential values) under the overall verdict.
@@ -227,11 +233,23 @@ echo "  search status=$FINAL_STATUS"
 # --- Step 4: assert each tracker's REAL authentication state -------------------
 # Python reads ONLY {name,status,authenticated,results_count,error}. It NEVER
 # touches any credential value (the proxy holds those; they are not in the body).
+# The search body is handed over as a FILE PATH, not as an argv string. Passing
+# the whole payload as an argument exceeded ARG_MAX at limit=50 and killed the
+# run with "/usr/bin/python3: Argument list too long" — the product was fine
+# (backend healthy, search status=completed), the instrument was broken
+# (§11.4.1 FAIL-bluff / §11.4.201(12) shell-instrument footgun). A file also
+# scales with `limit` instead of silently re-breaking at some larger result set.
+# stdin is already taken by the heredoc, so a temp file — not a pipe — is the
+# correct channel here; this mirrors write_evidence(), which already hands its
+# JSON fragment over by path.
+printf '%s' "$FINAL_BODY" > "$TMP_BODY"
 ASSERT_OUT="$(PRIVATE_TRACKERS="$PRIVATE_TRACKERS" PUBLIC_TRACKERS="$PUBLIC_TRACKERS" \
-  python3 - "$FINAL_BODY" "$TMP_FRAG" <<'PY'
+  python3 - "$TMP_BODY" "$TMP_FRAG" <<'PY'
 import json, os, re, sys
 
-final_body, frag = sys.argv[1], sys.argv[2]
+body_path, frag = sys.argv[1], sys.argv[2]
+with open(body_path, encoding="utf-8") as _fh:
+    final_body = _fh.read()
 private = set(os.environ["PRIVATE_TRACKERS"].split())
 public = set(os.environ["PUBLIC_TRACKERS"].split())
 

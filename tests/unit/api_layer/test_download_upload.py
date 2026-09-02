@@ -128,11 +128,40 @@ class TestUploadSuccess:
         # The multipart payload must carry the uploaded bytes under "torrents".
         # aiohttp stores each field as (type_options, headers, value).
         fields = form._fields
-        assert len(fields) == 1
-        type_options, headers, value = fields[0]
-        assert type_options.get("name") == "torrents"
+        by_name = {opts.get("name"): (opts, hdrs, val) for opts, hdrs, val in fields}
+
+        # The multipart payload must carry the uploaded bytes under "torrents".
+        # aiohttp stores each field as (type_options, headers, value).
+        assert "torrents" in by_name, f"no 'torrents' field; got {sorted(by_name)}"
+        type_options, headers, value = by_name["torrents"]
         assert "application/x-bittorrent" in headers.get("Content-Type", "")
         assert value == torrent  # the exact uploaded bytes were forwarded
+
+        # RECONCILED 2026-09-01 (§11.4.120, review #3 finding F7). This used to
+        # assert `len(fields) == 1`. Content tagging now attaches a second
+        # field, "tags", so the old assertion failed against the NEW CORRECT
+        # behaviour. §11.4.120 forbids both fake-passing the check and reverting
+        # the feature: the assertion is rewritten to assert the NEW mechanism.
+        #
+        # Strengthened rather than merely widened — it no longer just tolerates
+        # an extra field, it VERIFIES what that field is:
+        assert "tags" in by_name, (
+            "the upload path must attach content-derived tags; "
+            f"fields present: {sorted(by_name)}"
+        )
+        _, _, tags_value = by_name["tags"]
+        tag_list = [t for t in str(tags_value).split(",") if t]
+        # Both promotion tags are unconditional (operator decision 2026-09-01).
+        assert "Boba" in tag_list and "Боба" in tag_list, f"tags field was {tags_value!r}"
+        # A comma inside a tag would split it into bogus tags at the API — the
+        # shared sanitiser strips them, so no element may be blank.
+        assert all(t.strip() for t in tag_list), f"blank tag in {tags_value!r}"
+        # The `boba-` prefix is reserved as a test-debris signature and must
+        # never be emitted by production code.
+        assert not any(t.lower().startswith("boba-") for t in tag_list), (
+            f"production emitted a reserved boba- tag: {tags_value!r}"
+        )
+        assert len(fields) == 2, f"expected exactly torrents+tags, got {sorted(by_name)}"
 
 
 class TestUploadRejection:

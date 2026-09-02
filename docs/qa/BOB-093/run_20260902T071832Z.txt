@@ -1,0 +1,8 @@
+== rutracker_redos_regex_bounds_challenge run_id=20260902T071832Z RED_MODE=1 ==
+deployed_sha256=98e3cb71f3bc06633c9defba8f2be881eda3444f17306d3644de684164e6f858
+deployed_bytes=19594
+assertion.bounded_pattern_matches=1 (expected: 1)
+assertion.unsafe_pattern_matches=0 (expected: 0)
+self_validation.golden_good bounded=1 unsafe=0 (expect 1/0)
+self_validation.golden_bad  bounded=0  unsafe=1  (expect 0/1)
+PASS: deployed rutracker.py carries bounded ReDoS-safe regex (§11.4.108 layer-3 verified)

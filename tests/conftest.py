@@ -26,7 +26,31 @@ from typing import Any
 # sys.modules assignment (no monkeypatch teardown). They MUST be snapshotted and
 # restored around every unit test or they leak across files under randomized
 # ordering (§11.4.50 pollution: env_loader/tokyotoshokan/kinozal/rutor/iptorrents).
+#
+# THIS LIST IS DERIVED, NOT CURATED (BOB-176 root cause). Until 2026-09-01 it was
+# a REACTIVE denylist: a name was appended only after its leak had already caused
+# a measured failure (see 6230865, which added exactly the five plugin names that
+# were failing that day). Nothing tied it to the actual set of injection sites, so
+# every new `sys.modules["<plugin>"] = mod` in a test silently minted a new
+# uncleaned leak. Measured 2026-09-01 by AST scan of tests/unit/: 49 distinct
+# top-level names are injected, of which only 11 were covered — 36 leaked.
+#
+# The trailing block below is the machine-derived remainder: every top-level name
+# a tests/unit/ file assigns into sys.modules from INSIDE a function body (a test
+# or its helper). Function-scope registration is the load-bearing distinction --
+# the fixture below snapshots at setup and restores at teardown, so a name that
+# was ALREADY present at setup (registered at module/collection scope) is restored
+# rather than purged, and listing it here would not stop its leak. The two
+# module-scope names are handled separately and MUST NOT be added here:
+#   * "pirateiro"     -- explicitly re-registered + popped by the fixture below.
+#   * "download_proxy" -- tests/unit/_download_proxy_harness.py, a SHARED harness
+#                         other test files import; purging it would break them.
+#
+# Do NOT hand-edit the derived block. `tests/unit/test_sys_modules_isolation_guard.py`
+# re-derives it mechanically and FAILs when an injected name is uncovered
+# (§11.4.135 standing guard, §11.4.238 -- the gate this class escaped).
 _POLLUTING_ROOTS = (
+    # --- infrastructure roots (download-proxy packages + plugin support stubs) ---
     "api",
     "merge_service",
     "config",
@@ -34,10 +58,47 @@ _POLLUTING_ROOTS = (
     "env_loader",
     "novaprinter",
     "socks",
-    "tokyotoshokan",
-    "kinozal",
-    "rutor",
+    # --- derived: plugin/test-private modules injected at function scope ---
+    "academictorrents",
+    "ali213",
+    "anilibra",
+    "audiobookbay",
+    "bitru",
+    "bt4g",
+    "btsow",
+    "download_proxy_cov",
+    "extratorrent",
+    "eztv",
+    "gamestorrents",
+    "glotorrents",
     "iptorrents",
+    "jackett",
+    "jackett_mod",
+    "kickass",
+    "kinozal",
+    "limetorrents",
+    "linuxtracker",
+    "megapeer",
+    "nnmclub",
+    "nnmclub_under_test",
+    "nyaa",
+    "one337x",
+    "pctorrent",
+    "piratebay",
+    "rutor",
+    "rutracker",
+    "snowfl",
+    "solidtorrents",
+    "therarbg",
+    "tokyotoshokan",
+    "torlock",
+    "torrentdownload",
+    "torrentfunk",
+    "torrentproject",
+    "torrentscsv",
+    "xfsub",
+    "yihua",
+    "yourbittorrent",
 )
 
 _CORRECT_MS_PATH: str | None = None
@@ -395,12 +456,86 @@ def _isolate_download_proxy_modules(request):
         _resync_submodule_attrs()
 
 
+@pytest.fixture(autouse=True)
+def _reinstate_purged_download_proxy_modules(request):
+    """A purge outside ``tests/unit/`` MUST NOT orphan the purged module's importers.
+
+    THE DEFECT (measured 2026-09-02). ``tests/concurrency/test_orchestrator_semaphore.py``,
+    ``tests/concurrency/test_tracker_semaphore.py`` and
+    ``tests/memory/test_orchestrator_caches_bounded.py`` each build a fresh
+    orchestrator by deleting EVERY ``merge_service*`` key from ``sys.modules``
+    and re-importing. That purge is deliberate and correct for their own
+    purpose. What is not correct is that nothing puts the modules back:
+    :func:`_isolate_download_proxy_modules` above returns early for any path
+    outside ``tests/unit/``, so these three files are the only download-proxy
+    module mutators in the standard sweep with no restore at all.
+
+    An importer that ran EARLIER keeps its import-time binding to the purged
+    module, while the next import mints a SECOND module object -- the BOB-135
+    "two live copies" class, at a different pair. Measured chain, from a
+    control-needled probe over the deterministic three-file reproducer
+    ``tests/unit/test_qbit_login_compat.py``,
+    ``tests/concurrency/test_orchestrator_semaphore.py``,
+    ``tests/unit/test_qbit_add_shared_predicate.py``:
+
+    * at collection ``api.routes`` binds ``merge_service.qbit_add`` module
+      ``qa_id=...013408``, and ``routes._qbit_add_succeeded_shared`` is that
+      module's function ``...722080``;
+    * the concurrency test purges ``merge_service.qbit_add`` (probe reads
+      ``qa_file=None``) while ``api.routes`` stays in ``sys.modules`` holding
+      the now-orphaned ``...722080``;
+    * the unit test re-imports, getting module ``...258640`` and a DIFFERENT
+      function ``...434624``.
+
+    ``test_both_sites_delegate_to_the_one_implementation`` then failed on its
+    ``routes`` half only -- ``assert routes._qbit_add_succeeded_shared is
+    qbit_add_succeeded`` -- with the bridge half green, because the bridge is
+    loaded AFTER the purge and binds the fresh copy. The identity assertion is
+    correct and deliberately strict (§11.4.251: it is what catches a future
+    re-fork even if the fork initially agrees); it was reporting a REAL
+    two-live-copies state, so the assertion is left untouched and the pollution
+    is removed instead.
+
+    RESTORE-ONLY, never a wipe. This re-instates ONLY the keys that were
+    present at setup and were removed or replaced during the test; modules the
+    test legitimately ADDED are left alone. That is the load-bearing difference
+    from :func:`_isolate_download_proxy_modules`'s delete-then-restore, which
+    the docstring above records as having broken ``tests/e2e/`` by wiping
+    modules out from under live references: restoring the very object those
+    references already hold cannot break them.
+    """
+    test_path = str(request.node.fspath).replace("\\", "/")
+    if "/tests/unit/" in test_path:
+        # Already covered, symmetrically, by _isolate_download_proxy_modules.
+        yield
+        return
+    saved = {
+        k: v
+        for k, v in sys.modules.items()
+        if k in _POLLUTING_ROOTS or any(k.startswith(root + ".") for root in _POLLUTING_ROOTS)
+    }
+    try:
+        yield
+    finally:
+        reinstated = False
+        for name, mod in saved.items():
+            if sys.modules.get(name) is not mod:
+                sys.modules[name] = mod
+                reinstated = True
+        if reinstated:
+            # Re-point parent-package attributes at the re-instated objects --
+            # sys.modules assignment alone cannot undo the in-place parent
+            # mutation the import system performed (BOB-135).
+            _resync_submodule_attrs()
+
+
 # Re-export live-service fixtures so that tests can request them by name
 # from any conftest without an explicit import.
 from tests.fixtures.services import (
     all_services_live,
     merge_service_endpoint,
     merge_service_live,
+    merge_service_live_or_skip,
     qbittorrent_endpoint,
     qbittorrent_live,
     webui_bridge_endpoint,

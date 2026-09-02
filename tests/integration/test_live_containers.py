@@ -81,6 +81,22 @@ def _fetch(
         return None, str(e.reason), {}
 
 
+def _header(headers: dict | None, name: str) -> str:
+    """Case-insensitive header lookup.
+
+    ``dict(resp.headers)`` preserves the wire casing, and qBittorrent emits
+    ``set-cookie`` in lowercase — a plain ``headers["Set-Cookie"]`` would miss
+    it and silently read as "no cookie was issued" (a §11.4.201 false-null).
+    """
+    if not headers:
+        return ""
+    lowered = name.lower()
+    for key, value in headers.items():
+        if key.lower() == lowered:
+            return value
+    return ""
+
+
 # ──────────────────────────────────────────────
 # Container Runtime
 # ──────────────────────────────────────────────
@@ -110,9 +126,36 @@ class TestQbittorrentWebUI:
         assert status == 200, f"qBittorrent WebUI not reachable: status={status}"
 
     def test_webui_login(self):
+        """A GOOD credential must actually authenticate — and a BAD one must not.
+
+        The previous form accepted ``status in (200, 302, 403)`` as a pass.
+        ``403`` is qBittorrent's REFUSAL, so that assertion scored a rejected
+        login as a successful one and could not fail for the defect it named —
+        a §11.4 PASS-bluff. Measured reality (2026-09-01, qBittorrent 5.2.3):
+        good login → ``204`` + ``Set-Cookie: QBT_SID_<port>=…``; bad login →
+        ``401`` with no cookie.
+        """
         data = urllib.parse.urlencode({"username": WEBUI_USER, "password": WEBUI_PASS}).encode()
-        status, _, headers = _fetch(f"{QBITTORRENT_URL}/api/v2/auth/login", method="POST", data=data)
-        assert status in (200, 302, 403), f"Login unexpected status: {status}"
+        status, body, headers = _fetch(f"{QBITTORRENT_URL}/api/v2/auth/login", method="POST", data=data)
+
+        set_cookie = _header(headers, "Set-Cookie")
+        has_session = "QBT_SID" in set_cookie
+        assert status is not None and 200 <= status < 300 and (has_session or body.strip() == "Ok."), (
+            f"login with the configured credential did not authenticate: "
+            f"status={status} body={body.strip()!r} set_cookie={set_cookie!r}"
+        )
+
+        # Negative control — a wrong password must NOT mint a session cookie.
+        bad_data = urllib.parse.urlencode({"username": WEBUI_USER, "password": "wrongwrong"}).encode()
+        bad_status, bad_body, bad_headers = _fetch(
+            f"{QBITTORRENT_URL}/api/v2/auth/login", method="POST", data=bad_data
+        )
+        bad_cookie = _header(bad_headers, "Set-Cookie")
+        bad_ok = bad_status is not None and 200 <= bad_status < 300 and ("QBT_SID" in bad_cookie or bad_body.strip() == "Ok.")
+        assert not bad_ok, (
+            f"a WRONG password authenticated: status={bad_status} "
+            f"body={bad_body.strip()!r} set_cookie={bad_cookie!r}"
+        )
 
     def test_api_version(self):
         data = urllib.parse.urlencode({"username": WEBUI_USER, "password": WEBUI_PASS}).encode()

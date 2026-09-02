@@ -164,12 +164,14 @@ app.add_middleware(
 # RATE_LIMIT_SEARCH / RATE_LIMIT_DASHBOARD / RATE_LIMIT_SSE_STREAM env
 # vars. Set RATE_LIMIT_DISABLED=1 to bypass (integration harnesses only —
 # a production deploy MUST NOT set that flag). See docs/qa/BOB-111/.
-from .rate_limit import (  # noqa: E402
-    dashboard_limit_decorator,
-    install as _install_rate_limits,
-    search_limit_decorator,
-    sse_limit_decorator,
-)
+# Only the two symbols this module actually binds are imported. Verified
+# 2026-09-02: `search_limit_decorator` / `sse_limit_decorator` were imported
+# here and referenced nowhere — routes.py wires its classes through its own
+# `_rl("search")` / `_rl("sse_stream")` helper, and no consumer re-exports
+# them from `api` (there is no `__all__`). The module still executes on this
+# import, so dropping the two names changes no behaviour.
+from .rate_limit import dashboard_limit_decorator  # noqa: E402
+from .rate_limit import install as _install_rate_limits  # noqa: E402
 
 if os.getenv("RATE_LIMIT_DISABLED", "").strip().lower() not in ("1", "true", "yes"):
     _install_rate_limits(app)

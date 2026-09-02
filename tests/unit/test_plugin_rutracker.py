@@ -167,11 +167,23 @@ TOPIC_PAGE_NO_MAGNET = "<html><body><p>No magnet here</p></body></html>"
 # ─── Module loader ──────────────────────────────────────────────────────────
 
 
-def _load_rutracker(captured=None):
-    """Import rutracker plugin with stubs and mocked login.
+def _import_rutracker_module(captured=None):
+    """Register ``plugins/rutracker.py`` as the top-level module ``rutracker``.
 
-    Returns (instance, captured_results_list).
-    The instance has _open_url and __login mocked so no real HTTP happens.
+    Returns (module, captured_results_list).
+
+    ``plugins/`` is deliberately NOT on ``sys.path`` (it holds ``helpers.py``,
+    ``socks.py``, ``novaprinter.py`` and ``env_loader.py``, which would shadow
+    the suite-wide stubs ``tests/conftest.py`` manages via ``_POLLUTING_ROOTS``),
+    so a bare ``import rutracker`` resolves ONLY through the ``sys.modules``
+    entry installed below.
+
+    Every test that imports ``rutracker`` by name MUST call this first -- either
+    directly or via ``_load_rutracker`` -- instead of relying on some earlier
+    test in the same process having left the entry behind. That leftover is what
+    made ``TestConfig`` pass or fail purely on the ``pytest-randomly`` seed:
+    ``rutracker`` is NOT in ``_POLLUTING_ROOTS``, so the entry survives teardown
+    and silently satisfies whichever test happens to run next (§11.4.50).
     """
     if captured is None:
         captured = []
@@ -194,6 +206,16 @@ def _load_rutracker(captured=None):
     mod = importlib.util.module_from_spec(spec)
     sys.modules["rutracker"] = mod
     spec.loader.exec_module(mod)
+    return mod, captured
+
+
+def _load_rutracker(captured=None):
+    """Import rutracker plugin with stubs and mocked login.
+
+    Returns (instance, captured_results_list).
+    The instance has _open_url and __login mocked so no real HTTP happens.
+    """
+    mod, captured = _import_rutracker_module(captured)
 
     # Get the class (module-level alias: rutracker = RuTracker)
     cls = getattr(mod, "rutracker", None)
@@ -238,6 +260,7 @@ def _load_rutracker(captured=None):
 class TestConfig:
     def test_default_mirrors(self):
         """Config.mirrors has the three default rutracker mirrors."""
+        _import_rutracker_module()
         from rutracker import Config
 
         c = Config()
@@ -247,6 +270,7 @@ class TestConfig:
 
     def test_env_mirrors_override(self):
         """_get_mirrors_from_env parses comma-separated env var."""
+        _import_rutracker_module()
         from rutracker import _get_mirrors_from_env
 
         with patch.dict(os.environ, {"RUTRACKER_MIRRORS": "https://m1.example.com, https://m2.example.com"}):
@@ -255,6 +279,7 @@ class TestConfig:
 
     def test_get_env_with_default(self):
         """_get_env returns env var value or default."""
+        _import_rutracker_module()
         from rutracker import _get_env
 
         assert _get_env("NONEXISTENT_VAR_XYZ_999", "fallback") == "fallback"
@@ -263,6 +288,7 @@ class TestConfig:
 
     def test_get_mirrors_from_env_empty(self):
         """_get_mirrors_from_env returns None when env var is empty."""
+        _import_rutracker_module()
         from rutracker import _get_mirrors_from_env
 
         with patch.dict(os.environ, {"RUTRACKER_MIRRORS": ""}):
@@ -270,6 +296,7 @@ class TestConfig:
 
     def test_get_mirrors_from_env_whitespace(self):
         """Whitespace-only mirrors are filtered out."""
+        _import_rutracker_module()
         from rutracker import _get_mirrors_from_env
 
         with patch.dict(os.environ, {"RUTRACKER_MIRRORS": " , , , "}):
@@ -311,6 +338,7 @@ class TestClassAttributes:
         assert url == inst.forum_url + "viewtopic.php?t=456"
 
     def test_rutracker_trackers_list(self):
+        _import_rutracker_module()
         import rutracker
 
         assert len(rutracker.RUTRACKER_TRACKERS) >= 10
@@ -674,9 +702,9 @@ class TestBuildMagnetLink:
         assert "tr=" in link
 
     def test_trackers_included(self):
+        inst, _ = _load_rutracker()
         import rutracker
 
-        inst, _ = _load_rutracker()
         link = inst._build_magnet_link("aabbccddee" * 4, "Test")
         for tracker in rutracker.RUTRACKER_TRACKERS:
             from urllib.parse import quote
@@ -1091,7 +1119,12 @@ class TestReDoSRegexBounds:
         """
         src = os.path.join(REPO, "download-proxy", "src", "merge_service", "search.py")
         if not os.path.exists(src):
-            pytest.skip("merge_service/search.py absent (topology_unsupported)")
+            # The condition is os.path.exists on a repo SOURCE FILE — no port
+            # is probed and no service is involved. "service" appears only as
+            # part of the package path download-proxy/src/merge_service/: a
+            # §11.4.201(7)(a) carrier match, not a service-availability skip,
+            # so no fixture gate applies.
+            pytest.skip("merge_service/search.py absent (topology_unsupported)")  # allow-skip: source-file absence
         with open(src, encoding="utf-8") as fh:
             text = fh.read()
         # Locate each assignment on its own rather than slicing a fixed window
@@ -1218,7 +1251,12 @@ class TestBoundExceedanceTelemetry:
         """The fork must not stay silent while the plugin reports (§11.4.251)."""
         src = os.path.join(REPO, "download-proxy", "src", "merge_service", "search.py")
         if not os.path.exists(src):
-            pytest.skip("merge_service/search.py absent (topology_unsupported)")
+            # The condition is os.path.exists on a repo SOURCE FILE — no port
+            # is probed and no service is involved. "service" appears only as
+            # part of the package path download-proxy/src/merge_service/: a
+            # §11.4.201(7)(a) carrier match, not a service-availability skip,
+            # so no fixture gate applies.
+            pytest.skip("merge_service/search.py absent (topology_unsupported)")  # allow-skip: source-file absence
         with open(src, encoding="utf-8") as fh:
             text = fh.read()
         for needle in (

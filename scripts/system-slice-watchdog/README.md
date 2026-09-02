@@ -87,8 +87,8 @@ bash scripts/system-slice-watchdog/uninstall.sh  # prints commands to run
 Run the challenge WITHOUT root — verifies structural correctness:
 
 ```bash
-bash challenges/scripts/user1000-watchdog-challenge.sh              # GREEN mode
-POLARITY_MODE=red bash challenges/scripts/user1000-watchdog-challenge.sh  # golden-bad polarity
+bash challenges/scripts/user1000_watchdog_challenge.sh              # GREEN mode
+POLARITY_MODE=red bash challenges/scripts/user1000_watchdog_challenge.sh  # golden-bad polarity
 ```
 
 The challenge asserts:

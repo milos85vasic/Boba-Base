@@ -3,6 +3,8 @@
 
 import re
 from time import sleep
+from urllib.parse import quote, unquote_plus
+
 from helpers import retrieve_url
 from novaprinter import prettyPrinter
 
@@ -10,6 +12,12 @@ from novaprinter import prettyPrinter
 class kickass(object):
     url = "https://kickasstorrents.to/"
     name = "Kickasstorrents"
+
+    # Hard cap on search-result pagination. A misbehaving / interstitial /
+    # index-ignoring upstream that re-serves matching rows for every page
+    # index would make the search loop run forever (compounded by the
+    # per-row sleep). Real result sets are far under this bound.
+    MAX_PAGES: int = 50
 
     supported_categories = {
         "all": "",
@@ -38,7 +46,7 @@ class kickass(object):
             trs = re.findall(r"<tr class=\"(?:odd|even)\"\s*>.*?</tr>", html, re.DOTALL)
             for tr in trs:
                 url_titles = re.search(
-                    r'<div class="torrentname">.*?<a href="([^"]+)"\s+class="cellMainLink">\s*(.*?)\s*</a>.*?<td[^>]*>\s*([\d\.]+\s*(?:TB|GB|MB|KB))\s*</td>.*?<td class="green center">\s*(\d+)\s*</td>.*?<td class="red lasttd center">\s*(\d+)\s*</td>',
+                    r'<div class="torrentname">.*?<a href="([^"]+)"\s+class="cellMainLink">\s*(.*?)\s*</a>.*?<td[^>]*>\s*([\d,\.]+\s*(?:TB|GB|MB|KB))\s*</td>.*?<td class="green center">\s*(\d+)\s*</td>.*?<td class="red lasttd center">\s*(\d+)\s*</td>',
                     tr,
                     re.DOTALL,
                 )
@@ -59,7 +67,12 @@ class kickass(object):
             return trs
 
         def __retrieve_download_link(self, detail_link):
-            torrent_page = retrieve_url(detail_link)
+            try:
+                torrent_page = retrieve_url(detail_link)
+            except Exception:
+                return "NotFound"
+            if not torrent_page:
+                return "NotFound"
             magnet_match = re.search(r"\"(magnet:.*?)\"", torrent_page)
             if magnet_match and magnet_match.groups():
                 return str(magnet_match.groups()[0])
@@ -67,12 +80,23 @@ class kickass(object):
                 return "NotFound"
 
     def download_torrent(self, url):
+        if not url or not isinstance(url, str):
+            # Degenerate input (None / empty / non-string): there is no
+            # usable URL to resolve. Emit the qBittorrent-expected
+            # "<url> <engine_url>" fallback shape instead of crashing.
+            print("{0} {1}".format(url or "", self.url))
+            return
         if url.startswith("magnet:"):
             print(url + " " + self.url)
             return
-        from helpers import retrieve_url
-
-        data = retrieve_url(url)
+        try:
+            data = retrieve_url(url)
+        except Exception:
+            print(url + " " + self.url)
+            return
+        if not data:
+            print(url + " " + self.url)
+            return
         magnet_match = re.search(r'(magnet:\?[^"<\s]+)', data)
         if magnet_match:
             print(magnet_match.group(1) + " " + self.url)
@@ -80,13 +104,31 @@ class kickass(object):
             print(url + " " + self.url)
 
     def search(self, what, cat="all"):
+        # The query goes into the URL PATH ("search/<what>/"), so quote() is the
+        # right tool, NOT quote_plus: a '+' is a LITERAL plus in a path segment,
+        # it does not mean "space" there. safe="" percent-encodes the separators
+        # too. unquote_plus() first normalises BOTH caller conventions (the merge
+        # service passes a raw query with literal spaces; nova2 passes a
+        # %20-encoded one) so the encode happens exactly ONCE and a pre-encoded
+        # query is never double-encoded into %25XX garbage.
+        #
+        # The previous `what.replace(" ", "%20")` handled ONLY the space and left
+        # every non-ASCII character raw, so a Cyrillic query reached urllib as
+        # non-ASCII and died with "'ascii' codec can't encode characters ...".
+        # This project's primary trackers are Russian-language, so that is the
+        # NORMAL case (§11.4.238 coverage escape from commit ae387b2).
+        what = quote(unquote_plus(what), safe="")
         parser = self.HTMLParser(self.url)
         category = "" if cat == "all" else "category/{0}/".format(self.supported_categories[cat])
         counter: int = 0
-        while True:
+        while counter < self.MAX_PAGES:
             url = "{0}search/{1}/{2}{3}/".format(self.url, what, category, counter)
-            # Some replacements to format the html source
-            html = retrieve_url(url)
+            try:
+                html = retrieve_url(url)
+            except Exception:
+                break
+            if not html:
+                break
             html = re.sub("<strong[^>]*>|</strong>", "", html)
             parser.feed(html)
             if parser.noTorrents:

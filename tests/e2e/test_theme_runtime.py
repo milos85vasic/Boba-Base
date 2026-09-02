@@ -23,6 +23,7 @@ import pytest
 
 # playwright is a hard requirement; import directly so a missing
 # install surfaces as a clear ImportError instead of a silent skip.
+from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import sync_playwright
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -141,7 +142,29 @@ def test_theme_switching_applies_tokens_and_persists(palettes: dict[str, dict[st
     )
 
     with sync_playwright() as pw:
-        browser = pw.chromium.launch(headless=True)
+        # A MISSING BROWSER BINARY IS AN ENVIRONMENT CONDITION, NOT A DEFECT
+        # (§11.4.3 / §11.4.27(11)). Playwright itself IS installed here; only
+        # the Chromium download is absent, and on this host Playwright's
+        # bundled build refuses to install at all ("does not support chromium
+        # on ubuntu26.04-x64"). Hard-failing on that reports a green product as
+        # broken — a §11.4.201(1) false-positive refusal.
+        #
+        # tests/e2e/test_crossapp_theme.py already skips honestly here; this
+        # file was missed, so the same run showed one skip and one failure for
+        # the identical cause. Mirrored.
+        try:
+            browser = pw.chromium.launch(headless=True)
+        except PlaywrightError as exc:
+            if "executable doesn't exist" not in str(exc).lower():
+                raise
+            pytest.skip(
+                "SKIP-reason=browser_binary_not_installed: Playwright's Chromium "
+                "binary is not installed on this host (Playwright itself IS "
+                "installed — only the browser download is missing). Install it "
+                "with:\n"
+                "    .venv/bin/python -m playwright install chromium\n"
+                "or point BOBA_CHROMIUM_PATH at a system Chromium."
+            )
         try:
             context = browser.new_context()
             page = context.new_page()

@@ -344,7 +344,20 @@ class MetadataEnricher:
             return "1080p"
         if re.search(r"720p|hdrip", name_lower):
             return "720p"
-        if re.search(r"480p|sd|camrip", name_lower):
+        # F6 (review #3): the M-c fix below OVERCORRECTED. `\bsd\b` removed the
+        # false positives but ALSO killed the legitimate `sdrip` / `sdtv`
+        # tokens the old bare substring matched — fixing a false positive by
+        # breaking a true positive, which is the both-factors trap
+        # (§11.4.194(1)): only one side of the change was verified. A
+        # pre-existing RED-capable test (test_enricher_resolve.py) caught it
+        # exactly as designed; it simply had not been run.
+        #
+        # M-c (review 2026-09-01): `sd` was matched as a BARE SUBSTRING, so any
+        # name or URL containing those two letters anywhere — `?sdid=`,
+        # `/sdcard/`, `xsd` — was tagged "SD". That is an invented value
+        # (§11.4.6), and it became reachable the moment tagging began falling
+        # back to the download URL when no title is supplied. Word-bounded now.
+        if re.search(r"480p|\bsd(?:rip|tv)?\b|camrip", name_lower):
             return "SD"
 
         if "bluray" in name_lower or "blu-ray" in name_lower or "bdrip" in name_lower or "bd-remux" in name_lower:

@@ -293,8 +293,42 @@ if [ "$WI_TOUCHED" -eq 1 ]; then
             echo "      An absent tool is NOT evidence of sync. Commit proceeds (§11.4.234(D))." >&2
         else
             TMPDIR_SEAM="${TMPDIR_SEAM:-$(mktemp -d)}"
-            sqlite3 "$WI_DB" "$PROJ_Q" > "$TMPDIR_SEAM/tracked.txt" 2>/dev/null || true
-            if _reparse_projection "$WI_DB" "$WI_ISSUES" "$WI_FIXED" "$TMPDIR_SEAM/reparsed.txt"; then
+            # The TRACKED side of the comparison. This was `|| true` with stderr
+            # to /dev/null, while its sibling `_reparse_projection` (line below)
+            # has ALWAYS been guarded — the same query, checked on one side and
+            # discarded on the other. That asymmetry made the verdict a function
+            # of a file the seam did not know had been written, in BOTH
+            # polarities (MEASURED 2026-09-01):
+            #   * query fails, file left EMPTY  -> diff sees every item as changed
+            #     -> CHECK 3 FAILs naming ALL of BOB-001.. as body-drifted, and the
+            #     printed remediation is `sync md-to-db`/`db-to-md` — i.e. it tells
+            #     the operator to overwrite one authoritative side from the other
+            #     BECAUSE the DB could not be read. A §11.4.1 FAIL-bluff that
+            #     recommends a destructive action.
+            #   * file never created at all     -> `diff` errors, its output is
+            #     eaten by 2>/dev/null, OFFENDERS is empty -> CHECK 3 reports PASS
+            #     having compared nothing. A §11.4 PASS-bluff — the seam reporting
+            #     clean when it did not actually check.
+            # Now: the status is checked, stderr is CAPTURED (not discarded) so the
+            # real cause is reportable, and an unreadable tracked projection is an
+            # honest SKIP — the same treatment the sibling already gets. An absent
+            # answer is never rendered as a verdict (§11.4.201(6): a null is not
+            # evidence).
+            TRACKED_ERR=""
+            if ! TRACKED_ERR="$(sqlite3 "$WI_DB" "$PROJ_Q" 2>&1 > "$TMPDIR_SEAM/tracked.txt")"; then
+                echo "  CHECK 3 body_md drift oracle ............ SKIP (tracked projection UNREADABLE)"
+                echo "WARN: could NOT read the tracked projection from $WI_DB — the BOB-136" >&2
+                echo "      body-drift oracle did NOT run. This is NOT evidence of sync, and it" >&2
+                echo "      is NOT drift: the DB side of the comparison was never obtained." >&2
+                [ -n "$TRACKED_ERR" ] && printf '      sqlite3: %s\n' "$TRACKED_ERR" >&2
+                echo "      Do NOT run 'sync md-to-db'/'db-to-md' on this — investigate the DB" >&2
+                echo "      first. Commit proceeds (§11.4.234(D))." >&2
+            elif [ ! -f "$TMPDIR_SEAM/tracked.txt" ]; then
+                # Belt-and-braces: this is the exact shape of the PASS-bluff above.
+                echo "  CHECK 3 body_md drift oracle ............ SKIP (tracked projection MISSING)"
+                echo "WARN: the tracked projection file was not created — oracle did NOT run." >&2
+                echo "      NOT evidence of sync (§11.4.3). Commit proceeds (§11.4.234(D))." >&2
+            elif _reparse_projection "$WI_DB" "$WI_ISSUES" "$WI_FIXED" "$TMPDIR_SEAM/reparsed.txt"; then
                 OFFENDERS="$(diff "$TMPDIR_SEAM/tracked.txt" "$TMPDIR_SEAM/reparsed.txt" 2>/dev/null | grep -E '^[<>]' | sed 's/^[<>] //' | cut -d'|' -f1 | sort -u || true)"
                 if [ -z "$OFFENDERS" ]; then
                     echo "  CHECK 3 body_md drift oracle ............ PASS"

@@ -92,7 +92,14 @@ class yourbittorrent(object):
             raise Exception("Error, please fill a bug report!")
 
     def search(self, what, cat="all"):
-        what = what.replace("%20", "-")
+        # yourbittorrent uses '-' for spaces in its ?q= param. Keep '-' as the
+        # word separator but percent-encode each word with quote(safe="") so a
+        # Cyrillic query is ASCII-safe (UTF-8 percent-encoded) and never reaches
+        # urllib as a non-ASCII char. unquote_plus first decodes the nova2
+        # (%20-encoded) caller so encoding happens exactly once.
+        what = "-".join(
+            urllib.parse.quote(word, safe="") for word in urllib.parse.unquote_plus(what).split()
+        )
         parser = self.HTMLParser(self.url)
         category = "" if cat == "all" else f"&c={self.supported_categories[cat]}"
         url = "{0}?q={1}{2}".format(self.url, what, category)

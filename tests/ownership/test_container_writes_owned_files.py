@@ -164,9 +164,29 @@ def test_container_written_file_is_owned_by_the_operator() -> None:
     # so the in-container user can write regardless of which uid it maps to —
     # otherwise a permission error would mask the ownership question we are
     # actually asking.
+    #
+    # WHY 0o777 AND NOT SOMETHING TIGHTER (measured 2026-09-01, not assumed):
+    # this test is deliberately CONFIG-DRIVEN — `_configured_puid_pgid()` reads
+    # whatever docker-compose.yml declares, so the writing identity is a host
+    # uid/gid the test cannot know in advance (rootless maps container id 0 to
+    # the operator, and id N>0 to 100000+N-1). A probe across the configuration
+    # space this test must span gave:
+    #     mode    PUID=0/PGID=0   PUID=1000/PGID=1000   PUID=1000/PGID=0
+    #     0o700       wrote              DENIED               DENIED
+    #     0o707       wrote              wrote                DENIED
+    #     0o770       wrote              DENIED               wrote
+    #     0o777       wrote              wrote                wrote
+    # Every tighter mode DENIES the write under some readable configuration,
+    # and a denied write makes this test report "the container did not create
+    # the file at all" — a harness failure standing in place of the ownership
+    # verdict, i.e. exactly the §11.4.201(1) false-positive refusal the module
+    # docstring forbids. The permissive mode IS the mechanism under test here,
+    # not incidental reach: it is a short-lived TemporaryDirectory used solely
+    # as a bind-mount target and removed in the `finally` below — no executable
+    # and nothing on any service's allowlist lives in it.
     with tempfile.TemporaryDirectory(prefix="ownership-red-") as tmp:
       try:
-        os.chmod(tmp, 0o777)
+        os.chmod(tmp, 0o777)  # noqa: S103 — required; see the measured table above
         target = Path(tmp) / "written_by_the_app"
 
         puid, pgid = _configured_puid_pgid()
@@ -224,7 +244,8 @@ def test_container_written_directory_is_owned_by_the_operator() -> None:
 
     with tempfile.TemporaryDirectory(prefix="ownership-red-dir-") as tmp:
       try:
-        os.chmod(tmp, 0o777)
+        # Same requirement, same measured evidence as the file test above.
+        os.chmod(tmp, 0o777)  # noqa: S103 — required; see the measured table above
         nested = Path(tmp) / "outer" / "inner"
         puid, pgid = _configured_puid_pgid()
 

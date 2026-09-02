@@ -119,10 +119,26 @@ class ThemeStore:
             with os.fdopen(tmp_fd, "w", encoding="utf-8") as fp:
                 json.dump(state.to_dict(), fp, indent=2, sort_keys=True)
                 fp.flush()
-                try:  # noqa: SIM105
+                # fsync is the step that makes the rename below crash-safe;
+                # swallowing its failure silently downgrades an atomic-and-durable
+                # write to a merely-atomic one. Reported, not raised, and NOT
+                # imported from ``api.hooks`` — ``api.routes`` imports this module,
+                # and ``api.hooks`` imports ``api.routes``, so the import would be
+                # circular. See ``api.hooks._fsync_or_report`` for the full
+                # rationale, including why EINVAL makes raising a §11.4.201(1)
+                # false-positive refusal.
+                try:
                     os.fsync(fp.fileno())
-                except OSError:
-                    pass
+                except OSError as e:
+                    logger.error(
+                        "fsync FAILED before publishing %s (errno=%s %s) — the theme "
+                        "write is still ATOMIC but NO LONGER DURABLE: a crash before "
+                        "the OS flushes may leave theme.json present with incomplete "
+                        "contents, which the next boot then reverts to default.",
+                        self._path,
+                        e.errno,
+                        e.strerror,
+                    )
             os.replace(tmp_path, self._path)
         except Exception:
             try:  # noqa: SIM105

@@ -15,6 +15,12 @@ Tests:
 import pytest
 import requests
 
+from tests.integration.qbit_login_oracle import (
+    describe_login,
+    qbit_login_succeeded,
+    qbit_session_cookie_names,
+)
+
 
 class TestLoginModal:
     """Test login modal functionality."""
@@ -47,13 +53,36 @@ class TestLoginAuthentication:
         self.session = requests.Session()
 
     def test_direct_qbittorrent_login(self):
-        """Direct qBittorrent login should work."""
+        """Direct qBittorrent login must work — judged by the version-independent
+        oracle, not by the literal body ``Ok.``.
+
+        Measured 2026-09-01 against the running qBittorrent 5.2.3: a GOOD login
+        answers ``204`` with an EMPTY body plus ``Set-Cookie: QBT_SID_7185=…``.
+        """
         resp = self.session.post(
             f"{self.qbit_url}/api/v2/auth/login",
             data={"username": "admin", "password": "admin"},
             timeout=30,
         )
-        assert resp.text == "Ok.", f"qBittorrent login failed: {resp.text}"
+        assert qbit_login_succeeded(resp), f"qBittorrent login failed: {describe_login(resp)}"
+        assert qbit_session_cookie_names(resp) or resp.text.strip() == "Ok.", describe_login(resp)
+
+    def test_direct_qbittorrent_login_rejects_wrong_password(self):
+        """Negative control for :meth:`test_direct_qbittorrent_login`.
+
+        Without this, an oracle that returned ``True`` unconditionally would
+        make the success test pass while proving nothing.
+        """
+        rejected = requests.Session()
+        resp = rejected.post(
+            f"{self.qbit_url}/api/v2/auth/login",
+            data={"username": "admin", "password": "wrongwrong"},
+            timeout=30,
+        )
+        assert not qbit_login_succeeded(resp), f"a WRONG password was accepted: {describe_login(resp)}"
+        assert not qbit_session_cookie_names(resp), (
+            f"qBittorrent issued a session cookie for a REJECTED password: {describe_login(resp)}"
+        )
 
     def test_merge_service_auth_endpoint(self):
         """Merge service auth endpoint should work."""

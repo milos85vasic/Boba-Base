@@ -1,0 +1,33 @@
+# Live verification — qBittorrent WebUI login repair
+Captured: 2026-09-01T17:56:15+02:00   HEAD: 0e61779
+Image: lscr.io/linuxserver/qbittorrent:latest -> qBittorrent v5.2.3 / WebAPI 2.15.1
+
+## Containers
+qbittorrent	Up About a minute (healthy)
+jackett	Up About a minute (healthy)
+boba-jackett	Up About a minute (healthy)
+qbittorrent-proxy	Up About a minute (healthy)
+
+## Temporary-password check (must be absent)
+NONE — credentials read from config
+
+## Login matrix
+port 7185: admin/admin=204  wrong=401  authed_version=v5.2.3  unauthed=Forbidden
+port 7186: admin/admin=204  wrong=401  authed_version=v5.2.3  unauthed=<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Error response</title>
+    </head>
+    <body>
+        <h1>Error response</h1>
+        <p>Error code: 403</p>
+        <p>Message: Forbidden.</p>
+        <p>Error code explanation: 403 - Request forbidden -- authorization will not help.</p>
+    </body>
+</html>
+
+## Vanilla WebUI integrity via proxy :7186
+qBittorrent_namespace_occurrences=4
+boba_rebrand_occurrences=0
+theme_overlay_occurrences=0

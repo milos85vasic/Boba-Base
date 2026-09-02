@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>README</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">README</h1>
+</header>
+<h1
+id="bob-207-qa-evidence-preconditionrepair-agreement-on-the-ownership-property">BOB-207
+— QA evidence: precondition/repair agreement on the ownership
+property</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-08-27T00:00:00Z <strong>Item:</strong> BOB-207 ·
+<strong>Feature:</strong> 002-user-owned-downloads <strong>Artifacts
+under test:</strong> <code>scripts/ownership_repair.sh</code>,
+<code>scripts/lib/ownership.sh</code>,
+<code>tests/unit/test_ownership_repair.sh</code>,
+<code>tests/unit/test_ownership_gid_agreement.sh</code> <strong>Baseline
+commit:</strong> <code>a3e1141777914f3d71d62a6cd32a4c79c7f43842</code>
+(HEAD at capture time)</p>
+<hr />
+<h2 id="why-this-directory-exists">Why this directory exists</h2>
+<p>An earlier report of this work claimed the pre-re-base repair suite
+was “146 passed / 0 failed — completely blind” to a mutation.
+<strong>That figure does not reproduce from committed history and is
+WITHDRAWN.</strong> It was measured against the <em>uncommitted
+working-tree</em> state of
+<code>tests/unit/test_ownership_repair.sh</code> (which was already
+<code>M</code> before this work began), not against <code>HEAD</code>.
+That intermediate was overwritten by the re-base and not preserved, so
+the number cannot be re-derived — the defect is the missing snapshot,
+not the measurement.</p>
+<p>Every figure below is re-derived from committed history in this
+session, with the sha256 of the exact artifact each run used. This is
+the third chain to lose an uncommitted intermediate (after BOB-195 and
+BOB-102); the remedy adopted by both — snapshot before editing — is
+adopted here.</p>
+<h2 id="the-corrected-claim">The corrected claim</h2>
+<p>The committed suite <strong>does</strong> catch a selects-nothing
+walk. What it cannot see is the loss of the <strong>namespace
+fallback</strong> — <code>unshare_chown_paths()</code>, the only code
+path able to repair the production defect (a foreign uid, which a plain
+<code>chown</code> cannot touch: EPERM). The old fixture used a
+<em>gid</em> mismatch, which a plain <code>chgrp</code> repairs, so that
+path was never reached and its removal was invisible.</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Suite</th>
+<th>Repair artifact</th>
+<th>Mutation</th>
+<th>Result</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>committed</td>
+<td>committed</td>
+<td>none (control)</td>
+<td>86 / 0 / 0 · rc 0</td>
+<td>baseline</td>
+</tr>
+<tr>
+<td>B</td>
+<td>committed</td>
+<td>committed</td>
+<td><code>unshare_chown_paths</code> disabled</td>
+<td><strong>86 / 0 / 0 · rc 0</strong></td>
+<td><strong>BLIND</strong></td>
+</tr>
+<tr>
+<td>C</td>
+<td>committed</td>
+<td>committed</td>
+<td>walk selects nothing (<code>-false</code>)</td>
+<td>61 / 18 / 1 · rc 1</td>
+<td>catches</td>
+</tr>
+<tr>
+<td>D</td>
+<td>re-based</td>
+<td>narrowed</td>
+<td>none (control)</td>
+<td>146 / 0 / 0 · rc 0</td>
+<td>baseline</td>
+</tr>
+<tr>
+<td>E</td>
+<td>re-based</td>
+<td>narrowed</td>
+<td><code>unshare_chown_paths</code> disabled</td>
+<td><strong>101 / 37 / 1 · rc 1</strong></td>
+<td><strong>CATCHES</strong></td>
+</tr>
+<tr>
+<td>F</td>
+<td>re-based</td>
+<td>narrowed</td>
+<td>walk selects nothing (<code>-false</code>)</td>
+<td>116 / 23 / 1 · rc 1</td>
+<td>catches</td>
+</tr>
+</tbody>
+</table>
+<p><strong>B vs E is the load-bearing pair.</strong> Identical mutation,
+opposite verdicts: the committed suite ships green while the production
+repair path is gone; the re-based suite fails 37 checks. That is what
+the re-base bought, and it is a narrower, stronger claim than the
+withdrawn one.</p>
+<p>C is recorded because it <em>refutes</em> the withdrawn “completely
+blind” wording: on the selects-nothing axis the old suite was never
+blind.</p>
+<h2 id="artifact-provenance-sha256-first-16">Artifact provenance
+(sha256, first 16)</h2>
+<table>
+<thead>
+<tr>
+<th>Config</th>
+<th>suite</th>
+<th>repair</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td><code>e3aaa7ed49e663f0</code></td>
+<td><code>ae025b74602414ca</code></td>
+</tr>
+<tr>
+<td>B</td>
+<td><code>e3aaa7ed49e663f0</code></td>
+<td><code>d55a0c098129436e</code></td>
+</tr>
+<tr>
+<td>C</td>
+<td><code>e3aaa7ed49e663f0</code></td>
+<td><code>8b8b0b7b91a095b0</code></td>
+</tr>
+<tr>
+<td>D</td>
+<td><code>03fb989d2781acdd</code></td>
+<td><code>47889d4cd25fcdb1</code></td>
+</tr>
+<tr>
+<td>E</td>
+<td><code>03fb989d2781acdd</code></td>
+<td><code>0c470e9aeb5a58bf</code></td>
+</tr>
+<tr>
+<td>F</td>
+<td><code>03fb989d2781acdd</code></td>
+<td><code>9874e64eea4b4e6f</code></td>
+</tr>
+</tbody>
+</table>
+<p>A/B/C share the committed suite; D/E/F share the re-based suite. The
+repair hash differs per mutation, so no two rows can be the same run
+mislabelled.</p>
+<h2 id="commands">Commands</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># committed-history tree (configs A-C)</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> show HEAD:scripts/ownership_repair.sh         <span class="op">&gt;</span> <span class="va">$T</span>/scripts/ownership_repair.sh</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> show HEAD:scripts/lib/ownership.sh            <span class="op">&gt;</span> <span class="va">$T</span>/scripts/lib/ownership.sh</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> show HEAD:tests/unit/test_ownership_repair.sh <span class="op">&gt;</span> <span class="va">$T</span>/tests/unit/test_ownership_repair.sh</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># mutation B/E — disable the fallback at its source (both call sites: the</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># batch path at flush_batch and the per-path path in repair_one)</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">#   UNSHARE_ERR=&quot;$(&quot;${RUNTIME}&quot; unshare chown -h -- 0:0 &quot;$@&quot; 2&gt;&amp;1 &gt;/dev/null)&quot; &amp;&amp; return 0</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">#   return 1</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># becomes</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">#   UNSHARE_ERR=&quot;MUTATION: namespace fallback disabled&quot;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">#   return 1</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co"># mutation C/F — the walk selects nothing</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co">#   find_args+=(-false -printf &#39;%U\t%G\t%m\t%p\0&#39;)</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="fu">timeout</span> 900 nice <span class="at">-n</span> 19 ionice <span class="at">-c</span> 3 bash <span class="va">$T</span>/tests/unit/test_ownership_repair.sh</span></code></pre></div>
+<p>Raw output for every configuration is in <code>runs/</code>.</p>
+<h2 id="final-state-of-the-shipped-tree">Final state of the shipped
+tree</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Suite</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tests/unit/test_ownership_gid_agreement.sh</code></td>
+<td>5 / 0 / 0 · rc 0 (<code>runs/agreement_suite_final.txt</code>)</td>
+</tr>
+<tr>
+<td><code>tests/unit/test_ownership_repair.sh</code></td>
+<td>146 / 0 / 0 · rc 0 (<code>runs/config_D.txt</code>)</td>
+</tr>
+<tr>
+<td><code>tests/pre_build/test_check_cm_ownership_invariants.sh</code></td>
+<td>42 / 42 · rc 0 (<code>runs/pre_build_gate_final.txt</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Reverting the one-line predicate change restores the original BOB-207
+failure verbatim — <code>runs/mutation_revert_predicate.txt</code>, 4
+passed / 1 failed / rc 1.</p>
+<h2 id="a-mutation-that-did-not-hold-recorded">A mutation that did NOT
+hold, recorded</h2>
+<p>Removing only <code>|| unshare_chown_paths</code> from
+<code>flush_batch</code> left the suite green. Not a fake-pass:
+<code>repair_one()</code> is a second call site, so the tool
+legitimately still repaired. Mutations B/E therefore disable the
+function at its source. Recorded because a mutation that fails to fail
+is a result, not a nuisance.</p>
+<h2 id="fixture-note">Fixture note</h2>
+<p>The re-based suite seeds a <strong>real foreign uid</strong> via
+<code>podman unshare chown 1:1</code> (host-visible
+<code>100000</code>), replacing the gid proxy. Files and symlinks carry
+the foreign uid; directories stay operator-owned except Case 22’s
+declared root — see the DECLARED GAPS output in
+<code>runs/config_D.txt</code> and <code>FOLLOWUP_ITEMS.md</code> ITEM
+1.</p>
+</body>
+</html>

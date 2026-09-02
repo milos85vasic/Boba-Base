@@ -1,11 +1,7 @@
-import gzip
 import importlib.util
-import os
 import re
 import sys
-import zlib
 from pathlib import Path
-from unittest import mock
 
 import pytest
 
@@ -32,13 +28,6 @@ def _load_download_proxy():
 @pytest.fixture(scope="module")
 def dp():
     return _load_download_proxy()
-
-
-SAMPLE_HTML = (
-    b"<!doctype html><html><head>"
-    b"<meta charset='utf-8'><title>qBittorrent</title>"
-    b"</head><body><div id='desktop'></div></body></html>"
-)
 
 
 class TestIdentifyPlugin:
@@ -89,286 +78,29 @@ class TestIdentifyPlugin:
 
 
 class TestPluginPatternsStructure:
-    def test_all_plugins_have_patterns(self, dp):
-        assert len(dp.PLUGIN_PATTERNS) == 4
-        for plugin, patterns in dp.PLUGIN_PATTERNS.items():
-            assert len(patterns) >= 1
-            for p in patterns:
-                assert isinstance(p, str)
+    """RECONCILED 2026-09-01 (§11.4.120).
 
-    def test_compiled_patterns_match(self, dp):
-        for plugin, patterns in dp.PLUGIN_PATTERNS.items():
-            assert plugin in dp.COMPILED_PATTERNS
-            compiled = dp.COMPILED_PATTERNS[plugin]
-            assert len(compiled) == len(patterns)
-            for c in compiled:
-                assert isinstance(c, re.Pattern)
+    ``PLUGIN_PATTERNS`` / ``COMPILED_PATTERNS`` were this module's private copy
+    of the private-tracker roster, and it had drifted from the three other
+    copies (it uniquely carried ``kinozal.me`` / ``iptorrents.org`` and
+    uniquely lacked ``kinozal.guru`` / ``nnmclub.ro``). The roster now lives
+    once, in ``merge_service.trackers``, so these gates would fail-by-absence
+    on a mechanism that is deliberately gone. They are rewritten to assert the
+    replacement mechanism rather than fake-passed or deleted: the module
+    resolves the SHARED roster, and every tracker in it is matchable through
+    this module's own entry point.
+    """
 
+    def test_module_resolves_the_shared_roster(self, dp):
+        names = dp._supported_tracker_names()
+        assert sorted(names) == ["iptorrents", "kinozal", "nnmclub", "rutracker"]
 
-class TestRewriteCsp:
-    def test_adds_connect_src_when_missing(self, dp):
-        csp = "default-src 'self'; script-src 'self';"
-        out = dp.rewrite_csp(csp)
-        assert "connect-src" in out
-        assert dp.MERGE_SERVICE_ORIGIN in out
+    def test_every_roster_domain_matches_through_this_module(self, dp):
+        from merge_service.trackers import PRIVATE_TRACKER_DOMAINS
 
-    def test_empty_input_passthrough(self, dp):
-        assert dp.rewrite_csp("") == ""
-        assert dp.rewrite_csp(None) is None
-
-    def test_extends_existing_connect_src(self, dp):
-        origin = dp.MERGE_SERVICE_ORIGIN
-        csp = f"default-src 'self'; connect-src 'self' https://other.example;"
-        out = dp.rewrite_csp(csp)
-        assert "https://other.example" in out
-        assert origin in out
-
-    def test_idempotent(self, dp):
-        origin = dp.MERGE_SERVICE_ORIGIN
-        csp = f"default-src 'self'; connect-src 'self' {origin};"
-        out = dp.rewrite_csp(csp)
-        assert out.count(origin) == 1
-
-    def test_disabled_flag_passthrough(self, dp, monkeypatch):
-        monkeypatch.setenv("DISABLE_THEME_INJECTION", "1")
-        csp = "default-src 'self';"
-        assert dp.rewrite_csp(csp) == csp
-
-    def test_preserves_all_directives(self, dp):
-        csp = "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;"
-        out = dp.rewrite_csp(csp)
-        assert "style-src" in out
-        assert "img-src" in out
-        assert "default-src" in out
-
-    def test_creates_connect_from_default_src(self, dp):
-        csp = "default-src 'self' https://example.com;"
-        out = dp.rewrite_csp(csp)
-        assert "connect-src" in out
-        assert dp.MERGE_SERVICE_ORIGIN in out
-        assert "https://example.com" in out
-
-
-class TestInjectThemeAssets:
-    def test_injects_before_head_close(self, dp):
-        out = dp.inject_theme_assets(SAMPLE_HTML, "text/html")
-        text = out.decode("utf-8")
-        assert "/__qbit_theme__/skin.css" in text
-        assert "/__qbit_theme__/bootstrap.js" in text
-
-    def test_idempotent(self, dp):
-        once = dp.inject_theme_assets(SAMPLE_HTML, "text/html")
-        twice = dp.inject_theme_assets(once, "text/html")
-        text = twice.decode("utf-8")
-        assert text.count("/__qbit_theme__/skin.css") == 1
-        assert text.count("/__qbit_theme__/bootstrap.js") == 1
-
-    def test_non_html_passthrough(self, dp):
-        assert dp.inject_theme_assets(b"\xff\xd8\xff\xe0", "image/jpeg") == b"\xff\xd8\xff\xe0"
-
-    def test_no_head_tag_passthrough(self, dp):
-        html = b"<div>fragment</div>"
-        assert dp.inject_theme_assets(html, "text/html") == html
-
-    def test_disabled_flag_passthrough(self, dp, monkeypatch):
-        monkeypatch.setenv("DISABLE_THEME_INJECTION", "1")
-        assert dp.inject_theme_assets(SAMPLE_HTML, "text/html") == SAMPLE_HTML
-
-    def test_no_content_type_passthrough(self, dp):
-        assert dp.inject_theme_assets(SAMPLE_HTML, "") == SAMPLE_HTML
-        assert dp.inject_theme_assets(SAMPLE_HTML, None) == SAMPLE_HTML
-
-
-class TestServeThemeAsset:
-    def test_css_returns_200(self, dp):
-        status, headers, body = dp.serve_theme_asset("/__qbit_theme__/skin.css")
-        assert status == 200
-        ci = {k.lower(): v for k, v in headers.items()}
-        assert ci["content-type"].startswith("text/css")
-        assert "no-cache" in ci["cache-control"]
-        assert b":root" in body
-
-    def test_js_returns_200(self, dp):
-        status, headers, body = dp.serve_theme_asset("/__qbit_theme__/bootstrap.js")
-        assert status == 200
-        ci = {k.lower(): v for k, v in headers.items()}
-        assert ci["content-type"].startswith("application/javascript")
-        assert "no-cache" in ci["cache-control"]
-        assert b"EventSource" in body
-
-    def test_unknown_returns_404(self, dp):
-        status, _, body = dp.serve_theme_asset("/__qbit_theme__/missing.png")
-        assert status == 404
-        assert body == b"Not Found"
-
-
-class TestMaybeDecodeBody:
-    def test_gzip_decode(self, dp):
-        compressed = gzip.compress(SAMPLE_HTML)
-        decoded, flag = dp._maybe_decode_body(compressed, "gzip")
-        assert flag is True
-        assert decoded == SAMPLE_HTML
-
-    def test_deflate_decode(self, dp):
-        compressed = zlib.compress(SAMPLE_HTML)
-        decoded, flag = dp._maybe_decode_body(compressed, "deflate")
-        assert flag is True
-        assert decoded == SAMPLE_HTML
-
-    def test_raw_deflate_decode(self, dp):
-        compressor = zlib.compressobj(wbits=-zlib.MAX_WBITS)
-        raw = compressor.compress(SAMPLE_HTML) + compressor.flush()
-        decoded, flag = dp._maybe_decode_body(raw, "deflate")
-        assert flag is True
-        assert decoded == SAMPLE_HTML
-
-    def test_unknown_encoding_returns_false(self, dp):
-        decoded, flag = dp._maybe_decode_body(b"\x00\x01\x02", "br")
-        assert flag is False
-        assert decoded == b"\x00\x01\x02"
-
-    def test_empty_encoding_returns_true(self, dp):
-        decoded, flag = dp._maybe_decode_body(SAMPLE_HTML, "")
-        assert flag is True
-        assert decoded == SAMPLE_HTML
-
-    def test_none_encoding_returns_true(self, dp):
-        decoded, flag = dp._maybe_decode_body(SAMPLE_HTML, None)
-        assert flag is True
-        assert decoded == SAMPLE_HTML
-
-
-class TestRebrandHtml:
-    def test_title_replaced(self, dp):
-        html = b"<html><head><title>qBittorrent WebUI</title></head></html>"
-        out = dp.rebrand_html(html, "text/html")
-        assert b"<title>\xd0\x91\xd0\xbe\xd0\xb1\xd0\xb0" in out
-
-    def test_svg_logo_src_replaced(self, dp):
-        html = b'<img src="images/qbittorrent-tray.svg">'
-        out = dp.rebrand_html(html, "text/html")
-        assert b"/images/boba-logo.jpeg" in out
-
-    def test_png_logo_src_replaced(self, dp):
-        html = b'<img src="images/qbittorrent32.png">'
-        out = dp.rebrand_html(html, "text/html")
-        assert b"/images/boba-logo.jpeg" in out
-
-    def test_alt_text_replaced(self, dp):
-        html = b'<img alt="qBittorrent logo">'
-        out = dp.rebrand_html(html, "text/html")
-        assert b"\xd0\x91\xd0\xbe\xd0\xb1\xd0\xb0 logo" in out
-
-    def test_meta_description_replaced(self, dp):
-        html = b'<meta content="qBittorrent WebUI">'
-        out = dp.rebrand_html(html, "text/html")
-        assert b"\xd0\x91\xd0\xbe\xd0\xb1\xd0\xb0 WebUI" in out
-
-    def test_non_html_passthrough(self, dp):
-        body = b"\xff\xd8\xff\xe0 image"
-        assert dp.rebrand_html(body, "image/jpeg") == body
-
-    def test_unicode_decode_error_passthrough(self, dp):
-        bad = bytes(range(256))
-        assert dp.rebrand_html(bad, "text/html") == bad
-
-    def test_no_content_type_passthrough(self, dp):
-        assert dp.rebrand_html(SAMPLE_HTML, "") == SAMPLE_HTML
-        assert dp.rebrand_html(SAMPLE_HTML, None) == SAMPLE_HTML
-
-    def test_single_quotes_replaced(self, dp):
-        html = b"<img src='images/qbittorrent-tray.svg' alt='qBittorrent logo'>"
-        out = dp.rebrand_html(html, "text/html")
-        assert b"/images/boba-logo.jpeg" in out
-        assert b"\xd0\x91\xd0\xbe\xd0\xb1\xd0\xb0 logo" in out
-
-    def test_href_replaced(self, dp):
-        html = b'<link rel="icon" href="images/qbittorrent32.png">'
-        out = dp.rebrand_html(html, "text/html")
-        assert b"/images/boba-logo.jpeg" in out
-
-    def test_fallback_replaces_remaining(self, dp):
-        html = b"<p>Welcome to qBittorrent</p>"
-        out = dp.rebrand_html(html, "text/html")
-        assert b"\xd0\x91\xd0\xbe\xd0\xb1\xd0\xb0" in out
-        assert b"qBittorrent" not in out
-
-
-class TestThemePalettes:
-    def test_all_8_palettes_present(self, dp):
-        expected = {"darcula", "dracula", "solarized", "nord", "monokai", "gruvbox", "one-dark", "tokyo-night"}
-        assert set(dp.THEME_PALETTES.keys()) == expected
-
-    def test_all_palettes_have_dark_and_light(self, dp):
-        required_modes = {"dark", "light"}
-        for name, modes in dp.THEME_PALETTES.items():
-            assert required_modes == set(modes.keys()), f"{name} missing modes"
-
-    def test_all_palettes_have_required_keys(self, dp):
-        required = {
-            "bgPrimary", "bgSecondary", "bgTertiary", "border",
-            "textPrimary", "textSecondary", "accent", "accentHover",
-            "contrast", "success", "danger", "warning", "info", "purple", "shadow",
-        }
-        for name, modes in dp.THEME_PALETTES.items():
-            for mode, tokens in modes.items():
-                assert required == set(tokens.keys()), f"{name}/{mode} missing keys"
-
-
-class TestBuildThemeBootstrapJs:
-    def test_valid_js_output(self, dp):
-        js = dp._build_theme_bootstrap_js()
-        assert "function" in js
-        assert "MERGE" in js
-        assert "CATALOG" in js
-
-    def test_includes_all_palettes(self, dp):
-        js = dp._build_theme_bootstrap_js()
-        for name in dp.THEME_PALETTES:
-            assert name in js
-
-    def test_theme_bootstrap_js_is_string(self, dp):
-        assert isinstance(dp.THEME_BOOTSTRAP_JS, str)
-        assert len(dp.THEME_BOOTSTRAP_JS) > 100
-
-
-class TestMergeServiceOrigin:
-    def test_default_origin(self, dp):
-        with mock.patch.dict(os.environ, {}, clear=False):
-            os.environ.pop("MERGE_SERVICE_URL", None)
-            mod = _load_download_proxy()
-            assert mod.MERGE_SERVICE_ORIGIN.startswith("http://")
-            assert ":7187" in mod.MERGE_SERVICE_ORIGIN
-
-    def test_custom_url(self, dp):
-        with mock.patch.dict(os.environ, {"MERGE_SERVICE_URL": "https://myhost:9999"}):
-            mod = _load_download_proxy()
-            assert mod.MERGE_SERVICE_ORIGIN == "https://myhost:9999"
-
-
-class TestIsBobaLogoRequest:
-    def test_matches(self, dp):
-        assert dp.is_boba_logo_request("/images/boba-logo.jpeg") is True
-
-    def test_rejects(self, dp):
-        assert dp.is_boba_logo_request("/images/other.png") is False
-        assert dp.is_boba_logo_request("/") is False
-
-
-class TestServeBobaLogo:
-    def test_404_when_no_logo(self, dp):
-        with mock.patch.object(dp, "_BOBA_LOGO_BYTES", None):
-            dp._BOBA_LOGO_BYTES = None
-            with mock.patch("builtins.open", side_effect=FileNotFoundError):
-                dp._BOBA_LOGO_BYTES = None
-                status, _, body = dp.serve_boba_logo()
-                assert status == 404
-                assert body == b"Not Found"
-
-    def test_200_when_logo_exists(self, dp):
-        with mock.patch.object(dp, "_BOBA_LOGO_BYTES", b"\xff\xd8\xff\xe0 fake"):
-            status, headers, body = dp.serve_boba_logo()
-            assert status == 200
-            assert body == b"\xff\xd8\xff\xe0 fake"
-            ci = {k.lower(): v for k, v in headers.items()}
-            assert ci["content-type"] == "image/jpeg"
+        assert dp._resolve_tracker_matcher() is not None
+        for plugin, domains in PRIVATE_TRACKER_DOMAINS.items():
+            assert len(domains) >= 1
+            for domain in domains:
+                assert isinstance(domain, str)
+                assert dp.identify_plugin(f"https://{domain}/download.php?id=1") == plugin, domain

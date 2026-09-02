@@ -18,9 +18,12 @@ import aiohttp
 from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from filelock import FileLock
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
+from merge_service.qbit_add import qbit_add_succeeded as _qbit_add_succeeded_shared
 from merge_service.search import SearchResult
+from merge_service.trackers import TRACKER_DOMAINS as _TRACKER_DOMAINS
+from merge_service.trackers import identify_tracker as _identify_tracker
 
 try:
     from . import theme_state
@@ -327,9 +330,80 @@ class SearchResponse(BaseModel):
     )
 
 
+def _build_tag_field(request: object | None, fallback_name: str) -> str:
+    """Build qBittorrent's comma-separated ``tags`` value for an add.
+
+    Tagging must NEVER block or fail a download: any error here returns an
+    empty string, which qBittorrent treats as "no tags". An untagged torrent is
+    a cosmetic loss; a failed add is a real one.
+
+    ``request`` may be a DownloadRequest carrying optional content metadata, or
+    None on paths that have none. ``fallback_name`` is the best available name
+    (uploaded filename, or the source URL) used for offline quality detection.
+    """
+    try:
+        from merge_service.tagging import build_tags, tags_to_qbittorrent_field
+
+        name = fallback_name or ""
+        content_type = year = genres = None
+        if request is not None:
+            name = getattr(request, "title", None) or name
+            content_type = getattr(request, "content_type", None)
+            year = getattr(request, "year", None)
+            genres = getattr(request, "genres", None)
+
+        return tags_to_qbittorrent_field(
+            build_tags(name=name, content_type=content_type, year=year, genres=genres)
+        )
+    except Exception:  # pragma: no cover - defensive
+        return ""
+
+
 class DownloadRequest(BaseModel):
     result_id: str = Field(..., description="Merged result ID")
     download_urls: list[str] = Field(..., description="URLs to download")
+
+    # Content metadata for qBittorrent tagging (2026-09-01).
+    #
+    # Until now nothing was ever tagged: every real torrent carried tags='' and
+    # category='', while the only tags in the instance were `boba-bridge-*`
+    # test debris. These fields let the caller pass the content facts it ALREADY
+    # knows from the search result it is downloading, so the torrent lands
+    # tagged with the operator-chosen dimensions (type / quality / year / genre)
+    # plus the Boba promotion tags.
+    #
+    # All optional and all default to None: an older client that sends neither
+    # still works, and anything absent produces NO tag rather than a guessed one
+    # (§11.4.6). Quality is always derivable from the name without any of these.
+    @field_validator("download_urls")
+    @classmethod
+    def _reject_empty_urls(cls, v: list[str]) -> list[str]:
+        """Refuse empty/whitespace URLs (F4, review #3 — live-proven).
+
+        An empty string reaches qBittorrent as ``urls=""``, which it answers
+        with ``409 Conflict`` having added NOTHING. ``_qbit_add_succeeded``
+        treats 409 as a duplicate-success, so the API reported
+        ``{"status":"added"}`` for a torrent that never existed — a PASS-bluff
+        on the primary download path, reproduced through the public API:
+
+            POST /api/v1/download {"download_urls":[""]}
+            -> {"status":"initiated","added_count":1,...}
+            qBittorrent torrent count: UNCHANGED
+
+        Rejecting here is better than loosening the 409 clause: 409 genuinely
+        does mean duplicate-success for a real payload (measured twice), so the
+        fix belongs where the bad input enters, not where a good signal is
+        interpreted.
+        """
+        cleaned = [u for u in v if u and u.strip()]
+        if not cleaned:
+            raise ValueError("download_urls must contain at least one non-empty URL")
+        return cleaned
+
+    title: str | None = Field(None, description="Content title, for tag derivation")
+    content_type: str | None = Field(None, description="movie | tv | music | book | anime")
+    year: int | None = Field(None, description="Release year")
+    genres: list[str] | None = Field(None, description="Genre list (capped when tagged)")
 
 
 def _parse_size_to_bytes(size_str: str) -> float:
@@ -1041,82 +1115,47 @@ def _qbit_login_succeeded(status, body, cookies):  # type: ignore[no-untyped-def
 def _qbit_add_succeeded(status, body):  # type: ignore[no-untyped-def]
     """Detect a successful qBittorrent ``/api/v2/torrents/add`` across versions.
 
-    Legacy qBittorrent (<5.x) replies ``200`` with body ``Ok.`` (``Fails.`` on
-    rejection). Modern qBittorrent (5.x, as shipped by
-    ``linuxserver/qbittorrent:latest``) replies ``200`` with a JSON summary::
+    THIN DELEGATION (§11.4.251). The decision logic — the measured status/body
+    contract, and the load-bearing ``409`` ambiguity — lives in exactly ONE
+    place: :func:`merge_service.qbit_add.qbit_add_succeeded`. It used to be
+    re-typed here AND in ``webui-bridge.py``, and the two copies drifted until
+    they recorded OPPOSITE verdicts for ``409``; a mutation of either left the
+    other's tests green, which is how the divergence survived three review
+    rounds. Read that module for the contract table and, in particular, for the
+    payload invariant that makes ``409``-as-success sound.
 
-        {"added_torrent_ids":["<hash>"],"failure_count":0,
-         "pending_count":0,"success_count":1}
-
-    The torrent landed when ``success_count`` or ``pending_count`` is >= 1, or
-    ``added_torrent_ids`` is non-empty (``pending_count`` covers a magnet whose
-    metadata is still resolving — it IS accepted into the session). Requiring
-    ``body.lower().startswith('ok')`` mis-classifies the modern JSON success as
-    ``failed`` even though the torrent was added — the real defect surfaced by
-    the live :7187 round-trip.
-
-    A ``409 Conflict`` is also a SUCCESS: qBittorrent returns it when the
-    torrent is already in the session (a duplicate add). Adding is idempotent
-    from the user's view — the torrent IS present — and a client retry of this
-    non-idempotent POST (e.g. BobaClient retrying after attempt 1 timed out
-    client-side but already landed server-side) produces exactly this. Treating
-    the duplicate as success makes the add retry-safe.
+    The invariant's enforcement point for THIS caller is
+    ``DownloadRequest._reject_empty_urls`` above — it strips empty/whitespace
+    URLs and raises when none survive, so a ``409`` reaching the predicate from
+    this module means a genuine duplicate, never an empty add.
     """
-    if status == 409:
-        return True
-    if status not in (200, 201):
-        return False
-    text = (body or "").strip()
-    if text.lower().startswith("ok"):
-        return True
-    try:
-        payload = json.loads(text)
-    except (ValueError, TypeError):
-        return False
-    if not isinstance(payload, dict):
-        return False
-    if payload.get("added_torrent_ids"):
-        return True
-    # Coerce defensively — a malformed body like ``{"success_count":"N/A"}`` must
-    # classify as failure, never raise (``int("N/A")`` would crash the add path).
-    try:
-        success = int(payload.get("success_count") or 0)
-        pending = int(payload.get("pending_count") or 0)
-    except (ValueError, TypeError):
-        return False
-    return success >= 1 or pending >= 1
+    return _qbit_add_succeeded_shared(status, body)
 
 
-TRACKER_DOMAINS = (
-    "rutracker.org",
-    "rutracker.nl",
-    "kinozal.tv",
-    "kinozal.guru",
-    "nnmclub.to",
-    "nnmclub.ro",
-    "iptorrents.com",
-    "iptorrents.me",
-)
+#: Re-exported from the ONE roster (``merge_service.trackers``) so existing
+#: importers of ``api.routes.TRACKER_DOMAINS`` keep working. This module MUST
+#: NOT re-type the list: it had already drifted from the three other consumers
+#: (missing ``rutracker.net``, ``kinozal.me``, ``nnm-club.me``,
+#: ``iptorrents.org``), and every missing domain sent a private-tracker URL
+#: down the ANONYMOUS fetch below — which saves the tracker's HTML login page
+#: as the user's ``.torrent``. See ``merge_service/trackers.py``.
+TRACKER_DOMAINS = _TRACKER_DOMAINS
 
 
 def _is_tracker_url(url: str) -> str | None:
-    from urllib.parse import urlparse
+    """Return the private-tracker name owning ``url``'s host, else ``None``.
 
+    Host-based (never substring) — this decision gates whether credentials are
+    spent on the fetch, so a tracker name appearing in a query string must not
+    trigger it. The roster is shared; only the matching policy is local, and
+    the substring variant used by the WebUI bridge / in-container engine is
+    ``merge_service.trackers.identify_tracker_in_text``.
+    """
     try:
-        host = urlparse(url).hostname or ""
-        for domain in TRACKER_DOMAINS:
-            if host == domain or host.endswith("." + domain):
-                if "rutracker" in domain:
-                    return "rutracker"
-                if "kinozal" in domain:
-                    return "kinozal"
-                if "nnmclub" in domain or "nnm-club" in domain:
-                    return "nnmclub"
-                if "iptorrents" in domain:
-                    return "iptorrents"
-    except Exception as e:
+        return _identify_tracker(url)
+    except Exception as e:  # pragma: no cover - defensive
         logger.debug(f"Could not identify tracker from URL: {e}")
-    return None
+        return None
 
 
 def _is_safe_fetch_url(url: str) -> bool:
@@ -1243,6 +1282,9 @@ async def initiate_download(
                                     filename=f"{tracker}_{download_id[:8]}.torrent",
                                     content_type="application/x-bittorrent",
                                 )
+                                _tag_field = _build_tag_field(request, url)
+                                if _tag_field:
+                                    form.add_field("tags", _tag_field)
                                 async with session.post(
                                     f"{qbit_url}/api/v2/torrents/add",
                                     data=form,
@@ -1271,9 +1313,13 @@ async def initiate_download(
                         finally:
                             os.unlink(tmp_path)
                     else:
+                        _url_payload: dict[str, str] = {"urls": url}
+                        _tag_field = _build_tag_field(request, url)
+                        if _tag_field:
+                            _url_payload["tags"] = _tag_field
                         async with session.post(
                             f"{qbit_url}/api/v2/torrents/add",
-                            data={"urls": url},
+                            data=_url_payload,
                             cookies=qbit_cookies,
                         ) as resp:
                             body = (await resp.text()).strip()
@@ -1401,6 +1447,11 @@ async def upload_torrent(
                 filename=filename,
                 content_type="application/x-bittorrent",
             )
+            # The uploaded filename IS the content name here — the strongest
+            # tag signal available on this path.
+            _tag_field = _build_tag_field(None, filename)
+            if _tag_field:
+                form.add_field("tags", _tag_field)
             async with session.post(
                 f"{qbit_url}/api/v2/torrents/add",
                 data=form,

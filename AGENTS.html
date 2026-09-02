@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.10" />
+  <meta name="generator" content="pandoc 3.11" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>AGENTS</title>
   <style>
@@ -41,7 +41,6 @@
       body {
         background-color: transparent;
         color: black;
-        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -172,7 +171,6 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
     /* CSS for syntax highlighting */
     html { -webkit-text-size-adjust: 100%; }
     pre > code.sourceCode { white-space: pre; position: relative; }
@@ -552,7 +550,7 @@ functions, statements</li>
     hooks.py             # Hook registration / invocation
     auth.py              # Auth state + credential management
     scheduler.py         # Scheduled search API
-    theme_state.py       # Cross-app theme injection state
+    theme_state.py       # Cross-app theme state (:7187 dashboard only)
   merge_service/
     __init__.py          # Package init
     search.py            # Search orchestration + tracker parsing
@@ -597,7 +595,7 @@ tests/                   # All tests (NOT in download-proxy/tests/)
   unit/                  # Unit tests (heavily mocked)
     merge_service/       # Core logic tests
     api_layer/           # API layer tests
-  contract/              # API contract tests (OpenAPI, cross-app theme)
+  contract/              # API contract tests (OpenAPI)
   property/              # Hypothesis property-based tests
   concurrency/           # Semaphore / concurrency tests
   memory/                # Memory leak tests (tracemalloc)
@@ -769,7 +767,7 @@ scheduler</td>
 </tr>
 <tr>
 <td><code>tests/contract/</code></td>
-<td>API contract tests (OpenAPI, cross-app theme)</td>
+<td>API contract tests (OpenAPI)</td>
 <td>Nothing</td>
 </tr>
 <tr>
@@ -1026,11 +1024,14 @@ Fernet key to pin tracker-session at-rest encryption across restarts
 (default: per-process ephemeral) - <code>MAX_CONCURRENT_SEARCHES</code>
 – default <code>5</code> - <code>MAX_CONCURRENT_TRACKERS</code> –
 default <code>10</code> - <code>PUBLIC_TRACKER_DEADLINE_SECONDS</code> –
-default <code>15</code> - <code>DISABLE_THEME_INJECTION</code> – set to
-<code>1</code> to disable cross-app dark mode - <code>LOG_LEVEL</code> –
-default <code>INFO</code> - <code>OMDB_API_KEY</code>,
-<code>TMDB_API_KEY</code>, <code>TVDB_API_KEY</code> – metadata
-enrichment - <code>ANILIST_CLIENT_ID</code> – anime metadata -
+default <code>15</code> - <code>DISABLE_THEME_INJECTION</code> –
+obsolete no-op in the Python stack (2026-09-01): the themed
+qBittorrent-WebUI overlay was removed and the stock vanilla WebUI is now
+served byte-for-byte. Still read by the Go backend. -
+<code>LOG_LEVEL</code> – default <code>INFO</code> -
+<code>OMDB_API_KEY</code>, <code>TMDB_API_KEY</code>,
+<code>TVDB_API_KEY</code> – metadata enrichment -
+<code>ANILIST_CLIENT_ID</code> – anime metadata -
 <code>JACKETT_API_KEY</code> – public tracker uplift (auto-discovered
 from Jackett container config; manual override optional) -
 <code>JACKETT_INDEXER_MAP</code> – CSV <code>NAME:indexer_id</code>

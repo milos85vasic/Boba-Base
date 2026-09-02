@@ -9,50 +9,148 @@ Scenarios:
 """
 
 import concurrent.futures
+import http.cookiejar
+import json as _json
+import sys
 import time
+import urllib.parse
+import urllib.request
 
 import pytest
 import requests
 
+QBIT_PROXY_URL = "http://localhost:7186"
 
-def _purge_qbittorrent_torrents(qbit_url: str = "http://localhost:7186") -> None:
-    """Delete every torrent from qBittorrent.
 
-    Stress tests add many synthetic torrents. If they pile up across
-    runs, qBittorrent starts slowing down (large state files, lock
-    contention) and the stress-test floors stop holding. Call this
-    before/after the class so each run starts clean.
-    """
+# ---------------------------------------------------------------------------
+# DIFF-SCOPED TEARDOWN (§11.4.14 / §9 data safety) — rewritten 2026-09-01.
+#
+# WHAT WAS HERE BEFORE, AND WHY IT WAS A DATA-SAFETY DEFECT:
+# `_purge_qbittorrent_torrents()` listed EVERY torrent in the instance and
+# deleted the whole list, from an autouse fixture running before AND after
+# every test in the class. On the operator's live instance that silently
+# de-registered their entire library. `deleteFiles=false` meant the bytes on
+# disk survived, but the session, categories, tags, ratio history and seeding
+# state did not — none of which the operator can get back from the files.
+#
+# THE RULE NOW: a test may only remove what that test ADDED.
+#   before = snapshot()          # taken while the class is still pristine
+#   ... tests run, may add torrents ...
+#   added  = snapshot() - before # exactly this suite's own debris
+#   delete(added)                # never a hash present in `before`
+# This is the same shape `tests/integration/test_webui_bridge_auth_live.py`
+# already uses (`added = _torrent_hashes(...) - before`); it is reused rather
+# than reinvented (§11.4.251 — a second divergent copy is how the two
+# `_qbit_add_succeeded` implementations drifted into opposite verdicts).
+#
+# CONSERVATIVE-SAFE DEFAULT ON A BLIND READ (§11.4.201(4)):
+# if the BEFORE snapshot could not be taken, `before` is None and the teardown
+# DELETES NOTHING. A reader that cannot see the baseline cannot compute a diff,
+# and `None - anything` must never degrade into "everything". Leaving debris is
+# recoverable; deleting the operator's library is not.
+#
+# LOUD, NEVER SILENT (§11.4.201(6)):
+# the old `except Exception: pass` meant a cleanup that stopped working
+# re-accumulated state with nothing observing it — the exact invisibility that
+# let eighteen stray tags pile up unnoticed (see
+# scripts/pre_build/check_cm_no_test_tag_debris.sh). Every failure below names
+# what it could not do, on stderr, with the hashes involved.
+#
+# WHY A FAILED PURGE DOES NOT FAIL THE TEST:
+# the purge is teardown, not the unit under test. Raising here would fail a run
+# for a script-internal reason rather than a product defect — a §11.4.1
+# FAIL-bluff — and, worse, would mask a genuine product FAIL behind a cleanup
+# error. The blocking observer is the independent pre-build gate
+# `scripts/pre_build/check_cm_no_unscoped_live_destruction.sh`, which reads the
+# source rather than trusting the cleanup code that is supposed to have run.
+# ---------------------------------------------------------------------------
+
+
+def _qbit_opener(qbit_url: str):
+    """Authenticated urllib opener, or None with a named reason on stderr."""
+    jar = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+    data = urllib.parse.urlencode({"username": "admin", "password": "admin"}).encode()
     try:
-        import http.cookiejar
-        import urllib.parse
-        import urllib.request
-
-        jar = http.cookiejar.CookieJar()
-        opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
-        data = urllib.parse.urlencode({"username": "admin", "password": "admin"}).encode()
         opener.open(
             urllib.request.Request(f"{qbit_url}/api/v2/auth/login", data=data, method="POST"),
             timeout=10,
         )
-        resp = opener.open(f"{qbit_url}/api/v2/torrents/info", timeout=10)
-        import json as _json
+    except Exception as exc:
+        print(f"[stress-cleanup] could not authenticate to {qbit_url}: {exc!r}", file=sys.stderr)
+        return None
+    return opener
 
-        torrents = _json.loads(resp.read().decode("utf-8"))
-        hashes = "|".join(t["hash"] for t in torrents)
-        if hashes:
-            opener.open(
-                urllib.request.Request(
-                    f"{qbit_url}/api/v2/torrents/delete",
-                    data=urllib.parse.urlencode({"hashes": hashes, "deleteFiles": "false"}).encode(),
-                    method="POST",
-                ),
-                timeout=15,
-            )
-    except Exception:
-        # Best effort — stress tests must not fail because the purge
-        # itself had a transient blip.
-        pass
+
+def _snapshot_torrent_hashes(qbit_url: str = QBIT_PROXY_URL):
+    """Set of infohashes currently in the instance, or None if unreadable.
+
+    None is load-bearing: it is NOT an empty set. A caller that receives None
+    must refuse to delete (see `_purge_added_torrents`).
+    """
+    opener = _qbit_opener(qbit_url)
+    if opener is None:
+        return None
+    try:
+        resp = opener.open(f"{qbit_url}/api/v2/torrents/info", timeout=10)
+        rows = _json.loads(resp.read().decode("utf-8") or "[]")
+        return {t["hash"] for t in rows}
+    except Exception as exc:
+        print(f"[stress-cleanup] could not read torrents/info: {exc!r}", file=sys.stderr)
+        return None
+
+
+def _purge_added_torrents(before, qbit_url: str = QBIT_PROXY_URL) -> None:
+    """Delete ONLY the torrents that appeared since `before` was taken."""
+    if before is None:
+        print(
+            "[stress-cleanup] REFUSING to purge: the baseline snapshot was "
+            "unreadable, so this suite's own additions cannot be told apart "
+            "from the operator's torrents. Nothing was deleted.",
+            file=sys.stderr,
+        )
+        return
+
+    after = _snapshot_torrent_hashes(qbit_url)
+    if after is None:
+        print(
+            "[stress-cleanup] could not re-read torrents/info at teardown — "
+            "nothing deleted; any torrents this suite added are still present.",
+            file=sys.stderr,
+        )
+        return
+
+    added = after - before
+    if not added:
+        return
+
+    opener = _qbit_opener(qbit_url)
+    if opener is None:
+        print(
+            f"[stress-cleanup] {len(added)} torrent(s) added by this suite were "
+            f"NOT removed (login failed): {sorted(added)}",
+            file=sys.stderr,
+        )
+        return
+    try:
+        opener.open(
+            urllib.request.Request(
+                f"{qbit_url}/api/v2/torrents/delete",
+                # deleteFiles stays false: this suite never owns files on disk,
+                # and a scoping bug must never escalate into data loss.
+                data=urllib.parse.urlencode(
+                    {"hashes": "|".join(sorted(added)), "deleteFiles": "false"}
+                ).encode(),
+                method="POST",
+            ),
+            timeout=15,
+        )
+    except Exception as exc:
+        print(
+            f"[stress-cleanup] delete FAILED for {len(added)} torrent(s) this "
+            f"suite added: {sorted(added)} — {exc!r}",
+            file=sys.stderr,
+        )
 
 
 from tests.fixtures.health import merge_service_required
@@ -73,12 +171,13 @@ class TestSearchStress:
     @pytest.fixture(autouse=True)
     def _service_up(self, merge_service_live):
         self.base_url = merge_service_live
-        # Start clean — purge any torrent state left behind by prior
-        # stress runs so the service isn't carrying hundreds of stub
-        # torrents into this class.
-        _purge_qbittorrent_torrents()
+        # Record the instance as we found it. Everything present here is the
+        # operator's and is NEVER touched; only what appears afterwards is
+        # this suite's own debris. A snapshot that could not be read is None,
+        # and a None baseline disarms the teardown entirely.
+        before = _snapshot_torrent_hashes()
         yield
-        _purge_qbittorrent_torrents()
+        _purge_added_torrents(before)
 
     @pytest.mark.timeout(300)
     def test_rapid_fire_searches(self):

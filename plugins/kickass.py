@@ -3,6 +3,8 @@
 
 import re
 from time import sleep
+from urllib.parse import quote, unquote_plus
+
 from helpers import retrieve_url
 from novaprinter import prettyPrinter
 
@@ -102,10 +104,20 @@ class kickass(object):
             print(url + " " + self.url)
 
     def search(self, what, cat="all"):
-        # The query goes into the URL path. The merge service passes a raw
-        # query with literal spaces; nova2 passes a %20-encoded one. Encode
-        # a raw space to %20 so it never reaches urllib (which rejects it).
-        what = what.replace(" ", "%20")
+        # The query goes into the URL PATH ("search/<what>/"), so quote() is the
+        # right tool, NOT quote_plus: a '+' is a LITERAL plus in a path segment,
+        # it does not mean "space" there. safe="" percent-encodes the separators
+        # too. unquote_plus() first normalises BOTH caller conventions (the merge
+        # service passes a raw query with literal spaces; nova2 passes a
+        # %20-encoded one) so the encode happens exactly ONCE and a pre-encoded
+        # query is never double-encoded into %25XX garbage.
+        #
+        # The previous `what.replace(" ", "%20")` handled ONLY the space and left
+        # every non-ASCII character raw, so a Cyrillic query reached urllib as
+        # non-ASCII and died with "'ascii' codec can't encode characters ...".
+        # This project's primary trackers are Russian-language, so that is the
+        # NORMAL case (§11.4.238 coverage escape from commit ae387b2).
+        what = quote(unquote_plus(what), safe="")
         parser = self.HTMLParser(self.url)
         category = "" if cat == "all" else "category/{0}/".format(self.supported_categories[cat])
         counter: int = 0

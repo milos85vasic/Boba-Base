@@ -165,11 +165,11 @@ All have safe defaults; tune for your workload.
 | `HOOK_LOG_MAXLEN` | `500` | Deque cap for hook-execution logs. |
 | `MERGE_SERVICE_HOST` | `0.0.0.0` | Bind interface for the merge service. |
 | `MERGE_SERVICE_PORT` | `7187` | HTTP port. |
-| `MERGE_SERVICE_URL` | `http://localhost:7187` | Where the download-proxy (and the injected theme bridge) find the merge service. Embedded verbatim into `/__qbit_theme__/bootstrap.js`. |
+| `MERGE_SERVICE_URL` | `http://localhost:7187` | Base URL of the merge service. (No longer consumed by the download-proxy: the themed-WebUI overlay it fed was removed 2026-09-01.) |
 | `PROXY_PORT` | `7186` | Download proxy port. |
 | `BRIDGE_PORT` | `7188` | WebUI bridge port. |
 | `THEME_STATE_PATH` | `/config/merge-service/theme.json` | JSON file the merge service uses to persist the active palette + mode (see `docs/CROSS_APP_THEME_PLAN.md`). |
-| `DISABLE_THEME_INJECTION` | *(unset)* | Escape hatch for the cross-app theme bridge. Set to `1` to make the download proxy stop injecting `/__qbit_theme__/*` into qBittorrent's HTML responses and stop rewriting CSP. Useful if a qBittorrent upgrade ever breaks the bridge and you need to fall back to the untouched WebUI. |
+| `DISABLE_THEME_INJECTION` | *(unset)* | **OBSOLETE / NO-OP in the Python stack (2026-09-01).** The themed-WebUI overlay it disabled was removed entirely — the download-proxy now always serves qBittorrent's HTML untouched, so there is nothing left to switch off. Still read by the Go backend (`qBitTorrent-go/internal/config/config.go`). |
 
 ---
 

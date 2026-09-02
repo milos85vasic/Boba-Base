@@ -123,7 +123,18 @@ class gamestorrents:
                 try:
                     num = float(num_match.group(1).replace(",", ""))
                     return int(num * mult)
-                except ValueError:
+                except ValueError as e:
+                    # §11.4.252: narrowed from a bare `except:`, which also caught
+                    # KeyboardInterrupt and SystemExit — so Ctrl-C or an interpreter
+                    # shutdown inside this loop was silently converted into a bogus
+                    # "size 0" result instead of terminating. A non-numeric size token
+                    # is the only real failure here.
+                    # Not silent either: an unparseable size still renders as a 0-byte
+                    # torrent in the WebUI, so its reason must be recoverable somewhere.
+                    # stderr, NOT stdout: nova3 parses plugin STDOUT (novaprinter writes
+                    # the result stream to raw fd 1), so a diagnostic printed there would
+                    # corrupt the very results it explains.
+                    print(f"Size parse error ({size_str!r}): {e}", file=__import__("sys").stderr)
                     return 0
         return 0
 

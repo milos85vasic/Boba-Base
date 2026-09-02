@@ -439,7 +439,47 @@ class TestDownloadEndpoint:
     @patch("api.routes._get_orchestrator")
     @patch("api.routes.aiohttp.ClientSession")
     def test_download_empty_urls(self, mock_session_cls, mock_get_orch, client):
-        """Download with empty URLs should return failed status, not crash."""
+        """An empty/blank ``download_urls`` is REFUSED at the request boundary (422).
+
+        CONTRACT CHANGED 2026-09-01 — this test previously asserted
+        ``200 {"status": "failed", "added_count": 0}``. That 200 was never an
+        asserted "empty list is a no-op that succeeds" contract: the test was
+        added in fcb610c as one of a six-case error-surface sweep, its docstring
+        pinned only "should return failed status, NOT CRASH", and the body it
+        pinned already said ``status: "failed"`` — the endpoint always called
+        this input a failure. The 200 envelope was the incidental shape of that
+        failure, not a promise to any caller.
+
+        Why it had to change — the permissive boundary made a REAL PASS-bluff
+        reachable on the primary download path. qBittorrent's ``torrents/add``
+        answers **409 Conflict** for BOTH a genuine duplicate (success: the
+        torrent is present) AND a request that carried no payload at all
+        (total failure: nothing was added). Both measured against qBittorrent
+        v5.2.3 on 2026-09-01. ``_qbit_add_succeeded`` reads 409 as success, so a
+        blank URL — which reaches qBittorrent as ``urls=""``, the no-payload
+        409 — was reported to the user as an added torrent that never existed:
+
+            POST /api/v1/download {"download_urls":[""]}
+            -> {"status":"initiated","added_count":1,...}
+            qBittorrent torrent count: UNCHANGED
+
+        The 409 clause itself is correct for a real payload, so the fix belongs
+        where the bad input enters. Rejecting empty URLs at the boundary is what
+        makes "409 reaching the add-success predicate" imply a genuine
+        duplicate. Loosening that predicate instead would break real duplicate
+        adds (§11.4.120: reconcile the gate to the new mechanism, never
+        fake-pass it).
+
+        No consumer relied on the old 200: the Jinja dashboard guards the call
+        (``if (urls.length === 0) { alert('No download URLs available'); return; }``
+        — download-proxy/src/ui/templates/dashboard.html:1042), the Angular
+        dashboard only forwards URL lists taken from real search results and
+        surfaces failures as a toast, and neither ``webui-bridge.py`` nor
+        ``plugins/`` call this endpoint at all. Both dashboards DO normalise a
+        missing link to ``['']`` (dashboard.component.ts:504,
+        dashboard.html:597) — the exact blank-URL input this now refuses loudly
+        instead of reporting a phantom add.
+        """
         orch = MagicMock()
         orch.is_search_queue_full.return_value = False
         mock_get_orch.return_value = orch
@@ -460,10 +500,37 @@ class TestDownloadEndpoint:
             "/api/v1/download",
             json={"result_id": "test-1", "download_urls": []},
         )
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["status"] == "failed"
-        assert data["added_count"] == 0
+        assert resp.status_code == 422
+        # The refusal must name the offending field, not merely be "some 422".
+        assert "download_urls" in resp.text
+        # The load-bearing outcome: qBittorrent is never contacted, so no 409
+        # can be misread as an add. This is what the old contract permitted.
+        assert mock_session.post.call_count == 0
+
+    @patch("api.routes._get_orchestrator")
+    @patch("api.routes.aiohttp.ClientSession")
+    def test_download_blank_url_string_rejected(self, mock_session_cls, mock_get_orch, client):
+        """A whitespace-only URL is refused exactly like an empty list.
+
+        This is the input that actually produced the live PASS-bluff documented
+        on ``test_download_empty_urls``: ``[""]`` passes a bare
+        ``min_length``-style check but reaches qBittorrent as ``urls=""``.
+        """
+        orch = MagicMock()
+        orch.is_search_queue_full.return_value = False
+        mock_get_orch.return_value = orch
+
+        mock_session = MagicMock()
+        mock_session_cls.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+
+        resp = client.post(
+            "/api/v1/download",
+            json={"result_id": "test-1", "download_urls": ["   "]},
+        )
+        assert resp.status_code == 422
+        assert "download_urls" in resp.text
+        assert mock_session.post.call_count == 0
 
     @patch("api.routes._get_orchestrator")
     @patch("api.routes.aiohttp.ClientSession")
@@ -577,6 +644,153 @@ class TestDownloadEndpoint:
         assert data["added_count"] == 1
         assert len(data["results"]) == 1
         assert data["results"][0]["status"] == "added"
+
+    # --- the 409 contract, asserted at the HTTP layer -------------------
+    #
+    # COVERAGE ESCAPE THIS CLOSES (§11.4.238, measured 2026-09-02). Flipping the
+    # 409 clause in ``merge_service/qbit_add.py`` — the single shared predicate —
+    # left this entire 29-test HTTP suite GREEN while the direct-import suites
+    # (``test_qbit_login_compat.py`` / ``test_qbit_add_shared_predicate.py``)
+    # went red. The layer CLOSEST TO THE USER never exercised the 409 path at
+    # all, so the acceptance criterion ("one mutation reddens both consumers")
+    # was met only below the HTTP boundary. These three tests drive
+    # ``POST /api/v1/download`` for real and assert the user-visible envelope.
+    #
+    # WHY 409 MEANS SUCCESS HERE, and why that is not ambiguous any more
+    # (measured against qBittorrent v5.2.3 / WebAPI 2.15.1, 2026-09-01):
+    #
+    #     duplicate add   -> 409  -> already present  -> SUCCESS
+    #     no payload sent -> 409  -> nothing added    -> FAILURE
+    #
+    # The status alone cannot separate them. What separates them is the
+    # boundary: ``DownloadRequest._reject_empty_urls`` refuses an empty or
+    # whitespace-only URL with 422 before qBittorrent is contacted, so a 409
+    # that reaches the predicate FROM THIS ROUTE is necessarily the duplicate.
+    # ``test_download_409_no_payload_case_cannot_reach_the_predicate`` asserts
+    # that enforcement point holds at the HTTP layer, with the ambiguous 409
+    # armed and waiting — proving it is unreachable rather than merely unused.
+
+    @staticmethod
+    def _session_answering_add_with(mock_session_cls, add_status, add_body):
+        """Wire a mocked aiohttp session: login succeeds, add answers as given."""
+        mock_session = MagicMock()
+        mock_session_cls.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+
+        login_resp = MagicMock()
+        login_resp.status = 200
+        login_resp.text = AsyncMock(return_value="Ok.")
+        login_resp.cookies = {}
+
+        add_resp = MagicMock()
+        add_resp.status = add_status
+        add_resp.text = AsyncMock(return_value=add_body)
+
+        def post_side_effect(*args, **kwargs):
+            mock_r = MagicMock()
+            mock_r.__aenter__ = AsyncMock(return_value=login_resp if "/auth/login" in args[0] else add_resp)
+            mock_r.__aexit__ = AsyncMock(return_value=False)
+            return mock_r
+
+        mock_session.post.side_effect = post_side_effect
+        return mock_session
+
+    @patch("api.routes._get_orchestrator")
+    @patch("api.routes.aiohttp.ClientSession")
+    def test_download_duplicate_409_is_reported_to_the_user_as_added(self, mock_session_cls, mock_get_orch, client):
+        """A duplicate add (409) surfaces as an ADDED torrent, not a failure.
+
+        The user asked for a torrent that is already in the session; their goal
+        is satisfied, and reporting "failed" would make an ordinary client retry
+        of this non-idempotent POST look like a broken download.
+
+        RED under the §1.1 mutation of the shared predicate (flip the 409 clause
+        to ``return False``): this asserts the exact user-visible envelope, so
+        the flip turns ``initiated``/``added_count: 1``/``added`` into
+        ``failed``/``0``/``failed``.
+        """
+        self._session_answering_add_with(mock_session_cls, 409, "Conflict")
+
+        orch = MagicMock()
+        orch.is_search_queue_full.return_value = False
+        mock_get_orch.return_value = orch
+
+        resp = client.post(
+            "/api/v1/download",
+            json={
+                "result_id": "test-409",
+                "download_urls": ["magnet:?xt=urn:btih:e9bb4ead5d7ed51aa7d310d7cfef92b9b273a77f"],
+            },
+        )
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "initiated"
+        assert data["added_count"] == 1
+        assert len(data["results"]) == 1
+        assert data["results"][0]["status"] == "added"
+
+    @patch("api.routes._get_orchestrator")
+    @patch("api.routes.aiohttp.ClientSession")
+    def test_download_415_is_still_a_failure_not_a_blanket_4xx_success(self, mock_session_cls, mock_get_orch, client):
+        """§11.4.201(1) false-positive guard for the test above.
+
+        A predicate rewritten to "any 4xx is success" would satisfy the 409 test
+        while reporting every corrupt torrent as added. 415 is the measured
+        response to a corrupt/truncated/empty ``.torrent`` and MUST stay a
+        failure, so 409 has to be special-cased rather than swept up.
+        """
+        self._session_answering_add_with(mock_session_cls, 415, "Error: 'x.torrent' is not a valid torrent file.")
+
+        orch = MagicMock()
+        orch.is_search_queue_full.return_value = False
+        mock_get_orch.return_value = orch
+
+        resp = client.post(
+            "/api/v1/download",
+            json={
+                "result_id": "test-415",
+                "download_urls": ["magnet:?xt=urn:btih:e9bb4ead5d7ed51aa7d310d7cfef92b9b273a77f"],
+            },
+        )
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "failed"
+        assert data["added_count"] == 0
+        assert data["results"][0]["status"] == "failed"
+
+    @patch("api.routes._get_orchestrator")
+    @patch("api.routes.aiohttp.ClientSession")
+    def test_download_409_no_payload_case_cannot_reach_the_predicate(self, mock_session_cls, mock_get_orch, client):
+        """The OTHER 409 — "nothing was sent" — is unreachable from this route.
+
+        This is the live-proven PASS-bluff input: ``{"download_urls": [""]}``
+        reached qBittorrent as ``urls=""``, drew the no-payload 409, and was
+        reported as ``{"status":"added"}`` for a torrent that never existed.
+
+        The mock here is ARMED with exactly that 409 — so if the boundary ever
+        stops refusing, this test does not merely fail to reproduce the bug, it
+        reproduces it: the request would sail through and be reported as added.
+        Instead the 422 lands and ``post`` is never called, which is what makes
+        the SUCCESS reading of 409 in the test above sound.
+        """
+        mock_session = self._session_answering_add_with(mock_session_cls, 409, "Conflict")
+
+        orch = MagicMock()
+        orch.is_search_queue_full.return_value = False
+        mock_get_orch.return_value = orch
+
+        resp = client.post(
+            "/api/v1/download",
+            json={"result_id": "test-409-empty", "download_urls": [""]},
+        )
+
+        assert resp.status_code == 422
+        assert "download_urls" in resp.text
+        # The load-bearing outcome: qBittorrent is never contacted, so the
+        # ambiguous 409 the stub is holding can never be read as an add.
+        assert mock_session.post.call_count == 0
 
 
 class TestActiveDownloadsEndpoint:

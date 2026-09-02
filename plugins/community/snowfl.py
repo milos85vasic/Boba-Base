@@ -63,6 +63,12 @@ class snowfl(object):
                 raise Exception("Error, please fill a bug report!")
 
     def search(self, what, cat="all"):
+        # snowfl puts the query in a URL PATH segment: percent-encode with
+        # quote(safe="") so a space -> %20 and UTF-8 chars are percent-encoded
+        # ('+' is literal in a path, so quote_plus is wrong here). unquote first
+        # decodes the nova2 (%20-encoded) caller so a Cyrillic query is encoded
+        # exactly once and never reaches urllib as a non-ASCII char.
+        what = urllib.parse.quote(urllib.parse.unquote(what), safe="")
         parser = self.Parser(self.url)
         what = parser.generateQuery(what)
         parser.feed(json.loads(retrieve_url(what)))

@@ -155,7 +155,20 @@ main() {
         remove_container
         if [[ "$BOBA_CTL_MODE" == false ]]; then
             print_info "Removing local images..."
-            $COMPOSE_CMD down --rmi local 2>/dev/null || true
+            # Report the outcome instead of swallowing it: a purge that quietly
+            # failed to remove images looks identical to one that succeeded.
+            if $COMPOSE_CMD down --rmi local 2>/dev/null; then
+                print_success "Local images removed"
+            else
+                print_warning "Image removal did not complete — some images may remain"
+                print_info "  Inspect with: ${CONTAINER_RUNTIME:-podman} images"
+            fi
+        else
+            # boba-ctl owns orchestration and its `down` takes no --rmi flag, so
+            # image removal is genuinely not performed here. Say so rather than
+            # letting --purge imply images were cleaned (§11.4.6).
+            print_warning "Images NOT removed: boba-ctl mode does not support image purge"
+            print_info "  To also remove images: ./stop.sh --purge --no-boba-ctl"
         fi
         print_success "Cleanup complete"
     elif [[ "$remove_flag" == true ]]; then

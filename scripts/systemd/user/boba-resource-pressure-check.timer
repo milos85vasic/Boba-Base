@@ -25,7 +25,7 @@
 
 [Unit]
 Description=Hourly timer for boba-resource-pressure-check.service (task #77/BOB-076)
-Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/docs/scripts/install-resource-pressure-timer.md
+Documentation=file://@@BOBA_REPO_ROOT@@/docs/scripts/install-resource-pressure-timer.md
 
 [Timer]
 OnBootSec=5min

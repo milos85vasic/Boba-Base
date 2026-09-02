@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>README</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">README</h1>
+</header>
+<h1
+id="browser-runtime-proof-vanilla-qbittorrent-webui-angular-dashboard">Browser-runtime
+proof — vanilla qBittorrent WebUI + Angular dashboard</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-09-01T16:20:00Z</p>
+<h2 id="what-this-run-proves">What this run proves</h2>
+<p>The claim “the vanilla qBittorrent WebUI works through the proxy”
+previously rested only on HTML-integrity assertions (namespace token
+present, zero rebrand). Those bytes look identical whether the
+JavaScript runs or is dead — which is exactly how the removed themed
+overlay slipped through: it rewrote <code>qBittorrent</code> →
+<code>Боба</code> inside inline <code>&lt;script&gt;</code> blocks,
+destroying <code>window.qBittorrent</code>, while the served HTML still
+passed every byte check.</p>
+<p>This run replaces that with <strong>runtime</strong> evidence from a
+real browser.</p>
+<h2 id="environment">Environment</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Item</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Browser</td>
+<td>Chromium 152.0.7977.64 (snap), headless</td>
+</tr>
+<tr>
+<td>Node</td>
+<td>v26.8.1</td>
+</tr>
+<tr>
+<td>Playwright</td>
+<td><span class="citation"
+data-cites="playwright/test">@playwright/test</span> ^1.59.1</td>
+</tr>
+<tr>
+<td>Config</td>
+<td><code>frontend/playwright.runtime.config.ts</code></td>
+</tr>
+<tr>
+<td>Targets</td>
+<td><code>http://localhost:7186</code> (proxy, user-facing) ·
+<code>http://localhost:7187</code> (Angular)</td>
+</tr>
+<tr>
+<td>Host safety</td>
+<td><code>nice -n 19 ionice -c 3</code>, headless, 1 worker, 0
+retries</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Playwright’s bundled Chromium cannot be installed on this
+host</strong> — <code>playwright install chromium</code> fails with
+<code>ERROR: Playwright does not support chromium on ubuntu26.04-x64</code>.
+The config therefore drives the host’s own Chromium via
+<code>executablePath</code> (auto-detected; override with
+<code>BOBA_CHROMIUM_PATH</code>).</p>
+<h2 id="result-55-passed-33-consecutive-runs-identical">Result — 5/5
+passed, 3/3 consecutive runs identical</h2>
+<pre><code>✓ Angular dashboard (:7187) hydrates &lt;app-root&gt; with zero console errors
+✓ negative control: a wrong password does NOT log in
+✓ real UI login executes the WebUI JS with zero console errors
+✓ MUTATION: rebranding &quot;qBittorrent&quot; inside client.js breaks the namespace guard
+✓ MUTATION: blocking main bundle leaves the Angular &lt;app-root&gt; shell empty</code></pre>
+<p>Verbatim output: <a
+href="playwright-run.log"><code>playwright-run.log</code></a></p>
+<h2 id="console-error-inventory">Console-error inventory</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Uncaught exceptions</th>
+<th>Console errors (excl. control needle)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>qBittorrent WebUI, load → login → logged in (:7186)</td>
+<td><strong>0</strong></td>
+<td><strong>0</strong></td>
+</tr>
+<tr>
+<td>Angular dashboard (:7187)</td>
+<td><strong>0</strong></td>
+<td><strong>0</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Non-error observations, classified:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Observation</th>
+<th>Classification</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET http://localhost:7186/ → net::ERR_ABORTED</code><br><code>POST .../api/v2/auth/login → net::ERR_ABORTED</code></td>
+<td><strong>pre-existing in vanilla qBittorrent</strong></td>
+<td><code>scripts/login.js</code> runs
+<code>location.replace(location); location.reload(true);</code> on a
+successful login, which cancels the in-flight navigation. Not a console
+error, not an exception, not proxy-caused.</td>
+</tr>
+<tr>
+<td><code>401 Unauthorized</code> console error in the <strong>negative
+control</strong></td>
+<td><strong>expected / by design</strong></td>
+<td>The wrong-password rejection. Present only in that test, which does
+not assert zero.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="anti-bluff-measures-why-the-zeros-are-trustworthy">Anti-bluff
+measures (why the zeros are trustworthy)</h2>
+<ol type="1">
+<li><strong>Control needle (§11.4.201(6)(7)(b)).</strong> A blind
+listener and a clean page both report zero. Each spec injects a known
+<code>console.error</code> on the page under test and asserts the
+listener <em>observed</em> it before trusting silence. Recorded as
+<code>controlNeedleObserved: true</code> in the evidence JSON.</li>
+<li><strong>Negative control.</strong> A wrong password must not log in.
+It also fails loudly if the refusal came from an IP <strong>ban</strong>
+rather than credential rejection — a ban would leave the page on the
+login form and pass for the wrong reason.</li>
+<li><strong>Paired §1.1 mutations</strong>
+(<code>runtime-guards-mutation.spec.ts</code>) reproduce the real
+historical defect in-browser and prove the guards can fail:
+<ul>
+<li>rewriting <code>qBittorrent</code> → <code>Боба</code> inside
+<code>client.js</code> makes <code>Client</code>, <code>Filters</code>,
+<code>Search</code>, <code>TransferList</code> vanish from the namespace
+— while the DOM still renders, which is precisely why an HTML check
+cannot see it;</li>
+<li>blocking <code>main-*.js</code> leaves <code>&lt;app-root&gt;</code>
+with 0 children while HTTP still returns 200.</li>
+</ul></li>
+<li><strong>Determinism (§11.4.50).</strong> 3/3 consecutive runs,
+identical results.</li>
+</ol>
+<h2 id="two-defects-found-in-the-tests-themselves-fixed-recorded">Two
+defects found in the tests themselves (fixed, recorded)</h2>
+<p>Both were <strong>test artifacts</strong>, not product defects —
+recorded because a guard that refuses a healthy page is a §11.4.201(1)
+false positive:</p>
+<ul>
+<li><strong><code>Log</code> wrongly required.</strong> The first
+namespace list was built from a grep that matched <em>references</em>,
+not <em>assignments</em>. No eagerly-loaded script assigns
+<code>window.qBittorrent.Log</code>; it is registered lazily when the
+Log tab opens. Requiring it failed a healthy page. Removed.</li>
+<li><strong>First <code>waitForFunction</code> fired far too
+early.</strong> <code>typeof qBittorrent === 'object'</code> resolves
+the instant <code>monkeypatch.js</code> creates the object, while
+<code>client.js</code> / <code>dynamicTable.js</code> /
+<code>misc.js</code> have not run. Sampled there the namespace held only
+5 early keys and a <code>keys.length &gt; 0</code> check passed — it
+would have passed with <code>client.js</code> completely broken. Now
+waits for full <code>load</code> and asserts 17 specific members owned
+by 9 different scripts.</li>
+<li><strong>Mutation over-claimed.</strong> <code>Statistics</code> was
+listed as <code>client.js</code>-owned but is assigned by
+<code>statistics.js</code>, so it legitimately survives the mutation.
+Listing it made the fixture report a toothless guard when the guard was
+fine.</li>
+</ul>
+<h2 id="evidence-files">Evidence files</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>playwright-run.log</code></td>
+<td>Verbatim run output</td>
+</tr>
+<tr>
+<td><code>positive-login-console.json</code></td>
+<td>27 namespace members, 17 <code>Client</code> functions,
+console/page-error inventory, control needle</td>
+</tr>
+<tr>
+<td><code>negative-control-wrong-password.json</code></td>
+<td>Rejection message, proof <code>window.qBittorrent</code> absent
+pre-auth</td>
+</tr>
+<tr>
+<td><code>angular-dashboard-console.json</code></td>
+<td>Hydration counts (5 children, 416 chars), zero errors</td>
+</tr>
+<tr>
+<td><code>qbittorrent-webui-logged-in.png</code></td>
+<td>Logged-in WebUI, 1280×720</td>
+</tr>
+<tr>
+<td><code>angular-dashboard-hydrated.png</code></td>
+<td>Hydrated dashboard, 1280×918</td>
+</tr>
+</tbody>
+</table>
+<p><code>qbittorrent-webui-logged-in.png</code> shows the real
+qBittorrent chrome (File/Edit/View/Tools/Help, torrent table, filter
+sidebar) with a <strong>live</strong> status bar —
+<code>Free space: 1.533 TiB</code>, <code>DHT: 122 nodes</code> —
+i.e. the JS sync loop is actively polling the API, not merely parsed. No
+<code>Боба</code> rebrand anywhere in the WebUI.</p>
+<p><code>angular-dashboard-hydrated.png</code> shows the hydrated
+dashboard with live state (<code>qBit Connected — admin</code>,
+<code>43 Trackers</code>, tracker chips).</p>
+<h2 id="reproduce">Reproduce</h2>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> frontend</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">nice</span> <span class="at">-n</span> 19 ionice <span class="at">-c</span> 3 ./node_modules/.bin/playwright test <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--config</span><span class="op">=</span>playwright.runtime.config.ts</span></code></pre></div>
+<p>Requires the stack live on :7186 and :7187. No container is started,
+stopped, or restarted by this suite; the mutations rewrite responses
+<strong>in the browser only</strong> (<code>page.route</code>), never on
+the server or on disk.</p>
+<h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
+<p>This proves the WebUI’s JavaScript <strong>executes</strong>, the
+namespace is <strong>fully populated</strong>, a real end-user login
+<strong>works</strong>, and both surfaces are <strong>free of console
+errors and uncaught exceptions</strong> on Chromium 152 at this
+revision.</p>
+<p>It does <strong>not</strong> prove: every WebUI feature works (only
+load + login + live sync are driven); behaviour on other browser engines
+(Firefox/WebKit untested); or that no defect exists outside the
+exercised paths (§11.4.118 discovery-pressure still applies).
+<code>WebUI Bridge (down)</code> on the dashboard reflects port 7188, a
+manually-started host process out of scope here — it is not an error
+surfaced by this run.</p>
+</body>
+</html>

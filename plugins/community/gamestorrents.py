@@ -34,54 +34,107 @@ class gamestorrents:
             print(f"Search error: {e}", file=__import__("sys").stderr)
 
     def _parse_results(self, html):
-        """Parse search results from HTML."""
-        # GamesTorrents uses article cards
-        pattern = re.compile(
-            r"<article[^>]*>.*?"
-            r'<a[^>]*href="([^"]+)"[^>]*>.*?'
-            r"<h2[^>]*>([^<]+)</h2>.*?"
-            r'<div[^>]*class="[^"]*size[^"]*"[^>]*>([^<]+)</div>.*?'
-            r'<div[^>]*class="[^"]*date[^"]*"[^>]*>([^<]+)</div>.*?'
-            r"</article>",
+        """Parse search results from HTML.
+
+        The live site (verified 2026-06-16 against
+        https://www.gamestorrents.app/?s=<query>) renders results in a
+        ``<table class="table metalion">`` rather than the old
+        ``<article>`` cards. Body row layout (column order from the live
+        ``<thead>``): Nombre (``<td><a href=DETAIL>NAME</a></td>``), Fecha
+        (DD-MM-YYYY), Tamaño (e.g. ``59.03 GBs``), Version, Genero, Idioma.
+        The header row uses ``<th>`` and carries no detail ``<a>``, so it
+        is skipped naturally by the per-row anchor match.
+        """
+        # Iterate every metalion table on the page, then each row inside it.
+        for table in re.findall(
+            r'<table[^>]*class="[^"]*metalion[^"]*"[^>]*>(.*?)</table>',
+            html,
             re.S | re.I,
-        )
+        ):
+            for row in re.findall(r"<tr[^>]*>(.*?)</tr>", table, re.S | re.I):
+                # First <td> = Nombre: a detail-page link wrapping the name.
+                # The header row has only <th> cells and no such <a>, so it
+                # is skipped here. We deliberately key on the FIRST <a> whose
+                # href points at a detail page (not the rel="category tag"
+                # genre links in a later column).
+                name_match = re.search(
+                    r"<td[^>]*>\s*<a[^>]*href=\"([^\"]+)\"[^>]*>(.*?)</a>",
+                    row,
+                    re.S | re.I,
+                )
+                if not name_match:
+                    continue
 
-        matches = pattern.findall(html)
-        for match in matches:
-            try:
-                desc_link = match[0]
-                name = match[1].strip()
-                size = match[2].strip()
-                date_str = match[3].strip()
+                desc_link = name_match.group(1).strip()
+                name = self._clean_text(name_match.group(2))
+                if not name:
+                    continue
 
-                # Convert size to bytes
+                # Size is the Tamaño <td>: the first cell whose text matches a
+                # size token (e.g. "59.03 GBs" / "0.16 GB" / "512 MB").
+                size_match = re.search(
+                    r"<td[^>]*>\s*([\d.,]+\s*(?:TB|GB|MB|KB|B)s?)\s*</td>",
+                    row,
+                    re.I,
+                )
+                size = size_match.group(1) if size_match else ""
                 size_bytes = self._parse_size(size)
 
                 result = {
                     "link": desc_link,
                     "name": name,
                     "size": str(size_bytes),
-                    "seeds": "0",
-                    "leech": "0",
+                    "seeds": "-1",
+                    "leech": "-1",
                     "engine_url": self.url,
                     "desc_link": desc_link,
                     "pub_date": str(int(time.time())),
                 }
                 prettyPrinter(result)
-            except Exception as e:
-                continue
+
+    @staticmethod
+    def _clean_text(raw):
+        """Strip tags, decode the few HTML entities the site emits, and
+        collapse whitespace."""
+        text = re.sub(r"<[^>]+>", "", raw)
+        text = (
+            text.replace("&#8211;", "-")
+            .replace("&#8217;", "'")
+            .replace("&amp;", "&")
+        )
+        return re.sub(r"\s+", " ", text).strip()
 
     def _parse_size(self, size_str):
-        """Convert size string to bytes."""
-        size_str = size_str.upper().strip()
-        multipliers = {"B": 1, "KB": 1024, "MB": 1024**2, "GB": 1024**3, "TB": 1024**4}
+        """Convert size string to bytes.
 
-        for unit, mult in multipliers.items():
+        The live site uses both ``GB`` and a plural ``GBs`` (e.g.
+        ``59.03 GBs``); extract the numeric part by regex so a trailing
+        ``s`` or stray text never corrupts the float() (TB/GB/MB/KB ordered
+        before the bare ``B`` so the longer suffixes win).
+        """
+        size_str = size_str.upper().strip()
+        multipliers = (("TB", 1024**4), ("GB", 1024**3), ("MB", 1024**2), ("KB", 1024), ("B", 1))
+
+        for unit, mult in multipliers:
             if unit in size_str:
+                num_match = re.search(r"([\d.,]+)", size_str)
+                if not num_match:
+                    return 0
                 try:
-                    num = float(size_str.replace(unit, "").replace(",", "").strip())
+                    num = float(num_match.group(1).replace(",", ""))
                     return int(num * mult)
-                except:
+                except ValueError as e:
+                    # §11.4.252: narrowed from a bare `except:`, which also caught
+                    # KeyboardInterrupt and SystemExit — so Ctrl-C or an interpreter
+                    # shutdown inside this loop was silently converted into a bogus
+                    # "size 0" result instead of terminating. A non-numeric size token
+                    # is the only real failure here.
+                    # Not silent either: an unparseable size still renders as a 0-byte
+                    # torrent in the WebUI, so its reason must be recoverable somewhere.
+                    # stderr, NOT stdout: nova3 parses plugin STDOUT (novaprinter writes
+                    # the result stream to raw fd 1), so a diagnostic printed there would
+                    # corrupt the very results it explains.
+                    print(f"Size parse error ({size_str!r}): {e}", file=__import__("sys").stderr)
                     return 0
         return 0
 
@@ -100,10 +153,22 @@ class gamestorrents:
                 sys.stdout.flush()
                 return
 
-            # Look for .torrent download
-            torrent_match = re.search(r'href="(/download/[^"]+\.torrent)"', html)
+            # Look for a .torrent download link. The live detail page (verified
+            # 2026-06-16) serves the file from /wp-content/uploads/files/...,
+            # NOT /download/...; match any .torrent href and resolve it against
+            # the site root. The href may contain literal [ ] ( ) from the
+            # title, so percent-quote the path (leaving the URL structure
+            # intact) before handing it back.
+            torrent_match = re.search(r'href="([^"]+\.torrent)"', html)
             if torrent_match:
-                torrent_url = self.url + torrent_match.group(1)
+                href = torrent_match.group(1)
+                if href.startswith("//"):
+                    torrent_url = "https:" + href
+                elif href.startswith("http"):
+                    torrent_url = href
+                else:
+                    torrent_url = self.url + ("" if href.startswith("/") else "/") + href
+                torrent_url = quote(torrent_url, safe=":/?&=%")
                 print(torrent_url + " " + url)
                 sys.stdout.flush()
                 return

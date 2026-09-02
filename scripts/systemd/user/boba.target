@@ -46,9 +46,9 @@
 
 [Unit]
 Description=Boba (qBittorrent + Jackett + Merge Search) stack umbrella
-Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/README.md
-Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/CLAUDE.md
-Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/docs/systemd/UNITS.md
+Documentation=file://@@BOBA_REPO_ROOT@@/README.md
+Documentation=file://@@BOBA_REPO_ROOT@@/CLAUDE.md
+Documentation=file://@@BOBA_REPO_ROOT@@/docs/systemd/UNITS.md
 After=default.target
 # Pull every registered boba-*.service in when the target starts.
 # When a new unit is added, extend this list AND its [Install]

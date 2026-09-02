@@ -1,0 +1,42 @@
+# FINAL LIVE VERIFICATION — 2026-09-01T18:02:36+02:00  HEAD 0e61779
+
+## Containers
+qbittorrent	Up 8 minutes (healthy)
+jackett	Up 8 minutes (healthy)
+boba-jackett	Up 7 minutes (healthy)
+qbittorrent-proxy	Up 40 seconds (healthy)
+
+## Service reachability
+  7185 -> HTTP 200
+  7186 -> HTTP 200
+  7187 -> HTTP 200
+  7189 -> HTTP 404
+  9117 -> HTTP 301
+
+## qBittorrent login (the reported defect)
+  temp-password minting: NONE
+  :7185 admin/admin=204  wrong=401  authed_version=v5.2.3
+  :7186 admin/admin=204  wrong=401  authed_version=v5.2.3
+
+## Vanilla WebUI integrity (themed overlay removed)
+  qBittorrent JS namespace present : 4
+  Боба rebrand injected           : 0
+  theme overlay assets            : 0
+
+## Angular dashboard :7187
+  <app-root>: 1   title: <title>Боба Dashboard</title>
+  asset styles-GCTY6SPV.css -> HTTP 200
+  asset styles-GCTY6SPV.css -> HTTP 200
+  asset chunk-BLMHHXNZ.js -> HTTP 200
+
+## Security posture
+  .env mode: 600   boba.db mode: 600
+  auth bypass: ABSENT (authentication enforced)
+
+## systemd reboot survival
+  boba-resource-pressure-check.service                                                      static    -
+  boba-stack.service                                                                        disabled  enabled
+  boba-webui-bridge.service                                                                 disabled  enabled
+  boba.target                                                                               enabled   enabled
+  boba-resource-pressure-check.timer                                                        enabled   enabled
+  Linger=yes

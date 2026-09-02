@@ -116,7 +116,7 @@ DEFAULT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # listed, the `engines` derivation rises and this gate FAILs with an
 # actionable message — fail-closed by design (§11.4.252), never a silent
 # miscount.
-UTILITY_MODULES="download_proxy env_loader helpers nova2 novaprinter socks theme_injector"
+UTILITY_MODULES="download_proxy env_loader helpers nova2 novaprinter socks"
 
 GOVERNED_DOCS="CLAUDE.md AGENTS.md docs/features/Status.md"
 

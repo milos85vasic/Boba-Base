@@ -23,6 +23,7 @@
 from datetime import datetime
 from html.parser import HTMLParser
 from typing import Dict, List, Mapping, Tuple, Union
+from urllib.parse import quote_plus, unquote_plus
 
 from helpers import retrieve_url
 from novaprinter import prettyPrinter
@@ -152,10 +153,15 @@ class solidtorrents:
             + '&sort=seeders&sort=desc&page=' + str(page))
 
     def search(self, what: str, cat: str = 'all') -> None:
-        # ?q= query param: '+' encodes a space. The merge service passes a
-        # raw query with literal spaces; nova2 passes a %20-encoded one.
-        # Normalise both so a literal space never reaches urllib.
-        what = what.replace('%20', '+').replace(' ', '+')
+        # ?q= is a QUERY parameter, where '+' encodes a space -> quote_plus.
+        # unquote_plus() first normalises BOTH caller conventions (the merge
+        # service passes raw spaces, nova2 passes %20-encoded) so the encode
+        # happens exactly once.
+        #
+        # The previous replace()-only form handled the SPACE but left every
+        # non-ASCII character raw, so a Cyrillic query crashed urllib's ASCII
+        # encode (§11.4.238 coverage escape from commit ae387b2).
+        what = quote_plus(unquote_plus(what))
         category = self.supported_categories[cat]
 
         for page in range(1, 5):

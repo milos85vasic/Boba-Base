@@ -9,8 +9,8 @@
       "base_url": ""
     },
     "nnmclub": {
-      "has_session": true,
-      "base_url": "https://nnmclub.to"
+      "has_session": false,
+      "base_url": ""
     },
     "iptorrents": {
       "has_session": true,

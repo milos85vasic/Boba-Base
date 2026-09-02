@@ -9,8 +9,7 @@ import { DialogService } from '../../services/dialog.service';
 import { SseService } from '../../services/sse.service';
 import {
   SearchResult, ActiveDownload, Schedule, Hook,
-  TrackerStatus, Source, TrackerSearchStat
-} from '../../models/search.model';
+  TrackerStatus, Source, TrackerSearchStat, DownloadRequest } from '../../models/search.model';
 import { MagnetDialogComponent } from '../magnet-dialog/magnet-dialog.component';
 import { QbitLoginDialogComponent } from '../qbit-login-dialog/qbit-login-dialog.component';
 import { TrackerStatDialogComponent } from '../tracker-stat-dialog/tracker-stat-dialog.component';
@@ -662,10 +661,27 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.executeScheduleRow(r, `qbit:${index}`);
   }
 
+  /**
+   * Content facts for qBittorrent tagging, taken from the clicked result.
+   *
+   * The backend derives quality from the torrent name on its own; these are the
+   * dimensions it CANNOT derive offline (type / year / genre). Everything is
+   * optional — an unresolved field is simply omitted so the backend emits no
+   * tag for it rather than guessing one.
+   */
+  private tagFactsFor(r: SearchResult): Partial<DownloadRequest> {
+    return {
+      title: r.name,
+      content_type: r.metadata?.content_type ?? r.content_type ?? undefined,
+      year: r.metadata?.year ?? undefined,
+      genres: r.metadata?.genres ?? undefined,
+    };
+  }
+
   executeScheduleRow(r: SearchResult, busyKey?: string): void {
     if (busyKey) this.setBusy(busyKey, true);
     const done = () => { if (busyKey) this.setBusy(busyKey, false); };
-    this.api.download({ result_id: r.name, download_urls: r.download_urls }).subscribe({
+    this.api.download({ result_id: r.name, download_urls: r.download_urls, ...this.tagFactsFor(r) }).subscribe({
       next: (res) => {
         done();
         if (res.added_count > 0 || res.status === 'initiated') {
@@ -733,7 +749,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.setBusy(key, false);
         this.magnetDialog.open(res.magnet, () => {
-          this.api.download({ result_id: String(index), download_urls: [res.magnet] }).subscribe({
+          this.api.download({ result_id: String(index), download_urls: [res.magnet], ...this.tagFactsFor(r) }).subscribe({
             next: (dres) => {
               if (dres.added_count > 0) {
                 this.toast.success('Added magnet to qBittorrent');

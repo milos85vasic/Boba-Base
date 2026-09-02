@@ -7,6 +7,7 @@ import re
 import sys
 import urllib.error
 import urllib.request
+from urllib.parse import quote, unquote_plus
 from datetime import datetime, timedelta
 from html.parser import HTMLParser
 from typing import Callable, Dict, List, Mapping, Match, Tuple, Union
@@ -87,11 +88,17 @@ class eztv:
                 self.in_table_row = False
 
     def do_query(self, what: str) -> str:
-        # EZTV uses dashes for spaces in its search path. Normalise BOTH
-        # caller conventions: nova2 passes a %20-encoded query, the merge
-        # service passes a raw query with literal spaces. Handle both so a
-        # raw space never reaches urllib (which would reject it).
-        what = what.replace('%20', '-').replace(' ', '-')
+        # EZTV uses dashes for spaces in its search PATH. Keep '-' as the word
+        # separator but percent-encode each WORD with quote(safe="") so a
+        # Cyrillic query is ASCII-safe; quote (not quote_plus) because a '+' is
+        # a literal plus inside a path segment. unquote_plus() first normalises
+        # BOTH caller conventions (nova2 sends %20-encoded, the merge service
+        # sends raw spaces) so the encode happens exactly once.
+        #
+        # The previous replace()-only form handled the SPACE but left every
+        # non-ASCII character raw, so a Cyrillic query crashed urllib's ASCII
+        # encode (§11.4.238 coverage escape from commit ae387b2).
+        what = '-'.join(quote(word, safe='') for word in unquote_plus(what).split())
         url = f"{self.url}/search/{what}"
         data = b"layout=def_wlinks"
         try:

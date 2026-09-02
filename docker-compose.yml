@@ -33,8 +33,15 @@ services:
       - PGID=0
       - TZ=Europe/Moscow
       - WEBUI_PORT=7185
-      - WEBUI_USERNAME=admin
-      - WEBUI_PASSWORD=admin
+      # NOTE (2026-09-01): WEBUI_USERNAME / WEBUI_PASSWORD were REMOVED here.
+      # lscr.io/linuxserver/qbittorrent implements NEITHER variable — proven
+      # with a control needle: the same grep over the image finds WEBUI_PORT
+      # and finds nothing for those two. Setting them created a false belief
+      # that credentials were configured while nothing was configured at all,
+      # which is half of why admin/admin could not log in. Credentials are
+      # written into config/qBittorrent/qBittorrent.conf by start.sh's
+      # _ensure_webui_credentials (insert-or-replace) — the file the image
+      # actually reads.
       - RUTRACKER_USERNAME=${RUTRACKER_USERNAME}
       - RUTRACKER_PASSWORD=${RUTRACKER_PASSWORD}
       # Configurable outbound proxy for tracker-bound egress (qBittorrent's own

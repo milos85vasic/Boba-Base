@@ -27,7 +27,7 @@
   {
     "name": "bitsearch",
     "status": "success",
-    "results_count": 60
+    "results_count": 20
   },
   {
     "name": "bt4g",
@@ -56,7 +56,7 @@
   },
   {
     "name": "glotorrents",
-    "status": "error",
+    "status": "empty",
     "results_count": 0
   },
   {
@@ -67,7 +67,7 @@
   {
     "name": "jackett",
     "status": "success",
-    "results_count": 36
+    "results_count": 1
   },
   {
     "name": "kickass",
@@ -82,15 +82,20 @@
   {
     "name": "limetorrents",
     "status": "success",
-    "results_count": 17
+    "results_count": 80
   },
   {
     "name": "linuxtracker",
     "status": "success",
-    "results_count": 120
+    "results_count": 15
   },
   {
     "name": "megapeer",
+    "status": "error",
+    "results_count": 0
+  },
+  {
+    "name": "nnmclub",
     "status": "error",
     "results_count": 0
   },
@@ -136,8 +141,8 @@
   },
   {
     "name": "snowfl",
-    "status": "success",
-    "results_count": 137
+    "status": "error",
+    "results_count": 0
   },
   {
     "name": "solidtorrents",
@@ -162,7 +167,7 @@
   {
     "name": "torrentdownload",
     "status": "success",
-    "results_count": 167
+    "results_count": 198
   },
   {
     "name": "torrentfunk",
@@ -172,7 +177,7 @@
   {
     "name": "torrentgalaxy",
     "status": "success",
-    "results_count": 200
+    "results_count": 250
   },
   {
     "name": "torrentkitty",
@@ -182,7 +187,7 @@
   {
     "name": "torrentproject",
     "status": "success",
-    "results_count": 47
+    "results_count": 100
   },
   {
     "name": "torrentscsv",
@@ -206,7 +211,7 @@
   },
   {
     "name": "yts",
-    "status": "error",
+    "status": "empty",
     "results_count": 0
   }
 ]

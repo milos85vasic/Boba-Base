@@ -1,0 +1,560 @@
+........................................................................ [  1%]
+........................................................................ [  3%]
+........................................................................ [  4%]
+........................................................................ [  6%]
+........................................................................ [  8%]
+........................................................................ [  9%]
+........................................................................ [ 11%]
+........................................................................ [ 13%]
+........................................................................ [ 14%]
+........................................................................ [ 16%]
+........................................................................ [ 17%]
+........................................................................ [ 19%]
+........................................................................ [ 21%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 26%]
+........................................................................ [ 27%]
+........................................................................ [ 29%]
+........................................................................ [ 30%]
+........................................................................ [ 32%]
+........................................................................ [ 34%]
+........................................................................ [ 35%]
+........................................................................ [ 37%]
+........................................................................ [ 39%]
+..........................................FFFFFFFFFFFFFFFFFFFF........FF [ 40%]
+F....................................................................... [ 42%]
+........................................................................ [ 43%]
+........................................................................ [ 45%]
+.......E................................................................ [ 47%]
+........................................................................ [ 48%]
+........................................................................ [ 50%]
+........................................................................ [ 52%]
+........................................................................ [ 53%]
+........................................................................ [ 55%]
+........................................................................ [ 56%]
+........................................................................ [ 58%]
+........................................................................ [ 60%]
+...................................................F.................... [ 61%]
+........................................................................ [ 63%]
+........................................................................ [ 65%]
+........................................................................ [ 66%]
+........................................................................ [ 68%]
+........................................................................ [ 69%]
+........................................................................ [ 71%]
+........................................................................ [ 73%]
+........................................................................ [ 74%]
+........................................................................ [ 76%]
+........................................................................ [ 78%]
+........................................................................ [ 79%]
+........................................................................ [ 81%]
+........................................................................ [ 82%]
+........................................................................ [ 84%]
+........................................................................ [ 86%]
+..............F......................................................... [ 87%]
+........................................................................ [ 89%]
+........................................................................ [ 91%]
+........................................................................ [ 92%]
+........................................................................ [ 94%]
+........................................................................ [ 95%]
+........................................................................ [ 97%]
+....................F................................................... [ 99%]
+...................................                                      [100%]
+==================================== ERRORS ====================================
+_ ERROR at setup of TestComputeBadgesCheckModePolarity.test_golden_bad_stale_python_count_is_detected _
+
+self = <tests.unit.test_compute_badges_script.TestComputeBadgesCheckModePolarity object at 0x7d666647b890>
+
+    @pytest.fixture
+    def synced_fixtures(self):
+        """Golden-good: regenerate real README/TESTING.md copies into a
+        scratch dir, so --check compares against genuinely fresh counts.
+        Function-scoped deliberately (a class-scoped generator fixture
+        here trips a pytest fixture-finalizer-ordering assertion on this
+        project's pinned pytest version — `assert not self._finalizers` in
+        `_pytest/fixtures.py` — so each test pays its own ~10-20s
+        regeneration cost rather than fighting that scope interaction).
+        Uses a plain `tempfile` directory, not the built-in `tmp_path`
+        fixture, to keep the fixture self-contained."""
+        with tempfile.TemporaryDirectory(prefix="compute_badges_fixture_") as d:
+            tmp_dir = Path(d)
+            readme_src = ROOT / "README.md"
+            testing_src = ROOT / "docs" / "TESTING.md"
+            readme = tmp_dir / "README.md"
+            testing = tmp_dir / "TESTING.md"
+            readme.write_text(readme_src.read_text())
+            testing.write_text(testing_src.read_text())
+    
+>           subprocess.run(
+                [str(SCRIPT), "--readme", str(readme), "--testing-md", str(testing)],
+                cwd=ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=180,
+            )
+
+tests/unit/test_compute_badges_script.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/subprocess.py:550: in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/subprocess.py:1209: in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/subprocess.py:2116: in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <Popen: returncode: -9 args: ['/home/milosvasic/Projects/boba/scripts/comput...>
+endtime = 77377.069168145, orig_timeout = 180
+stdout_seq = [b'compute-badges.sh: README.md badges refreshed\n  python tests:   5499 (collected)\n  frontend tests: 2742 (collecte...section refreshed\n", b'compute-badges.sh: regenerating .md exports (\xc2\xa711.4.65) so the tree is not left stale\n']
+stderr_seq = [], skip_check_and_raise = False
+
+    def _check_timeout(self, endtime, orig_timeout, stdout_seq, stderr_seq,
+                       skip_check_and_raise=False):
+        """Convenience for checking if a timeout has expired."""
+        if endtime is None:
+            return
+        if skip_check_and_raise or _time() > endtime:
+>           raise TimeoutExpired(
+                    self.args, orig_timeout,
+                    output=b''.join(stdout_seq) if stdout_seq else None,
+                    stderr=b''.join(stderr_seq) if stderr_seq else None)
+E           subprocess.TimeoutExpired: Command '['/home/milosvasic/Projects/boba/scripts/compute-badges.sh', '--readme', '/tmp/compute_badges_fixture_uem03qj4/README.md', '--testing-md', '/tmp/compute_badges_fixture_uem03qj4/TESTING.md']' timed out after 180 seconds
+
+../../.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/subprocess.py:1253: TimeoutExpired
+=================================== FAILURES ===================================
+_______ TestHandlerProxyToQbittorrent.test_proxy_skips_transfer_encoding _______
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerProxyToQbittorrent object at 0x7d6666359190>
+
+    def test_proxy_skips_transfer_encoding(self):
+        """Lines 925-926: transfer-encoding skipped, content-length rewritten."""
+>       handler = _make_handler(path="/")
+                  ^^^^^^^^^^^^^
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:348: NameError
+_ TestHandlerProxyToQbittorrent.test_proxy_html_response_passed_through_unmodified _
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerProxyToQbittorrent object at 0x7d6666343fe0>
+
+    def test_proxy_html_response_passed_through_unmodified(self):
+        """HTML is relayed byte-for-byte — the themed-WebUI overlay was
+        removed 2026-09-01 (see tests/integration/
+        test_vanilla_webui_unmodified.py)."""
+>       handler = _make_handler(path="/")
+                  ^^^^^^^^^^^^^
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:289: NameError
+_______ TestHandlerProxyToQbittorrent.test_proxy_csp_forwarded_verbatim ________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerProxyToQbittorrent object at 0x7d6666358d40>
+
+    def test_proxy_csp_forwarded_verbatim(self):
+        """qBittorrent's CSP is forwarded untouched (no connect-src
+        relaxation for a theme bridge that no longer exists)."""
+>       handler = _make_handler(path="/")
+                  ^^^^^^^^^^^^^
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:329: NameError
+_ TestHandlerProxyToQbittorrent.test_proxy_content_encoding_preserved_for_html _
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerProxyToQbittorrent object at 0x7d66663595e0>
+
+    def test_proxy_content_encoding_preserved_for_html(self):
+        """Content-Encoding is forwarded untouched — nothing decodes the
+        body any more, so gzip bodies relay exactly as compressed."""
+>       handler = _make_handler(path="/")
+                  ^^^^^^^^^^^^^
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:367: NameError
+__________ TestHandlerProxyToQbittorrent.test_proxy_rewrites_referer ___________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerProxyToQbittorrent object at 0x7d6666343bc0>
+
+    def test_proxy_rewrites_referer(self):
+        """Lines 892-895: referer and origin rewritten."""
+>       handler = _make_handler(
+                  ^^^^^^^^^^^^^
+            path="/api/v2/app/version",
+            headers={"Referer": "http://old-host:8080", "Origin": "http://old-host:8080"},
+        )
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:271: NameError
+_____________ TestHandlerProxyToQbittorrent.test_proxy_http_error ______________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerProxyToQbittorrent object at 0x7d66663584a0>
+
+    def test_proxy_http_error(self):
+        """Lines 941-946: HTTPError handled."""
+        import urllib.error
+    
+>       handler = _make_handler(path="/api/v2/app/version")
+                  ^^^^^^^^^^^^^
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:308: NameError
+____________ TestHandlerProxyToQbittorrent.test_proxy_generic_error ____________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerProxyToQbittorrent object at 0x7d66663588f0>
+
+    def test_proxy_generic_error(self):
+        """Lines 947-952: generic error sends 502."""
+>       handler = _make_handler(path="/api/v2/app/version")
+                  ^^^^^^^^^^^^^
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:321: NameError
+_________________ TestHandlerLogMessage.test_log_non_api_path __________________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerLogMessage object at 0x7d6666343770>
+
+    def test_log_non_api_path(self):
+        """Lines 770-771: non-API path not logged."""
+>       handler = _make_handler(path="/images/logo.png")
+                  ^^^^^^^^^^^^^
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:264: NameError
+___________________ TestHandlerLogMessage.test_log_api_path ____________________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerLogMessage object at 0x7d6666343320>
+
+    def test_log_api_path(self):
+        """Lines 770-772: API path logged."""
+>       handler = _make_handler(path="/api/v2/app/version")
+                  ^^^^^^^^^^^^^
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:259: NameError
+__________________ TestHandlerDoGet.test_do_get_proxies_other __________________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerDoGet object at 0x7d6666341c40>
+
+    def test_do_get_proxies_other(self):
+        """Lines 779: do_GET proxies other requests."""
+>       handler = _make_handler(path="/api/v2/app/version")
+                  ^^^^^^^^^^^^^
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:132: NameError
+____________ TestHandlerHandleRequest.test_plugin_intercept_success ____________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerHandleRequest object at 0x7d6666343170>
+
+    def test_plugin_intercept_success(self):
+        """Lines 854-869: plugin URL intercepted and torrent downloaded."""
+>       handler = _make_handler(
+                  ^^^^^^^^^^^^^
+            method="POST",
+            path="/api/v2/torrents/add",
+            body=b"urls=https://rutracker.org/forum/dl.php?t=123",
+            headers={"Content-Length": "45"},
+        )
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:186: NameError
+_____________ TestHandlerHandleRequest.test_multipart_passthrough ______________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerHandleRequest object at 0x7d66663428d0>
+
+    def test_multipart_passthrough(self):
+        """Lines 837-840: multipart upload passed through."""
+>       handler = _make_handler(
+                  ^^^^^^^^^^^^^
+            method="POST",
+            path="/api/v2/torrents/add",
+            body=b"multipart-data",
+            headers={"Content-Type": "multipart/form-data; boundary=abc", "Content-Length": "15"},
+        )
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:162: NameError
+________ TestHandlerHandleRequest.test_plugin_intercept_download_fails _________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerHandleRequest object at 0x7d666631ffb0>
+
+    def test_plugin_intercept_download_fails(self):
+        """Lines 870-873: download failure returns 502."""
+>       handler = _make_handler(
+                  ^^^^^^^^^^^^^
+            method="POST",
+            path="/api/v2/torrents/add",
+            body=b"urls=https://rutracker.org/forum/dl.php?t=123",
+            headers={"Content-Length": "45"},
+        )
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:202: NameError
+____________ TestHandlerHandleRequest.test_binary_body_passthrough _____________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerHandleRequest object at 0x7d6666342d20>
+
+    def test_binary_body_passthrough(self):
+        """Lines 842-847: binary body passed through."""
+>       handler = _make_handler(
+                  ^^^^^^^^^^^^^
+            method="POST",
+            path="/api/v2/torrents/add",
+            body=b"\x00\x01\x02\x03",
+            headers={"Content-Length": "4"},
+        )
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:174: NameError
+___________ TestHandlerHandleRequest.test_non_plugin_url_passthrough ___________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerHandleRequest object at 0x7d6666342c90>
+
+    def test_non_plugin_url_passthrough(self):
+        """Lines 875: non-plugin URL passed through."""
+>       handler = _make_handler(
+                  ^^^^^^^^^^^^^
+            method="POST",
+            path="/api/v2/torrents/add",
+            body=b"urls=https://example.com/file.torrent",
+            headers={"Content-Length": "40"},
+        )
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:214: NameError
+______________ TestHandlerHandleRequest.test_exception_sends_500 _______________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerHandleRequest object at 0x7d6666340cb0>
+
+    def test_exception_sends_500(self):
+        """Lines 877-882: exception sends 500."""
+>       handler = _make_handler(
+                  ^^^^^^^^^^^^^
+            method="POST",
+            path="/api/v2/torrents/add",
+            body=b"urls=test",
+            headers={"Content-Length": "10"},
+        )
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:245: NameError
+____________ TestHandlerHandleRequest.test_non_add_path_passthrough ____________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerHandleRequest object at 0x7d6666341d90>
+
+    def test_non_add_path_passthrough(self):
+        """Lines 875: non-/add path passed through."""
+>       handler = _make_handler(
+                  ^^^^^^^^^^^^^
+            method="POST",
+            path="/api/v2/torrents/pause",
+            body=b"hashes=abc",
+            headers={"Content-Length": "10"},
+        )
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:226: NameError
+____________ TestHandlerHandleRequest.test_get_request_passthrough _____________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerHandleRequest object at 0x7d6666341490>
+
+    def test_get_request_passthrough(self):
+        """Lines 875: GET request passed through."""
+>       handler = _make_handler(method="GET", path="/api/v2/app/version")
+                  ^^^^^^^^^^^^^
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:238: NameError
+____________________ TestHandlerIsMultipart.test_multipart _____________________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerIsMultipart object at 0x7d6666340ef0>
+
+    def test_multipart(self):
+        """Lines 824-826: multipart/form-data detected."""
+>       handler = _make_handler(headers={"Content-Type": "multipart/form-data; boundary=abc"})
+                  ^^^^^^^^^^^^^
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:113: NameError
+__________________ TestHandlerIsMultipart.test_not_multipart ___________________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerIsMultipart object at 0x7d6666341340>
+
+    def test_not_multipart(self):
+        """Lines 824-826: non-multipart content type."""
+>       handler = _make_handler(headers={"Content-Type": "application/x-www-form-urlencoded"})
+                  ^^^^^^^^^^^^^
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:118: NameError
+____________________ TestHandlerDoPost.test_do_post_no_body ____________________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerDoPost object at 0x7d6666342480>
+
+    def test_do_post_no_body(self):
+        """Lines 782-783: do_POST with no content-length."""
+>       handler = _make_handler(method="POST", path="/api/v2/torrents/add")
+                  ^^^^^^^^^^^^^
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:153: NameError
+___________________ TestHandlerDoPost.test_do_post_with_body ___________________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerDoPost object at 0x7d6666342030>
+
+    def test_do_post_with_body(self):
+        """Lines 781-784: do_POST reads body and calls handle_request."""
+>       handler = _make_handler(
+                  ^^^^^^^^^^^^^
+            method="POST",
+            path="/api/v2/torrents/add",
+            body=b"urls=magnet:?xt=urn:btih:abc",
+            headers={"Content-Length": "30"},
+        )
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:141: NameError
+_________________ TestHandlerIsTorrentField.test_always_false __________________
+
+self = <tests.unit.test_download_proxy_deep.TestHandlerIsTorrentField object at 0x7d66663417c0>
+
+    def test_always_false(self):
+        """Lines 828-830: always returns False."""
+>       handler = _make_handler()
+                  ^^^^^^^^^^^^^
+E       NameError: name '_make_handler' is not defined
+
+tests/unit/test_download_proxy_deep.py:125: NameError
+________________________ test_no_runtime_service_skips _________________________
+
+    def test_no_runtime_service_skips() -> None:
+        """Fail if any test file still uses the runtime availability-skip pattern."""
+        offenders: list[str] = []
+    
+        for path in _py_files():
+            if path in ALLOW_LISTED_FILES:
+                continue
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+    
+            for lineno, line in enumerate(text.splitlines(), start=1):
+                if ALLOW_MARKER in line:
+                    continue
+                match = SKIP_CALL.search(line)
+                if not match:
+                    continue
+                arg = match.group("arg").lower()
+                if any(word in arg for word in FORBIDDEN):
+                    rel = path.relative_to(TESTS_ROOT.parent)
+                    offenders.append(f"{rel}:{lineno}: {line.strip()}")
+    
+>       assert not offenders, (
+            "Found runtime service-availability skips. Convert them to fixture gates "
+            "(merge_service_live / qbittorrent_live / webui_bridge_live / all_services_live) "
+            "or append a trailing '# allow-skip: <reason>' comment if the skip is truly "
+            "data-dependent and not about service availability.\n  - " + "\n  - ".join(offenders)
+        )
+E       AssertionError: Found runtime service-availability skips. Convert them to fixture gates (merge_service_live / qbittorrent_live / webui_bridge_live / all_services_live) or append a trailing '# allow-skip: <reason>' comment if the skip is truly data-dependent and not about service availability.
+E           - tests/scaling/test_boba_scaling.py:138: pytest.skip("merge service :7187 not reachable (SKIP-OK BOB-109)")
+E           - tests/scaling/test_scaling_envelope.py:828: pytest.skip("SKIP-OK BOB-109: merge service :7187 not reachable")
+E           - tests/scaling/test_scaling_envelope.py:942: pytest.skip("SKIP-OK BOB-109: merge service :7187 not reachable")
+E           - tests/unit/test_plugin_rutracker.py:1094: pytest.skip("merge_service/search.py absent (topology_unsupported)")
+E           - tests/unit/test_plugin_rutracker.py:1221: pytest.skip("merge_service/search.py absent (topology_unsupported)")
+E       assert not ['tests/scaling/test_boba_scaling.py:138: pytest.skip("merge service :7187 not reachable (SKIP-OK BOB-109)")', 'tests/...)")', 'tests/unit/test_plugin_rutracker.py:1221: pytest.skip("merge_service/search.py absent (topology_unsupported)")']
+
+tests/unit/test_no_runtime_service_skips.py:72: AssertionError
+_ TestDecoratedEndpointContract.test_every_decorated_endpoint_declares_response_or_is_exempt _
+
+self = <tests.unit.test_bob129_slowapi_response_contract.TestDecoratedEndpointContract object at 0x7d666640bb90>
+
+    def test_every_decorated_endpoint_declares_response_or_is_exempt(self) -> None:
+        import api
+    
+        if not getattr(api, "_rate_limits_active", False):
+            pytest.skip("rate limiting disabled at import time (RATE_LIMIT_DISABLED)")
+    
+        marked = _marked_for_limiting(api.app.state.limiter)
+        assert marked, (
+            "slowapi reports ZERO decorated endpoints — either the limiter was not "
+            "installed or slowapi renamed its internal registry. Refusing to report a "
+            "vacuous PASS over an empty set (§11.4.201(6) false-null)."
+        )
+    
+        offenders: list[str] = []
+        for name, functions in marked.items():
+            if name in _RESPONSE_RETURNING_EXEMPTIONS:
+                continue
+            for function in functions:
+                parameters = inspect.signature(function).parameters
+                declares_response = any(
+                    parameter.annotation is Response or parameter.annotation is StarletteResponse
+                    for parameter in parameters.values()
+                )
+                if not declares_response:
+                    offenders.append(f"{name} (params: {list(parameters)})")
+    
+>       assert not offenders, (
+            "slowapi-decorated endpoint(s) declare no `response: Response` parameter and "
+            "are not a reviewed always-returns-Response exemption. With "
+            "`headers_enabled=True` these raise "
+            f"{_SLOWAPI_CONTRACT_ERROR!r} on every request whose handler returns a "
+            f"non-Response (BOB-129): {offenders}"
+        )
+E       AssertionError: slowapi-decorated endpoint(s) declare no `response: Response` parameter and are not a reviewed always-returns-Response exemption. With `headers_enabled=True` these raise 'parameter `response` must be an instance of starlette.responses.Response' on every request whose handler returns a non-Response (BOB-129): ["api_routes.search_stream (params: ['search_id', 'request', 'token'])"]
+E       assert not ["api_routes.search_stream (params: ['search_id', 'request', 'token'])"]
+
+tests/unit/test_bob129_slowapi_response_contract.py:207: AssertionError
+_ TestEncodedHtmlPassedThroughUntouched.test_br_encoded_html_relayed_verbatim __
+
+self = <tests.unit.test_download_proxy_extra_guards.TestEncodedHtmlPassedThroughUntouched object at 0x7d6666341fa0>
+
+>   ???
+E   AssertionError: assert b'Content-Encoding: br' in b'<html><head><title>qBittorrent</title></head><body></body></html>'
+
+tests/unit/test_download_proxy_extra_guards.py:142: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /home/milosvasic/Projects/boba/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/unit/test_main.py::TestMainFastAPIServer::test_start_fastapi_server_default_host_port
+tests/unit/test_main.py::TestMainFastAPIServer::test_start_fastapi_server_uses_env_port
+  /home/milosvasic/Projects/boba/tests/conftest.py:187: RuntimeWarning: coroutine 'start_fastapi_server.<locals>._serve_with_heartbeat' was never awaited
+    gc.collect()
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests/unit/test_compute_badges_script.py::TestComputeBadgesCheckModePolarity::test_golden_bad_stale_python_count_is_detected
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerProxyToQbittorrent::test_proxy_skips_transfer_encoding
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerProxyToQbittorrent::test_proxy_html_response_passed_through_unmodified
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerProxyToQbittorrent::test_proxy_csp_forwarded_verbatim
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerProxyToQbittorrent::test_proxy_content_encoding_preserved_for_html
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerProxyToQbittorrent::test_proxy_rewrites_referer
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerProxyToQbittorrent::test_proxy_http_error
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerProxyToQbittorrent::test_proxy_generic_error
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerLogMessage::test_log_non_api_path
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerLogMessage::test_log_api_path
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerDoGet::test_do_get_proxies_other
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerHandleRequest::test_plugin_intercept_success
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerHandleRequest::test_multipart_passthrough
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerHandleRequest::test_plugin_intercept_download_fails
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerHandleRequest::test_binary_body_passthrough
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerHandleRequest::test_non_plugin_url_passthrough
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerHandleRequest::test_exception_sends_500
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerHandleRequest::test_non_add_path_passthrough
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerHandleRequest::test_get_request_passthrough
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerIsMultipart::test_multipart
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerIsMultipart::test_not_multipart
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerDoPost::test_do_post_no_body
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerDoPost::test_do_post_with_body
+FAILED tests/unit/test_download_proxy_deep.py::TestHandlerIsTorrentField::test_always_false
+FAILED tests/unit/test_no_runtime_service_skips.py::test_no_runtime_service_skips
+FAILED tests/unit/test_bob129_slowapi_response_contract.py::TestDecoratedEndpointContract::test_every_decorated_endpoint_declares_response_or_is_exempt
+FAILED tests/unit/test_download_proxy_extra_guards.py::TestEncodedHtmlPassedThroughUntouched::test_br_encoded_html_relayed_verbatim
+26 failed, 4400 passed, 3 warnings, 1 error in 1408.61s (0:23:28)

@@ -4,11 +4,11 @@ Targets the narrow defensive branches left uncovered by
 ``test_download_proxy_coverage.py`` + ``test_download_proxy_deep.py``:
 
 * binary-passthrough except branch (undecodable torrents/add body),
-* undecodable Content-Encoding HTML still theme-injected + rebranded,
+* encoded HTML relayed byte-for-byte with its Content-Encoding intact,
 * proxy error paths where ``send_error`` itself raises (swallowed),
 * intercept-success with ``os.unlink`` raising ``OSError`` (non-fatal),
-* malformed path makes the two short-circuit handlers return False,
-* ``rewrite_csp`` idempotent on the default-src fallback path.
+  (the themed-WebUI overlay was removed 2026-09-01 — see
+  ``tests/integration/test_vanilla_webui_unmodified.py``).
 
 Each test asserts a USER-OBSERVABLE outcome (the bytes that reach
 qBittorrent, the bytes the browser receives, the absence of an escaping
@@ -16,15 +16,16 @@ exception) and would FAIL against a no-op stub of the behaviour under
 test. Per CLAUDE.md §11.4 / CONST-XII.
 
 NOTE: this file is deliberately separate from the existing
-download_proxy test files to avoid edit collisions; it reuses the same
-``download_proxy`` module name + ``_make_handler`` pattern so the module
-under test is shared (single import, coverage attributable).
+download_proxy test files to avoid edit collisions; the shared
+``download_proxy`` bootstrap and the ``_make_handler`` / ``_mock_response``
+helpers live in ``_download_proxy_harness.py`` (ONE definition, imported
+by every download_proxy test file — §11.4.251 forbids the byte-identical
+fork these helpers used to be), so the module under test is shared
+(single import, coverage attributable).
 """
 
 from __future__ import annotations
 
-import importlib.util
-import io
 import os
 import sys
 import urllib.error
@@ -32,54 +33,17 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-_DP_PATH = os.path.join(_REPO_ROOT, "plugins", "download_proxy.py")
+# The suite runs under --import-mode=importlib (pyproject.toml), so a
+# sibling helper module is not implicitly importable — put this directory
+# on sys.path first, exactly as the plugins/ dir is handled inside the
+# harness itself.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-sys.path.insert(0, os.path.join(_REPO_ROOT, "plugins"))
-
-if "download_proxy" not in sys.modules:
-    _dp_spec = importlib.util.spec_from_file_location("download_proxy", _DP_PATH)
-    _dp_mod = importlib.util.module_from_spec(_dp_spec)
-    sys.modules["download_proxy"] = _dp_mod
-    _dp_spec.loader.exec_module(_dp_mod)
-else:
-    _dp_mod = sys.modules["download_proxy"]
-
-DownloadHandler = _dp_mod.DownloadHandler
-rewrite_csp = _dp_mod.rewrite_csp
-MERGE_SERVICE_ORIGIN = _dp_mod.MERGE_SERVICE_ORIGIN
-
-
-def _make_handler(path="/test", method="GET", body=None, headers=None):
-    """Create a DownloadHandler with mocked socket streams.
-
-    Mirrors the helper in test_download_proxy_deep.py.
-    """
-    handler = DownloadHandler.__new__(DownloadHandler)
-    handler.path = path
-    handler.command = method
-    handler.headers = headers or {}
-    handler.wfile = io.BytesIO()
-    handler.rfile = io.BytesIO(body or b"")
-    handler.requestline = f"{method} {path} HTTP/1.1"
-    handler.request_version = "HTTP/1.1"
-    handler.client_address = ("127.0.0.1", 12345)
-    handler.send_response = MagicMock()
-    handler.send_header = MagicMock()
-    handler.end_headers = MagicMock()
-    handler.send_error = MagicMock()
-    handler.address_string = MagicMock(return_value="127.0.0.1")
-    return handler
-
-
-def _mock_response(status, headers, body):
-    resp = MagicMock()
-    resp.status = status
-    resp.headers = headers
-    resp.read = MagicMock(return_value=body)
-    resp.__enter__ = MagicMock(return_value=resp)
-    resp.__exit__ = MagicMock(return_value=False)
-    return resp
+from _download_proxy_harness import (  # noqa: E402
+    _make_handler,
+    _mock_response,
+    sent_headers,
+)
 
 
 # --------------------------------------------------------------------------
@@ -112,18 +76,18 @@ class TestUndecodableBodyPassthrough:
 
 
 # --------------------------------------------------------------------------
-# 2. HTML body with an undecodable Content-Encoding (e.g. `br`) still gets
-#    theme-injected + rebranded on the RAW bytes.
-#    Source lines 918-920 (the `else` branch when _maybe_decode_body is
-#    False but content is HTML). The proxy injects/rebrands raw bytes.
+# 2. An HTML body carrying a Content-Encoding the proxy cannot read (e.g.
+#    `br`) is relayed BYTE-FOR-BYTE with its Content-Encoding header
+#    intact. The themed-WebUI overlay that used to decode + mutate this
+#    body was removed 2026-09-01 by operator decision; it rewrote the
+#    `qBittorrent` token inside inline <script> blocks and killed the
+#    WebUI's JavaScript. This is the unit-level half of
+#    tests/integration/test_vanilla_webui_unmodified.py.
 # --------------------------------------------------------------------------
 
 
-class TestUndecodableContentEncodingStillThemed:
-    def test_br_encoded_html_is_injected_and_rebranded(self):
-        # Plain-but-mislabelled HTML: Content-Encoding 'br' is unknown to
-        # _maybe_decode_body so it returns (body, False). The body itself
-        # is readable HTML, so inject/rebrand operate on it directly.
+class TestEncodedHtmlPassedThroughUntouched:
+    def test_br_encoded_html_relayed_verbatim(self):
         raw_html = b"<html><head><title>qBittorrent</title></head><body></body></html>"
         handler = _make_handler(path="/")
         resp = _mock_response(
@@ -134,12 +98,39 @@ class TestUndecodableContentEncodingStillThemed:
         with patch("urllib.request.urlopen", return_value=resp):
             handler.proxy_to_qbittorrent(None)
 
-        sent = handler.wfile.getvalue()
-        # USER-OBSERVABLE: the bytes the browser receives carry the theme
-        # css path (injection) AND the Боба rebrand (qBittorrent -> Боба).
-        assert b"/__qbit_theme__/skin.css" in sent
-        assert "Боба".encode() in sent
-        assert b"<title>qBittorrent" not in sent
+        # The body is deliberately readable HTML carrying a `br` label the
+        # proxy never validates: proxy_to_qbittorrent NEVER reads or decodes
+        # the body, so the label is exactly what proves the encoding header
+        # survives, and byte-equality is what proves the body is untouched.
+        # Had the proxy decoded/re-encoded (or injected a rebrand), the
+        # bytes below would differ.
+        #
+        # Two DISTINCT recording surfaces — see _make_handler's docstring:
+        #   * handler.wfile  -> the response BODY only
+        #   * send_header    -> the response HEADERS (a Mock; headers never
+        #                       reach wfile, so asserting on wfile for a
+        #                       header can never pass).
+
+        # USER-OBSERVABLE 1: the browser receives qBittorrent's own bytes,
+        # byte-for-byte — no injection, no rebrand, no re-encode.
+        body = handler.wfile.getvalue()
+        assert body == raw_html
+        assert b"<title>qBittorrent" in body
+        assert b"/__qbit_theme__/" not in body
+        assert "Боба".encode() not in body
+
+        # USER-OBSERVABLE 2: the browser receives qBittorrent's own
+        # Content-Encoding, relayed once and verbatim — so a genuinely
+        # compressed body is still decodable client-side.
+        headers = sent_headers(handler)
+        ce = [v for name, v in headers if name.lower() == "content-encoding"]
+        assert ce == ["br"], f"Content-Encoding not relayed verbatim: {headers}"
+
+        # USER-OBSERVABLE 3: Content-Length describes the ENCODED bytes the
+        # proxy actually wrote. A proxy that decompressed would have to send
+        # a different length here; this pins that it did not.
+        cl = [v for name, v in headers if name.lower() == "content-length"]
+        assert cl == [str(len(raw_html))], f"Content-Length rewritten wrongly: {headers}"
 
 
 # --------------------------------------------------------------------------
@@ -204,51 +195,3 @@ class TestUnlinkOSErrorNonFatal:
         assert "file%3A%2F%2F%2Ftmp%2Fx.torrent" in forwarded or "file:///tmp/x.torrent" in forwarded
         # The proxy was driven, not the 502 error path.
         handler.send_error.assert_not_called()
-
-
-# --------------------------------------------------------------------------
-# 5. Malformed path makes _serve_boba_logo / _serve_theme_bridge return
-#    False (request falls through) rather than raising.
-#    Source lines 790-791 + 809-810 (the `except Exception: return False`).
-#    urlparse on a control-char path can raise; the guards swallow it.
-# --------------------------------------------------------------------------
-
-
-class TestMalformedPathFallsThrough:
-    def test_both_short_circuits_return_false_on_urlparse_error(self):
-        handler = _make_handler(path="/whatever")
-        # Force urlparse to raise to drive the except branch in both
-        # short-circuit helpers (covers a hostile/malformed self.path).
-        with patch("urllib.parse.urlparse", side_effect=ValueError("bad path")):
-            # USER-OBSERVABLE: neither helper raises; both decline (False)
-            # so do_GET falls through to proxy_to_qbittorrent.
-            assert handler._serve_boba_logo() is False
-            assert handler._serve_theme_bridge() is False
-
-
-# --------------------------------------------------------------------------
-# 6. rewrite_csp idempotent when origin already in the default-src
-#    fallback. Source branch 594->596: when there is no connect-src and
-#    default-src ALREADY contains the merge origin, we must NOT append it
-#    a second time. The synthesised connect-src carries the origin once.
-# --------------------------------------------------------------------------
-
-
-class TestRewriteCspDefaultSrcIdempotent:
-    def test_origin_in_default_src_not_double_appended(self):
-        origin = MERGE_SERVICE_ORIGIN
-        # No connect-src; default-src ALREADY whitelists the merge origin.
-        # Branch 594->596: the fallback copies default-src verbatim into a
-        # new connect-src WITHOUT appending the origin a second time.
-        csp = f"default-src 'self' {origin}; script-src 'self';"
-        out = rewrite_csp(csp)
-        # USER-OBSERVABLE: a connect-src directive exists, and within that
-        # synthesised connect-src the origin appears exactly once (the
-        # fallback did not re-append it). It legitimately also appears in
-        # the preserved default-src, so the total is 2 — but the connect-src
-        # directive itself carries it once, never twice.
-        assert "connect-src" in out
-        connect_directive = next(
-            part.strip() for part in out.split(";") if part.strip().startswith("connect-src")
-        )
-        assert connect_directive.count(origin) == 1

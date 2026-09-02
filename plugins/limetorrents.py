@@ -8,7 +8,7 @@ import logging
 from datetime import datetime, timedelta
 from html.parser import HTMLParser
 from typing import Callable, Dict, List, Mapping, Match, Tuple, Union
-from urllib.parse import quote, unquote
+from urllib.parse import quote, unquote, unquote_plus
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 
@@ -173,11 +173,17 @@ class limetorrents:
 
     def search(self, query: str, cat: str = "all") -> None:
         """Performs search and returns magnet links only."""
-        # limetorrents uses '-' for spaces in its search PATH. Handle BOTH the
-        # %20-encoded (nova2) and raw-space (merge service) caller conventions —
-        # the raw-space case was unhandled and crashed urllib on multi-word
-        # queries (observed on nezha as plugin_bad_query_encoding).
-        query = query.replace("%20", "-").replace(" ", "-")
+        # limetorrents uses '-' for spaces in its search PATH. Keep '-' as the
+        # word separator but percent-encode each WORD with quote(safe="") so a
+        # Cyrillic query is ASCII-safe; quote (not quote_plus) because a '+' is
+        # a literal plus inside a path segment. unquote_plus() first normalises
+        # BOTH the %20-encoded (nova2) and raw-space (merge service) caller
+        # conventions so the encode happens exactly once.
+        #
+        # The previous replace()-only form handled the SPACE but left every
+        # non-ASCII character raw, so a Cyrillic query crashed urllib's ASCII
+        # encode (§11.4.238 coverage escape from commit ae387b2).
+        query = "-".join(quote(word, safe="") for word in unquote_plus(query).split())
         category = self.supported_categories[cat]
 
         for page in range(1, 3):  # Reduced from 5 to 3 pages for speed

@@ -11,9 +11,40 @@
 # the no-sudo rule).
 #
 # Source-of-truth unit files live under scripts/systemd/user/ in the
-# repo. `boba-svc install` symlinks (or copies, --copy flag) them into
-# ~/.config/systemd/user/ + issues daemon-reload. This lets git carry
-# the units + the operator's local install match them by construction.
+# repo. They are TEMPLATES: every reference to the repo root is written
+# as the token @@BOBA_REPO_ROOT@@, which `boba-svc install` substitutes
+# with this checkout's real REPO_ROOT while COPYING each unit into
+# ~/.config/systemd/user/, then issues daemon-reload.
+#
+# ─── WHY TEMPLATE + COPY, NOT SYMLINK (defect fixed 2026-09-01) ──────
+# Every unit previously hardcoded an absolute
+# /run/media/.../Projects/boba prefix that did not exist on this host,
+# across WorkingDirectory=, ExecStart=, EnvironmentFile= and
+# Documentation= — 14 references in total. Nothing checked it. Such a
+# unit installs clean, enables clean, and dies at ACTIVATION on the next
+# boot with a bare CHDIR failure: the §11.4.108 source-looks-fine /
+# runtime-broken gap. A hardcoded path IS the defect, so the fix is to
+# remove the hardcoding rather than correct it to a different constant
+# that the next checkout location would break all over again.
+#
+# Substitution forces COPY: a symlink is a pointer to the template, so
+# systemd would read the raw @@BOBA_REPO_ROOT@@ token and fail. The
+# tradeoff is accepted deliberately:
+#   COST — installed units no longer track repo edits live. Editing a
+#          unit under scripts/systemd/user/ now requires re-running
+#          `boba-svc install` for the change to reach systemd.
+#   BENEFIT — the units are checkout-location-independent. The same repo
+#          works from /home/user/Projects/boba, /mnt/track2/boba, a
+#          worktree, or any future location, with no edit.
+# The cost is a re-run of one idempotent command; the benefit is that
+# this entire defect class cannot recur. `boba-svc install` is therefore
+# safe to re-run at any time and is the single way units reach systemd.
+#
+# The drift the COPY introduces is not left to vigilance: `boba-svc
+# install` is idempotent and reports whether each unit CHANGED or was
+# already current, and tests/pre_build/test_systemd_unit_paths.sh ARM 2
+# asserts against the INSTALLED copies — the bytes systemd actually
+# reads — not merely against the repo templates.
 #
 # Universal Constitution §11.4.234 posture:
 # - Dedicated single entrypoint for the boba service lifecycle.
@@ -25,8 +56,12 @@
 #   failure, never silently hangs. Long stages timeout-bounded.
 #
 # ─── SUBCOMMANDS ────────────────────────────────────────────────────
-#   install [--copy]  Install unit files into ~/.config/systemd/user/.
-#                     Symlinks by default; --copy makes hard copies.
+#   install [--copy]  Install unit files into ~/.config/systemd/user/,
+#                     substituting @@BOBA_REPO_ROOT@@ with this repo's
+#                     real root. Always a COPY (see the template note
+#                     above); --copy is accepted as a no-op for
+#                     backwards compatibility. Idempotent — safe to
+#                     re-run, and required after editing any unit.
 #                     Always issues `systemctl --user daemon-reload`.
 #   uninstall         Remove the boba-* units and reload.
 #   up                systemctl --user start boba.target
@@ -53,6 +88,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 UNIT_SRC="$SCRIPT_DIR/systemd/user"
 UNIT_DST="$HOME/.config/systemd/user"
+
+# The install-time substitution token. Every unit template writes this
+# wherever it needs the repo root; _cmd_install replaces it with REPO_ROOT
+# above. Kept in a variable so the token appears exactly once as a literal.
+BOBA_REPO_ROOT_TOKEN='@@BOBA_REPO_ROOT@@'
 
 # The full unit inventory. When we add more services, extend this list.
 #
@@ -113,10 +153,14 @@ _require_linux() {
 
 # ─── subcommands ────────────────────────────────────────────────────
 _cmd_install() {
-    local mode="symlink"
-    if [ "${1:-}" = "--copy" ]; then mode="copy"; fi
+    # --copy is now the only behaviour (substitution requires a real file,
+    # never a symlink). The flag is still accepted so existing docs and
+    # muscle memory keep working rather than erroring.
+    if [ "${1:-}" = "--copy" ]; then shift; fi
     _require_linux
     mkdir -p "$UNIT_DST"
+
+    local changed=0 unchanged=0
     for u in "${UNITS[@]}"; do
         local src="$UNIT_SRC/$u"
         local dst="$UNIT_DST/$u"
@@ -124,17 +168,64 @@ _cmd_install() {
             _error "unit source missing: $src"
             exit 1
         fi
-        rm -f "$dst"
-        if [ "$mode" = "copy" ]; then
-            cp -f "$src" "$dst"
-            _info "installed $u (copy)"
+
+        # Render the template into a temp file first, so a failed
+        # substitution can never leave a half-written unit where systemd
+        # would read it (§11.4.252 fail closed, atomic replace).
+        local tmp
+        tmp="$(mktemp "${dst}.XXXXXX.tmp")"
+        # REPO_ROOT is a filesystem path and may legally contain characters
+        # that are special to sed's replacement (& and \). Substituting via
+        # awk with a literal index/substr walk avoids that class entirely —
+        # no delimiter to collide with (NOTE: awk -v DOES process backslash escapes in the value, so a repo root containing a backslash would be mangled — impossible on Linux paths here, but do not reuse this pattern for arbitrary values).
+        if ! awk -v token="$BOBA_REPO_ROOT_TOKEN" -v repl="$REPO_ROOT" '
+            {
+                out = ""
+                line = $0
+                while ((i = index(line, token)) > 0) {
+                    out = out substr(line, 1, i - 1) repl
+                    line = substr(line, i + length(token))
+                }
+                print out line
+            }
+        ' "$src" > "$tmp"; then
+            rm -f "$tmp"
+            _error "failed rendering $u from $src"
+            exit 1
+        fi
+
+        # FAIL CLOSED: an unsubstituted token means systemd would read a
+        # path it cannot expand. Refuse to install it rather than ship a
+        # unit that dies at activation (§11.4.201 — assert the real
+        # condition; §11.4.252 — refuse rather than proceed).
+        if grep -q "$BOBA_REPO_ROOT_TOKEN" "$tmp"; then
+            rm -f "$tmp"
+            _error "$u still contains $BOBA_REPO_ROOT_TOKEN after substitution — refusing to install"
+            _error "  systemd cannot expand that token; installing it would fail at activation."
+            exit 1
+        fi
+
+        # Idempotency: report CHANGED vs already-current so an operator can
+        # see at a glance whether the installed copy had drifted from the
+        # repo template.
+        if [ -f "$dst" ] && [ ! -L "$dst" ] && cmp -s "$tmp" "$dst"; then
+            rm -f "$tmp"
+            unchanged=$((unchanged + 1))
+            _info "unchanged $u (installed copy already current)"
         else
-            ln -s "$src" "$dst"
-            _info "installed $u (symlink → $src)"
+            # A pre-existing SYMLINK is removed explicitly: mv over a symlink
+            # would follow it and write back into the repo.
+            [ -L "$dst" ] && rm -f "$dst"
+            mv -f "$tmp" "$dst"
+            chmod 0644 "$dst"
+            changed=$((changed + 1))
+            _info "installed $u (copy, @@BOBA_REPO_ROOT@@ → $REPO_ROOT)"
         fi
     done
+
     systemctl --user daemon-reload
-    _info "daemon-reload complete"
+    _info "daemon-reload complete ($changed changed, $unchanged already current)"
+    _info "units are COPIES: re-run 'bash $0 install' after editing any unit file."
     _info "next: bash $0 enable && bash $0 up"
 }
 
@@ -168,8 +259,49 @@ _refresh_cookies_from_downloads() {
 
 _cmd_up()      { _require_linux; _refresh_cookies_from_downloads; systemctl --user start   boba.target; _info "boba.target started"; }
 _cmd_down()    { _require_linux; systemctl --user stop    boba.target; _info "boba.target stopped"; }
-_cmd_enable()  { _require_linux; systemctl --user enable  boba.target; _info "boba.target enabled (auto-start on login/boot)"; _cmd_linger_status; }
-_cmd_disable() { _require_linux; systemctl --user disable boba.target; _info "boba.target disabled"; }
+# Units that need their OWN [Install] realised at boot, because nothing
+# else pulls them in.
+#
+# ORPHANED-TIMER DEFECT, MEASURED AND FIXED 2026-09-01
+#   boba-stack.service and boba-webui-bridge.service are deliberately left
+#   `disabled`: boba.target lists them in Wants=, so enabling the target is
+#   what starts them, and enabling them individually would only add a
+#   redundant second path to the same thing.
+#
+#   boba-resource-pressure-check.timer is NOT in that Wants= list — also
+#   deliberately, so host-pressure monitoring keeps running while the stack
+#   is down. But that deliberate exclusion left it wired to NOTHING:
+#   `boba-svc enable` only enabled boba.target, so the timer's own
+#   `WantedBy=timers.target` was never realised (verified: no symlink in
+#   ~/.config/systemd/user/timers.target.wants/). The hourly
+#   forced-logout-precursor probe that task #77 / BOB-076 exists to run
+#   would therefore never have fired after a reboot — the monitoring gap
+#   the incident itself argued was self-defeating.
+#
+#   Enabling it here realises WantedBy=timers.target. It stays outside
+#   boba.target, so `boba-svc down` still leaves monitoring running.
+ENABLE_UNITS=(
+    "boba.target"
+    "boba-resource-pressure-check.timer"
+)
+
+_cmd_enable() {
+    _require_linux
+    for u in "${ENABLE_UNITS[@]}"; do
+        systemctl --user enable "$u"
+        _info "$u enabled"
+    done
+    _info "boba.target auto-starts the stack on login/boot; the timer runs independently of it"
+    _cmd_linger_status
+}
+
+_cmd_disable() {
+    _require_linux
+    for u in "${ENABLE_UNITS[@]}"; do
+        systemctl --user disable "$u"
+        _info "$u disabled"
+    done
+}
 _cmd_reload()  { _require_linux; systemctl --user daemon-reload; _info "daemon-reload complete"; }
 
 _cmd_restart() {

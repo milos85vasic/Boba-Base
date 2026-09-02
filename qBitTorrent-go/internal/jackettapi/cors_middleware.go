@@ -4,46 +4,34 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
+
+	"github.com/milos85vasic/qBitTorrent-go/internal/corsorigins"
 )
 
-// defaultAllowedOrigins are the dashboard origins permitted by CORS by
-// default. Add more via WithCORSOrigins if needed in production.
-var defaultAllowedOrigins = []string{
-	"http://localhost:4200",   // ng serve dev server
-	"http://127.0.0.1:4200",   // ng serve dev server (IPv4)
-	"http://localhost:7187",   // merge service Angular SPA
-	"http://127.0.0.1:7187",   // merge service Angular SPA (IPv4)
-}
-
-// resolveOrigins returns the effective allow-list.  Priority:
-//   1. explicit allowedOrigins slice (non-empty)
-//   2. ALLOWED_ORIGINS env var (comma-separated; "*" = wildcard)
-//   3. defaultAllowedOrigins
+// resolveOrigins returns the effective allow-list. Priority:
+//  1. explicit allowedOrigins slice (non-empty)
+//  2. ALLOWED_ORIGINS env var (comma-separated; any "*" entry = wildcard)
+//  3. the shared default allowlist
+//
+// The implementation lives in internal/corsorigins, shared with the merge
+// service's middleware, so the two cannot drift (§11.4.251). This function had
+// its own copy of the logic and HAD drifted on two measured points, each fixed
+// by delegating:
+//
+//   - WILDCARD DETECTION was whole-string (`TrimSpace(env) == "*"`), so
+//     ALLOWED_ORIGINS="https://a.example,*" produced a NON-wildcard list holding
+//     a literal "*" entry that no real Origin can equal — the operator's
+//     wildcard silently did nothing. The reference tests each element after
+//     splitting, so that value IS a wildcard.
+//
+//   - EMPTY-AFTER-PARSE ("   ", " , ,") produced an EMPTY allowlist, silently
+//     revoking every default origin. The reference falls back to its defaults.
+//
+// The defaults also now derive their port from MERGE_SERVICE_PORT instead of
+// hardcoding 7187, matching the reference's own derivation.
 func resolveOrigins(explicit []string) ([]string, bool) {
-	if len(explicit) > 0 {
-		for _, o := range explicit {
-			if strings.TrimSpace(o) == "*" {
-				return nil, true
-			}
-		}
-		return explicit, false
-	}
-	if env := os.Getenv("ALLOWED_ORIGINS"); env != "" {
-		if strings.TrimSpace(env) == "*" {
-			return nil, true
-		}
-		parts := strings.Split(env, ",")
-		out := make([]string, 0, len(parts))
-		for _, p := range parts {
-			if t := strings.TrimSpace(p); t != "" {
-				out = append(out, t)
-			}
-		}
-		return out, false
-	}
-	return defaultAllowedOrigins, false
+	return corsorigins.Resolve(explicit)
 }
 
 // WithCORS wraps an inner handler with permissive-but-allowlisted CORS:
@@ -102,17 +90,14 @@ func sameHost(origin, reqHost string) bool {
 
 func WithCORS(allowedOrigins []string, inner http.Handler) http.Handler {
 	origins, wildcard := resolveOrigins(allowedOrigins)
-	allow := make(map[string]bool, len(origins))
-	for _, o := range origins {
-		allow[strings.ToLower(strings.TrimRight(o, "/"))] = true
-	}
+	allow := corsorigins.Index(origins)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
 		matched := false
 		if wildcard {
 			matched = origin != ""
 		} else if origin != "" {
-			matched = allow[strings.ToLower(strings.TrimRight(origin, "/"))]
+			matched = allow[corsorigins.Key(origin)]
 			if !matched {
 				// Same-machine sibling-port: the dashboard (:7187) and this
 				// service (:7189) are served from the SAME host, whichever

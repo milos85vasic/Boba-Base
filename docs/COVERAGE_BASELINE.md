@@ -60,7 +60,6 @@ Last updated at commit `HEAD` on 2026-06-09 (search.py 95%, community plugin cov
 | `rutor.py` | 192 | 22 | 38 | 1 | 90% |
 | `rutracker.py` | 219 | 31 | 34 | 1 | 87% |
 | `socks.py` | 444 | 444 | 142 | 0 | 0% |
-| `theme_injector.py` | 129 | 1 | 42 | 1 | 99% |
 | `torlock.py` | 80 | 0 | 34 | 2 | 98% |
 | `yts.py` | 105 | 31 | 34 | 3 | 70% |
 | `community/jackett.py` | 182 | 0 | 54 | 0 | 100% |
@@ -72,7 +71,7 @@ Last updated at commit `HEAD` on 2026-06-09 (search.py 95%, community plugin cov
 | Phase 0 | 1% | Baseline |
 | Phase 10 | 49% | Raised to actual measured coverage |
 | Phase 11 | 49% | routes.py 95%, search.py 80%, validator 92%, jackett_autoconfig 99% |
-| Phase 12 | 49% | search.py 84%, theme_injector 99%, env_loader 100%, yts/piratebay JSON guards |
+| Phase 12 | 49% | search.py 84%, theme_injector 99% *(module deleted 2026-09-01)*, env_loader 100%, yts/piratebay JSON guards |
 | Phase 13 | 49% | search.py 95%, total 88%, community plugin coverage sweep |
 | Phase 14 | 88% | Gate raised to match actual measured coverage (88.14%) |
 

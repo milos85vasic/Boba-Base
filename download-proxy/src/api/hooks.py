@@ -178,6 +178,48 @@ def _load_hooks() -> list[dict[str, Any]]:
     return data
 
 
+def _fsync_or_report(fd: int, dest: str) -> bool:
+    """``os.fsync(fd)``; on failure report LOUDLY and return ``False``.
+
+    The temp -> fsync -> rename idiom is a DURABILITY guarantee, and ``fsync`` is
+    the step that earns it: it is what forces the bytes to stable storage BEFORE
+    ``os.replace`` publishes the name. Swallowing its failure silently downgrades
+    an atomic-and-durable write to a merely-atomic one — the rename still lands,
+    so every caller and every test sees success, while the file can be visible at
+    its final path with contents that are not yet on disk. A crash in that window
+    yields a present-but-empty-or-torn store. That is the §11.4.201(6) false-null
+    at the durability layer: a machine whose disk is failing and a machine that
+    wrote perfectly returned the identical silence.
+
+    WHY THIS REPORTS RATHER THAN RAISES (§11.4.201(1) — a false-positive refusal
+    is a FAIL-bluff exactly as a false-negative pass is a PASS-bluff): ``fsync``
+    raises ``OSError`` for two very different reasons. EIO/ENOSPC are genuine
+    durability failures. EINVAL is not — it is what a file descriptor whose
+    backing filesystem does not implement ``fsync`` returns, and the store's
+    directory is operator-configurable (``HOOKS_FILE``), so it can legitimately
+    land on such a filesystem. Raising would turn a working write into a hard
+    failure on those hosts. So the write is allowed to complete and the LOSS OF
+    THE GUARANTEE is made visible instead — the caller keeps its data, the
+    operator learns durability was not achieved, and the errno says which case
+    it was. The return value lets a caller that needs the stronger contract act.
+    """
+    try:
+        os.fsync(fd)
+        return True
+    except OSError as e:
+        logger.error(
+            "fsync FAILED before publishing %s (errno=%s %s) — the write is still "
+            "ATOMIC but NO LONGER DURABLE: os.replace will publish the name, and a "
+            "crash before the OS flushes may leave the file present with incomplete "
+            "contents. Investigate the backing filesystem for %s.",
+            dest,
+            e.errno,
+            e.strerror,
+            os.path.dirname(dest) or ".",
+        )
+        return False
+
+
 def _save_hooks(hooks: list[dict[str, Any]]) -> None:
     """Atomically persist the hook list, or raise ``HookPersistenceError``.
 
@@ -228,10 +270,7 @@ def _save_hooks(hooks: list[dict[str, Any]]) -> None:
             with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
                 json.dump(hooks, f, indent=2)
                 f.flush()
-                try:  # noqa: SIM105
-                    os.fsync(f.fileno())
-                except OSError:
-                    pass
+                _fsync_or_report(f.fileno(), HOOKS_FILE)
             os.replace(tmp_path, HOOKS_FILE)
         except Exception:
             # Leave no debris: a stray .hooks-*.json is confusing at best and, if

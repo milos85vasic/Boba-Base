@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.10" />
+  <meta name="generator" content="pandoc 3.11" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>CROSS_APP_THEME_PLAN</title>
   <style>
@@ -41,7 +41,6 @@
       body {
         background-color: transparent;
         color: black;
-        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -172,7 +171,6 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
     /* CSS for syntax highlighting */
     html { -webkit-text-size-adjust: 100%; }
     pre > code.sourceCode { white-space: pre; position: relative; }
@@ -245,8 +243,37 @@
 <h1 class="title">CROSS_APP_THEME_PLAN</h1>
 </header>
 <h1 id="cross-app-theme-plan">Cross-app Theme Plan</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-06-06T00:00:00Z</p>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-09-01T00:00:00Z</p>
+<blockquote>
+<h2 id="status-partially-superseded-2026-09-01">STATUS: PARTIALLY
+SUPERSEDED (2026-09-01)</h2>
+<p><strong>The <code>:7186</code> half of this plan was REMOVED by
+operator decision.</strong> The themed qBittorrent-WebUI overlay — the
+injected <code>/__qbit_theme__/skin.css</code> +
+<code>/__qbit_theme__/bootstrap.js</code> pair, the
+<code>qBittorrent</code> → <code>Боба</code> rebrand, the logo
+substitution and the CSP relaxation — implemented <strong>zero
+qBittorrent features</strong> and actively <strong>broke the vanilla
+WebUI’s JavaScript</strong>: the rebrand rewrote the
+<code>qBittorrent</code> token <em>inside inline
+<code>&lt;script&gt;</code> blocks</em> while external <code>.js</code>
+files were skipped, so inline code referenced <code>window.Боба.*</code>
+that the external scripts never define → <code>ReferenceError</code> →
+the WebUI JS never initialised.</p>
+<p>The download-proxy on <code>:7186</code> and the WebUI bridge on
+<code>:7188</code> now serve qBittorrent’s HTML, headers and
+<code>Content-Encoding</code> <strong>byte-for-byte unmodified</strong>
+(stock vanilla WebUI). Permanent regression guard:
+<code>tests/integration/test_vanilla_webui_unmodified.py</code>.</p>
+<p><strong>STILL IN FORCE — do not remove:</strong> Phase A, the shared
+theme <em>state</em> used by the Angular dashboard on <code>:7187</code>
+— <code>download-proxy/src/api/theme_state.py</code>, the
+<code>/api/v1/theme</code> + <code>/api/v1/theme/stream</code>
+endpoints, <code>qBitTorrent-go/internal/api/theme.go</code> and the
+frontend theme service + picker. Everything below that describes
+injection into the qBittorrent WebUI is historical record.</p>
+</blockquote>
 <p><strong>Problem.</strong> The Angular dashboard at <code>:7187</code>
 is themed end-to-end (Darcula + 7 other palettes, per-element drop
 shadows). The qBittorrent WebUI proxied at <code>:7186</code> is

@@ -114,7 +114,13 @@ def _qbit_login(qbit_url: str, session: requests.Session) -> None:
         data={"username": "admin", "password": "admin"},
         timeout=30,
     )
-    has_session_cookie = any(name.startswith("QBT_SID") for name in session.cookies.keys())
+    # noqa: SIM118 is load-bearing, NOT a style waiver. ``session.cookies`` is a
+    # ``requests.cookies.RequestsCookieJar``, whose MRO puts ``http.cookiejar.CookieJar``
+    # before ``MutableMapping`` — so bare iteration yields ``Cookie`` OBJECTS, not name
+    # strings. Dropping ``.keys()`` (SIM118's suggested fix) makes this line raise
+    # ``AttributeError: 'Cookie' object has no attribute 'startswith'``. Verified in-session:
+    # ``[type(x).__name__ for x in jar]`` -> ['Cookie'] vs ``jar.keys()`` -> ['QBT_SID'].
+    has_session_cookie = any(name.startswith("QBT_SID") for name in session.cookies.keys())  # noqa: SIM118
     body_ok = resp.text.strip() == "Ok."
     if resp.status_code not in (200, 204) or not (has_session_cookie or body_ok):
         pytest.skip(f"real qBittorrent login did not succeed in this environment: {resp.status_code} {resp.text!r}")
@@ -158,7 +164,7 @@ class TestSearchEndpoint:
         assert resp.status_code == 200
         data = resp.json()
         assert data["query"] == "debian"
-        assert "search_id" in data and data["search_id"]
+        assert data.get("search_id")
         assert isinstance(data["results"], list)
         assert isinstance(data["trackers_searched"], list)
         # The real orchestrator really attempted at least one tracker —
@@ -277,7 +283,14 @@ class TestHooksEndpoint:
         host_path = os.path.join(host_hooks_dir, name)
         with open(host_path, "w") as f:
             f.write("#!/bin/sh\nexit 0\n")
-        os.chmod(host_path, 0o755)
+        # 0o700, not 0o755: least privilege. The only identity that ever execs this
+        # stub is the download-proxy container, which runs as container root and —
+        # under rootless podman with no userns remap — maps to host uid 1000, the
+        # owner of this freshly-created file (see CLAUDE.md "PUID=0/PGID=0 is
+        # DELIBERATE"). Owner-rwx is therefore sufficient to exec it, and the
+        # group/other read+exec bits 0o755 granted were unused reach in a
+        # bind-mounted directory the service treats as its script allowlist.
+        os.chmod(host_path, 0o700)
         container_path = f"/config/download-proxy/hooks/{name}"
         try:
             yield container_path
@@ -450,18 +463,29 @@ class TestDownloadEndpoint:
     def _qbit_ready(self, qbit_url, session):
         _qbit_login(qbit_url, session)
 
-    def test_download_empty_urls_returns_failed(self, merge_url, session):
-        """No URLs to add -> real qBittorrent login succeeds, real add loop
-        never runs -> deterministic real 'failed'/0-added response."""
+    def test_download_empty_urls_rejected_at_boundary(self, merge_url, session):
+        """No URLs to add -> the real service REFUSES the request with 422.
+
+        CONTRACT CHANGED 2026-09-01 (was: 200 with 'failed'/0-added). The old
+        200 was the incidental shape of a failure the endpoint already called a
+        failure, and permitting the request let a real PASS-bluff through:
+        qBittorrent's ``torrents/add`` answers **409 Conflict** both for a
+        genuine duplicate (success) and for a request carrying no payload
+        (nothing added) — measured against qBittorrent v5.2.3 — and
+        ``_qbit_add_succeeded`` reads 409 as success. A blank URL therefore
+        reported ``{"status":"initiated","added_count":1}`` for a torrent that
+        was never added. Refusing empty/blank URLs at the boundary is what makes
+        a 409 reaching that predicate imply a genuine duplicate. See the full
+        record on
+        tests/unit/test_merge_api_route_contracts.py::TestDownloadEndpoint::test_download_empty_urls.
+        """
         resp = session.post(
             f"{merge_url}/api/v1/download",
             json={"result_id": f"itest-{uuid.uuid4()}", "download_urls": []},
             timeout=30,
         )
-        assert resp.status_code == 200
-        data = resp.json()
-        assert data["status"] == "failed"
-        assert data["added_count"] == 0
+        assert resp.status_code == 422
+        assert "download_urls" in resp.text
 
     def test_download_magnet_added_to_real_qbittorrent(self, merge_url, qbit_url, session):
         """A syntactically-valid magnet (random infohash — no real swarm

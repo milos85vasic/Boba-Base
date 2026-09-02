@@ -4,6 +4,8 @@
 import re
 from time import sleep
 
+from urllib.parse import quote_plus, unquote_plus
+
 from helpers import retrieve_url
 from novaprinter import prettyPrinter
 
@@ -81,7 +83,11 @@ class glotorrents(object):
             print(url + " " + self.url)
 
     def search(self, what, cat="all"):
-        what = what.replace("%20", "+")
+        # ?search= query param: percent-encode (space -> +, UTF-8 percent-encoded).
+        # unquote_plus first decodes the nova2 (%20-encoded) caller so a Cyrillic
+        # query is encoded exactly once (no double-encoding); quote_plus then
+        # makes the value ASCII-safe so a non-ASCII char never reaches urllib.
+        what = quote_plus(unquote_plus(what))
         parser = self.HTMLParser(self.url)
         counter: int = 0
         while True:

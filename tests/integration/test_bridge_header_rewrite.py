@@ -141,9 +141,26 @@ def test_bridge_live_login_round_trip(webui_bridge_live: str) -> None:
     )
     try:
         with opener.open(req, timeout=10) as resp:
-            assert resp.status == 200, f"login returned {resp.status}"
+            # VERSION CONTRACT (measured 2026-09-01 against the live image,
+            # qBittorrent v5.2.3 / WebAPI 2.15.1): a SUCCESSFUL login returns
+            # HTTP 204 with an EMPTY body and sets cookie QBT_SID_<port>.
+            # qBittorrent 4.x returned HTTP 200 with body "Ok.".
+            #
+            # This test asserted the 4.x contract only, so it FAILED against a
+            # working 5.x server ("login returned 204"). Accept BOTH, and keep
+            # the session cookie as the authoritative signal — the same rule
+            # download-proxy/src/api/routes.py and the Go client now apply.
+            status = resp.status
             body = resp.read().decode("utf-8", errors="ignore")
-            assert body.strip().startswith("Ok"), f"login body: {body!r}"
+            assert status in (200, 204), f"login returned {status}, body={body!r}"
+            if status == 200:
+                assert body.strip().startswith("Ok"), f"login body: {body!r}"
+            else:
+                assert body.strip() == "", f"204 must carry an empty body, got {body!r}"
+            # Authoritative across both versions: a session cookie was issued.
+            assert any(
+                c.name == "SID" or c.name.startswith("QBT_SID") for c in jar
+            ), f"no session cookie issued; jar={[c.name for c in jar]}"
     except urllib.error.HTTPError as exc:
         pytest.fail(
             f"bridge returned {exc.code} on /api/v2/auth/login — "

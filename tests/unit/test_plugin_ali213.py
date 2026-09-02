@@ -140,9 +140,20 @@ class TestSearch:
     @patch("ali213.retrieve_url", return_value=AS_SEARCH_SINGLE)
     @patch("ali213.time.sleep")
     def test_search_first_call_is_query_url(self, mock_sleep, mock_retrieve):
+        """RECONCILED per §11.4.120 (2026-09-02): this gate asserted the OLD
+        mechanism — a RAW query concatenated into the URL — and correctly
+        FAILED when that was fixed.
+
+        A raw space is a disallowed URL character (urllib rejects it outright)
+        and a raw Cyrillic character crashes urllib's ASCII encode, so the old
+        asserted URL was never actually fetchable. ``?kw=`` is a QUERY
+        parameter, so the fix is ``quote_plus(unquote_plus(what))``: space ->
+        '+', everything else UTF-8 percent-encoded.
+        """
         self.inst.search("ark survival")
         first_call = mock_retrieve.mock_calls[0]
-        assert first_call == call("http://down.ali213.net/search?kw=ark survival&submit=")
+        assert first_call == call("http://down.ali213.net/search?kw=ark+survival&submit=")
+        assert first_call.args[0].encode("ascii")  # urllib requires ASCII
 
     @patch("ali213.retrieve_url")
     @patch("ali213.time.sleep")

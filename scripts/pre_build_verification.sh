@@ -329,7 +329,7 @@ else
 fi
 
 # --- Invariant 1: constitution directory ---
-echo "[1/52] constitution/ directory exists"
+echo "[1/55] constitution/ directory exists"
 if [[ -d "${PROJECT_ROOT}/constitution" ]]; then
     pass "constitution/ exists"
 else
@@ -337,7 +337,7 @@ else
 fi
 
 # --- Invariant 2: Constitution.md anchor ---
-echo "[2/52] constitution/Constitution.md §11.4 anchor"
+echo "[2/55] constitution/Constitution.md §11.4 anchor"
 CONSTITUTION_ANCHOR='§11.4 End-user quality guarantee'
 if [[ -f "${PROJECT_ROOT}/constitution/Constitution.md" ]] && \
    grep -qF "${CONSTITUTION_ANCHOR}" "${PROJECT_ROOT}/constitution/Constitution.md"; then
@@ -347,7 +347,7 @@ else
 fi
 
 # --- Invariant 3: CLAUDE.md anchor ---
-echo "[3/52] constitution/CLAUDE.md anti-bluff covenant anchor"
+echo "[3/55] constitution/CLAUDE.md anti-bluff covenant anchor"
 CLAUDE_ANCHOR='MANDATORY ANTI-BLUFF COVENANT'
 if [[ -f "${PROJECT_ROOT}/constitution/CLAUDE.md" ]] && \
    grep -qF "${CLAUDE_ANCHOR}" "${PROJECT_ROOT}/constitution/CLAUDE.md"; then
@@ -357,7 +357,7 @@ else
 fi
 
 # --- Invariant 4: AGENTS.md anchor ---
-echo "[4/52] constitution/AGENTS.md anti-bluff covenant anchor"
+echo "[4/55] constitution/AGENTS.md anti-bluff covenant anchor"
 AGENTS_ANCHOR='Anti-bluff covenant'
 if [[ -f "${PROJECT_ROOT}/constitution/AGENTS.md" ]] && \
    grep -qF "${AGENTS_ANCHOR}" "${PROJECT_ROOT}/constitution/AGENTS.md"; then
@@ -367,7 +367,7 @@ else
 fi
 
 # --- Invariant 5: Parent CLAUDE.md inheritance pointer ---
-echo "[5/52] Parent CLAUDE.md inheritance pointer"
+echo "[5/55] Parent CLAUDE.md inheritance pointer"
 if grep -qF 'constitution/CLAUDE.md' "${PROJECT_ROOT}/CLAUDE.md"; then
     pass "CLAUDE.md references constitution submodule"
 else
@@ -375,7 +375,7 @@ else
 fi
 
 # --- Invariant 6: Parent AGENTS.md inheritance pointer ---
-echo "[6/52] Parent AGENTS.md inheritance pointer"
+echo "[6/55] Parent AGENTS.md inheritance pointer"
 if grep -qF 'constitution/AGENTS.md' "${PROJECT_ROOT}/AGENTS.md"; then
     pass "AGENTS.md references constitution submodule"
 else
@@ -383,7 +383,7 @@ else
 fi
 
 # --- Invariant 7: Parent CONSTITUTION.md inheritance pointer ---
-echo "[7/52] Parent CONSTITUTION.md inheritance pointer"
+echo "[7/55] Parent CONSTITUTION.md inheritance pointer"
 if grep -qF 'Helix Universal Constitution' "${PROJECT_ROOT}/CONSTITUTION.md"; then
     pass "CONSTITUTION.md references Helix Universal Constitution"
 else
@@ -391,31 +391,47 @@ else
 fi
 
 # --- Invariant 8: Parent CLAUDE.md propagation anchor ---
-echo "[8/52] Parent CLAUDE.md §11.4 propagation anchor"
-if grep -qF '§11.4.10 (credentials handling)' "${PROJECT_ROOT}/CLAUDE.md"; then
+echo "[8/55] Parent CLAUDE.md §11.4 propagation anchor"
+# §11.4.201(7)(a): match the STRUCTURE that proves the clause is really
+# propagated, never a token that merely MENTIONS it. `grep -qF` was satisfied
+# by any occurrence anywhere in the file — a summary line, a prose aside, a
+# quoted example — so the check could pass on a file carrying no propagated-
+# clauses declaration at all. The real structure (read 2026-09-01) is a single
+# line-start **Propagated clauses** declaration that ENUMERATES the clause:
+#   CLAUDE.md       `**Propagated clauses** (Helix Universal Constitution): §11.4.10 (…), …`
+#   AGENTS.md       `> **Propagated clauses:** §11.4.10, …`
+#   CONSTITUTION.md `> **Propagated clauses (Helix Universal Constitution):** §11.4.10, …`
+# The optional '>' allows the blockquote form; the trailing ([^0-9]|$) guard
+# stops §11.4.109 — which is enumerated on the SAME line — from satisfying a
+# check for §11.4.10 by prefix.
+if grep -qE '^>?[[:space:]]*\*\*Propagated clauses.*§11\.4\.10([^0-9]|$)' "${PROJECT_ROOT}/CLAUDE.md"; then
     pass "CLAUDE.md contains §11.4 propagation anchor"
 else
     fail "CLAUDE.md missing §11.4 propagation anchor"
 fi
 
 # --- Invariant 9: Parent AGENTS.md propagation anchor ---
-echo "[9/52] Parent AGENTS.md §11.4 propagation anchor"
-if grep -qF '§11.4.10' "${PROJECT_ROOT}/AGENTS.md"; then
+echo "[9/55] Parent AGENTS.md §11.4 propagation anchor"
+# Structural, per §11.4.201(7)(a) — see invariant 8's block comment for the
+# measured declaration shapes and the §11.4.109 prefix-collision guard.
+if grep -qE '^>?[[:space:]]*\*\*Propagated clauses.*§11\.4\.10([^0-9]|$)' "${PROJECT_ROOT}/AGENTS.md"; then
     pass "AGENTS.md contains §11.4 propagation anchor"
 else
     fail "AGENTS.md missing §11.4 propagation anchor"
 fi
 
 # --- Invariant 10: Parent CONSTITUTION.md propagation anchor ---
-echo "[10/52] Parent CONSTITUTION.md §11.4 propagation anchor"
-if grep -qF '§11.4.10' "${PROJECT_ROOT}/CONSTITUTION.md"; then
+echo "[10/55] Parent CONSTITUTION.md §11.4 propagation anchor"
+# Structural, per §11.4.201(7)(a) — see invariant 8's block comment for the
+# measured declaration shapes and the §11.4.109 prefix-collision guard.
+if grep -qE '^>?[[:space:]]*\*\*Propagated clauses.*§11\.4\.10([^0-9]|$)' "${PROJECT_ROOT}/CONSTITUTION.md"; then
     pass "CONSTITUTION.md contains §11.4 propagation anchor"
 else
     fail "CONSTITUTION.md missing §11.4 propagation anchor"
 fi
 
 # --- Invariant 11: .claude/settings.json with PreToolUse hook ---
-echo "[11/52] .claude/settings.json with PreToolUse guard hook"
+echo "[11/55] .claude/settings.json with PreToolUse guard hook"
 SETTINGS_FILE="${PROJECT_ROOT}/.claude/settings.json"
 if [[ -f "${SETTINGS_FILE}" ]] && \
    grep -qF 'PreToolUse' "${SETTINGS_FILE}" && \
@@ -426,7 +442,7 @@ else
 fi
 
 # --- Invariant 12: AGENT_GUARDRAILS.md SUBAGENT CONSTITUTIONAL PREAMBLE ---
-echo "[12/52] docs/AGENT_GUARDRAILS.md SUBAGENT CONSTITUTIONAL PREAMBLE"
+echo "[12/55] docs/AGENT_GUARDRAILS.md SUBAGENT CONSTITUTIONAL PREAMBLE"
 GUARDRAILS_FILE="${PROJECT_ROOT}/docs/AGENT_GUARDRAILS.md"
 if [[ -f "${GUARDRAILS_FILE}" ]] && \
    grep -qF 'SUBAGENT CONSTITUTIONAL PREAMBLE' "${GUARDRAILS_FILE}"; then
@@ -436,7 +452,7 @@ else
 fi
 
 # --- Invariant 13: AGENT_GUARDRAILS.md ORCHESTRATOR PRE-ACTION CHECKLIST ---
-echo "[13/52] docs/AGENT_GUARDRAILS.md ORCHESTRATOR PRE-ACTION CHECKLIST"
+echo "[13/55] docs/AGENT_GUARDRAILS.md ORCHESTRATOR PRE-ACTION CHECKLIST"
 if [[ -f "${GUARDRAILS_FILE}" ]] && \
    grep -qF 'ORCHESTRATOR PRE-ACTION CHECKLIST' "${GUARDRAILS_FILE}"; then
     pass "AGENT_GUARDRAILS.md contains ORCHESTRATOR PRE-ACTION CHECKLIST"
@@ -445,7 +461,7 @@ else
 fi
 
 # --- Invariant 14: guard hook script at canonical path ---
-echo "[14/52] constitution/scripts/hooks/guard-forbidden-commands.sh"
+echo "[14/55] constitution/scripts/hooks/guard-forbidden-commands.sh"
 HOOK_SCRIPT="${PROJECT_ROOT}/constitution/scripts/hooks/guard-forbidden-commands.sh"
 if [[ -f "${HOOK_SCRIPT}" ]] && [[ -x "${HOOK_SCRIPT}" ]]; then
     pass "Guard hook script exists and is executable"
@@ -454,7 +470,7 @@ else
 fi
 
 # --- Invariant 15: hermetic hook test exists ---
-echo "[15/52] tests/hooks/test_guard_forbidden_commands.sh"
+echo "[15/55] tests/hooks/test_guard_forbidden_commands.sh"
 HOOK_TEST="${PROJECT_ROOT}/tests/hooks/test_guard_forbidden_commands.sh"
 if [[ -f "${HOOK_TEST}" ]] && [[ -x "${HOOK_TEST}" ]]; then
     pass "Hermetic hook test exists"
@@ -467,7 +483,7 @@ fi
 # .html AND .pdf siblings whose mtime is >= the .md mtime.
 # docs/research/** and docs/qa/** are intentionally OUT of scope.
 # .docx siblings are gitignored per BOB-011 (WARNING only, not failure).
-echo "[16/52] CM-MARKDOWN-EXPORT-SYNC: all-Markdown export freshness (§11.4.65)"
+echo "[16/55] CM-MARKDOWN-EXPORT-SYNC: all-Markdown export freshness (§11.4.65)"
 
 # §11.4.65 staleness oracle. NOT a plain mtime compare: git does not preserve
 # mtimes and ".html" sorts before ".md", so on any fresh clone every export
@@ -528,7 +544,7 @@ else
 fi
 
 # --- Invariant 17: CM-WORKABLE-ITEMS-VALIDATE (§11.4.93/§11.4.95) ---
-echo "[17/52] CM-WORKABLE-ITEMS-VALIDATE: workable-items validate (§11.4.93/§11.4.95)"
+echo "[17/55] CM-WORKABLE-ITEMS-VALIDATE: workable-items validate (§11.4.93/§11.4.95)"
 # Binary resolution chain (matches constitution/scripts/reporting/report_item.sh
 # and scripts/docs_chain.sh): env override -> committed constitution copy ->
 # on-demand `go build`. HISTORY, and why the ORDER of this loop matters:
@@ -598,7 +614,7 @@ fi
 # in the output stream; the actual script is scripts/workable-items-export.sh
 # (renamed 2026-08-15 BOB-104). The REAL Docs Chain engine gate lives at
 # invariant 24 (CM-DOCS-CHAIN-ENGINE-VERIFY) below.
-echo "[18/52] CM-WORKABLE-ITEMS-EXPORT-VALIDATE: workable-items-export.sh --check-only (§11.4.93/§11.4.65)"
+echo "[18/55] CM-WORKABLE-ITEMS-EXPORT-VALIDATE: workable-items-export.sh --check-only (§11.4.93/§11.4.65)"
 DOCS_CHAIN="${PROJECT_ROOT}/scripts/workable-items-export.sh"
 if [[ -f "${DOCS_CHAIN}" ]] && [[ -x "${DOCS_CHAIN}" ]]; then
     if bash "${DOCS_CHAIN}" --check-only; then
@@ -615,7 +631,7 @@ fi
 # header, and its `## Entries` count MUST equal the last data row of the
 # `Discovery-channel split` table. Silent drift between the two is a
 # §11.4.6 no-guessing violation at the ledger layer.
-echo "[19/52] CM-QA-DISCOVERY-LEDGER-FRESH: ledger fresh + counts aligned (§11.4.238)"
+echo "[19/55] CM-QA-DISCOVERY-LEDGER-FRESH: ledger fresh + counts aligned (§11.4.238)"
 LEDGER="${PROJECT_ROOT}/docs/QA_DISCOVERY_LEDGER.md"
 if [[ ! -f "${LEDGER}" ]]; then
     fail "QA discovery ledger not found at docs/QA_DISCOVERY_LEDGER.md"
@@ -656,7 +672,7 @@ fi
 # matches the FIELD SHAPE (`**escape-audit:**` marker), never a bare
 # substring — carrier prose mentioning the token in narrative text does
 # NOT satisfy the field (§11.4.201(7)(a) match-structure-not-substring).
-echo "[20/52] CM-QA-IS-THE-DISCOVERER: every out-of-band entry carries required fields (§11.4.238(C))"
+echo "[20/55] CM-QA-IS-THE-DISCOVERER: every out-of-band entry carries required fields (§11.4.238(C))"
 if [[ ! -f "${LEDGER}" ]]; then
     fail "QA discovery ledger not found — cannot verify §11.4.238(C)"
 else
@@ -706,7 +722,7 @@ fi
 # Mirror files (constitution/{CLAUDE,AGENTS,QWEN,GEMINI}.md): at least one
 # literal `11.4.238` (§11.4.157 lockstep-carrier check).
 # Refuses conservatively per §11.4.201 on any file that cannot be read.
-echo "[21/52] CM-COVENANT-114-238-PROPAGATION: §11.4.238 propagates (§11.4.227(B))"
+echo "[21/55] CM-COVENANT-114-238-PROPAGATION: §11.4.238 propagates (§11.4.227(B))"
 PROP_FINDINGS=""
 CONSTITUTION_FILE="${PROJECT_ROOT}/constitution/Constitution.md"
 if [[ ! -f "${CONSTITUTION_FILE}" ]]; then
@@ -726,8 +742,30 @@ for mirror_pair in \
     path="${mirror_pair#*:}"
     if [[ ! -f "${path}" ]]; then
         PROP_FINDINGS+="${label} not found at ${path}\n"
-    elif ! grep -qF '11.4.238' "${path}"; then
-        PROP_FINDINGS+="${label}: literal '11.4.238' missing entirely (§11.4.157 lockstep-mirror gap)\n"
+    else
+        # §11.4.227(B): a propagation gate counts BLOCK-STARTS, never bare
+        # literals. `grep -qF '11.4.238'` was satisfied by ANY mention — a
+        # citation, a cross-reference, a Status-summary line — so the gate
+        # passed while the anchor BLOCK was entirely absent (measured
+        # 2026-09-01: the project-root CLAUDE.md carries the literal once and
+        # has 0 block-starts, exactly the shape the literal check cannot see).
+        # The mirrors legitimately use a DIFFERENT heading shape than
+        # Constitution.md's '### §11.4.238' — canonical-vs-mirror layer
+        # variance is explicitly legitimate per §11.4.227(B) — so the pattern
+        # is derived from the mirrors as they actually are (read 2026-09-01):
+        # each carries exactly one '**§11.4.238 — …' bold block-start, and the
+        # compact-list form '- §11.4.NNN — …' is the other legitimate mirror
+        # block shape. '### ' is accepted too so a mirror that later adopts the
+        # canonical heading is not a false null. The trailing ([^0-9.]|$) guard
+        # stops a dotted sub-anchor or a longer number from prefix-matching.
+        # The mid-line "Canonical authority: … §11.4.238." carrier is excluded
+        # by the '^' anchor. Instrument proven seeing 2026-09-01: this pattern
+        # returns 1 on each of the four mirrors, 1 for the control-needle
+        # anchor 11.4.239, and 0 for the absent 11.4.999.
+        MIRROR_BLOCKS=$(grep -cE '^(\*\*|### |- )§?11\.4\.238([^0-9.]|$)' "${path}" || true)
+        if [[ "${MIRROR_BLOCKS}" -ne 1 ]]; then
+            PROP_FINDINGS+="${label}: expected exactly 1 §11.4.238 block-start (^** / ^### / ^- + §11.4.238), got ${MIRROR_BLOCKS} (§11.4.227(B) block-integrity; a bare literal is a CARRIER, not a block)\n"
+        fi
     fi
 done
 if [[ -n "${PROP_FINDINGS}" ]]; then
@@ -736,7 +774,7 @@ if [[ -n "${PROP_FINDINGS}" ]]; then
         [[ -z "${line}" ]] || echo "        - ${line}"
     done
 else
-    pass "§11.4.238 propagates (Constitution block-start ×1, §11.4.157 mirror-set literal present ×4)"
+    pass "§11.4.238 propagates (Constitution block-start ×1, §11.4.157 mirror-set block-start ×1 each across 4 mirrors)"
 fi
 
 # --- Invariant 22: CM-WORKABLE-ITEMS-EXPORT-STEP1-REAL-INVOCATION (§11.4.238 RD2-41a retroactive catcher) ---
@@ -746,7 +784,7 @@ fi
 # silently no-op'd because a hardcoded binary path (bin/workable-items) did
 # not exist and no downstream check inspected the printed error line. Sibling
 # of tests/unit/test_docs_chain_binary_resolution.sh at the pre-build seam.
-echo "[22/52] CM-WORKABLE-ITEMS-EXPORT-STEP1-REAL-INVOCATION: export step 1 really invoked (§11.4.238 RD2-41a)"
+echo "[22/55] CM-WORKABLE-ITEMS-EXPORT-STEP1-REAL-INVOCATION: export step 1 really invoked (§11.4.238 RD2-41a)"
 if [[ ! -f "${DOCS_CHAIN}" || ! -x "${DOCS_CHAIN}" ]]; then
     echo "  SKIP: scripts/workable-items-export.sh not found or not executable — skipping invariant 22"
 else
@@ -776,6 +814,22 @@ fi
 # --- Invariant 23: CM-NO-PRODUCTION-MUTATION-RESIDUE (§11.4.84) ---
 # Working-tree quiescence at the pre-build seam: refuses any build whose
 # production sources still carry paired-§1.1 mutation residue.
+#  53. CM-QBITTORRENT-WEBUI-CREDENTIALS: runs scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh
+#      — the qBittorrent WebUI must accept the documented admin/admin credentials AND that must be
+#      REAL authentication, not a LocalHostAuth/subnet-whitelist bypass that accepts any password.
+#      Retroactive catcher for the 2026-09-01 login outage (four compounding defects, zero gates).
+#  54. CM-NO-TEST-TAG-DEBRIS: runs scripts/pre_build/check_cm_no_test_tag_debris.sh — the live
+#      qBittorrent instance must carry no test-generated tags. Retroactive catcher for the
+#      2026-09-01 audit that found 18 test-debris tags while every real torrent had tags=''.
+#      SKIPs honestly when the stack is not running.
+#  55. CM-NO-UNSCOPED-LIVE-DESTRUCTION: runs
+#      scripts/pre_build/check_cm_no_unscoped_live_destruction.sh — no test or challenge may
+#      delete from the live instance on the basis of an UNFILTERED full-instance listing
+#      without diff-scoping against a baseline. Sibling of 54, one layer LEFT: 54 catches a
+#      cleanup that removed too LITTLE, 55 a cleanup that removes too MUCH. Retroactive
+#      catcher for tests/stress/test_search_stress.py::_purge_qbittorrent_torrents (a684b2f),
+#      which listed every torrent and deleted the lot from an autouse fixture, wiping the
+#      operator's library registration. Pure source check — needs no live stack.
 #
 # Retroactive catcher for the 2026-08-10 Agent H forensic FACT: a GCM
 # auth-bypass mutation (`if fals'e &&err != nil // MUT'ATED for §11.4.115 RED`)
@@ -796,7 +850,7 @@ fi
 #       lets the harness exercise the REAL detector.
 # The gate is BLOCKING (contributes to FAIL_COUNT): a build carrying live
 # mutation residue can ship an auth bypass.
-echo "[23/52] CM-NO-PRODUCTION-MUTATION-RESIDUE: no mutation-marker residue in production sources (§11.4.84)"
+echo "[23/55] CM-NO-PRODUCTION-MUTATION-RESIDUE: no mutation-marker residue in production sources (§11.4.84)"
 MUTRES_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_no_production_mutation_residue.sh"
 if [[ ! -x "${MUTRES_GATE}" ]]; then
     fail "CM-NO-PRODUCTION-MUTATION-RESIDUE: gate script missing or not executable at scripts/pre_build/check_cm_no_production_mutation_residue.sh"
@@ -827,7 +881,7 @@ fi
 # the .md SOURCES): invariant 24 gates the .md->export propagation the
 # real engine mechanically enforces. SKIP-with-reason (§11.4.3) if the
 # engine binary is not built OR transform tools absent (never fake PASS).
-echo "[24/52] CM-DOCS-CHAIN-ENGINE-VERIFY: docs_chain engine verify --all (§11.4.106)"
+echo "[24/55] CM-DOCS-CHAIN-ENGINE-VERIFY: docs_chain engine verify --all (§11.4.106)"
 DC_ENGINE="${PROJECT_ROOT}/constitution/submodules/docs_chain/docs_chain"
 DC_CONTEXTS="${PROJECT_ROOT}/.docs_chain/contexts"
 if [[ ! -x "${DC_ENGINE}" ]]; then
@@ -861,7 +915,7 @@ fi
 # the pre-build gate must always stay unblocked -- the operator needs a
 # loud WARNING here, not a blocked build. Bounded to 60s so a wedged probe
 # can never stall the pre-build sweep itself (§11.4.89).
-echo "[25/52] CM-RESOURCE-PRESSURE-SIGNATURE-CHECK: proactive host-pressure probe (§12.12, task #77/BOB-076)"
+echo "[25/55] CM-RESOURCE-PRESSURE-SIGNATURE-CHECK: proactive host-pressure probe (§12.12, task #77/BOB-076)"
 RPS_CHALLENGE="${PROJECT_ROOT}/challenges/scripts/resource_pressure_signature_challenge.sh"
 if [[ ! -f "${RPS_CHALLENGE}" ]]; then
     echo "  SKIP: resource_pressure_signature_challenge.sh not found — skipping invariant 25"
@@ -903,7 +957,7 @@ fi
 # WARNING here, not a blocked build. Bounded to 180s so a wedged pytest
 # collection or vitest invocation can never stall the pre-build sweep
 # itself (§11.4.89).
-echo "[26/52] CM-BADGE-FRESHNESS-CHECK: README badges match live counts (§11.4.259, BOB-118)"
+echo "[26/55] CM-BADGE-FRESHNESS-CHECK: README badges match live counts (§11.4.259, BOB-118)"
 BADGE_SCRIPT="${PROJECT_ROOT}/scripts/compute-badges.sh"
 if [[ ! -x "${BADGE_SCRIPT}" ]]; then
     echo "  SKIP: scripts/compute-badges.sh not found or not executable — skipping invariant 26"
@@ -940,7 +994,7 @@ fi
 # forced-logout incidents (BOB-116/120/123/124/125/126). BLOCKING
 # (contributes to FAIL_COUNT): this closes a real host-safety defect
 # class, not a documentation-freshness or resource-pressure signal.
-echo "[27/52] CM-KILLPG-PGID-GUARD: no unguarded process-group kill calls (§11.4.263, BOB-126)"
+echo "[27/55] CM-KILLPG-PGID-GUARD: no unguarded process-group kill calls (§11.4.263, BOB-126)"
 KILLPG_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_killpg_pgid_guard.sh"
 if [[ ! -x "${KILLPG_GATE}" ]]; then
     fail "CM-KILLPG-PGID-GUARD: gate script missing or not executable at scripts/pre_build/check_cm_killpg_pgid_guard.sh"
@@ -966,7 +1020,7 @@ fi
 # auto-generated `__int__`/`__index__` (defaulting to 1) reaches the same
 # broadcast-kill defect through a mocked test double. BLOCKING
 # (contributes to FAIL_COUNT).
-echo "[28/52] CM-TEST-MOCK-PID-EXPLICIT-INT: no unguarded subprocess-mock pid in tests (§11.4.263, BOB-126)"
+echo "[28/55] CM-TEST-MOCK-PID-EXPLICIT-INT: no unguarded subprocess-mock pid in tests (§11.4.263, BOB-126)"
 MOCK_PID_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_test_mock_pid_explicit_int.sh"
 if [[ ! -x "${MOCK_PID_GATE}" ]]; then
     fail "CM-TEST-MOCK-PID-EXPLICIT-INT: gate script missing or not executable at scripts/pre_build/check_cm_test_mock_pid_explicit_int.sh"
@@ -998,7 +1052,7 @@ fi
 # destructive syscall fired from a "unit" test is a genuine host-safety
 # defect class, not a documentation-freshness or resource-pressure
 # signal.
-echo "[29/52] CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID: no unpatched real-pid subprocess-mock in tests (§11.4.263, BOB-127)"
+echo "[29/55] CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID: no unpatched real-pid subprocess-mock in tests (§11.4.263, BOB-127)"
 MOCK_PID_REAL_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_test_mock_pid_patched_when_real_pid.sh"
 if [[ ! -x "${MOCK_PID_REAL_GATE}" ]]; then
     fail "CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID: gate script missing or not executable at scripts/pre_build/check_cm_test_mock_pid_patched_when_real_pid.sh"
@@ -1041,7 +1095,7 @@ fi
 # visible and tracked rather than silently dead. This list MUST only shrink.
 # Removing a name without fixing its suite is a §11.4.227 metric-gaming move.
 # TODO(BASH-TEST-QUARANTINE): fix and de-quarantine these three.
-echo "[30/52] CM-BASH-UNIT-TESTS-EXECUTED: tests/unit/*.sh + tests/pre_build/*.sh + tests/hooks/*.sh actually run (§11.4.226)"
+echo "[30/55] CM-BASH-UNIT-TESTS-EXECUTED: tests/unit/*.sh + tests/pre_build/*.sh + tests/hooks/*.sh actually run (§11.4.226)"
 # STRUCTURAL EXCLUSIONS — permanent by design, NOT debt. These suites invoke
 # scripts/pre_build_verification.sh itself to assert on another invariant's
 # output; running them from INSIDE this invariant recurses infinitely (proven
@@ -1427,7 +1481,33 @@ run_const_gate() {
     local glog grc=0 verdict
     glog="$(mktemp)"
     timeout "${CONST_GATE_TIMEOUT}" bash "${gpath}" "$@" >"${glog}" 2>&1 || grc=$?
-    verdict="$(grep -aE '^(✅|❌|⏭)|(PASS|FAIL|SKIP)' "${glog}" | tail -n1 || true)"
+    # Extract the gate's VERDICT by STRUCTURE, never by substring
+    # (§11.4.201(7)(a) — a token that MENTIONS a verdict is a CARRIER, not a
+    # verdict). The prior pattern was '^(✅|❌|⏭)|(PASS|FAIL|SKIP)': in ERE the
+    # leading '^' binds ONLY to the first alternation group, so the second group
+    # was an UNANCHORED substring match, and the following `tail -n1` then took
+    # the LAST such hit. A prose line the gate legitimately prints — e.g. a
+    # mutation description "── M1: ... returns PASS immediately" or a note
+    # "note: SKIP is not applicable here" — was therefore extracted AS the
+    # verdict, discarding the real '✅ ... PASS' line above it and flipping the
+    # exit-0 PASS/SKIP discrimination below. Three structural shapes are
+    # accepted, each anchored at line start:
+    #   1. an emoji-led verdict line ('✅ <GATE>: PASS — …'), the dominant shape;
+    #   2. this gate's OWN name as the label ('<gname>: …') — the strongest
+    #      anchor available here, since run_const_gate is handed the exact gate
+    #      name and every wired gate's in-script GATE= equals it (verified
+    #      2026-09-01 across all 9 wired gates). This keeps the propagation
+    #      family's label-led summary line ('<GATE>: 7 PRESENT, 3
+    #      POINTER-INHERITANCE-SKIP, 0 MISSING') extractable, which an
+    #      emoji-only pattern would have dropped — a regression that would have
+    #      turned that PASS into a spurious SKIP;
+    #   3. a generic UPPERCASE label followed immediately by the verdict token
+    #      ('<LABEL>: PASS|FAIL|SKIP'), covering gates that define no GATE= var.
+    # Lowercase prose labels ('note: …') and non-alphabetic leads ('── M1: …')
+    # match none of the three. gname is [A-Z0-9-]+ for every wired gate, so it
+    # carries no ERE metacharacter; if a future gate name gains one, alternative
+    # 2 simply stops matching and the honest fallback on the next line applies.
+    verdict="$(grep -aE "^(✅|❌|⏭)|^${gname}:[[:space:]]|^[A-Z][A-Z0-9_.-]*:[[:space:]](PASS|FAIL|SKIP)([[:space:]]|$)" "${glog}" | tail -n1 || true)"
     [[ -n "${verdict}" ]] || verdict="$(tail -n1 "${glog}" || true)"
     case "${grc}" in
         0)
@@ -1482,7 +1562,7 @@ run_const_gate() {
 # 2026-08-20: 57 false MISSING for anchor 11.4.199 alone. BLOCKING: all 17
 # are green today at this scope, so a future red is a real regression of the
 # governance corpus boba inherits.
-echo "[31/52] CM-COVENANT-PROPAGATION-BLOCK-INTEGRITY: 17 pack-unbound anchors (§11.4.227(B))"
+echo "[31/55] CM-COVENANT-PROPAGATION-BLOCK-INTEGRITY: 17 pack-unbound anchors (§11.4.227(B))"
 PROP_UNBOUND=(162 167 176 187 191 196 199 200 201 202 207 213 230 231 232 233 235)
 PROP_OK=0; PROP_BAD=(); PROP_MISSING=0
 for _anchor in "${PROP_UNBOUND[@]}"; do
@@ -1528,7 +1608,7 @@ fi
 # §11.4.234 (the mechanism is ALWAYS unblocked) while fixing nothing, so the
 # suite reports loudly on every run and the 3 reds are tracked as owed
 # upstream work. Promote to BLOCKING the moment the 3 land.
-echo "[32/52] CM-COVENANT-PROPAGATION-SUITE: 30 pack-driven anchors (§11.4.227(B), ADVISORY)"
+echo "[32/55] CM-COVENANT-PROPAGATION-SUITE: 30 pack-driven anchors (§11.4.227(B), ADVISORY)"
 PROP_SUITE="${CONST_GATES_DIR}/covenant_propagation_suite.sh"
 if [[ ! -f "${PROP_SUITE}" ]]; then
     echo "  SKIP: CM-COVENANT-PROPAGATION-SUITE — batch runner absent at constitution/scripts/gates/covenant_propagation_suite.sh (§11.4.3)"
@@ -1589,7 +1669,7 @@ run_const_gate "38/52" "CM-GATE-LEDGER-RATCHET"                 blocking cm_gate
 # printed on every run so none of it is silenced. Promote to BLOCKING once
 # each hit is triaged (fix the real fail-opens; declare the benign ones under
 # a §11.4.224(E)-style checked-in fence, or land the upstream refinement).
-echo "[39/52] CM-DANGEROUS-COMBINATION-FAIL-CLOSED: fail-open scan over first-party source (§11.4.252, ADVISORY)"
+echo "[39/55] CM-DANGEROUS-COMBINATION-FAIL-CLOSED: fail-open scan over first-party source (§11.4.252, ADVISORY)"
 DANGER_GATE="${CONST_GATES_DIR}/cm_dangerous_combination_fail_closed.sh"
 if [[ ! -f "${DANGER_GATE}" ]]; then
     echo "  SKIP: CM-DANGEROUS-COMBINATION-FAIL-CLOSED — gate script absent (§11.4.3)"
@@ -1660,7 +1740,7 @@ run_const_gate "40/52" "CM-ORACLE-STRATEGY-NAMED-AND-INDEPENDENT" advisory \
 # gap in boba's frontend, not a build defect, and closing it is design work
 # (an OpenDesign token file + visual-regression suite) rather than something
 # the pre-build seam can demand today.
-echo "[41/52] CM-OPENDESIGN-UI-SYSTEM: Angular frontend design-system audit (§11.4.162, ADVISORY)"
+echo "[41/55] CM-OPENDESIGN-UI-SYSTEM: Angular frontend design-system audit (§11.4.162, ADVISORY)"
 OD_GATE="${CONST_GATES_DIR}/cm_opendesign_ui_system.sh"
 if [[ ! -d "${PROJECT_ROOT}/frontend" ]]; then
     echo "  SKIP: CM-OPENDESIGN-UI-SYSTEM — no frontend/ UI surface in this checkout (§11.4.3)"
@@ -1726,7 +1806,7 @@ run_const_gate "43/52" "CM-VERSION-INCREMENT-ON-DEPLOY"          blocking cm_ver
 # [7186, 7187]. The gate deliberately FAILs — never SKIPs — when it checked
 # ZERO services or when python3+PyYAML is unavailable, because a quiet zero
 # from a blind instrument is not a clean tree (§11.4.201(6)/(7)(b)).
-echo "[44/52] CM-HEALTHCHECK-COVERS-SERVED-PORTS: healthchecks probe every served port (§11.4.254, BOB-138)"
+echo "[44/55] CM-HEALTHCHECK-COVERS-SERVED-PORTS: healthchecks probe every served port (§11.4.254, BOB-138)"
 HC_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_healthcheck_covers_served_ports.sh"
 if [[ ! -f "${HC_GATE}" ]]; then
     fail "CM-HEALTHCHECK-COVERS-SERVED-PORTS: gate script missing at scripts/pre_build/check_cm_healthcheck_covers_served_ports.sh"
@@ -1760,7 +1840,7 @@ fi
 # commit renumbered the file to /46. See the two-syntax census note at the
 # CM-PLUGIN-COUNT block for why counting labels here is easy to get wrong.
 # BLOCKING.
-echo "[45/52] CM-OWNERSHIP-INVARIANTS: operator-owned writes not reverted (§11.4.201, FR-011)"
+echo "[45/55] CM-OWNERSHIP-INVARIANTS: operator-owned writes not reverted (§11.4.201, FR-011)"
 OWNINV_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_ownership_invariants.sh"
 if [[ ! -x "${OWNINV_GATE}" ]]; then
     fail "CM-OWNERSHIP-INVARIANTS: gate script missing or not executable at scripts/pre_build/check_cm_ownership_invariants.sh"
@@ -1823,7 +1903,7 @@ fi
 # truth. If you add an invariant, take 47 and bump every denominator in BOTH
 # syntaxes — and COUNT BOTH FORMS before you believe any slot is free.
 # BLOCKING.
-echo "[46/52] CM-PLUGIN-COUNT: documented plugin counts match their derivation (BOB-149)"
+echo "[46/55] CM-PLUGIN-COUNT: documented plugin counts match their derivation (BOB-149)"
 PLUGINCNT_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_plugin_count.sh"
 if [[ ! -x "${PLUGINCNT_GATE}" ]]; then
     fail "CM-PLUGIN-COUNT: gate script missing or not executable at scripts/pre_build/check_cm_plugin_count.sh"
@@ -1852,7 +1932,7 @@ fi
 # The gate asserts builder >= directive, NOT string equality. Equality would
 # refuse a NEWER builder, which is a §11.4.201(1) false-positive refusal.
 # BLOCKING.
-echo "[47/52] CM-GO-TOOLCHAIN-MATCHES-BUILDER: Dockerfile builder satisfies go.mod (BOB-153)"
+echo "[47/55] CM-GO-TOOLCHAIN-MATCHES-BUILDER: Dockerfile builder satisfies go.mod (BOB-153)"
 GOTC_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_go_toolchain_matches_builder.sh"
 if [[ ! -x "${GOTC_GATE}" ]]; then
     fail "CM-GO-TOOLCHAIN-MATCHES-BUILDER: gate script missing or not executable"
@@ -1878,7 +1958,7 @@ fi
 # state, not evidence of drift. The skip is DISCRIMINATED from a pass below,
 # because reporting a skip as a pass is the false-null this gate exists to
 # prevent. BLOCKING otherwise.
-echo "[48/52] CM-RUNTIME-DEPS-PARITY: test stack and production run the same deps (BOB-154)"
+echo "[48/55] CM-RUNTIME-DEPS-PARITY: test stack and production run the same deps (BOB-154)"
 DEPSPARITY_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_runtime_deps_parity.sh"
 if [[ ! -x "${DEPSPARITY_GATE}" ]]; then
     fail "CM-RUNTIME-DEPS-PARITY: gate script missing or not executable"
@@ -1916,7 +1996,7 @@ if [[ -n "${FULL_VALIDATION:-}" ]] && [[ "${FULL_VALIDATION}" = "1" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-echo "[49/52] CM-CLOSURE-SEAM-BINDS: done-but-open rows found mechanically (§11.4.226)"
+echo "[49/55] CM-CLOSURE-SEAM-BINDS: done-but-open rows found mechanically (§11.4.226)"
 # WHY THIS IS WIRED HERE (BOB-136 acceptance (c)).
 #
 # The gate itself has existed and worked for some time, but NOTHING invoked it:
@@ -1978,7 +2058,7 @@ fi
 # error as false, so the gate PASSES with violations present and the producer
 # prints a RAISE labelled as a lowering — found by review mutation, not by the
 # author's own set).
-echo "[50/52] CM-EXPORT-CHARSET-VALID: exports declare a charset AND the ratchet is current (§11.4.238)"
+echo "[50/55] CM-EXPORT-CHARSET-VALID: exports declare a charset AND the ratchet is current (§11.4.238)"
 if [[ -x "${PROJECT_ROOT}/scripts/pre_build/check_cm_export_charset_valid.sh" ]]; then
     # Run ONCE and branch on the captured status: re-executing the gate to print
     # its reason races the corpus it just measured (§11.4.121-shaped TOCTOU) and
@@ -2006,7 +2086,7 @@ else
     echo "  SKIP: scripts/pre_build/check_cm_export_charset_valid.sh absent or not executable"
 fi
 
-echo "[51/52] CM-SERVED-BUNDLE-FRESH: the served dashboard bundle matches its sources (BOB-183)"
+echo "[51/55] CM-SERVED-BUNDLE-FRESH: the served dashboard bundle matches its sources (BOB-183)"
 # SEAM (§11.4.120): the bundle is a BUILD ARTIFACT, so at this PRE-build seam its
 # ABSENCE is `artifact_not_yet_built` (§11.4.69) and must not block — hard-failing
 # here would refuse every fresh clone and worktree, a §11.4.201(1) false positive.
@@ -2027,7 +2107,7 @@ else
     echo "  SKIP: scripts/pre_build/check_cm_served_bundle_fresh.sh absent or not executable"
 fi
 
-echo "[52/52] CM-WORKABLE-ITEMS-BINARY-FRESH: the shipped workable-items binary matches its sources (BOB-188)"
+echo "[52/55] CM-WORKABLE-ITEMS-BINARY-FRESH: the shipped workable-items binary matches its sources (BOB-188)"
 # NOT --if-present, unlike invariant 51. The distinction is the seam (§11.4.120):
 # the served bundle is a LOCAL build output whose absence on a fresh clone is
 # honest, but this binary is COMMITTED — if it is present it is being shipped to
@@ -2045,6 +2125,127 @@ else
     # §11.4.3 honest SKIP — never a silent pass.
     echo "  SKIP: scripts/pre_build/check_cm_workable_items_binary_fresh.sh absent or not executable"
 fi
+
+# --- Invariant 53: CM-QBITTORRENT-WEBUI-CREDENTIALS (§11.4.239, login repair 2026-09-01) ---
+# The qBittorrent WebUI must be reachable with the documented admin/admin
+# credentials, and that must be REAL authentication rather than a bypass.
+#
+# Retroactive catcher for the 2026-09-01 outage in which FOUR defects lined up
+# and no gate could see any of them: credentials authored into a config path
+# the image never reads; WEBUI_USERNAME/WEBUI_PASSWORD set in compose although
+# lscr.io/linuxserver/qbittorrent implements neither; start.sh's credential
+# writer being replace-only so it wrote nothing into a fresh config; and
+# qBittorrent 5.x consequently minting a random temporary password every boot.
+#
+# It ALSO pins the security half: the first repair attempt enforced
+# WebUI\LocalHostAuth=false + AuthSubnetWhitelistEnabled=true, which does not
+# relax the brute-force ban but DISABLES authentication for loopback and all
+# RFC1918 — measured: a wrong password then returned HTTP 204 (accepted).
+#
+# BLOCKING: availability + auth integrity of the primary user-facing
+# capability (§11.4.239 critical-invariant work class).
+echo "[53/55] CM-QBITTORRENT-WEBUI-CREDENTIALS: WebUI credentials enforced and auth not bypassed (§11.4.239)"
+QBT_CREDS_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh"
+if [[ ! -f "${QBT_CREDS_GATE}" ]]; then
+    fail "CM-QBITTORRENT-WEBUI-CREDENTIALS: gate script missing at scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh"
+else
+    QBT_CREDS_LOG="$(mktemp)"; QBT_CREDS_RC=0
+    timeout "${CONST_GATE_TIMEOUT}" bash "${QBT_CREDS_GATE}" >"${QBT_CREDS_LOG}" 2>&1 || QBT_CREDS_RC=$?
+    if [[ "${QBT_CREDS_RC}" -eq 0 ]]; then
+        pass "CM-QBITTORRENT-WEBUI-CREDENTIALS: $(tail -n1 "${QBT_CREDS_LOG}" || true)"
+    elif [[ "${QBT_CREDS_RC}" -eq 124 ]]; then
+        fail "CM-QBITTORRENT-WEBUI-CREDENTIALS: exceeded the ${CONST_GATE_TIMEOUT}s budget (a timeout is not a pass)"
+    else
+        fail "CM-QBITTORRENT-WEBUI-CREDENTIALS: exit ${QBT_CREDS_RC} — WebUI credentials are not enforced, or authentication is bypassed"
+        echo "        --- gate output ---"
+        sed 's/^/        /' "${QBT_CREDS_LOG}"
+        echo "        --- end ---"
+    fi
+    rm -f "${QBT_CREDS_LOG}"
+fi
+
+# --- Invariant 54: CM-NO-TEST-TAG-DEBRIS (§11.4.14, tagging audit 2026-09-01) ---
+# The live qBittorrent instance must carry no test-generated tags.
+#
+# Retroactive catcher: an operator audit found EIGHTEEN tags in the WebUI, all
+# of them debris (`boba-bridge-{go,red,neg}-<uuid>` from an integration test
+# that never cleaned up, plus two probe tags), while every REAL torrent carried
+# tags=''. The only tags the operator could see were the test suite's litter.
+#
+# A cleanup fixture was added to that suite, but a teardown FAILURE only prints
+# to stderr and the run still reports green — so a cleanup that silently broke
+# would re-accumulate debris with nothing watching. This gate is the
+# independent observer: it reads the LIVE instance rather than trusting the
+# cleanup code that was supposed to run (review finding M-e).
+#
+# BLOCKING, deliberately. A WARN would restore the exact invisibility this
+# exists to remove, and the remedy is a single deleteTags call. When the stack
+# is not running the gate SKIPs honestly with a reason (§11.4.3) — it never
+# fails a build merely because the service is down.
+echo "[54/55] CM-NO-TEST-TAG-DEBRIS: no test-generated tags in the live qBittorrent (§11.4.14)"
+TAG_DEBRIS_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_no_test_tag_debris.sh"
+if [[ ! -f "${TAG_DEBRIS_GATE}" ]]; then
+    fail "CM-NO-TEST-TAG-DEBRIS: gate script missing at scripts/pre_build/check_cm_no_test_tag_debris.sh"
+else
+    TAG_DEBRIS_LOG="$(mktemp)"; TAG_DEBRIS_RC=0
+    timeout "${CONST_GATE_TIMEOUT}" bash "${TAG_DEBRIS_GATE}" >"${TAG_DEBRIS_LOG}" 2>&1 || TAG_DEBRIS_RC=$?
+    if [[ "${TAG_DEBRIS_RC}" -eq 0 ]]; then
+        pass "CM-NO-TEST-TAG-DEBRIS: $(tail -n1 "${TAG_DEBRIS_LOG}" || true)"
+    elif [[ "${TAG_DEBRIS_RC}" -eq 124 ]]; then
+        fail "CM-NO-TEST-TAG-DEBRIS: exceeded the ${CONST_GATE_TIMEOUT}s budget (a timeout is not a pass)"
+    else
+        fail "CM-NO-TEST-TAG-DEBRIS: exit ${TAG_DEBRIS_RC} — test debris is present in the live instance"
+        echo "        --- gate output ---"
+        sed 's/^/        /' "${TAG_DEBRIS_LOG}"
+        echo "        --- end ---"
+    fi
+    rm -f "${TAG_DEBRIS_LOG}"
+fi
+
+
+# ---------------------------------------------------------------------------
+# 55. CM-NO-UNSCOPED-LIVE-DESTRUCTION
+#
+# SIBLING of gate 54, one layer LEFT. Gate 54 observes the live instance for
+# debris a cleanup FAILED to remove; gate 55 reads the SOURCE for cleanups
+# that remove TOO MUCH.
+#
+# The escape it closes (§11.4.238 — an agent found it, no gate did):
+# tests/stress/test_search_stress.py::_purge_qbittorrent_torrents (a684b2f)
+# listed EVERY torrent in the instance and deleted the lot, from an autouse
+# fixture running before every stress test. On the operator's live instance
+# that de-registered their whole library — files survived (deleteFiles=false),
+# session/categories/tags/ratio/seeding state did not.
+#
+# BLOCKING, deliberately: this is a data-safety class, and a WARN on a rule
+# whose violation destroys the operator's library is not a rule. Unlike gate
+# 54 it needs NO live stack — it is a pure source check, so it cannot be
+# quietly skipped by running with the containers down.
+echo "[55/55] CM-NO-UNSCOPED-LIVE-DESTRUCTION: test-tree deletes are diff-scoped (§9 / §11.4.14)"
+UNSCOPED_GATE="${PROJECT_ROOT}/scripts/pre_build/check_cm_no_unscoped_live_destruction.sh"
+if [[ ! -f "${UNSCOPED_GATE}" ]]; then
+    fail "CM-NO-UNSCOPED-LIVE-DESTRUCTION: gate script missing at scripts/pre_build/check_cm_no_unscoped_live_destruction.sh"
+else
+    UNSCOPED_LOG="$(mktemp)"; UNSCOPED_RC=0
+    timeout "${CONST_GATE_TIMEOUT}" bash "${UNSCOPED_GATE}" >"${UNSCOPED_LOG}" 2>&1 || UNSCOPED_RC=$?
+    if [[ "${UNSCOPED_RC}" -eq 0 ]]; then
+        pass "CM-NO-UNSCOPED-LIVE-DESTRUCTION: $(tail -n1 "${UNSCOPED_LOG}" || true)"
+    elif [[ "${UNSCOPED_RC}" -eq 124 ]]; then
+        fail "CM-NO-UNSCOPED-LIVE-DESTRUCTION: exceeded the ${CONST_GATE_TIMEOUT}s budget (a timeout is not a pass)"
+    elif [[ "${UNSCOPED_RC}" -eq 2 ]]; then
+        fail "CM-NO-UNSCOPED-LIVE-DESTRUCTION: harness error — the scan could not run, so the tree is UNVERIFIED (not clean)"
+        echo "        --- gate output ---"
+        sed 's/^/        /' "${UNSCOPED_LOG}"
+        echo "        --- end ---"
+    else
+        fail "CM-NO-UNSCOPED-LIVE-DESTRUCTION: exit ${UNSCOPED_RC} — a test deletes live state without diff-scoping"
+        echo "        --- gate output ---"
+        sed 's/^/        /' "${UNSCOPED_LOG}"
+        echo "        --- end ---"
+    fi
+    rm -f "${UNSCOPED_LOG}"
+fi
+
 
 echo
 echo "=== Result: ${PASS_COUNT} passed, ${FAIL_COUNT} failed ==="

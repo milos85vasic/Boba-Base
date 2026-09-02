@@ -358,7 +358,14 @@ class TestDownloadTorrent:
         with patch("torrentscsv.retrieve_url", return_value=json.dumps(EMPTY_RESPONSE)) as mock_req:
             self.mod.search("test query & stuff")
             called_url = mock_req.call_args[0][0]
-            assert "q=test query & stuff" in called_url
+            # §11.4.120 reconciled (2026-09-02): this asserted the PRE-ae387b2
+            # raw interpolation. The query is a ?q= QUERY PARAM, so quote_plus
+            # encodes space -> '+' AND the bare '&' -> %26. Encoding the '&' is
+            # load-bearing, not cosmetic: an unencoded one would terminate the
+            # q= parameter and turn the rest of the user's search term into a
+            # separate URL parameter.
+            assert "q=test+query+%26+stuff" in called_url
+            assert " " not in called_url
 
     def test_download_torrent_empty_magnet(self, capsys):
         self.mod.download_torrent("magnet:")

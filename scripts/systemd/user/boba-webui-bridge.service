@@ -31,17 +31,17 @@
 
 [Unit]
 Description=Boba webui-bridge — Go-based host process fronting qBittorrent for private trackers (port 7188)
-Documentation=file:///run/media/milosvasic/DATA4TB/Projects/boba/CLAUDE.md
+Documentation=file://@@BOBA_REPO_ROOT@@/CLAUDE.md
 After=network-online.target boba-stack.service
 Wants=network-online.target
 PartOf=boba.target
 
 [Service]
 Type=simple
-WorkingDirectory=/run/media/milosvasic/DATA4TB/Projects/boba
+WorkingDirectory=@@BOBA_REPO_ROOT@@
 EnvironmentFile=-%h/.qbit.env
-EnvironmentFile=-/run/media/milosvasic/DATA4TB/Projects/boba/.env
-ExecStart=/run/media/milosvasic/DATA4TB/Projects/boba/qBitTorrent-go/bin/webui-bridge
+EnvironmentFile=-@@BOBA_REPO_ROOT@@/.env
+ExecStart=@@BOBA_REPO_ROOT@@/qBitTorrent-go/bin/webui-bridge
 Restart=on-failure
 RestartSec=5
 StandardOutput=journal

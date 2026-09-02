@@ -1,0 +1,14 @@
+(node:1030619) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+Running 5 tests using 1 worker
+
+(node:1031432) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+  ✓  1 e2e/angular-dashboard-console.spec.ts:61:5 › Angular dashboard (:7187) hydrates <app-root> with zero console errors (854ms)
+  ✓  2 e2e/qbittorrent-webui-vanilla.spec.ts:105:7 › vanilla qBittorrent WebUI through the download-proxy (:7186) › negative control: a wrong password does NOT log in (455ms)
+  ✓  3 e2e/qbittorrent-webui-vanilla.spec.ts:155:7 › vanilla qBittorrent WebUI through the download-proxy (:7186) › real UI login executes the WebUI JS with zero console errors (1.6s)
+  ✓  4 e2e/runtime-guards-mutation.spec.ts:24:5 › MUTATION: rebranding "qBittorrent" inside client.js breaks the namespace guard (1.1s)
+  ✓  5 e2e/runtime-guards-mutation.spec.ts:74:5 › MUTATION: blocking main bundle leaves the Angular <app-root> shell empty (3.3s)
+
+  5 passed (9.1s)

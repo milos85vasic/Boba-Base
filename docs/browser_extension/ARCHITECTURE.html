@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.11" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>ARCHITECTURE</title>
   <style>
@@ -41,7 +41,6 @@
       body {
         background-color: transparent;
         color: black;
-        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -156,8 +155,12 @@
       text-decoration: none;
     }
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -168,14 +171,13 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
 </head>
 <body>
 <header id="title-block-header">
 <h1 class="title">ARCHITECTURE</h1>
 </header>
-<h1 id="bobalink-browser-extension--architecture">BobaLink Browser
+<h1 id="bobalink-browser-extension-architecture">BobaLink Browser
 Extension — Architecture</h1>
 <p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
 2026-06-10T23:55:00Z <strong>Scope:</strong> BobaLink
@@ -196,7 +198,7 @@ it appears in the code (<code>isValidScanResult</code>,
 …).</p>
 </blockquote>
 <hr />
-<h2 id="1-data-flow-diagram">1. Data-flow diagram</h2>
+<h2 id="data-flow-diagram">1. Data-flow diagram</h2>
 <p>The diagram renders on GitHub. In the exported HTML it remains a
 fenced code block (per scope note) — the textual edges are the
 load-bearing record.</p>
@@ -263,7 +265,7 @@ load-bearing record.</p>
 <p><strong>Edge legend.</strong> Solid = primary request/response path;
 dotted = failure/retry path. Quoted labels are real
 <code>MessageType</code> strings or method names from the code.</p>
-<h3 id="narrative-trace-page--backend">Narrative trace (page →
+<h3 id="narrative-trace-page-backend">Narrative trace (page →
 backend)</h3>
 <ol type="1">
 <li><strong>Page DOM → content script.</strong> The WXT content
@@ -309,13 +311,17 @@ ciphertext is never sent.</li>
 <li><strong>Popup / options / health.</strong> The popup queries
 <code>get-detected</code> and dispatches <code>send-torrent</code>; the
 options page round-trips config via <code>get-config</code> /
-<code>set-config</code>; the background's <code>health-check</code> and
+<code>set-config</code>; the background’s <code>health-check</code> and
 a periodic alarm probe <code>GET /health</code> via
 <code>probeHealth</code>.</li>
 </ol>
 <hr />
-<h2 id="2-module-responsibilities">2. Module responsibilities</h2>
+<h2 id="module-responsibilities">2. Module responsibilities</h2>
 <table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
 <thead>
 <tr>
 <th>Module (<code>extension/src/…</code>)</th>
@@ -459,7 +465,7 @@ never logged).</td>
 </tbody>
 </table>
 <hr />
-<h2 id="3-wxt-entrypoint--thin-wrapper-layout">3. WXT entrypoint /
+<h2 id="wxt-entrypoint-thin-wrapper-layout">3. WXT entrypoint /
 thin-wrapper layout</h2>
 <p>WXT generates the MV3 manifest and bundles the worker/scripts from
 the <code>entrypoints/</code> directory. Each entrypoint is a
@@ -467,6 +473,11 @@ the <code>entrypoints/</code> directory. Each entrypoint is a
 logic module, so the test corpus imports the logic modules directly
 while the entrypoints own the real browser lifecycle.</p>
 <table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
 <thead>
 <tr>
 <th>Entrypoint</th>
@@ -489,7 +500,7 @@ the logic module auto-registers on import.</td>
 <td><code>content_scripts</code> with <code>matches</code> derived from
 <code>SITE_SELECTORS</code> (no <code>&lt;all_urls&gt;</code>),
 <code>run_at: document_idle</code>, <code>all_frames: false</code>.
-SINGLE driver of the content logic (the logic module's self-init was
+SINGLE driver of the content logic (the logic module’s self-init was
 removed to avoid double-registering the message listener).</td>
 </tr>
 <tr>
@@ -509,15 +520,20 @@ removed to avoid double-registering the message listener).</td>
 <code>bobalink-1.0.0-{chrome,firefox,sources}.zip</code> (produced by
 <code>extension/ci-ext.sh</code>, §11.4.38 artifact-verified).</p>
 <hr />
-<h2 id="4-message-type-catalog">4. Message-type catalog</h2>
+<h2 id="message-type-catalog">4. Message-type catalog</h2>
 <p><code>MessageType</code> is the closed union in
 <code>types/api.ts</code>. The catalog below lists the messages actually
 routed by the two <code>handleMessage</code> switches (background in
 <code>background/index.ts</code>, content in
 <code>content/index.ts</code>) and their direction.</p>
-<h3 id="sender--background-routed-by-backgroundindexts">Sender →
+<h3 id="sender-background-routed-by-backgroundindex.ts">Sender →
 Background (routed by <code>background/index.ts</code>)</h3>
 <table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
 <thead>
 <tr>
 <th>Type</th>
@@ -535,7 +551,7 @@ Background (routed by <code>background/index.ts</code>)</h3>
 <tr>
 <td><code>get-detected</code></td>
 <td>popup</td>
-<td>Return the tab's stored <code>PageScanResult</code>
+<td>Return the tab’s stored <code>PageScanResult</code>
 (<code>{ result }</code>).</td>
 </tr>
 <tr>
@@ -574,7 +590,7 @@ drain).</td>
 <tr>
 <td><code>scan-page</code></td>
 <td>popup / command</td>
-<td>Forward <code>scan-now</code> to the tab's content script.</td>
+<td>Forward <code>scan-now</code> to the tab’s content script.</td>
 </tr>
 <tr>
 <td><code>open-dashboard</code></td>
@@ -584,10 +600,14 @@ drain).</td>
 </tbody>
 </table>
 <h3
-id="background--content-chrometabssendmessage-routed-by-contentindexts">Background
+id="background-content-chrome.tabs.sendmessage-routed-by-contentindex.ts">Background
 → Content (<code>chrome.tabs.sendMessage</code>, routed by
 <code>content/index.ts</code>)</h3>
 <table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
 <thead>
 <tr>
 <th>Type</th>
@@ -607,11 +627,11 @@ id="background--content-chrometabssendmessage-routed-by-contentindexts">Backgrou
 </tr>
 <tr>
 <td><code>get-detected</code></td>
-<td>Return the orchestrator's detected set.</td>
+<td>Return the orchestrator’s detected set.</td>
 </tr>
 <tr>
 <td><code>toggle-selection</code></td>
-<td>Flip a detected torrent's <code>selected</code> flag.</td>
+<td>Flip a detected torrent’s <code>selected</code> flag.</td>
 </tr>
 <tr>
 <td><code>get-scan-status</code></td>

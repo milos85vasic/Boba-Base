@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 """
-Download Proxy for Боба WebUI - Fixed version
-Intercepts RuTracker URLs and downloads via nova2dl.py with authentication
-Passes through all other requests (including magnet links).
+Download Proxy for the qBittorrent WebUI.
 
-Also injects a two-file theme bridge
-(``/__qbit_theme__/skin.css`` + ``/__qbit_theme__/bootstrap.js``)
-into every HTML response so the Боба WebUI picks up the
-palette chosen in the Angular dashboard at :7187. See
-docs/CROSS_APP_THEME_PLAN.md.
+Intercepts private-tracker URLs on ``POST /api/v2/torrents/add`` and
+downloads the .torrent via nova2dl.py with authentication. EVERY other
+request — and every response body and header — is passed through
+BYTE-FOR-BYTE, so browsers see the stock vanilla qBittorrent WebUI.
+
+The themed-WebUI overlay (CSS/JS injection + qBittorrent→Боба rebrand)
+was REMOVED 2026-09-01 by operator decision: it shipped zero qBittorrent
+features and broke the WebUI's JavaScript. Cross-app theme STATE for the
+Angular dashboard on :7187 is unaffected and still lives in
+``download-proxy/src/api/theme_state.py``.
 """
 
 import sys
 import os
 import json
-import gzip
-import zlib
 import urllib.request
 import urllib.parse
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
@@ -29,17 +30,112 @@ logger = logging.getLogger(__name__)
 QBITTORRENT_HOST = os.environ.get("QBITTORRENT_HOST", "localhost")
 QBITTORRENT_PORT = os.environ.get("QBITTORRENT_PORT", "7185")
 PROXY_PORT = int(os.environ.get("PROXY_PORT", "7186"))
-# Where the bridge can find the merge service (default port 7187).
-MERGE_SERVICE_URL = os.environ.get("MERGE_SERVICE_URL", "http://localhost:7187")
 
-PLUGIN_PATTERNS = {
-    "rutracker": [r"rutracker\.org", r"rutracker\.net", r"rutracker\.nl"],
-    "kinozal": [r"kinozal\.tv", r"kinozal\.me"],
-    "nnmclub": [r"nnmclub\.to", r"nnm-club\.me"],
-    "iptorrents": [r"iptorrents\.(com|me|org)"],
-}
+# NOTE: the private-tracker roster is NOT re-typed here any more. It lives in
+# ``merge_service.trackers`` and is resolved lazily by ``identify_plugin``
+# below — see the long comment there for why the import cannot be eager in this
+# particular file. ``PLUGIN_PATTERNS`` / ``COMPILED_PATTERNS`` were this file's
+# copy of that roster and had drifted from the other three (it uniquely carried
+# ``kinozal.me`` and ``iptorrents.org``, and uniquely lacked ``kinozal.guru``
+# and ``nnmclub.ro``).
 
-COMPILED_PATTERNS = {plugin: [re.compile(p, re.I) for p in patterns] for plugin, patterns in PLUGIN_PATTERNS.items()}
+
+# ---------------------------------------------------------------------------
+# Content tagging on the tracker-intercept path (§11.4.251 — import the
+# shared builder, never fork it).
+#
+# WHY THIS PATH NEEDED IT. The intercept below already rewrites
+# ``params["urls"]`` to the locally-downloaded ``file://`` path and re-encodes
+# the form, so it is the LAST place that can attach tags before qBittorrent
+# sees the add. Without this, a private-tracker download that arrives through
+# the browser's own WebUI (rather than through webui-bridge.py) lands with
+# ``tags=''`` — the same IMPORTANT-2 defect, on a second path.
+#
+# WHY THE IMPORT IS SAFE HERE (verified, not assumed — §11.4.6). This module is
+# staged into ``/config/qBittorrent/nova3/engines`` by install-plugin.sh and
+# imported by ``download-proxy/src/main.py::start_original_proxy``, which runs
+# inside the ``qbittorrent-proxy`` container. That container bind-mounts the
+# proxy source at ``/config/download-proxy`` (docker-compose.yml
+# ``./download-proxy:/config/download-proxy``), so ``merge_service`` is on
+# disk right there. Measured 2026-09-01 from the real engines working
+# directory inside the running container:
+#
+#     python3 -c "import sys; sys.path.insert(0,'/config/download-proxy/src');
+#                 from merge_service.tagging import build_tags; ..."
+#     -> 720p,Boba,Боба
+#
+# ``merge_service.tagging`` pulls only ``merge_service.enricher``, whose
+# module-level imports are stdlib (logging/os/re/dataclasses) — ``aiohttp`` is
+# imported lazily inside the async network methods, which the offline
+# ``detect_quality`` path never enters. So this adds NO dependency.
+#
+# The same file is also copied into the ``qbittorrent`` container, where the
+# proxy server is never started. The import is therefore LAZY (inside the
+# function, never at module import) and fully guarded: a context without
+# ``merge_service`` degrades to no tags instead of breaking the add.
+# ---------------------------------------------------------------------------
+
+
+def _merge_service_src_candidates():
+    """Ordered, deduplicated roots that may contain the ``merge_service`` package."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.environ.get("MERGE_SERVICE_SRC"),
+        # Container layout: docker-compose bind-mounts ./download-proxy here.
+        "/config/download-proxy/src",
+        # Repo layout when this file is read straight from plugins/.
+        os.path.join(os.path.dirname(here), "download-proxy", "src"),
+    ]
+    seen = []
+    for candidate in candidates:
+        if candidate and candidate not in seen:
+            seen.append(candidate)
+    return seen
+
+
+def build_tag_field(name):
+    """Return qBittorrent's comma-separated ``tags`` value for ``name``.
+
+    ``name`` is the downloaded ``.torrent`` filename — the only input the
+    shared builder REQUIRES and the one that needs no network, since quality
+    is parsed out of it offline. This path has no enriched metadata (no
+    merge-service search happened), so content type / year / genres are
+    genuinely absent and are omitted rather than invented (§11.4.6).
+
+    Tagging must NEVER block or fail a download: every failure path returns an
+    empty string, which qBittorrent treats as "no tags". An untagged torrent is
+    a cosmetic loss; a failed add is a real one. Same contract as
+    ``api/routes.py:_build_tag_field`` and ``webui-bridge.py:_bridge_tag_field``.
+    """
+    try:
+        for root in _merge_service_src_candidates():
+            if os.path.isdir(os.path.join(root, "merge_service")):
+                if root not in sys.path:
+                    sys.path.insert(0, root)
+                break
+        from merge_service.tagging import build_tags, tags_to_qbittorrent_field
+
+        return tags_to_qbittorrent_field(build_tags(name=os.path.basename(name or "")))
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning(f"Tagging skipped ({type(exc).__name__}: {exc})")
+        return ""
+
+
+def merge_tag_values(existing, derived):
+    """Union ``existing`` (whatever the client already sent) with ``derived``.
+
+    The client's tags are NEVER discarded: a user who typed their own tag into
+    the WebUI's add dialog must keep it. Order is client-first, then derived,
+    de-duplicated case-sensitively (qBittorrent's tags are case-sensitive, and
+    ``Боба`` has no case-folding relationship to anything Latin).
+    """
+    out = []
+    for value in (existing or "", derived or ""):
+        for tag in value.split(","):
+            tag = tag.strip()
+            if tag and tag not in out:
+                out.append(tag)
+    return ",".join(out)
 
 
 # ---------------------------------------------------------------------------
@@ -83,7 +179,7 @@ COMPILED_PATTERNS = {plugin: [re.compile(p, re.I) for p in patterns] for plugin,
 #
 # TWO CLASSES, and the split is the same shape as :7187's cheap/expensive one:
 #
-#   proxy           — WebUI passthrough + theme/logo assets. GENEROUS.
+#   proxy           — WebUI passthrough. GENEROUS.
 #                     MEASURED 2026-08-21: the qBittorrent WebUI page served
 #                     through :7186 references 76 UNIQUE local sub-resources
 #                     (223 src/href occurrences), so ONE cold page load is
@@ -357,12 +453,89 @@ def classify_request(command, path, body):
 
 
 
+_IDENTIFY_TRACKER_IN_TEXT = None
+
+
+def _resolve_tracker_matcher():
+    """Resolve (once) the shared roster's substring matcher.
+
+    WHY LAZY AND NOT A MODULE-LEVEL IMPORT (§11.4.6 — measured, not assumed).
+    This file is copied into ``/config/qBittorrent/nova3/engines/`` by
+    ``install-plugin.sh`` (``INFRA_MODULES``) and that directory is mounted into
+    BOTH containers. Only ``qbittorrent-proxy`` bind-mounts
+    ``./download-proxy:/config/download-proxy`` (docker-compose.yml), so in the
+    ``qbittorrent`` container ``merge_service`` is genuinely absent — an eager
+    import would raise during nova2's engine enumeration there. Verified
+    2026-09-01 inside the running proxy container, from the real engines working
+    directory::
+
+        podman exec qbittorrent-proxy sh -lc 'cd /config/qBittorrent/nova3/engines &&
+          python3 -c "import sys; sys.path.insert(0,\\"/config/download-proxy/src\\");
+                      import merge_service.tagging as t; print(t.__file__)"'
+        -> /config/download-proxy/src/merge_service/tagging.py
+
+    ``identify_plugin`` is only ever CALLED by the :7186 proxy server, which
+    runs exclusively in that container — so the one context that needs the
+    roster provably has it, and the other never asks.
+
+    A failure is logged at ERROR and yields no matcher, so tracker interception
+    is skipped rather than silently answered from a stale local copy. That is a
+    loud, diagnosable degrade — not a second roster.
+    """
+    global _IDENTIFY_TRACKER_IN_TEXT
+    if _IDENTIFY_TRACKER_IN_TEXT is not None:
+        return _IDENTIFY_TRACKER_IN_TEXT
+    try:
+        for root in _merge_service_src_candidates():
+            if os.path.isdir(os.path.join(root, "merge_service")):
+                if root not in sys.path:
+                    sys.path.insert(0, root)
+                break
+        from merge_service.trackers import identify_tracker_in_text
+
+        _IDENTIFY_TRACKER_IN_TEXT = identify_tracker_in_text
+    except Exception as exc:
+        logger.error(
+            f"Private-tracker roster unavailable ({type(exc).__name__}: {exc}) — "
+            "tracker interception disabled for this process"
+        )
+        return None
+    return _IDENTIFY_TRACKER_IN_TEXT
+
+
+def _supported_tracker_names():
+    """Tracker names this process can intercept — read from the shared roster.
+
+    Returns ``[]`` (and the startup banner says so) when the roster could not be
+    resolved, so an operator sees the real capability rather than a hardcoded
+    list that no longer reflects what ``identify_plugin`` will do (§11.4.201 —
+    the banner asserts the real condition).
+    """
+    try:
+        for root in _merge_service_src_candidates():
+            if os.path.isdir(os.path.join(root, "merge_service")):
+                if root not in sys.path:
+                    sys.path.insert(0, root)
+                break
+        from merge_service.trackers import PRIVATE_TRACKER_DOMAINS
+
+        return list(PRIVATE_TRACKER_DOMAINS.keys())
+    except Exception:
+        return []
+
+
 def identify_plugin(url):
-    for plugin, patterns in COMPILED_PATTERNS.items():
-        for pattern in patterns:
-            if pattern.search(url):
-                return plugin
-    return None
+    """Return the nova3 plugin owning ``url``, else ``None``.
+
+    Substring semantics (this consumer's deliberate policy, preserved): the
+    intercepted payload is a WebUI "add by URL" body that can carry a tracker
+    address inside a parameter. Over-matching routes through AUTHENTICATION,
+    which is the safe direction here.
+    """
+    matcher = _resolve_tracker_matcher()
+    if matcher is None:
+        return None
+    return matcher(url)
 
 
 def download_via_nova2dl(plugin, url):
@@ -401,684 +574,6 @@ def download_via_nova2dl(plugin, url):
         return None
 
 
-# ---------------------------------------------------------------------- theme
-#
-# The Боба WebUI is qBittorrent's own code — it ignores our
-# design system. To keep the two ports visually consistent, every HTML
-# response flowing through this proxy is rewritten so a tiny CSS + JS
-# pair is loaded from ``/__qbit_theme__/``. The bridge pulls the active
-# palette from the merge service at :7187 and applies the tokens to
-# ``document.documentElement`` plus a handful of high-level overrides.
-#
-# The palette catalog below mirrors
-# ``frontend/src/app/models/palette.model.ts`` — a lockstep test
-# (``tests/unit/test_palette_catalog_python_mirror.py``) keeps the two
-# copies in sync.
-
-THEME_PALETTES: dict[str, dict[str, dict[str, str]]] = {
-    "darcula": {
-        "dark": {
-            "bgPrimary": "#2b2b2b",
-            "bgSecondary": "#3c3f41",
-            "bgTertiary": "#4e5254",
-            "border": "#555555",
-            "textPrimary": "#a9b7c6",
-            "textSecondary": "#808080",
-            "accent": "#9d001e",
-            "accentHover": "#c4002a",
-            "contrast": "#d9a441",
-            "success": "#6a8759",
-            "danger": "#cc7832",
-            "warning": "#d9a441",
-            "info": "#6897bb",
-            "purple": "#9876aa",
-            "shadow": "rgba(0,0,0,0.55)",
-        },
-        "light": {
-            "bgPrimary": "#ffffff",
-            "bgSecondary": "#f2f2f2",
-            "bgTertiary": "#e4e4e4",
-            "border": "#c9c9c9",
-            "textPrimary": "#1c1c1c",
-            "textSecondary": "#555555",
-            "accent": "#9d001e",
-            "accentHover": "#7d0017",
-            "contrast": "#b07d1f",
-            "success": "#0a7b28",
-            "danger": "#c9302c",
-            "warning": "#b07d1f",
-            "info": "#1e6fa8",
-            "purple": "#6f42c1",
-            "shadow": "rgba(0,0,0,0.12)",
-        },
-    },
-    "dracula": {
-        "dark": {
-            "bgPrimary": "#282a36",
-            "bgSecondary": "#343746",
-            "bgTertiary": "#44475a",
-            "border": "#6272a4",
-            "textPrimary": "#f8f8f2",
-            "textSecondary": "#bfbfbf",
-            "accent": "#ff79c6",
-            "accentHover": "#ff92d0",
-            "contrast": "#bd93f9",
-            "success": "#50fa7b",
-            "danger": "#ff5555",
-            "warning": "#f1fa8c",
-            "info": "#8be9fd",
-            "purple": "#bd93f9",
-            "shadow": "rgba(0,0,0,0.55)",
-        },
-        "light": {
-            "bgPrimary": "#f8f8f2",
-            "bgSecondary": "#eeeeec",
-            "bgTertiary": "#e0e0da",
-            "border": "#c9c9c0",
-            "textPrimary": "#282a36",
-            "textSecondary": "#6272a4",
-            "accent": "#d6336c",
-            "accentHover": "#bd255a",
-            "contrast": "#7048e8",
-            "success": "#2b8a3e",
-            "danger": "#c92a2a",
-            "warning": "#b08900",
-            "info": "#1c7ed6",
-            "purple": "#6741d9",
-            "shadow": "rgba(0,0,0,0.12)",
-        },
-    },
-    "solarized": {
-        "dark": {
-            "bgPrimary": "#002b36",
-            "bgSecondary": "#073642",
-            "bgTertiary": "#0a4453",
-            "border": "#586e75",
-            "textPrimary": "#93a1a1",
-            "textSecondary": "#657b83",
-            "accent": "#268bd2",
-            "accentHover": "#2aa198",
-            "contrast": "#b58900",
-            "success": "#859900",
-            "danger": "#dc322f",
-            "warning": "#b58900",
-            "info": "#268bd2",
-            "purple": "#6c71c4",
-            "shadow": "rgba(0,0,0,0.55)",
-        },
-        "light": {
-            "bgPrimary": "#fdf6e3",
-            "bgSecondary": "#eee8d5",
-            "bgTertiary": "#d9d2bf",
-            "border": "#93a1a1",
-            "textPrimary": "#073642",
-            "textSecondary": "#657b83",
-            "accent": "#268bd2",
-            "accentHover": "#1d70ad",
-            "contrast": "#b58900",
-            "success": "#859900",
-            "danger": "#dc322f",
-            "warning": "#b58900",
-            "info": "#268bd2",
-            "purple": "#6c71c4",
-            "shadow": "rgba(0,0,0,0.12)",
-        },
-    },
-    "nord": {
-        "dark": {
-            "bgPrimary": "#2e3440",
-            "bgSecondary": "#3b4252",
-            "bgTertiary": "#434c5e",
-            "border": "#4c566a",
-            "textPrimary": "#eceff4",
-            "textSecondary": "#d8dee9",
-            "accent": "#88c0d0",
-            "accentHover": "#8fbcbb",
-            "contrast": "#ebcb8b",
-            "success": "#a3be8c",
-            "danger": "#bf616a",
-            "warning": "#ebcb8b",
-            "info": "#81a1c1",
-            "purple": "#b48ead",
-            "shadow": "rgba(0,0,0,0.55)",
-        },
-        "light": {
-            "bgPrimary": "#eceff4",
-            "bgSecondary": "#e5e9f0",
-            "bgTertiary": "#d8dee9",
-            "border": "#b8c0ce",
-            "textPrimary": "#2e3440",
-            "textSecondary": "#4c566a",
-            "accent": "#5e81ac",
-            "accentHover": "#4c6e95",
-            "contrast": "#d08770",
-            "success": "#5b8c3a",
-            "danger": "#bf616a",
-            "warning": "#b08900",
-            "info": "#81a1c1",
-            "purple": "#b48ead",
-            "shadow": "rgba(0,0,0,0.12)",
-        },
-    },
-    "monokai": {
-        "dark": {
-            "bgPrimary": "#272822",
-            "bgSecondary": "#383830",
-            "bgTertiary": "#49483e",
-            "border": "#75715e",
-            "textPrimary": "#f8f8f2",
-            "textSecondary": "#cfcfc2",
-            "accent": "#f92672",
-            "accentHover": "#ff4890",
-            "contrast": "#a6e22e",
-            "success": "#a6e22e",
-            "danger": "#f92672",
-            "warning": "#fd971f",
-            "info": "#66d9ef",
-            "purple": "#ae81ff",
-            "shadow": "rgba(0,0,0,0.55)",
-        },
-        "light": {
-            "bgPrimary": "#fafaf5",
-            "bgSecondary": "#ededeb",
-            "bgTertiary": "#dddbcf",
-            "border": "#b0ad9e",
-            "textPrimary": "#272822",
-            "textSecondary": "#75715e",
-            "accent": "#d63384",
-            "accentHover": "#b5256e",
-            "contrast": "#689822",
-            "success": "#689822",
-            "danger": "#c02450",
-            "warning": "#c6660a",
-            "info": "#2a9ab4",
-            "purple": "#7a4ddb",
-            "shadow": "rgba(0,0,0,0.12)",
-        },
-    },
-    "gruvbox": {
-        "dark": {
-            "bgPrimary": "#282828",
-            "bgSecondary": "#3c3836",
-            "bgTertiary": "#504945",
-            "border": "#665c54",
-            "textPrimary": "#ebdbb2",
-            "textSecondary": "#a89984",
-            "accent": "#fb4934",
-            "accentHover": "#cc241d",
-            "contrast": "#fabd2f",
-            "success": "#b8bb26",
-            "danger": "#fb4934",
-            "warning": "#fabd2f",
-            "info": "#83a598",
-            "purple": "#d3869b",
-            "shadow": "rgba(0,0,0,0.55)",
-        },
-        "light": {
-            "bgPrimary": "#fbf1c7",
-            "bgSecondary": "#ebdbb2",
-            "bgTertiary": "#d5c4a1",
-            "border": "#bdae93",
-            "textPrimary": "#3c3836",
-            "textSecondary": "#665c54",
-            "accent": "#9d0006",
-            "accentHover": "#79111e",
-            "contrast": "#b57614",
-            "success": "#79740e",
-            "danger": "#9d0006",
-            "warning": "#b57614",
-            "info": "#076678",
-            "purple": "#8f3f71",
-            "shadow": "rgba(0,0,0,0.12)",
-        },
-    },
-    "one-dark": {
-        "dark": {
-            "bgPrimary": "#282c34",
-            "bgSecondary": "#353b45",
-            "bgTertiary": "#3e4451",
-            "border": "#4b5263",
-            "textPrimary": "#abb2bf",
-            "textSecondary": "#7f848e",
-            "accent": "#61afef",
-            "accentHover": "#4e96d6",
-            "contrast": "#e5c07b",
-            "success": "#98c379",
-            "danger": "#e06c75",
-            "warning": "#e5c07b",
-            "info": "#56b6c2",
-            "purple": "#c678dd",
-            "shadow": "rgba(0,0,0,0.55)",
-        },
-        "light": {
-            "bgPrimary": "#fafafa",
-            "bgSecondary": "#eaeaeb",
-            "bgTertiary": "#d3d3d5",
-            "border": "#a0a1a7",
-            "textPrimary": "#383a42",
-            "textSecondary": "#696c77",
-            "accent": "#4078f2",
-            "accentHover": "#2e62cc",
-            "contrast": "#986801",
-            "success": "#50a14f",
-            "danger": "#e45649",
-            "warning": "#c18401",
-            "info": "#0184bc",
-            "purple": "#a626a4",
-            "shadow": "rgba(0,0,0,0.12)",
-        },
-    },
-    "tokyo-night": {
-        "dark": {
-            "bgPrimary": "#1a1b26",
-            "bgSecondary": "#24283b",
-            "bgTertiary": "#2f344d",
-            "border": "#414868",
-            "textPrimary": "#c0caf5",
-            "textSecondary": "#a9b1d6",
-            "accent": "#7aa2f7",
-            "accentHover": "#6a91e6",
-            "contrast": "#e0af68",
-            "success": "#9ece6a",
-            "danger": "#f7768e",
-            "warning": "#e0af68",
-            "info": "#7dcfff",
-            "purple": "#bb9af7",
-            "shadow": "rgba(0,0,0,0.55)",
-        },
-        "light": {
-            "bgPrimary": "#e6e7ed",
-            "bgSecondary": "#d5d6db",
-            "bgTertiary": "#c4c7d0",
-            "border": "#989caf",
-            "textPrimary": "#343b58",
-            "textSecondary": "#565a6e",
-            "accent": "#34548a",
-            "accentHover": "#2a4471",
-            "contrast": "#8f5e15",
-            "success": "#485e30",
-            "danger": "#8c4351",
-            "warning": "#8f5e15",
-            "info": "#2a6194",
-            "purple": "#5a3e8e",
-            "shadow": "rgba(0,0,0,0.12)",
-        },
-    },
-}
-
-
-THEME_SKIN_CSS = """\
-/* Боба WebUI theme bridge.
- * Populated with the Darcula-dark fallback; bootstrap.js overrides
- * these with the live palette (and reacts to SSE theme events).
- */
-:root {
-  --color-bg-primary:     #2b2b2b;
-  --color-bg-secondary:   #3c3f41;
-  --color-bg-tertiary:    #4e5254;
-  --color-border:         #555555;
-  --color-text-primary:   #a9b7c6;
-  --color-text-secondary: #808080;
-  --color-accent:         #9d001e;
-  --color-accent-hover:   #c4002a;
-  --color-contrast:       #d9a441;
-  --color-success:        #6a8759;
-  --color-danger:         #cc7832;
-  --color-warning:        #d9a441;
-  --color-info:           #6897bb;
-  --color-purple:         #9876aa;
-  --color-shadow:         rgba(0,0,0,0.55);
-}
-
-/* Боба WebUI overrides — target its actual class/id names. */
-html, body {
-  background: var(--color-bg-primary) !important;
-  color: var(--color-text-primary) !important;
-}
-#desktop, #mainWindowTabs, #filterTitle, .sidebar,
-.scroll_container, dialog, .MochaMenu, .propContent,
-#rssFeedFixedHeightContainer, #tabs, .MochaTab {
-  background: var(--color-bg-secondary) !important;
-  color: var(--color-text-primary) !important;
-  border-color: var(--color-border) !important;
-}
-a { color: var(--color-accent); }
-a:hover { color: var(--color-accent-hover); }
-button, input[type="button"], input[type="submit"], .mochaToolButtonText {
-  background: var(--color-accent);
-  color: #fff;
-  border: 1px solid var(--color-accent-hover);
-}
-button:hover, input[type="button"]:hover, input[type="submit"]:hover {
-  background: var(--color-accent-hover);
-}
-.dynamicTable_pane, .dynamicTable {
-  background: var(--color-bg-primary);
-  color: var(--color-text-primary);
-}
-.dynamicTable th, .dynamicTable_headerBackgroundContainer {
-  background: var(--color-bg-tertiary);
-  color: var(--color-accent);
-}
-"""
-
-
-def _build_theme_bootstrap_js() -> str:
-    """Materialise bootstrap.js with the palette catalog inlined.
-
-    The catalog is emitted as a Python dict via ``json.dumps`` so the
-    bytes sent to the browser are always valid JSON, regardless of how
-    the catalog grows. Keeping the catalog inline avoids a second
-    CORS round-trip from the :7186 origin.
-    """
-    catalog_json = json.dumps(THEME_PALETTES, indent=2)
-    js = f"""\
-// Боба WebUI theme bridge — loaded on every HTML page served by
-// the download-proxy on :7186. Fetches the active palette from the
-// merge service and subscribes to live updates via SSE so palette swaps
-// made in the Angular dashboard mirror here without a manual refresh.
-
-(function () {{
-  "use strict";
-  var MERGE = (window.__MERGE_SERVICE_URL__ || ('http://' + window.location.hostname + ':7187'));
-  var CATALOG = {catalog_json};
-  window.__QBIT_PALETTE_CATALOG__ = CATALOG;
-
-  var KEYS = [
-    "bg-primary","bg-secondary","bg-tertiary","border","text-primary",
-    "text-secondary","accent","accent-hover","contrast","success","danger",
-    "warning","info","purple","shadow"
-  ];
-  function camel(k) {{
-    return k.replace(/-([a-z])/g, function (_, c) {{ return c.toUpperCase(); }});
-  }}
-  function apply(tokens) {{
-    var doc = document.documentElement;
-    for (var i = 0; i < KEYS.length; i++) {{
-      var k = KEYS[i];
-      var v = tokens[camel(k)];
-      if (v) doc.style.setProperty("--color-" + k, v);
-    }}
-  }}
-  function tokensFor(paletteId, mode) {{
-    var entry = CATALOG[paletteId] || CATALOG["darcula"];
-    return entry[mode] || entry["dark"];
-  }}
-  var lastUpdatedAt = null;
-  function adopt(state) {{
-    if (!state || !state.paletteId || !state.mode) return;
-    if (lastUpdatedAt && state.updatedAt && state.updatedAt === lastUpdatedAt) return;
-    lastUpdatedAt = state.updatedAt || null;
-    apply(tokensFor(state.paletteId, state.mode));
-    var doc = document.documentElement;
-    doc.setAttribute("data-palette", state.paletteId);
-    doc.setAttribute("data-mode", state.mode);
-    doc.style.setProperty("color-scheme", state.mode);
-    window.__qbitTheme = state;
-  }}
-  function boot() {{
-    // Preseed with Darcula dark so unstyled flashes are minimal.
-    apply(tokensFor("darcula", "dark"));
-    if (typeof fetch !== "function") return;
-    fetch(MERGE + "/api/v1/theme", {{credentials: "omit"}})
-      .then(function (r) {{ if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }})
-      .then(adopt)
-      .catch(function (e) {{ try {{ console.warn("qbit-theme: using fallback", e); }} catch (_) {{}} }});
-    try {{
-      var es = new EventSource(MERGE + "/api/v1/theme/stream");
-      es.addEventListener("theme", function (ev) {{
-        try {{ adopt(JSON.parse(ev.data)); }} catch (_) {{}}
-      }});
-    }} catch (_) {{
-      /* no live updates available */
-    }}
-  }}
-  if (document.readyState === "loading") {{
-    document.addEventListener("DOMContentLoaded", boot);
-  }} else {{
-    boot();
-  }}
-}})();
-"""
-    return js
-
-
-THEME_BOOTSTRAP_JS = _build_theme_bootstrap_js()
-
-THEME_INJECTION_MARKER = "/__qbit_theme__/skin.css"
-_THEME_HEAD_TAGS = (
-    '<link rel="stylesheet" href="/__qbit_theme__/skin.css">\n'
-    '<script src="/__qbit_theme__/bootstrap.js" defer></script>\n'
-)
-_HEAD_CLOSE_RE = re.compile(rb"</head\s*>", re.IGNORECASE)
-
-
-def _merge_service_origin() -> str:
-    """Return the origin of the merge service for CSP whitelisting.
-
-    Боба ships a strict CSP header (``default-src 'self'; ...``)
-    that, without the ``connect-src`` directive, blocks the bridge's
-    ``fetch('/api/v1/theme')`` + ``EventSource(...)`` calls cross-origin.
-    We whitelist the merge-service origin in the CSP the browser sees.
-    """
-    from urllib.parse import urlparse
-
-    parsed = urlparse(MERGE_SERVICE_URL)
-    scheme = parsed.scheme or "http"
-    host = parsed.hostname or "localhost"
-    port = parsed.port or (443 if scheme == "https" else 7187)
-    return f"{scheme}://{host}:{port}"
-
-
-MERGE_SERVICE_ORIGIN = _merge_service_origin()
-
-
-_CSP_DIRECTIVE_RE = re.compile(r"\s*([^;\s]+)(?:\s+([^;]*))?\s*;?", re.I)
-
-
-def rewrite_csp(header_value: str) -> str:
-    """Relax Боба's Content-Security-Policy so the theme bridge
-    can talk to the merge service.
-
-    Adds the merge-service origin to ``connect-src`` (creating the
-    directive if qBittorrent didn't set one). Idempotent. If the input
-    is blank, returns it unchanged.
-    """
-    if not header_value or _theme_injection_disabled():
-        return header_value
-    origin = MERGE_SERVICE_ORIGIN
-    directives: list[tuple[str, str]] = []
-    for part in header_value.split(";"):
-        part = part.strip()
-        if not part:
-            continue
-        name, _, rest = part.partition(" ")
-        directives.append((name.lower(), rest.strip()))
-
-    seen_connect = False
-    new_directives: list[tuple[str, str]] = []
-    for name, value in directives:
-        if name == "connect-src":
-            seen_connect = True
-            if origin not in value.split():
-                value = (value + " " + origin).strip()
-        new_directives.append((name, value))
-    if not seen_connect:
-        # Fall back to default-src if present, extended with our origin.
-        default_src = next((v for n, v in directives if n == "default-src"), "'self'")
-        if origin not in default_src.split():
-            default_src = (default_src + " " + origin).strip()
-        new_directives.append(("connect-src", default_src))
-    return "; ".join(f"{n} {v}".strip() for n, v in new_directives)
-
-
-def _theme_injection_disabled() -> bool:
-    return os.environ.get("DISABLE_THEME_INJECTION") == "1"
-
-
-def _maybe_decode_body(body: bytes, content_encoding: str) -> tuple[bytes, bool]:
-    """Return (decoded_bytes, decoded_flag).
-
-    ``decoded_flag`` is True only when we successfully turned a gzip /
-    deflate payload back into plain text so the injector can mutate
-    it. Anything we can't decode (br, zstd, unknown) is returned as
-    the original bytes with the flag False — the caller should then
-    skip the rewrite and pass the response through untouched.
-    """
-    if not content_encoding:
-        return body, True
-    enc = content_encoding.lower().strip()
-    try:
-        if enc == "gzip":
-            return gzip.decompress(body), True
-        if enc == "deflate":
-            try:
-                return zlib.decompress(body), True
-            except zlib.error:
-                return zlib.decompress(body, -zlib.MAX_WBITS), True
-    except Exception as exc:  # pragma: no cover — defensive
-        logger.debug(f"could not decompress {enc}: {exc}")
-    return body, False
-
-
-def inject_theme_assets(body: bytes, content_type: str) -> bytes:
-    """Return ``body`` with the two theme-bridge tags injected before
-    ``</head>``. Passes through unchanged when:
-
-    * ``body`` is not HTML (``content_type`` doesn't start with ``text/html``),
-    * ``body`` already contains our sentinel (idempotency),
-    * there is no ``</head>`` tag,
-    * the ``DISABLE_THEME_INJECTION=1`` escape hatch is active.
-    """
-    if _theme_injection_disabled():
-        return body
-    if not content_type or not content_type.lower().startswith("text/html"):
-        return body
-    if THEME_INJECTION_MARKER.encode("ascii") in body:
-        return body
-    match = _HEAD_CLOSE_RE.search(body)
-    if not match:
-        return body
-    # Inject just before the </head> tag preserving the original casing.
-    insertion = _THEME_HEAD_TAGS.encode("utf-8")
-    return body[: match.start()] + insertion + body[match.start() :]
-
-
-def serve_theme_asset(path: str) -> tuple[int, dict[str, str], bytes]:
-    """Return (status, headers, body) for a ``/__qbit_theme__/*`` request.
-
-    Kept as a pure function so unit tests can poke it without
-    standing up the HTTP server.
-    """
-    if path == "/__qbit_theme__/skin.css":
-        payload = THEME_SKIN_CSS.encode("utf-8")
-        headers = {
-            "Content-Type": "text/css; charset=utf-8",
-            "Cache-Control": "no-cache",
-            "Content-Length": str(len(payload)),
-        }
-        return 200, headers, payload
-    if path == "/__qbit_theme__/bootstrap.js":
-        payload = THEME_BOOTSTRAP_JS.encode("utf-8")
-        headers = {
-            "Content-Type": "application/javascript; charset=utf-8",
-            "Cache-Control": "no-cache",
-            "Content-Length": str(len(payload)),
-        }
-        return 200, headers, payload
-    payload = b"Not Found"
-    return (
-        404,
-        {
-            "Content-Type": "text/plain; charset=utf-8",
-            "Content-Length": str(len(payload)),
-        },
-        payload,
-    )
-
-
-# ---------------------------------------------------------------------------
-# Re-branding: qBittorrent → Боба (duplicated from theme_injector.py so
-# download_proxy.py stays self-contained)
-# ---------------------------------------------------------------------------
-
-_BOBA_LOGO_PATH = "/images/boba-logo.jpeg"
-
-_REBRAND_PATTERNS = [
-    (re.compile(r'src="images/qbittorrent-tray\.svg"', re.IGNORECASE), 'src="/images/boba-logo.jpeg"'),
-    (re.compile(r"src='images/qbittorrent-tray\.svg'", re.IGNORECASE), 'src="/images/boba-logo.jpeg"'),
-    (re.compile(r'src="images/qbittorrent32\.png"', re.IGNORECASE), 'src="/images/boba-logo.jpeg"'),
-    (re.compile(r"src='images/qbittorrent32\.png'", re.IGNORECASE), 'src="/images/boba-logo.jpeg"'),
-    (re.compile(r'href="images/qbittorrent-tray\.svg"', re.IGNORECASE), 'href="/images/boba-logo.jpeg"'),
-    (re.compile(r"href='images/qbittorrent-tray\.svg'", re.IGNORECASE), 'href="/images/boba-logo.jpeg"'),
-    (re.compile(r'href="images/qbittorrent32\.png"', re.IGNORECASE), 'href="/images/boba-logo.jpeg"'),
-    (re.compile(r"href='images/qbittorrent32\.png'", re.IGNORECASE), 'href="/images/boba-logo.jpeg"'),
-    (re.compile(r'alt="qBittorrent logo"', re.IGNORECASE), 'alt="Боба logo"'),
-    (re.compile(r"alt='qBittorrent logo'", re.IGNORECASE), 'alt="Боба logo"'),
-    (re.compile(r"<title>qBittorrent", re.IGNORECASE), "<title>Боба"),
-    (re.compile(r'content="qBittorrent WebUI"', re.IGNORECASE), 'content="Боба WebUI"'),
-    (re.compile(r"content='qBittorrent WebUI'", re.IGNORECASE), 'content="Боба WebUI"'),
-    (re.compile(r"qBittorrent", re.IGNORECASE), "Боба"),
-]
-
-_BOBA_LOGO_BYTES: bytes | None = None
-_BOBA_LOGO_PATH_ON_DISK = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    "static",
-    "boba-logo.jpeg",
-)
-
-
-def _load_boba_logo() -> bytes:
-    global _BOBA_LOGO_BYTES
-    if _BOBA_LOGO_BYTES is None:
-        try:
-            with open(_BOBA_LOGO_PATH_ON_DISK, "rb") as f:
-                _BOBA_LOGO_BYTES = f.read()
-        except Exception:
-            _BOBA_LOGO_BYTES = b""
-    return _BOBA_LOGO_BYTES
-
-
-def is_boba_logo_request(path: str) -> bool:
-    return path == _BOBA_LOGO_PATH
-
-
-def serve_boba_logo() -> tuple[int, dict[str, str], bytes]:
-    payload = _load_boba_logo()
-    if not payload:
-        payload = b"Not Found"
-        return (
-            404,
-            {
-                "Content-Type": "text/plain; charset=utf-8",
-                "Content-Length": str(len(payload)),
-            },
-            payload,
-        )
-    return (
-        200,
-        {
-            "Content-Type": "image/jpeg",
-            "Cache-Control": "public, max-age=604800",
-            "Content-Length": str(len(payload)),
-        },
-        payload,
-    )
-
-
-def rebrand_html(body: bytes, content_type: str) -> bytes:
-    if not content_type or not content_type.lower().startswith("text/html"):
-        return body
-    try:
-        text = body.decode("utf-8")
-    except UnicodeDecodeError:
-        return body
-    for pattern, replacement in _REBRAND_PATTERNS:
-        text = pattern.sub(replacement, text)
-    return text.encode("utf-8")
-
-
 class DownloadHandler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
 
@@ -1088,8 +583,8 @@ class DownloadHandler(BaseHTTPRequestHandler):
 
     # -- BOB-111 rate limiting ------------------------------------------
     # Charged at the TOP of every entry point, before ANY work: before the
-    # logo/theme short-circuits, before the qBittorrent round-trip and before
-    # the nova2dl fan-out. A limiter that only guards the expensive branch
+    # qBittorrent round-trip and before the nova2dl fan-out. A limiter that
+    # only guards the expensive branch
     # leaves the cheap ones as a free amplifier for the same socket.
 
     def _rate_limit_client(self):
@@ -1145,10 +640,6 @@ class DownloadHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if not self._rate_limit_ok(None):
             return
-        if self._serve_boba_logo():
-            return
-        if self._serve_theme_bridge():
-            return
         self.handle_request(None)
 
     def do_POST(self):
@@ -1157,44 +648,6 @@ class DownloadHandler(BaseHTTPRequestHandler):
         if not self._rate_limit_ok(body):
             return
         self.handle_request(body)
-
-    def _serve_boba_logo(self) -> bool:
-        """Short-circuit Boba logo requests so they never hit qBittorrent."""
-        try:
-            path = urllib.parse.urlparse(self.path).path
-        except Exception:
-            return False
-        if not is_boba_logo_request(path):
-            return False
-        status, headers, payload = serve_boba_logo()
-        self.send_response(status)
-        for k, v in headers.items():
-            self.send_header(k, v)
-        self.end_headers()
-        try:
-            self.wfile.write(payload)
-        except BrokenPipeError:
-            pass
-        return True
-
-    def _serve_theme_bridge(self) -> bool:
-        """Short-circuit the two proxy-local theme routes."""
-        try:
-            path = urllib.parse.urlparse(self.path).path
-        except Exception:
-            return False
-        if not path.startswith("/__qbit_theme__/"):
-            return False
-        status, headers, payload = serve_theme_asset(path)
-        self.send_response(status)
-        for k, v in headers.items():
-            self.send_header(k, v)
-        self.end_headers()
-        try:
-            self.wfile.write(payload)
-        except BrokenPipeError:
-            pass
-        return True
 
     def _is_multipart_file_upload(self):
         content_type = self.headers.get("Content-Type", "")
@@ -1233,6 +686,16 @@ class DownloadHandler(BaseHTTPRequestHandler):
 
                         if torrent_file:
                             params["urls"] = [f"file://{torrent_file}"]
+                            # IMPORTANT-2: attach content tags here — this is
+                            # the last point before qBittorrent sees the add,
+                            # and the downloaded filename is the offline
+                            # quality signal. Any tags the client already sent
+                            # are preserved, never overwritten.
+                            derived = build_tag_field(torrent_file)
+                            if derived:
+                                merged = merge_tag_values(params.get("tags", [""])[0], derived)
+                                params["tags"] = [merged]
+                                logger.info(f"Applying tags: {merged}")
                             new_body = urllib.parse.urlencode(params, doseq=True).encode("utf-8")
 
                             self.proxy_to_qbittorrent(new_body)
@@ -1271,42 +734,26 @@ class DownloadHandler(BaseHTTPRequestHandler):
                     req.add_header(header, value)
 
             with urllib.request.urlopen(req, timeout=30) as response:
-                content_type = response.headers.get("Content-Type", "") or ""
-                content_encoding = (response.headers.get("Content-Encoding") or "").lower().strip()
+                # BYTE-FOR-BYTE PASS-THROUGH. The proxy MUST NOT rewrite
+                # qBittorrent's HTML, CSS, JS or headers. The themed-WebUI
+                # overlay that used to live here was removed 2026-09-01 by
+                # operator decision: it implemented zero qBittorrent
+                # features and its `qBittorrent` -> `Боба` rebrand rewrote
+                # the token INSIDE inline <script> blocks (external .js
+                # files were skipped), so the WebUI's own JS namespace
+                # vanished and every page died on a ReferenceError.
+                # Regression guard:
+                # tests/integration/test_vanilla_webui_unmodified.py
+                #
+                # Content-Encoding is forwarded untouched, so gzip/deflate
+                # bodies are relayed exactly as qBittorrent compressed them
+                # — nothing here needs to read the body.
                 content = response.read()
-
-                # Inject the theme bridge into HTML responses so the
-                # qBittorrent WebUI picks up the dashboard's palette.
-                # Also rebrand qBittorrent → Боба and swap the logo.
-                is_html = content_type.lower().startswith("text/html")
-                decoded_for_injection = False
-                if is_html:
-                    decoded, decoded_for_injection = _maybe_decode_body(content, content_encoding)
-                    if decoded_for_injection:
-                        new_decoded = inject_theme_assets(decoded, content_type)
-                        new_decoded = rebrand_html(new_decoded, content_type)
-                        if new_decoded is not decoded:
-                            # Serve the response un-encoded so the browser
-                            # doesn't misinterpret our plain-text insertion.
-                            content = new_decoded
-                            content_encoding = ""
-                    else:
-                        content = inject_theme_assets(content, content_type)
-                        content = rebrand_html(content, content_type)
 
                 self.send_response(response.status)
                 for header, value in response.headers.items():
-                    h = header.lower()
-                    if h in ("transfer-encoding", "content-length"):
+                    if header.lower() in ("transfer-encoding", "content-length"):
                         continue
-                    # Drop Content-Encoding if we rewrote the body in place.
-                    if h == "content-encoding" and is_html and decoded_for_injection and not content_encoding:
-                        continue
-                    # Relax qBittorrent's CSP so the injected bridge
-                    # can fetch + stream from the merge service on
-                    # :7187 without being blocked by connect-src.
-                    if is_html and h == "content-security-policy":
-                        value = rewrite_csp(value)
                     self.send_header(header, value)
                 self.send_header("Content-Length", str(len(content)))
                 self.end_headers()
@@ -1335,8 +782,7 @@ def run_server():
     logger.info("Download Proxy Server Started")
     logger.info(f"Proxy Port: {PROXY_PORT}")
     logger.info(f"qBittorrent backend: http://{QBITTORRENT_HOST}:{QBITTORRENT_PORT}")
-    logger.info(f"Supported trackers: {list(PLUGIN_PATTERNS.keys())}")
-    logger.info(f"Theme bridge -> {MERGE_SERVICE_URL}")
+    logger.info(f"Supported trackers: {_supported_tracker_names()}")
     logger.info("=" * 60)
 
     try:

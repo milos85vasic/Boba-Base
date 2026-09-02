@@ -104,18 +104,107 @@ if [[ "$TESTS_ONLY" == "false" ]]; then
     fi
 
     step "Scan for hardcoded API keys/passwords in tracked files"
+    # -------------------------------------------------------------------
+    # ROOT CAUSE (fixed 2026-09-01). The previous pattern used PCRE's
+    # non-capturing group `(?:...)` under `grep -E`, which is POSIX ERE and
+    # has no such construct. Measured on this host with GNU grep 3.12 against
+    # a file literally containing `api_key = "AKIA...XXXX"`:
+    #     grep -E '(?:api_key|...)...'  -> stderr "? at start of expression", exit 1 (NO MATCH)
+    #     grep -E '(api_key|...)...'    -> exit 0 (MATCH)
+    # The old code sent that warning to /dev/null, so `$( )` was empty,
+    # SECRETS_FOUND stayed false, and the gate printed PASS. Since CI here is
+    # manual (`./ci.sh` is the only path), this was the project's ONLY
+    # automated secret check and it had never once been able to fail.
+    #
+    # Three things changed, each load-bearing:
+    #  1. Correct POSIX ERE: `(a|b)` not `(?:a|b)`, `[[:space:]]` not `\s`,
+    #     and a real apostrophe via `$'...'` instead of `\x27` (inside a
+    #     bracket expression `\x27` is five literal chars, not a quote).
+    #  2. stderr is CAPTURED, not discarded. Any scanner diagnostic FAILs the
+    #     step — a regex engine's complaint must never read as "clean".
+    #  3. ONE scan, ONE threshold, ONE filter chain, computed once and used
+    #     for BOTH the human-readable listing and the pass/fail decision.
+    #     The two old scans disagreed ({16,} vs {20,}, four terms vs two,
+    #     and the deciding one lacked the pbkdf2_hash / admin.*admin
+    #     exclusions the display one had) so a legitimately-committed PBKDF2
+    #     hash could have failed the build the moment the regex started
+    #     working. Reconciled deliberately toward DETECTION: the wider term
+    #     list and the lower {16,} threshold (strictly more sensitive), with
+    #     the FULL exclusion chain (this repo ships a PBKDF2 hash and the
+    #     documented admin/admin WebUI credentials by design -- see CLAUDE.md).
+    #
+    # Scope is git-tracked files of THIS repo when inside a git worktree
+    # (matching the step's own title, and what PHASE 2 already does). The old
+    # recursive walk of $SCRIPT_DIR also descended into vendored third-party
+    # submodule trees; measured, the corrected pattern finds 10 placeholder
+    # assignments in vendored llama-index/skyvern sources that are not this
+    # project's secrets. Failing on those would be a false-positive refusal
+    # that teaches operators to ignore the gate.
+    # -------------------------------------------------------------------
     SECRETS_FOUND=false
-    grep -rn --include='*.py' --include='*.sh' --include='*.yml' \
-        -E '(?:api_key|secret|password|token)\s*=\s*["\x27][A-Za-z0-9_]{16,}["\x27]' \
-        "$SCRIPT_DIR" 2>/dev/null | grep -v '.env.example' | grep -v 'test_' | grep -v 'your_' | grep -v '.pyc' | grep -v __pycache__ | grep -v 'pbkdf2_hash' | grep -v 'admin.*admin' || true
-    if [[ -n "$(grep -rn --include='*.py' --include='*.sh' --include='*.yml' \
-        -E '(?:api_key|secret)\s*=\s*["\x27][A-Za-z0-9_]{20,}["\x27]' \
-        "$SCRIPT_DIR" 2>/dev/null | grep -v '.env.example' | grep -v 'test_' | grep -v 'your_' | grep -v '.pyc' | grep -v __pycache__)" ]]; then
+    SECRET_PATTERN=$'(api_key|secret|password|token)[[:space:]]*=[[:space:]]*["\'][A-Za-z0-9_]{16,}["\']'
+
+    # Shared exclusion chain — identical for the listing and the decision.
+    _secret_scan_filter() {
+        grep -v '\.env\.example' \
+            | grep -v 'test_' \
+            | grep -v 'your_' \
+            | grep -v '\.pyc' \
+            | grep -v '__pycache__' \
+            | grep -v 'pbkdf2_hash' \
+            | grep -v 'admin.*admin' \
+            || true
+    }
+
+    SECRET_STDERR="$(mktemp)"
+
+    # CONTROL NEEDLE (constitution 11.4.201(7)(b)): prove the instrument can
+    # SEE before trusting a zero. A blind scanner and a clean repo both
+    # return the same quiet nothing; only a known-present needle tells them
+    # apart. The needle value below is fabricated and is not a credential.
+    # The needle is ASSEMBLED at run time from fragments. Writing it as one
+    # literal would make ci.sh (a tracked *.sh file) match its own pattern —
+    # a carrier false-positive: the scanner reporting the rule that defines it.
+    SECRET_NEEDLE_DIR="$(mktemp -d)"
+    printf '%s = "%s"\n' 'api_key' 'CINEEDLE_not_a_real_secret_0123' > "$SECRET_NEEDLE_DIR/needle.py"
+    if ! grep -qE "$SECRET_PATTERN" "$SECRET_NEEDLE_DIR/needle.py" 2>>"$SECRET_STDERR"; then
+        fail "Secret-scan control needle NOT detected — the scanner is blind; treat this repo as UNSCANNED"
+        SECRETS_FOUND=true
+    fi
+    rm -rf "$SECRET_NEEDLE_DIR"
+
+    SECRET_RAW=""
+    SECRET_FILE_COUNT=0
+    if git rev-parse --git-dir >/dev/null 2>&1; then
+        SECRET_FILE_COUNT="$(git ls-files -- '*.py' '*.sh' '*.yml' | wc -l)"
+        SECRET_RAW="$(git ls-files -z -- '*.py' '*.sh' '*.yml' \
+            | xargs -0 -r grep -nHE "$SECRET_PATTERN" 2>>"$SECRET_STDERR" || true)"
+    else
+        SECRET_RAW="$(grep -rn --include='*.py' --include='*.sh' --include='*.yml' \
+            -E "$SECRET_PATTERN" "$SCRIPT_DIR" 2>>"$SECRET_STDERR" || true)"
+    fi
+
+    # A diagnostic from the scanner means the scan did not really run.
+    # Silence here is what let the broken pattern survive; never again.
+    if [[ -s "$SECRET_STDERR" ]]; then
+        echo "  scanner diagnostics (the scan is NOT trustworthy):"
+        sed 's/^/    /' "$SECRET_STDERR"
+        fail "Secret scan emitted diagnostics — pattern or scanner is broken; treat this repo as UNSCANNED"
+        SECRETS_FOUND=true
+    fi
+    rm -f "$SECRET_STDERR"
+
+    SECRET_HITS=""
+    if [[ -n "$SECRET_RAW" ]]; then
+        SECRET_HITS="$(printf '%s\n' "$SECRET_RAW" | _secret_scan_filter)"
+    fi
+    if [[ -n "$SECRET_HITS" ]]; then
+        printf '%s\n' "$SECRET_HITS"
         fail "Potential hardcoded secrets found (see above)"
         SECRETS_FOUND=true
     fi
     if [[ "$SECRETS_FOUND" == "false" ]]; then
-        pass "No hardcoded secrets detected"
+        pass "No hardcoded secrets detected ($SECRET_FILE_COUNT files scanned, control needle verified)"
     fi
 
     step "Verify .gitignore covers sensitive files"

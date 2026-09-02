@@ -9,8 +9,14 @@
 #   2. Build every native artefact: cmd/boba-ctl (Go), qBitTorrent-go/
 #      (Go binaries), frontend/ (Angular production bundle).
 #   3. Install user-space systemd units into ~/.config/systemd/user/
-#      via scripts/boba-svc.sh install (symlinks source-of-truth files
-#      from scripts/systemd/user/ so future git pulls propagate).
+#      via scripts/boba-svc.sh install. The units under
+#      scripts/systemd/user/ are TEMPLATES carrying @@BOBA_REPO_ROOT@@;
+#      boba-svc substitutes this checkout's real root and installs them
+#      as COPIES, so the units are checkout-location-independent.
+#      Because they are copies, a later `git pull` that changes a unit
+#      does NOT propagate on its own — re-run `boba-svc install` (it is
+#      idempotent and reports what changed). See the template note in
+#      scripts/boba-svc.sh for why substitution rules out symlinks.
 #   4. Reload systemd + enable boba.target so the stack auto-starts on
 #      user login (and on host boot when linger is enabled — reported
 #      honestly if it isn't).

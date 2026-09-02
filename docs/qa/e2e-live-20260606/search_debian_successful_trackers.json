@@ -5,6 +5,11 @@
     "results_count": 1
   },
   {
+    "name": "bitsearch",
+    "status": "success",
+    "results_count": 80
+  },
+  {
     "name": "iptorrents",
     "status": "success",
     "results_count": 49
@@ -12,22 +17,17 @@
   {
     "name": "jackett",
     "status": "success",
-    "results_count": 51
+    "results_count": 1
   },
   {
     "name": "limetorrents",
     "status": "success",
-    "results_count": 53
+    "results_count": 52
   },
   {
     "name": "linuxtracker",
     "status": "success",
-    "results_count": 240
-  },
-  {
-    "name": "nnmclub",
-    "status": "success",
-    "results_count": 50
+    "results_count": 15
   },
   {
     "name": "nyaa",
@@ -52,7 +52,7 @@
   {
     "name": "snowfl",
     "status": "success",
-    "results_count": 40
+    "results_count": 39
   },
   {
     "name": "torlock",

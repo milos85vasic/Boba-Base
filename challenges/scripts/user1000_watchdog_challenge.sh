@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# user1000-watchdog-challenge.sh — anti-bluff verification of the watchdog
+# user1000_watchdog_challenge.sh — anti-bluff verification of the watchdog
 #
 # §11.4.115 RED-first + §11.4.107(10) self-validated + §11.4.201 real-condition
 # guard. Verifies structural correctness of the watchdog artifacts WITHOUT

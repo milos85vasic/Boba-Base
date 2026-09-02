@@ -12,25 +12,38 @@ Scenarios:
 import html
 
 import pytest
-import requests
 
 
 from tests.fixtures.health import merge_service_required
 
 
+# BOB-152: a live call here may legitimately wait out one shared
+# per-IP `search` window (server-reported Retry-After, ~60s) before it
+# gets its real answer. The default --timeout=60 would kill that wait
+# and re-introduce the exact flake this fix removes, so the class
+# carries explicit headroom. This raises the CEILING only; nothing
+# here sleeps when the budget is not exhausted.
+@pytest.mark.timeout(240)
 @merge_service_required
 class TestXSSProtection:
     """XSS attack vectors must be sanitized or rejected."""
 
     @pytest.fixture(autouse=True)
-    def _service_up(self, merge_service_live):
-        self.base_url = merge_service_live
+    def _service_up(self, merge_service_client):
+        # BOB-152: every live call in this class goes through the
+        # rate-limit-aware client (tests/fixtures/services.py). It gates on
+        # `merge_service_live_or_skip`, so a down stack SKIPs honestly and
+        # never boots the operator's compose stack; and it drains the shared
+        # per-IP `search` window using the server's own `Retry-After` instead
+        # of letting a 429 masquerade as a product failure.
+        self.client = merge_service_client
+        self.base_url = merge_service_client.base_url
 
     def test_search_query_with_script_tag(self):
         """Search query containing <script> must be returned as text in JSON (not executable)."""
         payload = "<script>alert('xss')</script>"
-        resp = requests.post(
-            f"{self.base_url}/api/v1/search",
+        resp = self.client.post(
+            "/api/v1/search",
             json={"query": payload, "limit": 5},
             timeout=60,
         )
@@ -44,8 +57,8 @@ class TestXSSProtection:
     def test_search_query_with_javascript_protocol(self):
         """Search query with javascript: protocol must be treated as text."""
         payload = "javascript:alert('xss')"
-        resp = requests.post(
-            f"{self.base_url}/api/v1/search",
+        resp = self.client.post(
+            "/api/v1/search",
             json={"query": payload, "limit": 5},
             timeout=60,
         )
@@ -66,7 +79,7 @@ class TestXSSProtection:
            server data (i.e. no ``innerHTML`` / ``document.write`` /
            ``eval``).
         """
-        dashboard = requests.get(f"{self.base_url}/", timeout=10).text
+        dashboard = self.client.get("/", timeout=10).text
         assert "<app-root>" in dashboard, "Angular shell missing"
         bad_patterns = ["innerHTML", "document.write", "eval("]
         for bad in bad_patterns:
@@ -74,8 +87,8 @@ class TestXSSProtection:
 
     def test_magnet_link_rejects_javascript_protocol(self):
         """Magnet endpoint must reject javascript: URLs."""
-        resp = requests.post(
-            f"{self.base_url}/api/v1/magnet",
+        resp = self.client.post(
+            "/api/v1/magnet",
             json={"name": "test", "hash": "abc123"},
             timeout=10,
         )
@@ -91,14 +104,14 @@ class TestXSSProtection:
             "event": "search_complete",
             "script": "/bin/true",
         }
-        resp = requests.post(
-            f"{self.base_url}/api/v1/hooks",
+        resp = self.client.post(
+            "/api/v1/hooks",
             json=payload,
             timeout=10,
         )
         # Should either reject or sanitize
         if resp.status_code in (200, 201):
-            hooks = requests.get(f"{self.base_url}/api/v1/hooks", timeout=10).json()
+            hooks = self.client.get("/api/v1/hooks", timeout=10).json()
             for hook in hooks:
                 assert "<script>" not in hook.get("name", ""), "Hook name must not contain raw script tags"
 
@@ -108,8 +121,8 @@ class TestXSSProtection:
 
         Live search; budget raised above the default 30s.
         """
-        resp = requests.post(
-            f"{self.base_url}/api/v1/search",
+        resp = self.client.post(
+            "/api/v1/search",
             json={"query": "test", "limit": 5},
             timeout=60,
         )
@@ -125,8 +138,8 @@ class TestXSSProtection:
     def test_css_injection_in_search_query(self):
         """CSS injection via <style> tags must be returned as text in JSON."""
         payload = "<style>body{background:red}</style>"
-        resp = requests.post(
-            f"{self.base_url}/api/v1/search",
+        resp = self.client.post(
+            "/api/v1/search",
             json={"query": payload, "limit": 5},
             timeout=60,
         )
@@ -139,8 +152,8 @@ class TestXSSProtection:
     def test_onerror_attribute_injection(self):
         """img onerror attribute injection must not execute."""
         payload = "<img src=x onerror=alert('xss')>"
-        resp = requests.post(
-            f"{self.base_url}/api/v1/search",
+        resp = self.client.post(
+            "/api/v1/search",
             json={"query": payload, "limit": 5},
             timeout=60,
         )
