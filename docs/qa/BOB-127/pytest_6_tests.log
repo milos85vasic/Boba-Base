@@ -1,0 +1,22 @@
+[1m============================= test session starts ==============================[0m
+platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0 -- /home/milosvasic/Projects/boba/.venv/bin/python
+cachedir: .pytest_cache
+benchmark: 5.3.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+hypothesis profile 'default'
+rootdir: /home/milosvasic/Projects/boba
+configfile: pyproject.toml
+plugins: anyio-4.14.2, schemathesis-4.25.2, benchmark-5.3.0, xdist-3.8.0, asyncio-1.4.0, cov-7.1.0, docker-3.2.5, playwright-0.9.0, base-url-2.1.0, repeat-0.9.4, locust-2.46.4, timeout-2.4.0, hypothesis-6.167.1, respx-0.23.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+timeout: 60.0s
+timeout method: signal
+timeout func_only: False
+[1mcollecting ... [0mcollected 6 items
+
+tests/unit/merge_service/test_public_tracker_subprocess_timeout.py::test_stuck_subprocess_killed_and_abandoned [32mPASSED[0m[32m [ 16%][0m
+tests/unit/merge_service/test_public_tracker_subprocess_timeout.py::test_process_group_kill_called_on_deadline [32mPASSED[0m[32m [ 33%][0m
+tests/unit/merge_service/test_public_tracker_subprocess_timeout.py::test_cleanup_timeout_abandons_zombie [32mPASSED[0m[32m [ 50%][0m
+tests/unit/merge_service/test_public_tracker_subprocess_timeout.py::test_outer_backstop_timeout_in_search_tracker [32mPASSED[0m[32m [ 66%][0m
+tests/unit/merge_service/test_public_tracker_subprocess_timeout.py::test_return_exceptions_in_run_search [32mPASSED[0m[32m [ 83%][0m
+tests/unit/merge_service/test_public_tracker_subprocess_timeout.py::test_return_exceptions_preserves_successful_tracker [32mPASSED[0m[32m [100%][0m
+
+[32m============================== [32m[1m6 passed[0m[32m in 20.63s[0m[32m ==============================[0m

@@ -395,34 +395,34 @@ class TestOrchestratorGetEnabledTrackers:
             assert "jackett" not in names
 
 
-class TestIsTrackerAuthenticated:
+class TestTrackerCredentialsConfigured:
     def test_public_tracker_not_authenticated(self):
         orch = SearchOrchestrator()
-        assert orch._is_tracker_authenticated("rutor") is False
+        assert orch._tracker_credentials_configured("rutor") is False
 
     def test_rutracker_with_env(self):
         orch = SearchOrchestrator()
         with patch.dict(os.environ, {"RUTRACKER_USERNAME": "u", "RUTRACKER_PASSWORD": "p"}, clear=False):
-            assert orch._is_tracker_authenticated("rutracker") is True
+            assert orch._tracker_credentials_configured("rutracker") is True
 
     def test_kinozal_with_env(self):
         orch = SearchOrchestrator()
         with patch.dict(os.environ, {"KINOZAL_USERNAME": "u", "KINOZAL_PASSWORD": "p"}, clear=False):
-            assert orch._is_tracker_authenticated("kinozal") is True
+            assert orch._tracker_credentials_configured("kinozal") is True
 
     def test_nnmclub_with_env(self):
         orch = SearchOrchestrator()
         with patch.dict(os.environ, {"NNMCLUB_COOKIES": "sid=abc"}, clear=False):
-            assert orch._is_tracker_authenticated("nnmclub") is True
+            assert orch._tracker_credentials_configured("nnmclub") is True
 
     def test_iptorrents_with_env(self):
         orch = SearchOrchestrator()
         with patch.dict(os.environ, {"IPTORRENTS_USERNAME": "u", "IPTORRENTS_PASSWORD": "p"}, clear=False):
-            assert orch._is_tracker_authenticated("iptorrents") is True
+            assert orch._tracker_credentials_configured("iptorrents") is True
 
     def test_unknown_tracker(self):
         orch = SearchOrchestrator()
-        assert orch._is_tracker_authenticated("unknown_tracker") is False
+        assert orch._tracker_credentials_configured("unknown_tracker") is False
 
 
 class TestParseSizeString:

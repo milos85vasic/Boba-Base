@@ -435,8 +435,20 @@ events.</p>
 <tr>
 <td><code>authenticated</code></td>
 <td><code>bool</code></td>
-<td><code>True</code> when a cached session exists or credentials
-env-vars are set</td>
+<td><code>True</code> <strong>only</strong> when a real session exists
+for this tracker — one stored by a login that actually returned a
+session cookie, or an operator-exported browser cookie carrying the
+tracker’s session key. Re-evaluated when the tracker’s round-trip
+completes, so a refused login stays <code>False</code>. Never inferred
+from credential presence (BOB-173)</td>
+</tr>
+<tr>
+<td><code>credentials_configured</code></td>
+<td><code>bool</code></td>
+<td><code>True</code> when credentials/cookies for this tracker are
+<strong>present</strong> in the service environment — something to log
+in <em>with</em>, which is not the same as having logged in. Public
+trackers are always <code>False</code></td>
 </tr>
 <tr>
 <td><code>attempt</code></td>

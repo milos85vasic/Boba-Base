@@ -453,6 +453,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       error: raw.error ?? null,
       error_type: raw.error_type ?? null,
       authenticated: !!raw.authenticated,
+      credentials_configured: !!raw.credentials_configured,
       attempt: raw.attempt ?? 1,
       http_status: raw.http_status ?? null,
       category: raw.category ?? 'all',

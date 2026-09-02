@@ -18,18 +18,33 @@
 # SECURITY (§11.4.10 — non-negotiable):
 #   The qbittorrent-proxy holds the tracker credentials. This challenge NEVER
 #   reads, prints, logs, or env-dumps any credential VALUE. It reads ONLY the
-#   `authenticated` boolean (plus status / results_count / error) that the merge
+#   `authenticated` + `credentials_configured` booleans (plus status /
+#   results_count / error) that the merge
 #   service returns in its JSON. The query is a harmless public term ("ubuntu");
 #   no credential ever appears in the request, the evidence file, or any log.
+#
+# TWO DISTINCT FACTS (BOB-173) — never conflate them again:
+#   `credentials_configured` — the operator supplied something to log in WITH.
+#   `authenticated`          — a session actually exists (the login worked).
+#   Until 2026-09-02 a single `authenticated` flag carried the FIRST meaning
+#   under the SECOND name, so rutracker and nnmclub reported
+#   authenticated==true beside status=="error"/error_type=="upstream_captcha"
+#   — the captured proof that the login obtained no session cookie. This
+#   challenge then took the "authenticated but bad status" branch and reported
+#   a confusing FAIL, when the honest verdict was an operator-blocked SKIP.
 #
 # Per-tracker verdict (ground truth captured live, query=ubuntu):
 #   PRIVATE [rutracker, kinozal, nnmclub, iptorrents]:
 #     PASS  if authenticated==true  AND status in {success, empty}.
 #     SKIP  (operator-blocked) if authenticated==false AND error matches an
 #           honest transient blocker (captcha/timeout/temporarily/rate/
-#           unreachable/deadline).
-#     FAIL  if authenticated==false otherwise (bad/expired creds), OR the
-#           tracker is absent from tracker_stats.
+#           unreachable/deadline) — the tracker's login is gated upstream and
+#           only the operator can clear it (export browser cookies).
+#     FAIL  if authenticated==false otherwise — distinguishing
+#           credentials_configured==false (nothing supplied) from
+#           credentials_configured==true (supplied but the login was rejected
+#           for a non-transient reason) — OR the tracker is absent from
+#           tracker_stats.
 #   PUBLIC [rutor] (no login endpoint — authenticated==false BY DESIGN):
 #     PASS  if status==success AND results_count>0.
 #
@@ -51,7 +66,8 @@
 # Inputs:   none in the request (public query, no credentials sent).
 #           Optional env: BOBA_BASE_URL (default http://localhost:7187).
 # Outputs:  challenges/.evidence/tracker_auth_live.json (captured
-#           evidence: per-tracker {name,status,authenticated,results_count} —
+#           evidence: per-tracker {name,status,authenticated,
+#           credentials_configured,results_count,error} —
 #           NO credential values — plus the overall verdict, §11.4.83);
 #           a clear PASS:/SKIP:/FAIL: line; exit 0 PASS, 77 honest SKIP, !=0 FAIL.
 # Side-effects: none on the target (read-only search; no torrent added).
@@ -126,7 +142,8 @@ ev = {
     "base": base,
     "query": query,
     "note": "credential VALUES are never read or stored (§11.4.10); only the "
-            "merge service's authenticated boolean + status are inspected",
+            "merge service's authenticated + credentials_configured booleans, "
+            "status, results_count and error string are inspected",
 }
 ev.update(frag)
 with open(out, "w", encoding="utf-8") as fh:
@@ -280,14 +297,21 @@ fails = []
 skips = []
 passes = []
 
-def record(name, status, authed, count, verdict, reason=""):
+def record(name, status, authed, count, verdict, reason="", creds=None, err=None):
     per_tracker.append({
         "name": name,
         "status": status,
+        # BOB-173: BOTH facts land in the evidence, distinctly. An operator
+        # reading this file can tell "logged in" from "has credentials".
         "authenticated": authed,
+        "credentials_configured": creds,
         "results_count": count,
         "verdict": verdict,
         "reason": reason,
+        # The tracker's own error string is the operator's actionable detail
+        # (e.g. "export browser cookies") — it was previously dropped from the
+        # evidence, leaving a FAIL with no captured cause (§11.4.5).
+        "error": err or None,
     })
 
 # --- PRIVATE trackers: must be authenticated -----------------------------------
@@ -299,18 +323,32 @@ for name in sorted(private):
         continue
     status = s.get("status")
     authed = s.get("authenticated") is True
+    creds = s.get("credentials_configured") is True
     count = s.get("results_count")
     err = str(s.get("error") or "")
     if authed and status in ("success", "empty"):
-        record(name, status, authed, count, "PASS")
+        record(name, status, authed, count, "PASS", creds=creds, err=err)
         passes.append(name)
     elif (not authed) and TRANSIENT.search(err):
-        record(name, status, authed, count, "SKIP", f"transient: {err}")
-        skips.append(f"{name}: transient blocker ({err})")
+        # Login gated upstream (CAPTCHA / rate limit / unreachable). Only the
+        # operator can clear it, so this is an honest operator-blocked SKIP,
+        # never a product FAIL — and the two facts are reported separately so
+        # "credentials present, login refused" reads unambiguously.
+        record(name, status, authed, count, "SKIP",
+               f"transient: {err}", creds=creds, err=err)
+        skips.append(
+            f"{name}: transient blocker "
+            f"(credentials_configured={creds}, authenticated=False) {err}"
+        )
     else:
-        reason = (f"authenticated={authed} status={status!r} error={err!r}"
-                  if not authed else f"unexpected status {status!r} while authenticated")
-        record(name, status, authed, count, "FAIL", reason)
+        if not authed:
+            reason = (
+                f"credentials_configured={creds} authenticated=False "
+                f"status={status!r} error={err!r}"
+            ) + ("" if creds else " -- no credentials supplied for this tracker")
+        else:
+            reason = f"unexpected status {status!r} while authenticated"
+        record(name, status, authed, count, "FAIL", reason, creds=creds, err=err)
         fails.append(f"{name}: {reason}")
 
 # --- PUBLIC trackers: no login; must just return real results ------------------
@@ -327,12 +365,13 @@ for name in sorted(public):
         count_int = int(count)
     except (TypeError, ValueError):
         count_int = 0
+    creds = s.get("credentials_configured") is True
     if status == "success" and count_int > 0:
-        record(name, status, authed, count, "PASS")
+        record(name, status, authed, count, "PASS", creds=creds)
         passes.append(name)
     else:
         reason = f"public tracker status={status!r} results_count={count!r} (need success + >0)"
-        record(name, status, authed, count, "FAIL", reason)
+        record(name, status, authed, count, "FAIL", reason, creds=creds)
         fails.append(f"{name}: {reason}")
 
 # --- Overall verdict -----------------------------------------------------------
@@ -377,8 +416,11 @@ try:
 except Exception:
     sys.exit(0)
 for t in ev.get("tracker_stats", []):
-    print("  - %-11s auth=%-5s status=%-8s results=%-4s -> %s%s" % (
-        t.get("name"), str(t.get("authenticated")), str(t.get("status")),
+    # BOB-173: creds= and auth= are printed as SEPARATE columns so
+    # "credentials supplied but not logged in" can never read as "authenticated".
+    print("  - %-11s auth=%-5s creds=%-5s status=%-8s results=%-4s -> %s%s" % (
+        t.get("name"), str(t.get("authenticated")),
+        str(t.get("credentials_configured")), str(t.get("status")),
         str(t.get("results_count")), t.get("verdict"),
         (" ("+t.get("reason")+")") if t.get("reason") else ""))' "$EVIDENCE" || true
 

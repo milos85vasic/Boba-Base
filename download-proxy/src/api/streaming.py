@@ -143,7 +143,7 @@ def _build_merged_update(orchestrator: Any, search_id: str) -> dict[str, Any] | 
     try:
         from api.routes import _serialize_merged_rows
     except ImportError:  # pragma: no cover - import shape varies under importlib
-        from .routes import _serialize_merged_rows  # type: ignore[no-redef]
+        from .routes import _serialize_merged_rows
 
     rows = _serialize_merged_rows(merged)
     serialized = [

@@ -5,7 +5,9 @@ FastAPI application and router setup for the merge service.
 import logging
 import os
 import sys
+from collections.abc import Callable
 from contextlib import asynccontextmanager
+from typing import Any
 
 _src_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _src_dir not in sys.path:
@@ -375,7 +377,14 @@ def _serve_index_html():  # type: ignore[no-untyped-def]
 # `search()`). Both handlers declare `response: Response` so FastAPI's
 # injected Response object is available for slowapi to populate — same
 # root cause, same fix, applied here defensively for the dict-fallback path.
-_dashboard_deco = dashboard_limit_decorator(app) if _rate_limits_active else (lambda f: f)
+def _deco_passthrough(f: Callable[..., Any]) -> Callable[..., Any]:
+    """No-op decorator used when rate limiting is disabled."""
+    return f
+
+
+_dashboard_deco: Callable[[Callable[..., Any]], Callable[..., Any]] = (
+    dashboard_limit_decorator(app) if _rate_limits_active else _deco_passthrough
+)
 
 
 @app.get("/")

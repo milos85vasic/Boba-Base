@@ -51,7 +51,8 @@ def _make_orch(search_mod, enabled_names, *, raise_for_all=False):
     orch = search_mod.SearchOrchestrator()
     sources = [TrackerSource(name=n, url=f"https://{n}.example", enabled=True) for n in enabled_names]
     orch._get_enabled_trackers = lambda: list(sources)  # type: ignore[method-assign]
-    orch._is_tracker_authenticated = lambda name: False  # type: ignore[method-assign]
+    orch._has_tracker_session = lambda name: False  # type: ignore[method-assign]
+    orch._tracker_credentials_configured = lambda name: False  # type: ignore[method-assign]
 
     async def _fake_search_tracker(tracker, query, category):  # type: ignore[no-untyped-def]
         if raise_for_all:

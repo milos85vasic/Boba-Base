@@ -72,7 +72,10 @@ class TestStartSearchTrackerError:
                 assert "piratebay" in meta.tracker_stats
                 assert meta.tracker_stats["rutracker"].query == "linux"
                 assert meta.tracker_stats["rutracker"].status == "pending"
-                assert meta.tracker_stats["rutracker"].authenticated is True
+                # BOB-173: seeded before any login round-trip — credentials are
+                # configured, but no session exists yet, so authenticated=False.
+                assert meta.tracker_stats["rutracker"].credentials_configured is True
+                assert meta.tracker_stats["rutracker"].authenticated is False
 
 
 # --------------------------------------------------------------------------

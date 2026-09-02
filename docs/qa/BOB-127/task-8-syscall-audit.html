@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>task-8-syscall-audit</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">task-8-syscall-audit</h1>
+</header>
+<h1
+id="bob-127-task-8-syscall-audit-reproduced-closure-evidence">BOB-127 —
+Task 8 syscall audit (reproduced closure evidence)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-09-02T00:00:00Z</p>
+<h2 id="why-this-file-exists">Why this file exists</h2>
+<p>BOB-127 closed on 2026-08-19 (<code>item_history</code> id=172,
+event=<code>Fixed</code>, by=<code>AI</code>) citing evidence at
+<code>.superpowers/sdd/task-8-syscall-audit.md</code>. That path was
+<strong>never committed</strong> —
+<code>git log --all -- '.superpowers/sdd/task-8-syscall-audit.md'</code>
+returns nothing and <code>.superpowers/</code> does not exist in the
+working tree — so the closure’s captured proof was not producible on
+demand and <code>workable-items validate</code> refused it under §11.4.5
+/ §11.4.69 / §11.4.123 / §11.4.226.</p>
+<p>The claim itself is <strong>re-producible today</strong>, so this
+file re-executes the audit and lands it at the project’s canonical,
+tracked evidence location (<code>docs/qa/&lt;ATM-ID&gt;/</code>,
+§11.4.83 / §11.4.215) rather than an untracked scratch directory. The
+<code>item_history</code> <code>evidence_path</code> is corrected to
+point here.</p>
+<p><strong>Why the original vanished — known mechanism, not a new
+discovery.</strong> This project’s own QA discovery ledger already
+records the class: entry <code>SCRATCH-LOSS-2026-08-18</code>
+(<code>docs/QA_DISCOVERY_LEDGER.md</code>) documents
+<code>.superpowers/sdd/</code> deliverables that were declared but never
+written, root-caused to producer subagents crashing on session rate
+limits mid-deliverable (§11.4.147(e)), with the follow-up
+<strong>BOB-107</strong> filed for a pre-dispatch precondition check.
+<code>.superpowers/</code> is an untracked agent scratchpad, so anything
+cited from it is outside version control and unproducible the moment
+that scratchpad is gone. Citing a scratchpad path as a closure’s
+captured proof is the underlying defect; landing evidence under tracked
+<code>docs/qa/</code> is the fix, and matches every other evidence row
+in this DB.</p>
+<h2 id="what-bob-127-was">What BOB-127 was</h2>
+<p>Follow-up to the BOB-126 host-safety sweep (§11.4.263). The Task-8
+audit found <strong>2 test cases</strong> in
+<code>tests/unit/merge_service/test_public_tracker_subprocess_timeout.py</code>
+that set an explicit integer <code>mock.pid</code> (<code>12345</code>,
+<code>1111</code>) — satisfying the <em>production</em> BOB-126
+<code>pid &gt; 1</code> int-guard — but did <strong>not</strong> patch
+<code>os.killpg</code> / <code>os.getpgid</code>, so the real syscalls
+fired against hardcoded, non-owned PIDs. Low collision probability on a
+typical host, but a §11.4.263(C) test-side hygiene violation in the
+exact file authored to regression-guard against host-wide kills.</p>
+<p><strong>Fix:</strong> commit <code>8bedc5a</code> (“test(BOB-126):
+patch os.killpg/getpgid in remaining 2 subprocess-timeout tests”) added
+<code>patch.object(_search.os, "getpgid", ...)</code> +
+<code>patch.object(_search.os, "killpg")</code> to both tests, copying
+the sanctioned pattern already used by the sibling
+<code>test_process_group_kill_called_on_deadline</code>.</p>
+<h2 id="layer-1-the-fix-is-present-at-head-60729c9">Layer 1 — the fix is
+present at HEAD (<code>60729c9</code>)</h2>
+<pre><code>$ grep -n &quot;getpgid\|killpg\|def test_&quot; tests/unit/merge_service/test_public_tracker_subprocess_timeout.py
+15:1.  Process-group kill (`start_new_session=True` + `os.killpg`) so
+62:async def test_stuck_subprocess_killed_and_abandoned() -&gt; None:
+83:        patch.object(_search.os, &quot;getpgid&quot;, return_value=12345),
+84:        patch.object(_search.os, &quot;killpg&quot;),
+95:async def test_process_group_kill_called_on_deadline() -&gt; None:
+117:        patch.object(_search.os, &quot;getpgid&quot;, return_value=9999) as mock_getpgid,
+118:        patch.object(_search.os, &quot;killpg&quot;) as mock_killpg,
+122:    mock_getpgid.assert_called_once_with(9999)
+123:    mock_killpg.assert_called_once_with(9999, pytest.approx(9))  # SIGKILL = 9
+126:async def test_cleanup_timeout_abandons_zombie() -&gt; None:
+150:        patch.object(_search.os, &quot;getpgid&quot;, return_value=1111),
+151:        patch.object(_search.os, &quot;killpg&quot;),</code></pre>
+<p>Both formerly-unguarded tests (lines 62 and 126) now carry the guard
+pair at lines 83-84 and 150-151.</p>
+<h2 id="layer-2-the-6-tests-still-pass-runtime">Layer 2 — the 6 tests
+still pass (runtime)</h2>
+<p>Full log: <a
+href="pytest_6_tests.log"><code>pytest_6_tests.log</code></a></p>
+<pre><code>tests/.../test_stuck_subprocess_killed_and_abandoned      PASSED [ 16%]
+tests/.../test_process_group_kill_called_on_deadline      PASSED [ 33%]
+tests/.../test_cleanup_timeout_abandons_zombie            PASSED [ 50%]
+tests/.../test_outer_backstop_timeout_in_search_tracker   PASSED [ 66%]
+tests/.../test_return_exceptions_in_run_search            PASSED [ 83%]
+tests/.../test_return_exceptions_preserves_successful_tracker PASSED [100%]
+
+============================== 6 passed in 20.63s ==============================</code></pre>
+<p>(The closing commit claimed “All 6 tests in file still PASS (21.6s)”;
+re-measured today at 20.63 s — the same 6/6.)</p>
+<h2 id="layer-3-the-audit-is-now-mechanized-and-it-is-green">Layer 3 —
+the audit is now mechanized, and it is GREEN</h2>
+<p>The audit’s finding is no longer a one-off human read: it is the
+standing pre-build gate
+<code>CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID</code>
+(<code>scripts/pre_build/check_cm_test_mock_pid_patched_when_real_pid.sh</code>),
+which the BOB-127 body recorded as a recommended follow-up and which has
+since shipped.</p>
+<p>GREEN — full log: <a
+href="gate_cm_test_mock_pid_GREEN.log"><code>gate_cm_test_mock_pid_GREEN.log</code></a></p>
+<pre><code>$ bash scripts/pre_build/check_cm_test_mock_pid_patched_when_real_pid.sh
+check_cm_test_mock_pid_patched_when_real_pid — CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID static pre-build gate
+  scope: default (tests, excluding tests/pre_build/), repo-root: /home/milosvasic/Projects/boba
+  forward window: 20 lines; os.killpg-exemption window: ±30 lines
+  files scanned: 336
+
+PASS: CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID clean across 336 file(s)
+GATE_EXIT=0</code></pre>
+<h2
+id="layer-4-1.1-paired-mutation-the-gate-genuinely-catches-bob-127s-defect">Layer
+4 — §1.1 paired mutation: the gate genuinely catches BOB-127’s
+defect</h2>
+<p>RED — full log: <a
+href="gate_cm_test_mock_pid_RED_mutation.log"><code>gate_cm_test_mock_pid_RED_mutation.log</code></a></p>
+<p>Mutation: delete lines 83-84 (the two guard lines) from
+<code>test_stuck_subprocess_killed_and_abandoned</code>, restoring
+exactly the pre-<code>8bedc5a</code> defect. The gate is a
+<strong>static source scan</strong>, so this RED was captured
+<strong>without ever firing an unguarded <code>killpg</code></strong>
+against a non-owned PID (§11.4.263 — the defect is proven by detection,
+never by re-executing the dangerous syscall).</p>
+<pre><code>=== FINDINGS ===
+FAIL: .../test_public_tracker_subprocess_timeout.py:70: real-pid subprocess-mock with
+NO os.killpg-targeting patch — proc = AsyncMock() [identifier=proc] (has `proc.pid =
+&lt;int&gt;` but no `os.killpg`-targeting patch within 30 lines; see
+test_process_group_kill_called_on_deadline ... for the sanctioned fix pattern)
+
+FAIL: 1 unpatched real-pid test-subprocess-mock hit(s) (CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID, BOB-127)
+GATE_EXIT_UNDER_MUTATION=1</code></pre>
+<p>The gate names <strong>BOB-127</strong> in its own failure text. The
+mutation was reverted immediately and the working tree re-verified clean
+(<code>git diff --stat</code> empty for that file) before any further
+work — §11.4.84 working-tree quiescence.</p>
+<p><strong>Polarity pair:</strong> RED exit 1 on the defect present →
+GREEN exit 0 on the defect fixed. The guard is therefore validated
+instrumentation, not decoration (§11.4.115(F)).</p>
+<h2 id="verdict">Verdict</h2>
+<p>BOB-127’s closure claim is <strong>re-produced and true at HEAD
+<code>60729c9</code></strong>: the defect is fixed in source, the 6
+tests pass, the audit is mechanized as a standing gate that is GREEN,
+and that gate provably FAILs when the defect is reintroduced. The
+closure stands; only its <code>evidence_path</code> was wrong, and it
+now points at this file.</p>
+<h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
+<ul>
+<li>The <strong>original</strong>
+<code>.superpowers/sdd/task-8-syscall-audit.md</code> is gone and was
+never committed; its verbatim prose is <strong>not</strong> recovered.
+What is reproduced here is the audit’s <em>substance</em> — the finding,
+the fix, and machine-verifiable proof of both — re-derived today from
+the tracked commit <code>8bedc5a</code> and the live tree.</li>
+<li>This evidence covers BOB-127’s specific finding (2 unguarded test
+mocks in one file). It is not a claim that the whole test corpus is free
+of every host-safety anti-pattern; the standing gate’s 336-file scan is
+the ongoing instrument for that.</li>
+</ul>
+</body>
+</html>

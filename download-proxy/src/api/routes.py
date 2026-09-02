@@ -12,6 +12,8 @@ import re
 import socket
 import urllib.parse
 import uuid
+from collections.abc import Callable
+from http.cookies import SimpleCookie
 from typing import Annotated, Any
 
 import aiohttp
@@ -46,12 +48,17 @@ except ImportError:
     rate_limit_dependency = _rl_mod.rate_limit_dependency
 
 
-def _rl(class_name: str):
+def _rl(class_name: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Return @limiter.limit(<class>) or a no-op decorator when disabled."""
     lim = get_limiter()
     if lim is None:
-        return lambda f: f
-    return lim.limit(limit_for(class_name))
+
+        def _passthrough(f: Callable[..., Any]) -> Callable[..., Any]:
+            return f
+
+        return _passthrough
+    deco: Callable[[Callable[..., Any]], Callable[..., Any]] = lim.limit(limit_for(class_name))
+    return deco
 
 logger = logging.getLogger(__name__)
 
@@ -200,7 +207,7 @@ async def stream_theme(request: Request):  # type: ignore[no-untyped-def]
     try:
         from .streaming import _stream_stop_reason
     except ImportError:  # pragma: no cover - import shape varies under importlib
-        from api.streaming import _stream_stop_reason  # type: ignore[no-redef]
+        from api.streaming import _stream_stop_reason
 
     # Correlates the close event with the helper's log line when several
     # theme subscribers are connected at once, matching the per-stream id
@@ -1090,7 +1097,7 @@ def _get_qbit_username():  # type: ignore[no-untyped-def]
     return os.getenv("QBITTORRENT_USER", "admin")
 
 
-def _qbit_login_succeeded(status, body, cookies):  # type: ignore[no-untyped-def]
+def _qbit_login_succeeded(status: int, body: str, cookies: SimpleCookie) -> bool:
     """Detect a successful qBittorrent ``/api/v2/auth/login`` across versions.
 
     Legacy qBittorrent (<4.6) replies ``200`` with body ``Ok.``; modern
@@ -1112,7 +1119,7 @@ def _qbit_login_succeeded(status, body, cookies):  # type: ignore[no-untyped-def
     return has_session_cookie or body.strip() == "Ok."
 
 
-def _qbit_add_succeeded(status, body):  # type: ignore[no-untyped-def]
+def _qbit_add_succeeded(status: int, body: str) -> bool:
     """Detect a successful qBittorrent ``/api/v2/torrents/add`` across versions.
 
     THIN DELEGATION (§11.4.251). The decision logic — the measured status/body
@@ -1200,6 +1207,16 @@ def _is_safe_fetch_url(url: str) -> bool:
     if not addresses:
         return False
     for addr in addresses:
+        if not isinstance(addr, str):
+            # getaddrinfo's sockaddr is typed
+            # `tuple[str, int] | tuple[str, int, int, int] | tuple[int, bytes]`;
+            # the last shape (AF_PACKET / AF_NETLINK / AF_BLUETOOTH) carries an
+            # int at index 0. This call passes no `family` (AF_UNSPEC) with
+            # `proto=IPPROTO_TCP`, so it only ever yields AF_INET/AF_INET6 and
+            # that shape is unreachable here. If one ever appeared we could not
+            # prove the address is public, so fail CLOSED — reject the URL
+            # rather than raise AttributeError out of the SSRF guard.
+            return False
         try:
             ip = ipaddress.ip_address(addr.split("%", 1)[0])  # strip IPv6 zone id
         except ValueError:
@@ -1219,7 +1236,7 @@ def _is_safe_fetch_url(url: str) -> bool:
 @router.post("/download")
 async def initiate_download(
     request: DownloadRequest, req: Request, _: None = Depends(require_api_token)
-):  # type: ignore[no-untyped-def]
+) -> dict[str, Any]:
     import tempfile
 
     from .hooks import dispatch_event
@@ -1391,7 +1408,7 @@ def _looks_like_torrent(data: bytes) -> bool:
 @router.post("/download/upload")
 async def upload_torrent(
     file: Annotated[UploadFile, File()], _: None = Depends(require_api_token)
-):  # type: ignore[no-untyped-def]
+) -> dict[str, Any]:
     """Accept a raw ``.torrent`` file (multipart ``file`` field) and add it to
     qBittorrent.
 
@@ -1485,7 +1502,7 @@ async def upload_torrent(
 @router.post("/download/file")
 async def download_torrent_file(
     request: DownloadRequest, req: Request, _: None = Depends(require_api_token)
-):  # type: ignore[no-untyped-def]
+) -> Response:
     """Download the first available .torrent file from the result's URLs."""
 
     orch = _get_orchestrator(req)
@@ -1549,10 +1566,16 @@ async def download_torrent_file(
     raise HTTPException(status_code=404, detail="No downloadable torrent file found")
 
 
-@router.post("/magnet")
+# ``response_model=None`` is REQUIRED, not decoration: the handler returns
+# ``JSONResponse | dict``, and FastAPI derives its response model from the
+# return annotation — a Response/dict union is not a valid Pydantic field, so
+# without this the app raises ``FastAPIError`` at IMPORT time. The route was
+# previously un-annotated, which FastAPI treats as "no response model"; this
+# keeps that exact behaviour while letting the annotation be checkable.
+@router.post("/magnet", response_model=None)
 async def generate_magnet(
     request: Request, _: None = Depends(require_api_token)
-):  # type: ignore[no-untyped-def]
+) -> JSONResponse | dict[str, Any]:
     from pydantic import BaseModel
 
     class MagnetRequest(BaseModel):

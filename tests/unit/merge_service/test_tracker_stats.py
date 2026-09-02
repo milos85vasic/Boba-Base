@@ -55,6 +55,7 @@ def test_tracker_stat_dataclass_defaults(search_mod):
     assert stat.error is None
     assert stat.error_type is None
     assert stat.authenticated is False
+    assert stat.credentials_configured is False
     assert stat.attempt == 1
     assert stat.http_status is None
     assert stat.category == "all"
@@ -163,8 +164,13 @@ def test_tracker_stat_records_authentication_flag(search_mod, monkeypatch):
     orch._get_enabled_trackers = lambda: _fake_trackers(search_mod, ["rutracker", "piratebay"])
 
     metadata = orch.start_search(query="q", category="all")
-    assert metadata.tracker_stats["rutracker"].authenticated is True
+    # BOB-173: credentials being configured is NOT authentication. This stat is
+    # seeded before any login round-trip, so no session exists yet and the
+    # honest chip is credentials_configured=True / authenticated=False.
+    assert metadata.tracker_stats["rutracker"].credentials_configured is True
+    assert metadata.tracker_stats["rutracker"].authenticated is False
     assert metadata.tracker_stats["piratebay"].authenticated is False
+    assert metadata.tracker_stats["piratebay"].credentials_configured is False
 
 
 def test_tracker_stat_serialises_to_isoformat(search_mod):
@@ -194,7 +200,7 @@ def test_search_metadata_to_dict_includes_sorted_tracker_stats(search_mod):
     names = [s["name"] for s in stats]
     assert names == sorted(names)
     assert names == ["alpha", "mike", "zeta"]
-    # All 14 fields are present on each stat dict.
+    # All 16 fields are present on each stat dict.
     expected_fields = {
         "name",
         "tracker_url",
@@ -206,6 +212,7 @@ def test_search_metadata_to_dict_includes_sorted_tracker_stats(search_mod):
         "error",
         "error_type",
         "authenticated",
+        "credentials_configured",
         "attempt",
         "http_status",
         "category",
@@ -237,10 +244,11 @@ async def test_tracker_stats_survive_exception_and_still_complete(search_mod):
     assert metadata.tracker_stats["bad"].error_type == "ValueError"
 
 
-def test_is_tracker_authenticated_returns_true_when_session_present(search_mod, monkeypatch):
+def test_has_tracker_session_returns_true_when_session_present(search_mod, monkeypatch):
+    """BOB-173: a stored session — and only that — proves authentication."""
     monkeypatch.delenv("IPTORRENTS_USERNAME", raising=False)
     monkeypatch.delenv("IPTORRENTS_PASSWORD", raising=False)
     orch = search_mod.SearchOrchestrator()
-    assert orch._is_tracker_authenticated("iptorrents") is False
+    assert orch._has_tracker_session("iptorrents") is False
     orch._tracker_sessions["iptorrents"] = {"cookies": {"x": "y"}}
-    assert orch._is_tracker_authenticated("iptorrents") is True
+    assert orch._has_tracker_session("iptorrents") is True

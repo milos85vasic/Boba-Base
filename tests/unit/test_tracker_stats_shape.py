@@ -2,7 +2,7 @@
 
 Asserts both /api/v1/search/sync (blocking) and /api/v1/search/{id}
 (follow-up GET) expose tracker_stats as a list of dicts whose shape
-matches the 15-field TrackerSearchStat.to_dict() contract.
+matches the 16-field TrackerSearchStat.to_dict() contract.
 
 This is a UNIT-level test: it monkeypatches
 ``SearchOrchestrator._get_enabled_trackers`` /
@@ -44,6 +44,7 @@ REQUIRED_FIELDS = {
     "error",
     "error_type",
     "authenticated",
+    "credentials_configured",
     "attempt",
     "http_status",
     "category",

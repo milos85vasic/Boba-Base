@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 87
-**Last modified:** 2026-08-27T01:44:23Z
+**Revision:** 88
+**Last modified:** 2026-09-02T11:08:48Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -1640,22 +1640,6 @@ WHY IT WAS NOT CAUGHT: the CM-DANGEROUS-COMBINATION-FAIL-CLOSED gate (constituti
 ACCEPTANCE: (1) both discard sites either handle the error or the handler returns a non-2xx naming the unresolved precondition per §11.4.252(2); (2) the env_write_failed_db_rolled_back code is only emitted when the rollback actually succeeded, else a distinct honest code; (3) a RED test drives the unwritable-.env path and observes the pre-fix 204, flips GREEN post-fix (§11.4.115); (4) a golden-FALSE fixture proves the new guard does not refuse the healthy path (§11.4.201(1)).
 
 DISCOVERY CHANNEL (§11.4.238): found by an agent reading source during the BOB-191 investigation, NOT by the automated QA regime — this is itself a coverage escape and BOB-191 carries the escape audit.
-
-## BOB-205 — cmd/boba-ctl (947 LOC container orchestrator, shell-exec + mutation surface) is absent from DANGER_ROOTS — never scanned at all
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** major
-
-WHAT: the §11.4.252 fail-closed scanner is driven per-root by invariant 39 at scripts/pre_build_verification.sh:1481-1544 over a hand-maintained DANGER_ROOTS list. `cmd/boba-ctl/` — 4 files, 947 LOC — is NOT in that list, so it is never scanned by any arm. It is the container orchestrator: a shell-exec plus state-mutation surface, precisely the §11.4.252 dangerous-combination class the gate exists for.
-
-DISTINCT FROM BOB-191: BOB-191 is a MATCHER hole (the root IS scanned; the Go files inside it are structurally unanalysable while counted as analysed — a false null that prints green). This is a SCOPE hole (the root is not scanned at all). Different failure shapes, different fixes; per §11.4.214 they are distinct-but-similar, deliberately not merged.
-
-WHY BOTH EXIST: the root list is hand-maintained, so a new first-party root joins the tree without joining the gate. §11.4.251 (role-as-data-pack) points at the fix direction — replace the hand-maintained list with a declared manifest derived from the same source of truth the build uses, so a root cannot exist without being enumerated.
-
-ACCEPTANCE: (1) cmd/boba-ctl is scanned — either by being added to DANGER_ROOTS or by the manifest replacing it; (2) whichever is chosen, a RED fixture proves a planted fail-open inside cmd/boba-ctl is SEEN pre-fix-absent / post-fix-present (§11.4.115); (3) if the manifest route is taken, a fixture proves a NEWLY-ADDED first-party root is picked up without a hand edit — that is the invariant that stops this recurring; (4) the honest-blindness path (§11.4.3 SKIP-with-reason, which the gate already implements correctly for unenumerated extensions) is preserved, never converted into a silent PASS.
-
-DISCOVERY CHANNEL (§11.4.238): found by an agent auditing the scanner's own root list during the BOB-191 investigation, NOT by the automated QA regime — a coverage escape; BOB-191 carries the escape audit.
 
 ## BOB-207 — probe_location() is GID-BLIND: precondition verifies uid only while the repair fixes uid AND gid — false ok demonstrated live on this host, no privileges, no exotic filesystem
 

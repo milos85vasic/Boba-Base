@@ -3,6 +3,7 @@ API endpoints for scheduled search management.
 """
 
 import logging
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -64,7 +65,7 @@ async def list_schedules(req: Request):  # type: ignore[no-untyped-def]
 @router.post("")
 async def create_schedule(
     request: ScheduleCreateRequest, req: Request, _: None = Depends(require_api_token)
-):  # type: ignore[no-untyped-def]
+) -> dict[str, Any]:
     scheduler = _get_scheduler(req)
     search = scheduler.add_scheduled_search(
         name=request.name,
@@ -108,7 +109,7 @@ async def get_schedule(schedule_id: str, req: Request):  # type: ignore[no-untyp
 @router.patch("/{schedule_id}")
 async def update_schedule(
     schedule_id: str, request: ScheduleUpdateRequest, req: Request, _: None = Depends(require_api_token)
-):  # type: ignore[no-untyped-def]
+) -> dict[str, Any]:
     scheduler = _get_scheduler(req)
     search = scheduler.get_scheduled_search(schedule_id)
     if not search:
@@ -128,7 +129,7 @@ async def update_schedule(
 @router.delete("/{schedule_id}")
 async def delete_schedule(
     schedule_id: str, req: Request, _: None = Depends(require_api_token)
-):  # type: ignore[no-untyped-def]
+) -> dict[str, Any]:
     scheduler = _get_scheduler(req)
     removed = scheduler.remove_scheduled_search(schedule_id)
     if not removed:

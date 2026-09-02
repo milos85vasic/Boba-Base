@@ -5,7 +5,7 @@ of ``SearchOrchestrator`` or any of its internals anywhere in this
 file — that:
 
 *   ``POST /api/v1/search/sync`` (blocking) returns ``tracker_stats``
-    as a list of dicts whose shape matches the 15-field
+    as a list of dicts whose shape matches the 16-field
     ``TrackerSearchStat.to_dict()`` contract;
 *   ``GET /api/v1/search/{id}`` (the follow-up read) echoes the same
     shape for the same search;
@@ -75,6 +75,7 @@ REQUIRED_FIELDS = {
     "error",
     "error_type",
     "authenticated",
+    "credentials_configured",
     "attempt",
     "http_status",
     "category",
@@ -141,7 +142,7 @@ def _assert_stat_shape(stat: dict) -> None:
     assert isinstance(stat, dict), f"tracker_stats entry is not a dict: {stat!r}"
     assert set(stat.keys()) == REQUIRED_FIELDS, (
         f"tracker_stats entry keys {sorted(stat.keys())} do not match the "
-        f"contracted 15-field TrackerSearchStat shape {sorted(REQUIRED_FIELDS)}"
+        f"contracted 16-field TrackerSearchStat shape {sorted(REQUIRED_FIELDS)}"
     )
     assert stat["status"] in VALID_STATUSES, f"unexpected status {stat['status']!r} (real response: {stat!r})"
     assert isinstance(stat["name"], str) and stat["name"], f"tracker name must be a non-empty string: {stat!r}"

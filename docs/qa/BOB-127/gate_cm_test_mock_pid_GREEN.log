@@ -1,0 +1,6 @@
+check_cm_test_mock_pid_patched_when_real_pid — CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID static pre-build gate
+  scope: default (tests, excluding tests/pre_build/), repo-root: /home/milosvasic/Projects/boba
+  forward window: 20 lines; os.killpg-exemption window: ±30 lines
+  files scanned: 336
+
+PASS: CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID clean across 336 file(s)

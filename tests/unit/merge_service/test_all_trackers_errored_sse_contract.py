@@ -56,7 +56,8 @@ def _make_all_errored_orch(search_mod, names):
     orch = search_mod.SearchOrchestrator()
     sources = [TrackerSource(name=n, url=f"https://{n}.example", enabled=True) for n in names]
     orch._get_enabled_trackers = lambda: list(sources)  # type: ignore[method-assign]
-    orch._is_tracker_authenticated = lambda name: False  # type: ignore[method-assign]
+    orch._has_tracker_session = lambda name: False  # type: ignore[method-assign]
+    orch._tracker_credentials_configured = lambda name: False  # type: ignore[method-assign]
 
     async def _fake_search_tracker(tracker, query, category):  # type: ignore[no-untyped-def]
         raise RuntimeError(f"{tracker.name} auth failed")

@@ -184,7 +184,7 @@ def _diag_signal_dump(signum: int, frame: object) -> None:
     _diag_request.set()
 
 
-def _diag_open_dump_file():
+def _diag_open_dump_file() -> None:
     """Pre-open the dump file at startup so a stall dump needs no new fd."""
     global _diag_fh
     try:
@@ -198,9 +198,9 @@ def _diag_open_dump_file():
         _diag_fh = None
 
 
-def _diag_threads():
+def _diag_threads() -> dict[int, tuple[str, int, int, str]]:
     """{tid: (state, utime_ticks, stime_ticks, wchan)} from /proc/self/task."""
-    out = {}
+    out: dict[int, tuple[str, int, int, str]] = {}
     try:
         tids = os.listdir("/proc/self/task")
     except OSError:

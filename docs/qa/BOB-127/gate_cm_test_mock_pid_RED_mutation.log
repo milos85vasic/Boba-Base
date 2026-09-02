@@ -1,0 +1,10 @@
+check_cm_test_mock_pid_patched_when_real_pid — CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID static pre-build gate
+  scope: default (tests, excluding tests/pre_build/), repo-root: /home/milosvasic/Projects/boba
+  forward window: 20 lines; os.killpg-exemption window: ±30 lines
+  files scanned: 336
+
+=== FINDINGS ===
+FAIL: /home/milosvasic/Projects/boba/tests/unit/merge_service/test_public_tracker_subprocess_timeout.py:70: real-pid subprocess-mock with NO os.killpg-targeting patch — proc = AsyncMock() [identifier=proc] (has `proc.pid = <int>` but no `os.killpg`-targeting patch within 30 lines; see test_process_group_kill_called_on_deadline in tests/unit/merge_service/test_public_tracker_subprocess_timeout.py for the sanctioned fix pattern)
+
+FAIL: 1 unpatched real-pid test-subprocess-mock hit(s) (CM-TEST-MOCK-PID-PATCHED-WHEN-REAL-PID, BOB-127)
+GATE_EXIT_UNDER_MUTATION=1

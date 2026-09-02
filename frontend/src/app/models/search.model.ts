@@ -33,7 +33,12 @@ export interface TrackerSearchStat {
   duration_ms: number | null;
   error: string | null;
   error_type: string | null;
+  /** A real session exists for this tracker (login succeeded, or the
+   *  operator exported a browser cookie carrying the session key). */
   authenticated: boolean;
+  /** Credentials/cookies are PRESENT in the service environment — something
+   *  to log in with, which is not the same as having logged in (BOB-173). */
+  credentials_configured: boolean;
   attempt: number;
   http_status: number | null;
   category: string;

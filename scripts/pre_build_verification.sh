@@ -1674,7 +1674,12 @@ DANGER_GATE="${CONST_GATES_DIR}/cm_dangerous_combination_fail_closed.sh"
 if [[ ! -f "${DANGER_GATE}" ]]; then
     echo "  SKIP: CM-DANGEROUS-COMBINATION-FAIL-CLOSED — gate script absent (§11.4.3)"
 else
-    DANGER_ROOTS=(download-proxy/src plugins scripts qBitTorrent-go frontend/src)
+    # BOB-205: cmd/boba-ctl (the container orchestrator — a shell-exec and
+    # mutation surface) was absent from this list, so the fail-open scanner was
+    # never pointed at it: an anti-pattern reported inside download-proxy/src was
+    # INVISIBLE in cmd/boba-ctl. Added here; this invariant is ADVISORY, so
+    # widening its scope reports more, it cannot newly block a build.
+    DANGER_ROOTS=(download-proxy/src plugins scripts qBitTorrent-go frontend/src cmd/boba-ctl)
     DANGER_HITS=0; DANGER_SCANNED=0; DANGER_DETAIL=()
     for _dr in "${DANGER_ROOTS[@]}"; do
         [[ -d "${PROJECT_ROOT}/${_dr}" ]] || continue

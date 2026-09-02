@@ -32,10 +32,10 @@ try:
         apply_proxy_env as _apply_proxy_env,
     )
 except Exception:  # pragma: no cover - config package not importable in some embeds
-    def _tracker_session_kwargs() -> dict:  # type: ignore[misc]
+    def _tracker_session_kwargs() -> dict[str, bool]:  # type: ignore[misc]
         return {}
 
-    def _apply_proxy_env() -> None:  # type: ignore[misc]
+    def _apply_proxy_env() -> None:
         return None
 
 _TRACKER_NAME_RE = _re.compile(r"^[a-zA-Z0-9_-]+$")
@@ -463,7 +463,27 @@ class TrackerSearchStat:
     duration_ms: int | None = None
     error: str | None = None
     error_type: str | None = None
+    #: BOB-173 — TWO DISTINCT FACTS, never conflated again.
+    #:
+    #: ``authenticated`` means a real session exists for this tracker: one
+    #: stored by a successful login during a search, or an operator-supplied
+    #: browser cookie carrying the tracker's session key (the same rule
+    #: ``GET /api/v1/auth/status`` uses for ``has_session``). It is
+    #: re-evaluated once the tracker's round-trip completes, so a login that
+    #: was refused leaves it False.
+    #:
+    #: ``credentials_configured`` means credentials/cookies are PRESENT in the
+    #: environment — nothing more. It says the operator supplied something to
+    #: log in WITH, not that logging in worked.
+    #:
+    #: Until 2026-09-02 a single ``authenticated`` flag carried the
+    #: credential-presence meaning under the authentication name, and was
+    #: frozen at seed time — so rutracker and nnmclub reported
+    #: ``authenticated: true`` beside ``status: error`` /
+    #: ``error_type: upstream_captcha``, i.e. beside the captured proof that
+    #: the login obtained no session cookie.
     authenticated: bool = False
+    credentials_configured: bool = False
     attempt: int = 1
     http_status: int | None = None  # when available from the plugin
     category: str = "all"
@@ -483,6 +503,7 @@ class TrackerSearchStat:
             "error": self.error,
             "error_type": self.error_type,
             "authenticated": self.authenticated,
+            "credentials_configured": self.credentials_configured,
             "attempt": self.attempt,
             "http_status": self.http_status,
             "category": self.category,
@@ -830,7 +851,8 @@ class SearchOrchestrator:
                     status="pending",
                     query=query,
                     category=category,
-                    authenticated=self._is_tracker_authenticated(t.name),
+                    authenticated=self._has_tracker_session(t.name),
+                    credentials_configured=self._tracker_credentials_configured(t.name),
                 )
         except Exception:  # noqa: S110
             # Never let a tracker-enumeration failure block search start.
@@ -900,7 +922,8 @@ class SearchOrchestrator:
                         status="pending",
                         query=query,
                         category=category,
-                        authenticated=self._is_tracker_authenticated(t.name),
+                        authenticated=self._has_tracker_session(t.name),
+                        credentials_configured=self._tracker_credentials_configured(t.name),
                     )
 
             async def _search_one(tracker: TrackerSource) -> tuple[str, list[SearchResult], str | None]:
@@ -915,7 +938,8 @@ class SearchOrchestrator:
                         status="pending",
                         query=query,
                         category=category,
-                        authenticated=self._is_tracker_authenticated(tracker.name),
+                        authenticated=self._has_tracker_session(tracker.name),
+                        credentials_configured=self._tracker_credentials_configured(tracker.name),
                     )
                     metadata.tracker_stats[tracker.name] = stat
                 stat.status = "running"
@@ -975,6 +999,12 @@ class SearchOrchestrator:
                 finally:
                     stat.completed_at = datetime.now(UTC)
                     stat.duration_ms = int((_time.perf_counter() - t0) * 1000)
+                    # BOB-173: report the auth state AFTER the round-trip, not
+                    # the guess made before it. A login that succeeded during
+                    # this search now shows on this search's own chip, and one
+                    # the tracker refused stays honestly False instead of
+                    # claiming `authenticated: true` beside `status: error`.
+                    self._refresh_stat_auth_state(stat)
 
             semaphore = asyncio.Semaphore(self._max_concurrent_trackers)
 
@@ -1068,26 +1098,61 @@ class SearchOrchestrator:
         await self._run_search(metadata.search_id, query, category)
         return metadata
 
-    def _is_tracker_authenticated(self, name: str) -> bool:
-        """Return True when the tracker has credentials/session available.
+    def _has_tracker_session(self, name: str) -> bool:
+        """Return True when a REAL session exists for ``name`` (BOB-173).
 
-        Public trackers always report False.  For the four private
-        trackers we first consult ``_tracker_sessions`` (populated after
-        a successful login during a search) and fall back to env-var
-        presence so the first search still reports an accurate chip
-        state before any login round-trip has completed.
+        This is what ``TrackerSearchStat.authenticated`` means, and the only
+        thing it means. A session is real when either:
+
+        * ``_tracker_sessions`` holds one — written ONLY on a login that
+          actually came back with a session cookie (see the rutracker /
+          kinozal / nnmclub / iptorrents login paths, and the
+          ``/api/v1/auth/*`` login endpoints which write the same store); or
+        * the operator exported a browser cookie carrying the tracker's
+          session key. That is a valid session before any search runs, and
+          ``auth.py::all_trackers_auth_status`` already reports it as
+          ``has_session: true`` — matching it here keeps the two surfaces
+          from contradicting each other about the same tracker (§11.4.186).
+
+        Credential env vars are deliberately NOT consulted: a username and a
+        password are something to log in WITH, never proof that logging in
+        worked. That conflation is what let rutracker and nnmclub report
+        ``authenticated: true`` beside ``error_type: upstream_captcha``.
+        Credential presence is reported separately by
+        ``_tracker_credentials_configured``.
         """
         import os
 
         if name in self._tracker_sessions:
             return True
+        # Operator-supplied browser cookies — same session-key test as
+        # `auth.py::all_trackers_auth_status`, so both surfaces agree.
+        if name == "rutracker":
+            return "bb_session=" in os.getenv("RUTRACKER_COOKIES", "")
+        if name == "nnmclub":
+            return "phpbb2mysql_4_sid=" in os.getenv("NNMCLUB_COOKIES", "")
+        return False
+
+    def _tracker_credentials_configured(self, name: str) -> bool:
+        """Return True when credentials/cookies for ``name`` are PRESENT.
+
+        This is the env-var presence check that used to masquerade as
+        ``_is_tracker_authenticated`` (BOB-173). Its logic is unchanged —
+        only its name and the field it feeds are now truthful. It answers
+        "did the operator supply something to log in with?", never "did the
+        login succeed?"; the latter is ``_has_tracker_session``.
+
+        Public trackers always report False — they have nothing to log in with.
+        """
+        import os
+
         if name == "rutracker":
             return bool(os.getenv("RUTRACKER_USERNAME") and os.getenv("RUTRACKER_PASSWORD"))
         if name == "kinozal":
             return bool(os.getenv("KINOZAL_USERNAME") and os.getenv("KINOZAL_PASSWORD"))
         if name == "nnmclub":
-            # BOB-006: authenticated when raw cookies are supplied OR
-            # username+password are available for a session login.
+            # BOB-006: credentials are present via raw cookies OR
+            # username+password available for a session login.
             return bool(
                 os.getenv("NNMCLUB_COOKIES")
                 or (os.getenv("NNMCLUB_USERNAME") and os.getenv("NNMCLUB_PASSWORD"))
@@ -1095,6 +1160,19 @@ class SearchOrchestrator:
         if name == "iptorrents":
             return bool(os.getenv("IPTORRENTS_USERNAME") and os.getenv("IPTORRENTS_PASSWORD"))
         return False
+
+    def _refresh_stat_auth_state(self, stat: TrackerSearchStat) -> None:
+        """Re-derive both auth facts on ``stat`` from the live session store.
+
+        Called when a tracker's round-trip finishes so the reported state is
+        the state AFTER the login attempt, not a guess made before it. Prior
+        to BOB-173 the flag was frozen at seed time, which is why a login
+        refused by a CAPTCHA wall still reported ``authenticated: true``, and
+        — the mirror failure — a login that succeeded mid-search was invisible
+        to that search's own report.
+        """
+        stat.authenticated = self._has_tracker_session(stat.name)
+        stat.credentials_configured = self._tracker_credentials_configured(stat.name)
 
     def _select_trackers(self, tracker_filter: list[str] | None) -> list[TrackerSource]:
         """Return the enabled trackers to fan out over (BUG-1).
@@ -1186,7 +1264,7 @@ class SearchOrchestrator:
         import signal as _signal
 
         logger = logging.getLogger(__name__)
-        results = []
+        results: list[SearchResult] = []
 
         # Stream results as NDJSON so a subprocess kill at timeout still
         # leaves every completed row captured on stdout. Patch the top-level
@@ -1721,7 +1799,7 @@ class SearchOrchestrator:
         import aiohttp
 
         logger = logging.getLogger(__name__)
-        results = []
+        results: list[SearchResult] = []
         cookies_raw = os.getenv("NNMCLUB_COOKIES")
         base_url = os.getenv("NNMCLUB_MIRRORS", "https://nnmclub.to").split(",")[0].strip()
 
@@ -1889,7 +1967,7 @@ class SearchOrchestrator:
         import aiohttp
 
         logger = logging.getLogger(__name__)
-        results = []
+        results: list[SearchResult] = []
         username = os.getenv("IPTORRENTS_USERNAME")
         password = os.getenv("IPTORRENTS_PASSWORD")
         if not username or not password:
@@ -2162,7 +2240,7 @@ class SearchOrchestrator:
         """
         # First try _tracker_results
         if search_id in self._tracker_results:
-            results = []
+            results: list[SearchResult] = []
             for tracker_results in self._tracker_results[search_id].values():
                 if tracker_results:
                     results.extend(tracker_results)
@@ -2181,7 +2259,7 @@ class SearchOrchestrator:
         """Get all results from _tracker_results."""
         if search_id not in self._tracker_results:
             return []
-        results = []
+        results: list[SearchResult] = []
         for tracker_results in self._tracker_results[search_id].values():
             if tracker_results:
                 results.extend(tracker_results)

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>danger-roots-scope-evidence</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">danger-roots-scope-evidence</h1>
+</header>
+<h1 id="bob-205-closure-evidence">BOB-205 — closure evidence</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-09-02T11:10:00Z</p>
+<p><code>cmd/boba-ctl</code> (the container orchestrator — a shell-exec
+and mutation surface) was absent from <code>DANGER_ROOTS</code>, so it
+was never scanned by the danger-root invariant at all.</p>
+<p>Evidence is captured at this TRACKED path deliberately. BOB-127’s
+closure cited <code>.superpowers/sdd/…</code>, an untracked scratchpad
+that a rate-limited agent never persisted — the proof was unproducible
+the moment it was needed (§11.4.226, §11.4.215). This file is in-repo so
+the same failure cannot recur here.</p>
+<h2 id="layer-1-source">Layer 1 — SOURCE</h2>
+<p><code>scripts/pre_build_verification.sh:1682</code></p>
+<pre><code>DANGER_ROOTS=(download-proxy/src plugins scripts qBitTorrent-go frontend/src cmd/boba-ctl)</code></pre>
+<p>with the rationale recorded at :1677.</p>
+<h2 id="layer-2-runtime-the-guard-executes-and-passes">Layer 2 — RUNTIME
+(the guard executes and passes)</h2>
+<pre><code>$ bash tests/pre_build/test_bob205_danger_roots_scope.sh
+VERDICT: GREEN (primary=PASS secondary=PASS)
+exit 0</code></pre>
+<h2 id="layer-3-mechanized">Layer 3 — MECHANIZED</h2>
+<p>The audit is a standing gate, not a one-off check: invariant 39 in
+<code>scripts/pre_build_verification.sh</code>. It is ADVISORY by
+design, so widening the scope cannot newly block a build — it can only
+widen what is observed.</p>
+<h2 id="layer-4-1.1-paired-mutation">Layer 4 — §1.1 PAIRED MUTATION</h2>
+<p>Removing <code>cmd/boba-ctl</code> from <code>DANGER_ROOTS</code>
+moves the probe needle from 1 hit back to 0 and both oracles go RED;
+restoring it returns both to GREEN. The guard therefore catches its own
+negation and is not a tautology.</p>
+<h2 id="honest-boundary-11.4.6">Honest boundary (§11.4.6)</h2>
+<p>This closes the SCOPE defect — the orchestrator is now scanned. It
+does not assert <code>cmd/boba-ctl</code> is free of danger-root
+findings; that is what the now- enabled scan reports on each run. The
+tracker entry’s own note stands: a hand-maintained
+<code>DANGER_ROOTS</code> list has the §11.4.251 shape, and a directory
+added tomorrow will be missed just as silently. That structural weakness
+is NOT fixed here and remains worth its own item.</p>
+</body>
+</html>

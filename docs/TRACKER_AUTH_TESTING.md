@@ -56,11 +56,12 @@ service itself reports during that search:
    `GET /api/v1/search/{search_id}` until the search reaches a terminal state
    (`completed` / `no_results`).
 3. The response carries a `tracker_stats` list — one entry per tracker — each
-   shaped `{name, status, authenticated, results_count, error}`. For each
-   **private** tracker (rutracker, kinozal, nnmclub, iptorrents) assert
-   `authenticated` is `true` AND `status` is `success` or `empty` — proof the
-   stored credentials logged in against the real tracker. For **rutor** (public,
-   no login) assert `status == "success"` and `results_count > 0`.
+   shaped `{name, status, authenticated, credentials_configured, results_count,
+   error}`. For each **private** tracker (rutracker, kinozal, nnmclub,
+   iptorrents) assert `authenticated` is `true` AND `status` is `success` or
+   `empty` — proof the stored credentials logged in against the real tracker.
+   For **rutor** (public, no login) assert `status == "success"` and
+   `results_count > 0`.
 
 The assertion oracle is the **`authenticated` flag the merge service reports for
 the tracker after attempting a real login during the search** — a
@@ -68,6 +69,23 @@ user-observable outcome of the real auth path — never the mere absence of an
 error and never any credential string (anti-bluff, constitution §11.4 /
 §11.4.10). No `/api/v1/auth/*` status endpoint is consulted; the search
 response's `tracker_stats` is the single source of truth.
+
+### `authenticated` vs `credentials_configured` (BOB-173)
+
+These are **two distinct facts** and the oracle depends on not confusing them:
+
+| Field | Means | Set from |
+|---|---|---|
+| `authenticated` | a session actually exists — the login worked | the session store, or an operator-exported browser cookie carrying the tracker's session key; re-evaluated after the tracker's round-trip |
+| `credentials_configured` | credentials/cookies are **present** — something to log in *with* | env-var presence only |
+
+Until 2026-09-02 a single `authenticated` flag carried the *second* meaning
+under the *first* name and was frozen at seed time, before any login ran. A
+live run then reported rutracker and nnmclub as `authenticated: true` beside
+`status: "error"` and `error_type: "upstream_captcha"` — i.e. beside the
+service's own captured proof that the login had obtained no session cookie.
+Only `authenticated` may be read as proof of login; `credentials_configured`
+is configuration state and proves nothing about the auth path.
 
 ## Honest-SKIP vs FAIL rules
 
@@ -84,6 +102,9 @@ Per constitution §11.4.3 (topology-appropriate dispatch) and §11.4.69
 - **FAIL** — the service is up, no captcha/transient is in play, and the
   tracker reports `authenticated=false`: the configured credentials are
   genuinely **bad** (or the auth path is broken). This is a real failure.
+  `credentials_configured` distinguishes the two sub-cases in the report —
+  `false` means nothing was supplied for that tracker, `true` means something
+  was supplied and the login was rejected anyway.
 
 A SKIP is never silently counted as a PASS, and a missing/empty
 `authenticated` flag is treated as a failure to prove auth, not as proof.

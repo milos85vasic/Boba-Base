@@ -62,7 +62,8 @@ def _make_orch_with_recorder(search_mod, enabled_names):
         return []
 
     orch._search_tracker = _fake_search_tracker  # type: ignore[method-assign]
-    orch._is_tracker_authenticated = lambda name: False  # type: ignore[method-assign]
+    orch._has_tracker_session = lambda name: False  # type: ignore[method-assign]
+    orch._tracker_credentials_configured = lambda name: False  # type: ignore[method-assign]
     return orch, recorded
 
 

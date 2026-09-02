@@ -53,7 +53,7 @@ class TestNnmclubEnabledByCredentials:
         monkeypatch.setenv("NNMCLUB_PASSWORD", "s3cret")
 
         orch = _make_orch()
-        assert orch._is_tracker_authenticated("nnmclub") is True
+        assert orch._tracker_credentials_configured("nnmclub") is True
 
     def test_still_enabled_via_cookies_only(self, monkeypatch):
         monkeypatch.delenv("NNMCLUB_USERNAME", raising=False)
@@ -63,7 +63,11 @@ class TestNnmclubEnabledByCredentials:
         orch = _make_orch()
         names = {t.name for t in orch._get_enabled_trackers()}
         assert "nnmclub" in names
-        assert orch._is_tracker_authenticated("nnmclub") is True
+        assert orch._tracker_credentials_configured("nnmclub") is True
+        # BOB-173: an exported browser cookie carrying the real session key IS
+        # a session — so this path is genuinely authenticated, not merely
+        # credentialed. Both facts hold here, and the test now says so.
+        assert orch._has_tracker_session("nnmclub") is True
 
     def test_not_enabled_without_any_credentials(self, monkeypatch):
         for k in ("NNMCLUB_COOKIES", "NNMCLUB_USERNAME", "NNMCLUB_PASSWORD"):
@@ -72,7 +76,7 @@ class TestNnmclubEnabledByCredentials:
         orch = _make_orch()
         names = {t.name for t in orch._get_enabled_trackers()}
         assert "nnmclub" not in names
-        assert orch._is_tracker_authenticated("nnmclub") is False
+        assert orch._tracker_credentials_configured("nnmclub") is False
 
     def test_username_only_not_enough(self, monkeypatch):
         for k in ("NNMCLUB_COOKIES", "NNMCLUB_PASSWORD"):
@@ -82,7 +86,7 @@ class TestNnmclubEnabledByCredentials:
         orch = _make_orch()
         names = {t.name for t in orch._get_enabled_trackers()}
         assert "nnmclub" not in names
-        assert orch._is_tracker_authenticated("nnmclub") is False
+        assert orch._tracker_credentials_configured("nnmclub") is False
 
 
 # --- Login path stores a real session cookie ----------------------------

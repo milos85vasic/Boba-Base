@@ -340,8 +340,8 @@ query (<code>{"query": "ubuntu", "limit": 50}</code>) — then poll
 terminal state (<code>completed</code> / <code>no_results</code>).</li>
 <li>The response carries a <code>tracker_stats</code> list — one entry
 per tracker — each shaped
-<code>{name, status, authenticated, results_count, error}</code>. For
-each <strong>private</strong> tracker (rutracker, kinozal, nnmclub,
+<code>{name, status, authenticated, credentials_configured, results_count, error}</code>.
+For each <strong>private</strong> tracker (rutracker, kinozal, nnmclub,
 iptorrents) assert <code>authenticated</code> is <code>true</code> AND
 <code>status</code> is <code>success</code> or <code>empty</code> —
 proof the stored credentials logged in against the real tracker. For
@@ -356,6 +356,50 @@ path — never the mere absence of an error and never any credential
 string (anti-bluff, constitution §11.4 / §11.4.10). No
 <code>/api/v1/auth/*</code> status endpoint is consulted; the search
 response’s <code>tracker_stats</code> is the single source of truth.</p>
+<h3
+id="authenticated-vs-credentials_configured-bob-173"><code>authenticated</code>
+vs <code>credentials_configured</code> (BOB-173)</h3>
+<p>These are <strong>two distinct facts</strong> and the oracle depends
+on not confusing them:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Means</th>
+<th>Set from</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>authenticated</code></td>
+<td>a session actually exists — the login worked</td>
+<td>the session store, or an operator-exported browser cookie carrying
+the tracker’s session key; re-evaluated after the tracker’s
+round-trip</td>
+</tr>
+<tr>
+<td><code>credentials_configured</code></td>
+<td>credentials/cookies are <strong>present</strong> — something to log
+in <em>with</em></td>
+<td>env-var presence only</td>
+</tr>
+</tbody>
+</table>
+<p>Until 2026-09-02 a single <code>authenticated</code> flag carried the
+<em>second</em> meaning under the <em>first</em> name and was frozen at
+seed time, before any login ran. A live run then reported rutracker and
+nnmclub as <code>authenticated: true</code> beside
+<code>status: "error"</code> and
+<code>error_type: "upstream_captcha"</code> — i.e. beside the service’s
+own captured proof that the login had obtained no session cookie. Only
+<code>authenticated</code> may be read as proof of login;
+<code>credentials_configured</code> is configuration state and proves
+nothing about the auth path.</p>
 <h2 id="honest-skip-vs-fail-rules">Honest-SKIP vs FAIL rules</h2>
 <p>Per constitution §11.4.3 (topology-appropriate dispatch) and §11.4.69
 (no fail-open SKIP), the verdicts are:</p>
@@ -370,7 +414,11 @@ product defect, so it SKIPs with a reason.</li>
 <li><strong>FAIL</strong> — the service is up, no captcha/transient is
 in play, and the tracker reports <code>authenticated=false</code>: the
 configured credentials are genuinely <strong>bad</strong> (or the auth
-path is broken). This is a real failure.</li>
+path is broken). This is a real failure.
+<code>credentials_configured</code> distinguishes the two sub-cases in
+the report — <code>false</code> means nothing was supplied for that
+tracker, <code>true</code> means something was supplied and the login
+was rejected anyway.</li>
 </ul>
 <p>A SKIP is never silently counted as a PASS, and a missing/empty
 <code>authenticated</code> flag is treated as a failure to prove auth,

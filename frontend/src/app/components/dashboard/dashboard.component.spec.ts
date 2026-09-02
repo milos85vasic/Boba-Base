@@ -1135,6 +1135,7 @@ describe('DashboardComponent', () => {
         error: null,
         error_type: null,
         authenticated: true,
+        credentials_configured: true,
         attempt: 1,
         http_status: null,
         category: 'all',

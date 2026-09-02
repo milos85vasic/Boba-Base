@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 34
-**Last modified:** 2026-08-26T19:24:10Z
+**Revision:** 36
+**Last modified:** 2026-09-02T11:08:48Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -876,10 +876,10 @@ Seventh forced-logout SIGKILL cascade. Kernel audit trail: audit[399861] syscall
 
 **Status:** Fixed (→ Fixed.md)
 **Type:** Bug
-**Evidence:** .superpowers/sdd/task-8-syscall-audit.md
+**Evidence:** docs/qa/BOB-127/task-8-syscall-audit.md
 **Severity:** Low
 
-Follow-up to BOB-126 systematic sweep. Task 8 audit surfaced 2 test cases in tests/unit/merge_service/test_public_tracker_subprocess_timeout.py that set explicit int mock.pid (12345, 1111) satisfying the production BOB-126 int-guard, but did NOT patch os.killpg/os.getpgid so the real syscalls fired against hardcoded non-owned PIDs. Low collision probability on typical host, but section 11.4.263(C) hygiene violation in the exact file authored to guard against host-wide kills. FIX at 8bedc5a: added patch.object(_search.os, getpgid) + patch.object(_search.os, killpg) to both tests matching sibling test_process_group_kill_called_on_deadline pattern. 6/6 tests still PASS. Report: .superpowers/sdd/task-8-syscall-audit.md. Recommended gate CM-TEST-KILLPG-PATCHED-WHEN-REAL-PID tracked as separate followup.
+Follow-up to BOB-126 systematic sweep. Task 8 audit surfaced 2 test cases in tests/unit/merge_service/test_public_tracker_subprocess_timeout.py that set explicit int mock.pid (12345, 1111) satisfying the production BOB-126 int-guard, but did NOT patch os.killpg/os.getpgid so the real syscalls fired against hardcoded non-owned PIDs. Low collision probability on typical host, but section 11.4.263(C) hygiene violation in the exact file authored to guard against host-wide kills. FIX at 8bedc5a: added patch.object(_search.os, getpgid) + patch.object(_search.os, killpg) to both tests matching sibling test_process_group_kill_called_on_deadline pattern. 6/6 tests still PASS. Report: docs/qa/BOB-127/task-8-syscall-audit.md. Recommended gate CM-TEST-KILLPG-PATCHED-WHEN-REAL-PID tracked as separate followup.
 
 ## BOB-132 — qbittorrent-proxy post-recovery: unhealthy — connection refused to qbittorrent sidecar on localhost:7185
 
@@ -1893,4 +1893,42 @@ BLAST RADIUS: this is the ownership feature's own correctness core — the subje
 DISCOVERY CHANNEL (§11.4.238): found by an agent mapping the T041 review scope, NOT by the automated QA regime — a coverage escape in its own right. The escape audit owed: no existing check exercises a uid-flattening filesystem, so no automated surface could have caught it.
 
 NOTE ON THIS RECORD: the first write of this description was corrupted by shell backtick expansion (three terms silently emptied). This is the repaired text; the corruption is recorded here rather than quietly overwritten, per §11.4.6.
+
+## BOB-205 — cmd/boba-ctl (947 LOC container orchestrator, shell-exec + mutation surface) is absent from DANGER_ROOTS — never scanned at all
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-205/danger-roots-scope-evidence.md
+**Severity:** major
+
+WHAT: the §11.4.252 fail-closed scanner is driven per-root by invariant 39 at scripts/pre_build_verification.sh:1481-1544 over a hand-maintained DANGER_ROOTS list. `cmd/boba-ctl/` — 4 files, 947 LOC — is NOT in that list, so it is never scanned by any arm. It is the container orchestrator: a shell-exec plus state-mutation surface, precisely the §11.4.252 dangerous-combination class the gate exists for.
+
+DISTINCT FROM BOB-191: BOB-191 is a MATCHER hole (the root IS scanned; the Go files inside it are structurally unanalysable while counted as analysed — a false null that prints green). This is a SCOPE hole (the root is not scanned at all). Different failure shapes, different fixes; per §11.4.214 they are distinct-but-similar, deliberately not merged.
+
+WHY BOTH EXIST: the root list is hand-maintained, so a new first-party root joins the tree without joining the gate. §11.4.251 (role-as-data-pack) points at the fix direction — replace the hand-maintained list with a declared manifest derived from the same source of truth the build uses, so a root cannot exist without being enumerated.
+
+ACCEPTANCE: (1) cmd/boba-ctl is scanned — either by being added to DANGER_ROOTS or by the manifest replacing it; (2) whichever is chosen, a RED fixture proves a planted fail-open inside cmd/boba-ctl is SEEN pre-fix-absent / post-fix-present (§11.4.115); (3) if the manifest route is taken, a fixture proves a NEWLY-ADDED first-party root is picked up without a hand edit — that is the invariant that stops this recurring; (4) the honest-blindness path (§11.4.3 SKIP-with-reason, which the gate already implements correctly for unenumerated extensions) is preserved, never converted into a silent PASS.
+
+DISCOVERY CHANNEL (§11.4.238): found by an agent auditing the scanner's own root list during the BOB-191 investigation, NOT by the automated QA regime — a coverage escape; BOB-191 carries the escape audit.
+
+=== VERIFICATION COMPLETE 2026-08-26 — CONFIRMED, with three corrections and a far larger gap ===
+
+CONFIRMED: DANGER_ROOTS=(download-proxy/src plugins scripts qBitTorrent-go frontend/src) at scripts/pre_build_verification.sh:1511 (conductor-verified verbatim). Invariant 39 spans :1481-1541, skips non-existent roots at :1514, calls the gate once per root at :1517, and the gate is invoked from exactly ONE place (:1507) — so a root absent from that array is scanned by NO arm. cmd/boba-ctl re-measured: 4 tracked .go files, 947 LOC — the filed numbers hold, no drift.
+
+CORRECTION 1 (§11.4.6): this item said boba-ctl is a "shell-exec" surface. There is NO exec.Command in main.go — exec is one hop away via digital.vasic.containers/pkg/compose (main.go:13). The §11.4.252 threshold is still met several times over (5 of 6 capabilities: mutation :34,36,95-105,121 · untrusted input :21,33,53,110,144,170,302,453-465 · credentials :432-440,496-509 · external side effect :239,323,430 · irreversible :36,142) — but the specific word was wrong.
+
+CORRECTION 2 (§11.4.6): this item's acceptance criterion (4) asserted the gate "already implements correctly" an honest SKIP for unenumerated extensions. WRONG. That honest-skip path exists for the PYTHON ARM's degradations only. An extension absent from the ext list is a SILENT false-null. Filed separately as the LANGUAGE HOLE item.
+
+CORRECTION 3: the gap is not one root. FULL ENUMERATION — 266 files in scope / 512 OUT of scope = 66% of the gate-visible first-party corpus never scanned. tests/ 324 (excluded-by-intent but UNDECLARED) · extension/ 108 · docs/ 51 · challenges/ 18 · cmd/boba-ctl 4 · frontend/e2e+configs 5 · tools/ 1 (CONCEALS 3 REAL HITS: plugin_update_automation.py:189,198,215) · repository ROOT 1 (CONCEALS 1 REAL HIT: webui-bridge.py:295). Filed separately as the ROOT-SCOPE item.
+
+boba-ctl IS a genuine §11.4.252 surface, but the hole around it is LATENT: main.go has no `_ = err`, no empty `if err != nil {}`, no silent `return nil` today (grep control-needled against qBitTorrent-go/internal/config/config.go). It hides nothing live; it guarantees a future one lands unseen. One real semantic finding WAS spotted by reading: authMethod()'s default branch — filed separately.
+
+BOB-205 != BOB-191, AND THEY COMPOUND — measured, one temp root, both needles: go-needle 0 hits, py-needle 1 hit. Go-blindness independently reconfirmed (gate routes only *.py to the AST arm). The real cmd/boba-ctl scanned DIRECTLY returns "PASS — no anti-patterns found" over 947 LOC it cannot analyse. THEREFORE: fixing BOB-205 ALONE moves the root from never-looked-at to LOOKED-AT-AND-FALSELY-GREEN — the §11.4.201(6) FALSE-NULL, the WORSE state, because it then counts as covered. Both must land, and the language hole with them.
+
+THE RED: tests/pre_build/test_bob205_danger_roots_scope.sh. Oracle (§11.4.245) = METAMORPHIC + INVARIANT with a control needle: two BYTE-IDENTICAL Python fail-open needles (sha equality asserted at runtime, 8d8bd909...), one in a root that IS in DANGER_ROOTS (control), one in cmd/boba-ctl (probe), scanner driven exactly as invariant 39 drives it. Identical input, two locations, must give identical verdicts — matcher/language/gate-version held constant so SCOPE is the only free variable. Independent of the code under test: the expectation comes from the relation, not from reading DANGER_ROOTS. Shape (a) chosen; shape (b) included as an explicitly-labelled WEAKER secondary (it would pass on a typo'd list entry the [[ -d ]] guard silently skips).
+CONFOUND DELIBERATELY AVOIDED: the needle is PYTHON, not Go — a Go needle would stay unseen post-fix and the RED would never go green, which is itself a §11.4.201(1) FAIL-bluff. Fixing BOB-191 will NOT turn this green; only widening scope will.
+BLIND-INSTRUMENT GUARD: control needle not found -> exit 3 ABORT, never RED. The test parses DANGER_ROOTS from the real driver so it flips with zero edits, and never runs pre_build_verification.sh.
+MEASURED: RED exit 1 (evidence docs/qa/BOB-205/red_run_live_gate.log, gate sha256 c5752428...) — CONTROL 1 hit "instrument PROVEN seeing", PROBE 0 hits. GREEN polarity proof exit 0 against a SCRATCH copy of the driver with the root appended (real driver git diff --stat empty). Determinism 3/3 RED exit 1, 3/3 GREEN exit 0.
+
+FIX DIRECTION (assessed, not applied): §11.4.251 manifest feasible, but the source of truth matters — docker-compose.yml build contexts MISS plugins/, frontend/src, cmd/boba-ctl, webui-bridge.py; language markers (go.mod/package.json) MISS plugins/ and webui-bridge.py. ONLY derive-from-git-tracked-source-extensions minus a declared §11.4.224(E) exclusion fence reaches every gap. The derivation must be built either way: if the operator keeps the hand list, the omission-guard is the SAME computation — the only question is whether it drives the scan or audits the list. The tests/ question (324 files) is an operator §11.4.66 decision; production-only is defensible but currently UNDECLARED.
 

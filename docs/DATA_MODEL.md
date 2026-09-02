@@ -154,7 +154,8 @@ and `tracker_completed` (any terminal flip) events.
 | `duration_ms` | `Optional[int]` | Wall-clock milliseconds |
 | `error` | `Optional[str]` | Exception message, when `status == "error" \| "timeout"` |
 | `error_type` | `Optional[str]` | Exception class name (`"RuntimeError"`, `"TimeoutError"`, …) |
-| `authenticated` | `bool` | `True` when a cached session exists or credentials env-vars are set |
+| `authenticated` | `bool` | `True` **only** when a real session exists for this tracker — one stored by a login that actually returned a session cookie, or an operator-exported browser cookie carrying the tracker's session key. Re-evaluated when the tracker's round-trip completes, so a refused login stays `False`. Never inferred from credential presence (BOB-173) |
+| `credentials_configured` | `bool` | `True` when credentials/cookies for this tracker are **present** in the service environment — something to log in *with*, which is not the same as having logged in. Public trackers are always `False` |
 | `attempt` | `int` | Retry counter (currently always 1; reserved for future retries) |
 | `http_status` | `Optional[int]` | HTTP status from the plugin when surfaced |
 | `category` | `str` | The `category` filter value used for this run |

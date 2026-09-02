@@ -41,6 +41,23 @@ from __future__ import annotations
 
 import ipaddress
 import os
+from typing import TypedDict
+
+
+class AiohttpSessionKwargs(TypedDict):
+    """Exact keyword set spread into ``aiohttp.ClientSession(...)``.
+
+    A ``TypedDict`` rather than ``dict[str, bool]`` because the value is
+    ``**``-splatted into ``ClientSession``: a homogeneous ``dict[str, bool]``
+    forces the type checker to test that ``bool`` against EVERY ClientSession
+    keyword (connector, headers, timeout, ...), which is unsatisfiable and
+    yields one error per parameter per call site. A TypedDict names the key, so
+    the checker matches ``trust_env: bool`` against the real parameter.
+    Runtime behaviour is unchanged — a TypedDict IS a plain dict at runtime.
+    """
+
+    trust_env: bool
+
 
 UPSTREAM_PROXY_ENV = "BOBA_UPSTREAM_PROXY"
 
@@ -176,7 +193,7 @@ def apply_proxy_env() -> None:
         os.environ["no_proxy"] = value
 
 
-def aiohttp_session_kwargs() -> dict[str, bool]:
+def aiohttp_session_kwargs() -> AiohttpSessionKwargs:
     """kwargs to spread into ``aiohttp.ClientSession(...)`` for tracker clients.
 
     Returns ``{"trust_env": True}`` so the session reads ``HTTP(S)_PROXY`` /

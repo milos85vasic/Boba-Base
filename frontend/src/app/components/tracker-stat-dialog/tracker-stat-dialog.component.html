@@ -16,8 +16,20 @@
         <dt>URL</dt><dd><code>{{ s.tracker_url || '-' }}</code></dd>
         <dt>Authenticated</dt>
         <dd>
-          <span class="auth-badge" [class.yes]="s.authenticated" [class.no]="!s.authenticated">
-            {{ s.authenticated ? 'yes (session/credentials present)' : 'no (public tracker or no credentials)' }}
+          <span class="auth-badge" [class.yes]="s.authenticated" [class.no]="!s.authenticated"
+                data-testid="stat-authenticated">
+            {{ s.authenticated ? 'yes (a session exists)' : 'no (no session for this tracker)' }}
+          </span>
+        </dd>
+        <!-- BOB-173: credential presence is a SEPARATE fact from being logged
+             in. Collapsing them let a tracker whose login was refused still
+             render as authenticated. -->
+        <dt>Credentials</dt>
+        <dd>
+          <span class="auth-badge" [class.yes]="s.credentials_configured"
+                [class.no]="!s.credentials_configured"
+                data-testid="stat-credentials-configured">
+            {{ s.credentials_configured ? 'configured' : 'not configured (public tracker or none supplied)' }}
           </span>
         </dd>
       </dl>

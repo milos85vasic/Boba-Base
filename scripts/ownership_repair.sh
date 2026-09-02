@@ -151,12 +151,21 @@
 #       and vice versa. Source the environment the stack runs with, or pass
 #       --state-dir so the ad-hoc run keeps its own trail.
 #
-# WHY chown -h
-#   `-h` acts on a symlink itself rather than its target. Without it a symlink
-#   inside the declared scope pointing anywhere on the filesystem would let the
-#   repair mutate a file OUTSIDE the scope. `-h`, plus find's default -P (which
-#   does not descend a symlinked directory), closes the SYMLINK dimension of
-#   FR-005 by construction.
+# WHY lchown(2), NOT `chown -h`
+#   Ownership must be set on a symlink ITSELF rather than its target. Without
+#   that, a symlink inside the declared scope pointing anywhere on the
+#   filesystem would let the repair mutate a file OUTSIDE the scope. That,
+#   plus find's default -P (which does not descend a symlinked directory),
+#   closes the SYMLINK dimension of FR-005.
+#
+#   The VEHICLE is os.lchown, not the `chown -h` flag. An earlier revision of
+#   this header credited `-h` with closing FR-005 "by construction"; MEASURED
+#   2026-09-02 that is FALSE on this host (§11.4.6). uutils coreutils 0.8.0
+#   (/usr/bin/chown here) dereferences `-h` for a symlink-to-DIRECTORY —
+#   chowning the target and leaving the link alone, exit 0 — so `-h` silently
+#   reached THROUGH the fence for exactly the case the fence exists to stop.
+#   See the _LCHOWN_PY block near chown_paths() for the decisive probe. The
+#   syscall has no such ambiguity, so the guarantee now rests on lchown(2).
 #
 # THE ONE OUT-OF-SCOPE REACH THAT REMAINS: HARDLINKS
 #   An earlier revision of this header claimed FR-005 makes out-of-scope reach
@@ -711,13 +720,70 @@ record_absent() {
 CHOWN_ERR=""
 UNSHARE_ERR=""
 
-# chown_paths <paths…> — plain chown over a whole batch. Returns non-zero if any
-# path failed; chown itself continues past individual failures. Sets CHOWN_ERR
-# to whatever chown said on the way out.
+# _LCHOWN_PY — the lchown(2) vehicle, used by BOTH batch paths below.
+#
+# WHY NOT `chown -h` (§11.4.201, MEASURED on this host 2026-09-02): `-h` is NOT
+# portable. uutils coreutils 0.8.0 — the Rust reimplementation shipping as
+# /usr/bin/chown on this distro — DEREFERENCES `-h` when the symlink points at a
+# DIRECTORY: it changes the TARGET and leaves the link untouched, exiting 0.
+# Decisive probe (symlink-to-dir, chgrp --no-dereference 1000 -> 4):
+#     BEFORE  link_gid=1000  target_gid=1000
+#     AFTER   link_gid=1000  target_gid=4     <-- the TARGET moved, not the link
+# It behaves correctly for symlinks-to-FILES and dangling symlinks, so the bug
+# is silent on most fixtures. On a repair walk that names a foreign-owned
+# symlink-to-DIRECTORY inside scope, `chown -h` therefore reaches THROUGH the
+# fence and re-owns a directory that may be OUTSIDE it — with a success exit
+# code. That is precisely the FR-005 breach the "WHY chown -h" block above says
+# is closed by construction, so the vehicle must not be the `-h` flag.
+#
+# os.lchown is the lchown(2) syscall directly: no flag parsing, no dereference,
+# identical semantics on every implementation. python3 is already a declared
+# dependency of this script. Paths arrive NUL-separated on stdin so neither
+# ARG_MAX nor a path containing whitespace/newlines can distort the batch.
+_LCHOWN_PY='
+import os, sys
+uid, gid = int(sys.argv[1]), int(sys.argv[2])
+rc = 0
+for p in (x for x in sys.stdin.buffer.read().split(b"\0") if x):
+    try:
+        os.lchown(p, uid, gid)
+    except OSError as e:
+        rc = 1
+        sys.stderr.write("lchown: %s: %s\n" % (os.fsdecode(p), e.strerror))
+sys.exit(rc)
+'
+
+# chown_paths <paths…> — plain lchown over a whole batch. Returns non-zero if any
+# path failed; the batch continues past individual failures. Sets CHOWN_ERR
+# to whatever the vehicle said on the way out.
+# _partition_links <paths…> — split a batch into _PL_LINKS (symlinks, where the
+# broken `-h` matters) and _PL_PLAIN (everything else, where `chown -h` and
+# plain chown are equivalent). Keeping non-symlinks on the external chown
+# preserves its errno text verbatim for failure_reason() — EPERM/EROFS/ENOENT
+# need three different remediations (§11.4.201(5)) — and keeps the tool's
+# failure paths observable to a PATH shim.
+_partition_links() {
+    _PL_LINKS=(); _PL_PLAIN=()
+    local _p
+    for _p in "$@"; do
+        if [[ -L "${_p}" ]]; then _PL_LINKS+=("${_p}"); else _PL_PLAIN+=("${_p}"); fi
+    done
+}
+
 chown_paths() {
     CHOWN_ERR=""
-    CHOWN_ERR="$(chown -h -- "${OP_UID}:${OP_GID}" "$@" 2>&1 >/dev/null)" && return 0
-    return 1
+    local _rc=0 _err=""
+    _partition_links "$@"
+    if (( ${#_PL_PLAIN[@]} )); then
+        _err="$(chown -h -- "${OP_UID}:${OP_GID}" "${_PL_PLAIN[@]}" 2>&1 >/dev/null)" || _rc=1
+        [[ -n "${_err}" ]] && CHOWN_ERR="${_err}"
+    fi
+    if (( ${#_PL_LINKS[@]} )); then
+        _err="$(printf '%s\0' "${_PL_LINKS[@]}" \
+            | python3 -c "${_LCHOWN_PY}" "${OP_UID}" "${OP_GID}" 2>&1 >/dev/null)" || _rc=1
+        [[ -n "${_err}" ]] && CHOWN_ERR="${CHOWN_ERR:+${CHOWN_ERR}; }${_err}"
+    fi
+    return "${_rc}"
 }
 
 # unshare_chown_paths <paths…> — the namespace fallback. Inside `<runtime> unshare`
@@ -728,8 +794,18 @@ unshare_chown_paths() {
         UNSHARE_ERR="no container runtime available for the namespace fallback"
         return 1
     fi
-    UNSHARE_ERR="$("${RUNTIME}" unshare chown -h -- 0:0 "$@" 2>&1 >/dev/null)" && return 0
-    return 1
+    local _rc=0 _err=""
+    _partition_links "$@"
+    if (( ${#_PL_PLAIN[@]} )); then
+        _err="$("${RUNTIME}" unshare chown -h -- 0:0 "${_PL_PLAIN[@]}" 2>&1 >/dev/null)" || _rc=1
+        [[ -n "${_err}" ]] && UNSHARE_ERR="${_err}"
+    fi
+    if (( ${#_PL_LINKS[@]} )); then
+        _err="$(printf '%s\0' "${_PL_LINKS[@]}" \
+            | "${RUNTIME}" unshare python3 -c "${_LCHOWN_PY}" 0 0 2>&1 >/dev/null)" || _rc=1
+        [[ -n "${_err}" ]] && UNSHARE_ERR="${UNSHARE_ERR:+${UNSHARE_ERR}; }${_err}"
+    fi
+    return "${_rc}"
 }
 
 # failure_reason — the operator-facing WHY for the item that just failed, built

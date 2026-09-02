@@ -15,6 +15,7 @@ function makeStat(over: Partial<TrackerSearchStat> = {}): TrackerSearchStat {
     error: null,
     error_type: null,
     authenticated: true,
+    credentials_configured: true,
     attempt: 1,
     http_status: 200,
     category: 'all',
@@ -77,6 +78,26 @@ describe('TrackerStatDialogComponent', () => {
     expect(text).toContain('movies');
     expect(text).toContain('302');
     expect(text).toContain('authenticated');
+  });
+
+  it('renders authentication and credential state as two DISTINCT facts', () => {
+    // BOB-173: the live defect — credentials configured, login refused by a
+    // CAPTCHA wall, no session. The dialog must NOT read as authenticated.
+    cmp.open(makeStat({
+      name: 'nnmclub',
+      status: 'error',
+      error_type: 'upstream_captcha',
+      authenticated: false,
+      credentials_configured: true,
+    }));
+    fx.detectChanges();
+    const root = fx.nativeElement as HTMLElement;
+    const auth = root.querySelector('[data-testid="stat-authenticated"]');
+    const creds = root.querySelector('[data-testid="stat-credentials-configured"]');
+    expect(auth?.textContent).toContain('no');
+    expect(auth?.textContent).not.toContain('yes');
+    expect(creds?.textContent).toContain('configured');
+    expect(creds?.textContent).not.toContain('not configured');
   });
 
   it('shows the error section only when error is present', () => {

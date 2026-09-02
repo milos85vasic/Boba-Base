@@ -307,13 +307,27 @@ seed_wrong() {
         -R) mode="recursive"; shift ;;
         -D) mode="dir"; shift ;;
     esac
+    # The -h/link-seeding vehicle is lchown(2), NOT `chown -h`. MEASURED on this
+    # host 2026-09-02 (§11.4.201): uutils coreutils 0.8.0 dereferences `-h` for a
+    # symlink-to-DIRECTORY — it chowns the TARGET and leaves the link at its
+    # original uid, exit 0. That silently under-seeded this fixture (2 of 3 links
+    # foreign), which Case 8's own guard then correctly refused to score, so the
+    # symlink fence was never actually exercised. Seeding via os.lchown makes all
+    # three links genuinely foreign-owned so the fence assertions really run.
+    local _seed_py='
+import os, sys
+for p in (x for x in sys.stdin.buffer.read().split(b"\0") if x):
+    os.lchown(p, 1, 1)
+'
     if [[ "${mode}" == "dir" ]]; then
         timeout 300 "${NS_RUNTIME}" unshare chown 1:1 -- "$@" >/dev/null 2>&1
     elif [[ "${mode}" == "recursive" ]]; then
         timeout 300 "${NS_RUNTIME}" unshare sh -c \
-            'find "$1" \( -type f -o -type l \) -exec chown -h 1:1 {} +' _ "$1" >/dev/null 2>&1
+            'find "$1" \( -type f -o -type l \) -print0 | python3 -c "$2"' \
+            _ "$1" "${_seed_py}" >/dev/null 2>&1
     else
-        timeout 300 "${NS_RUNTIME}" unshare chown -h 1:1 -- "$@" >/dev/null 2>&1
+        printf '%s\0' "$@" \
+            | timeout 300 "${NS_RUNTIME}" unshare python3 -c "${_seed_py}" >/dev/null 2>&1
     fi
 }
 

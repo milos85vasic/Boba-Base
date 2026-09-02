@@ -64,6 +64,7 @@ from __future__ import annotations
 import logging
 import os
 from collections.abc import Callable
+from typing import Any
 
 import limits
 from fastapi import FastAPI, Request
@@ -264,7 +265,7 @@ def install(
     return limiter
 
 
-def search_limit_decorator(app: FastAPI) -> Callable[[Callable], Callable]:
+def search_limit_decorator(app: FastAPI) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Return a decorator applying the current `search` limit to a route.
 
     Usage in `routes.py`:
@@ -281,12 +282,12 @@ def search_limit_decorator(app: FastAPI) -> Callable[[Callable], Callable]:
     return limiter.limit(app.state.rate_limit_config["search"])
 
 
-def dashboard_limit_decorator(app: FastAPI) -> Callable[[Callable], Callable]:
+def dashboard_limit_decorator(app: FastAPI) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     limiter: Limiter = app.state.limiter
     return limiter.limit(app.state.rate_limit_config["dashboard"])
 
 
-def sse_limit_decorator(app: FastAPI) -> Callable[[Callable], Callable]:
+def sse_limit_decorator(app: FastAPI) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     limiter: Limiter = app.state.limiter
     return limiter.limit(app.state.rate_limit_config["sse_stream"])
 

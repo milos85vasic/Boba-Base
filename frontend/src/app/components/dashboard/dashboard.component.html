@@ -138,7 +138,12 @@
             <span class="chip-name">{{ s.name }}</span>
             <span class="chip-count" *ngIf="s.status !== 'pending' && s.status !== 'running'">{{ s.results_count }}</span>
             <span class="chip-spinner" *ngIf="s.status === 'running'"></span>
-            <span class="chip-badge auth" *ngIf="s.authenticated" title="authenticated">&#128274;</span>
+            <span class="chip-badge auth" *ngIf="s.authenticated" title="authenticated — a session exists">&#128274;</span>
+            <!-- BOB-173: credentials supplied but no session. Distinct from
+                 authenticated, and distinct from a public tracker. -->
+            <span class="chip-badge creds" *ngIf="!s.authenticated && s.credentials_configured"
+                  title="credentials configured, but not logged in — no session for this tracker"
+                  data-testid="credentials-only-badge">&#128273;</span>
             <span class="chip-badge err" *ngIf="s.error_type" [title]="s.error_type">!</span>
             <span class="chip-badge deadline" *ngIf="s.notes && s.notes['deadline_hit']"
                   title="Result set truncated — plugin hit the per-tracker deadline."

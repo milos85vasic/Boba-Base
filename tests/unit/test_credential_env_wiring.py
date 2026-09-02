@@ -2,7 +2,7 @@
 
 The SearchOrchestrator decides which private trackers are enabled and
 authenticated purely from environment variables (see search.py
-``_get_enabled_trackers`` + ``_is_tracker_authenticated``). These tests
+``_get_enabled_trackers`` + ``_tracker_credentials_configured``). These tests
 pin the OBSERVABLE wiring: with FAKE credentials present in the env the
 orchestrator reports the matching tracker as enabled + authenticated;
 with them absent it reports neither.
@@ -125,8 +125,8 @@ def test_rutracker_and_iptorrents_enabled_and_authed_when_creds_set(search_mod, 
     assert "rutracker" in enabled
     assert "iptorrents" in enabled
     # Observable: both report authenticated via the chip-state method.
-    assert orch._is_tracker_authenticated("rutracker") is True
-    assert orch._is_tracker_authenticated("iptorrents") is True
+    assert orch._tracker_credentials_configured("rutracker") is True
+    assert orch._tracker_credentials_configured("iptorrents") is True
 
 
 def test_trackers_absent_and_unauthed_when_creds_unset(search_mod, clean_cred_env):
@@ -137,8 +137,8 @@ def test_trackers_absent_and_unauthed_when_creds_unset(search_mod, clean_cred_en
     assert "rutracker" not in enabled
     assert "iptorrents" not in enabled
     # Observable: neither reports authenticated.
-    assert orch._is_tracker_authenticated("rutracker") is False
-    assert orch._is_tracker_authenticated("iptorrents") is False
+    assert orch._tracker_credentials_configured("rutracker") is False
+    assert orch._tracker_credentials_configured("iptorrents") is False
 
 
 def test_partial_creds_do_not_enable_tracker(search_mod, clean_cred_env):
@@ -149,7 +149,7 @@ def test_partial_creds_do_not_enable_tracker(search_mod, clean_cred_env):
 
     orch = search_mod.SearchOrchestrator()
     assert "rutracker" not in _enabled_names(orch)
-    assert orch._is_tracker_authenticated("rutracker") is False
+    assert orch._tracker_credentials_configured("rutracker") is False
 
 
 def test_iptorrents_independent_of_rutracker(search_mod, clean_cred_env):
@@ -162,14 +162,20 @@ def test_iptorrents_independent_of_rutracker(search_mod, clean_cred_env):
     enabled = _enabled_names(orch)
     assert "iptorrents" in enabled
     assert "rutracker" not in enabled
-    assert orch._is_tracker_authenticated("iptorrents") is True
-    assert orch._is_tracker_authenticated("rutracker") is False
+    assert orch._tracker_credentials_configured("iptorrents") is True
+    assert orch._tracker_credentials_configured("rutracker") is False
 
 
-def test_start_search_marks_authenticated_in_tracker_stats(search_mod, clean_cred_env):
+def test_start_search_marks_credentials_configured_in_tracker_stats(search_mod, clean_cred_env):
     """End-observable: the per-tracker stat surfaced to the SSE/UI layer
-    carries authenticated=True for a credentialed private tracker and
-    False for a public one."""
+    separates the two facts (BOB-173).
+
+    A credentialed private tracker carries ``credentials_configured=True``.
+    It does NOT carry ``authenticated=True`` on a seeded stat: no login has
+    run yet, so no session exists. Reporting authentication from credential
+    presence is exactly the bluff that let rutracker and nnmclub claim
+    ``authenticated: true`` beside ``status: error`` on the live service.
+    """
     clean_cred_env.setenv("RUTRACKER_USERNAME", _FAKE_USER)
     clean_cred_env.setenv("RUTRACKER_PASSWORD", _FAKE_PASS)
 
@@ -177,7 +183,14 @@ def test_start_search_marks_authenticated_in_tracker_stats(search_mod, clean_cre
     metadata = orch.start_search(query="q", category="all")
 
     assert "rutracker" in metadata.tracker_stats
+    assert metadata.tracker_stats["rutracker"].credentials_configured is True
+    assert metadata.tracker_stats["rutracker"].authenticated is False
+    # A session obtained later flips authentication — and only that does.
+    orch._tracker_sessions["rutracker"] = {"cookies": {"bb_session": "x"}, "base_url": "https://rutracker.org"}
+    orch._refresh_stat_auth_state(metadata.tracker_stats["rutracker"])
     assert metadata.tracker_stats["rutracker"].authenticated is True
-    # piratebay is a public tracker → always present, never authenticated.
+    # piratebay is a public tracker → always present, never authenticated,
+    # and never credentialed.
     assert "piratebay" in metadata.tracker_stats
     assert metadata.tracker_stats["piratebay"].authenticated is False
+    assert metadata.tracker_stats["piratebay"].credentials_configured is False

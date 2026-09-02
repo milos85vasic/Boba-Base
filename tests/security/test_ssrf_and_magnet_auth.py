@@ -96,6 +96,28 @@ class TestIsSafeFetchUrlHelper:
         with patch("socket.getaddrinfo", side_effect=socket.gaierror("no such host")):
             assert self.f("http://does-not-resolve.invalid/x") is False
 
+    def test_fails_closed_on_non_str_sockaddr(self):
+        """A non-``str`` sockaddr address MUST be REJECTED, never crash the guard.
+
+        typeshed types ``getaddrinfo``'s sockaddr as
+        ``tuple[str, int] | tuple[str, int, int, int] | tuple[int, bytes]``.
+        The third shape (AF_PACKET / AF_NETLINK / AF_BLUETOOTH) has an ``int``
+        at index 0, so ``addr.split("%", 1)`` raised ``AttributeError`` and the
+        SSRF guard exploded out of ``_is_safe_fetch_url`` instead of returning a
+        verdict — a §11.4.1 FAIL-bluff shape in a security guard.
+
+        This call (``family`` unset ⇒ ``AF_UNSPEC``, ``proto=IPPROTO_TCP``) only
+        ever yields AF_INET/AF_INET6, so the branch is unreachable in practice;
+        the guard MUST still fail CLOSED (reject) rather than raise, per
+        §11.4.252 fail-closed-on-unverifiable-input.
+        """
+
+        def _fake(host, *args, **kwargs):
+            return [(socket.AF_INET, socket.SOCK_STREAM, 0, "", (17, b"\x00\x11"))]
+
+        with patch("socket.getaddrinfo", _fake):
+            assert self.f("http://weird-sockaddr.example/x.torrent") is False
+
 
 # ---------------------------------------------------------------------------
 # Shared aiohttp response/session mock helpers.
