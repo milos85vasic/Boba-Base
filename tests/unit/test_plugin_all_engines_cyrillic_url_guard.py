@@ -348,6 +348,24 @@ def test_every_engine_builds_an_ascii_safe_url_for_a_cyrillic_query(
     name: str, copy: str
 ) -> None:
     urls = drive(name, copy)
+    if not urls and name in QUERY_NOT_IN_FETCHED_URL:
+        # The exemption is consulted ONLY on an empty result, never up front.
+        #
+        # Keying the skip on the name alone would disable this check for EVERY
+        # copy of the engine, including one that genuinely does build a query
+        # URL — silently converting real coverage into a green skip. Asking it
+        # only when the engine produced nothing keeps the §11.4.201(6)
+        # blind-instrument refusal intact for every driveable copy, while
+        # sparing the copy whose query provably never reaches a URL.
+        #
+        # Why this was needed (2026-09-19): the exemption existed and was
+        # honoured by test_every_engine_round_trips_the_cyrillic_query below,
+        # but NOT here — so this test failed `academictorrents[community]`, an
+        # engine the same file had already declared structurally immune. That
+        # is a §11.4.201(1) false-positive refusal of correct code: as
+        # forbidden as a false pass, and worse in practice, because it trains
+        # readers to ignore the guard.
+        pytest.skip(f"{name}/{copy}: {QUERY_NOT_IN_FETCHED_URL[name]}")
     assert urls, (
         f"{name}/{copy}: search() produced NO URL, so this engine was never "
         f"actually checked. That is a BLIND instrument, not a pass "

@@ -697,6 +697,52 @@ class TestDownloadEndpoint:
 
     @patch("api.routes._get_orchestrator")
     @patch("api.routes.aiohttp.ClientSession")
+    def test_download_url_add_202_is_reported_to_the_user_as_added(self, mock_session_cls, mock_get_orch, client):
+        """A `.torrent` URL add (202) surfaces as ADDED, not as a failure.
+
+        REGRESSION GUARD for F2 (review #3), added at the ROUTES layer after
+        review #4 found the guard missing here (IMPORTANT-4).
+
+        The defect: `_qbit_add_succeeded` excluded 202, so every successful
+        non-tracker URL add reported ``"status":"failed","added_count":0``
+        while the torrent was already downloading. Measured on qBittorrent
+        v5.2.3 / WebAPI 2.15.1: a magnet add answers 200, but a `.torrent` URL
+        add answers ``202 {"added_torrent_ids":[],"pending_count":1,
+        "success_count":0}`` — accepted, metadata still resolving.
+
+        WHY HERE AND NOT ONLY IN THE SHARED PREDICATE'S OWN TESTS: the fix was
+        verified by mutation and only 2 tests failed, BOTH in
+        test_qbit_add_shared_predicate.py. The defect the user actually hit
+        lived at this API layer, so §11.4.135 wants the guard at this seam —
+        a shared-predicate test alone cannot prove the endpoint reports it
+        correctly. Dropping 202 from the predicate must fail a test HERE.
+        """
+        self._session_answering_add_with(mock_session_cls, 202, '{"added_torrent_ids":[],"failure_count":0,"pending_count":1,"success_count":0}')
+        orch = MagicMock()
+        mock_get_orch.return_value = orch
+
+        resp = client.post(
+            "/api/v1/download",
+            json={
+                "result_id": "url-add-202",
+                "download_urls": ["http://tracker.example/file.torrent"],
+            },
+        )
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "initiated"
+        # The load-bearing assertion: 202 means accepted. Reporting 0 here is
+        # the exact user-visible defect F2 fixed.
+        assert data["added_count"] == 1, (
+            f"a 202 URL add must report added_count 1, got {data['added_count']} "
+            f"— the torrent is downloading while the API calls it a failure"
+        )
+        assert len(data["results"]) == 1
+        assert data["results"][0]["status"] == "added"
+
+    @patch("api.routes._get_orchestrator")
+    @patch("api.routes.aiohttp.ClientSession")
     def test_download_duplicate_409_is_reported_to_the_user_as_added(self, mock_session_cls, mock_get_orch, client):
         """A duplicate add (409) surfaces as an ADDED torrent, not a failure.
 

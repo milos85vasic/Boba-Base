@@ -1,0 +1,808 @@
+================================================================================
+LIVE END-TO-END RE-VERIFICATION OF THE RUNNING BOBA STACK — CAPTURED EVIDENCE
+================================================================================
+Run label      : live_reverify_final
+Captured (UTC) : 2026-09-19T12:14Z .. 2026-09-19T12:20Z
+Host           : rootless podman, host networking
+Repo           : /home/milosvasic/Projects/boba @ main (deed8bf at session start)
+Label          : (T1/main - claude5 - opus - ?)
+Runtime under test: qBittorrent v5.2.3 / WebAPI 2.15.1 (read live, see §2)
+
+VERDICT SUMMARY
+  1  CONTAINERS ................................. PASS
+  2  LOGIN MATRIX (:7185 and :7186, 3 arms) ..... PASS
+  3  NO AUTH BYPASS ............................. PASS
+  4  VANILLA WEBUI on :7186 ..................... PASS
+  5  ANGULAR DASHBOARD on :7187 ................. PASS
+  6  CONTENT TAGGING END-TO-END + neg. control .. PASS
+  7  FILE MODES ................................. PASS
+  8  SYSTEMD .................................... PASS (reboot survival STAGED-NOT-PROVEN)
+
+  FINDINGS raised by this run (NOT failures of the eight checks, but
+  reported plainly because they matter more than a green report):
+  F-1  The qBittorrent instance holds ZERO torrent registrations. The
+       operator's DOWNLOADED DATA is intact on disk (~79 GB across 30
+       files) but nothing is registered in the client. This was already
+       true at BEFORE capture, before this run touched anything. §6.1/§9
+  F-2  A stale category `no-such-category-7e2fe1` exists in the live
+       instance. Not created by this run; left untouched (hygiene). §6.1
+  F-3  One of THIS RUN's own probe commands produced a FALSE NULL through
+       a shell-chain footgun (§11.4.201(7)(c)). Diagnosed, reproduced
+       under control, and corrected. Recorded in §8.3 rather than hidden,
+       because the first reading would have wrongly reported a missing
+       systemd enablement symlink.
+  F-4  A CONCURRENT agent session is writing to this same checkout. The
+       tree was clean at BEFORE capture and now carries four modified
+       files that this run did not touch (a `.superpowers/` gitignore
+       stanza, a stale-log annotation, and a re-run BOB-095 benchmark).
+       The checkout is therefore NOT quiescent (§11.4.84). No §1-§8
+       verdict depends on those files. §9
+
+================================================================================
+§0  HYGIENE CONTRACT AND ITS PROOF
+================================================================================
+Operator constraints for this run, and how each was honoured:
+
+  * NEVER delete a torrent not created by this run
+      -> Exactly ONE torrent was added by this run (hash
+         b4820792c93ba7f5dacbb84e0731cbae62833d66, added 12:17Z). The only
+         delete call issued pinned that single hash explicitly. See §6.4.
+  * NEVER pass deleteFiles=true to anything but the probe torrent
+      -> deleteFiles=true was passed exactly once, in the same
+         hash-pinned call. See §6.4.
+  * Every probe torrent AND probe tag deleted afterwards, verified by
+    re-reading live state
+      -> Torrent: verified gone by live re-read (count=0, hashes=[]).
+         Tags: the 3 tags this run created (Movie, 2001, Action) deleted
+         and the list re-read. See §6.4/§6.5.
+  * Tag list MUST end exactly ["1080p","Boba","Боба"]
+      -> AFTER == ["1080p","Boba","Боба"], machine-compared. §6.5
+  * Never emit a tag beginning with the lowercase-hyphen prefix `boba-`
+      -> No tag of that shape was created at any point. The tags this run
+         caused qBittorrent to mint were exactly: Movie, 1080p, 2001,
+         Action, Boba, Боба — none matches that reserved shape. Verified
+         against the live tag list in §6.3 and §6.5.
+  * No host power-state change attempted
+      -> None. CONST-033 respected; see §8.4.
+
+================================================================================
+§1  CONTAINERS — all four healthy
+================================================================================
+$ podman ps --format '{{.Names}}\t{{.Image}}\t{{.Status}}'
+qbittorrent	lscr.io/linuxserver/qbittorrent:latest	Up 2 days (healthy)
+jackett	lscr.io/linuxserver/jackett:latest	Up 2 days (healthy)
+boba-jackett	localhost/boba_boba-jackett:latest	Up 2 days (healthy)
+qbittorrent-proxy	docker.io/library/python:3.12-alpine	Up 2 days (healthy)
+helixcode-autoboot-postgres	docker.io/library/postgres:15	Up 2 days (healthy)
+helixcode-autoboot-redis	docker.io/library/redis:7-alpine	Up 2 days (healthy)
+workshop-curriculum_platform_1	docker.io/library/alpine:3.20	Up 8 hours (healthy)
+
+All four boba containers present and (healthy):
+  qbittorrent        (healthy)
+  qbittorrent-proxy  (healthy)
+  boba-jackett       (healthy)
+  jackett            (healthy)
+The last three rows are unrelated host containers, listed for completeness.
+
+Network mode (load-bearing for §6 — it is WHY a host-loopback torrent URL
+is reachable from inside the containers):
+$ podman inspect qbittorrent --format '{{.HostConfig.NetworkMode}} | {{json .NetworkSettings.Networks}}'
+host | {"host":{"EndpointID":"","Gateway":"","IPAddress":"",...,"NetworkID":"host",...}}
+$ podman inspect qbittorrent-proxy --format '{{.HostConfig.NetworkMode}} | {{json .NetworkSettings.Networks}}'
+host | {"host":{"EndpointID":"","Gateway":"","IPAddress":"",...,"NetworkID":"host",...}}
+
+Listening ports, resolved to owning processes:
+$ ss -ltnp | grep -E ':7185|:7186|:7187|:7188|:7189|:9117'
+LISTEN 0      2048        0.0.0.0:7187  0.0.0.0:*  users:(("python3",pid=13188,fd=8))
+LISTEN 0      5           0.0.0.0:7186  0.0.0.0:*  users:(("python3",pid=13188,fd=5))
+LISTEN 0      50                *:7185        *:*  users:(("qbittorrent-nox",pid=8896,fd=30))
+LISTEN 0      4096              *:7189        *:*  users:(("boba-jackett",pid=13112,fd=9))
+LISTEN 0      4096              *:7188        *:*  users:(("webui-bridge",pid=13473,fd=3))
+LISTEN 0      512               *:9117        *:*  users:(("jackett",pid=2530348,fd=321))
+
+VERDICT §1: PASS — four boba containers up and healthy; every documented
+port is bound by the expected process.
+
+================================================================================
+§2  THE LOGIN MATRIX ON BOTH :7185 AND :7186 — three arms each
+================================================================================
+Runtime identity read LIVE (not assumed) — this is what makes 204/empty the
+correct success shape rather than the legacy 200 "Ok.":
+
+$ curl -s -b <cookiejar> http://localhost:7185/api/v2/app/version
+v5.2.3
+$ curl -s -b <cookiejar> http://localhost:7185/api/v2/app/webapiVersion
+2.15.1
+
+-------------------------------------------------------------------------------
+§2.1  Full success response, headers included (port 7185)
+-------------------------------------------------------------------------------
+$ curl -s -i -c cj7185.txt -X POST "http://localhost:7185/api/v2/auth/login" \
+    --data-urlencode "username=admin" --data-urlencode "password=admin" \
+    -H "Referer: http://localhost:7185"
+HTTP/1.1 204 OK
+connection: keep-alive
+content-length: 0
+content-security-policy: default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self' 'unsafe-inline'; object-src 'none'; form-action 'self'; frame-src 'self' blob:; frame-ancestors 'self';
+cross-origin-opener-policy: same-origin
+date: Sat, 19 Sep 2026 12:14:17 GMT
+referrer-policy: same-origin
+set-cookie: QBT_SID_7185=jzy33/SgB7n67hHEjQFIL6Y1PxkoqLtI; HttpOnly; SameSite=Lax; expires=Sat, 19-Sep-2026 13:14:17 GMT; path=/
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+
+Cookie jar written by libcurl (proof the cookie was accepted, not merely echoed):
+# Netscape HTTP Cookie File
+#HttpOnly_localhost	FALSE	/	FALSE	1789823657	QBT_SID_7185	jzy33/SgB7n67hHEjQFIL6Y1PxkoqLtI
+
+Assertions met: HTTP 204 / content-length: 0 / empty body / QBT_SID_7185
+cookie set, HttpOnly + SameSite=Lax.
+
+-------------------------------------------------------------------------------
+§2.2  The three-arm matrix, both ports, one transcript
+-------------------------------------------------------------------------------
+$ for P in 7185 7186; do ... done     (arm A: admin/admin, arm B: wrong
+                                       password, arm C: unauthenticated)
+
+########## PORT 7185 ##########
+--- ARM A: admin/admin ---
+HTTP_CODE=204
+body_bytes=0 body_content=[]
+set-cookie: QBT_SID_7185=yvq2wG7IITWqyda28O8fN4iIqaUavKOa; HttpOnly; SameSite=Lax; expires=Sat, 19-Sep-2026 13:14:52 GMT; path=/
+--- ARM B: admin/WRONG-PASSWORD-xY9 (negative control) ---
+HTTP_CODE=401
+body_content=[Unauthorized]
+no set-cookie (correct)
+--- ARM C: unauthenticated API call ---
+HTTP_CODE=403
+body_content=[Forbidden]
+
+########## PORT 7186 ##########
+--- ARM A: admin/admin ---
+HTTP_CODE=204
+body_bytes=0 body_content=[]
+set-cookie: QBT_SID_7185=0jgPSwxq74pZfg0b9qyNKHu+KgcBZPDM; HttpOnly; SameSite=Lax; expires=Sat, 19-Sep-2026 13:14:52 GMT; path=/
+--- ARM B: admin/WRONG-PASSWORD-xY9 (negative control) ---
+HTTP_CODE=401
+body_content=[<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Error response</title>
+    </head>
+    <body>
+        <h1>Error response</h1>
+        <p>Error code: 401</p>
+        <p>Message: Unauthorized.</p>
+        <p>Error code explanation: 401 - No permission -- see authorization schemes.</p>
+    </body>
+</html>]
+no set-cookie (correct)
+--- ARM C: unauthenticated API call ---
+HTTP_CODE=403
+body_content=[<!DOCTYPE HTML>
+<html lang="en">
+    ... <p>Error code: 403</p>
+        <p>Message: Forbidden.</p>
+        <p>Error code explanation: 403 - Request forbidden -- authorization will not help.</p>
+    </body>
+</html>]
+
+Per-arm reading:
+  ARM A  :7185 -> 204, 0-byte body, QBT_SID_7185 cookie set.   PASS
+         :7186 -> 204, 0-byte body, QBT_SID_7185 cookie set.   PASS
+         NOTE (§11.4.6, stated rather than glossed): on :7186 the cookie
+         name is QBT_SID_7185, not QBT_SID_7186. That is the UPSTREAM
+         qBittorrent cookie passed through by the proxy — :7186 does not
+         mint a session of its own, it forwards qBittorrent's. The task's
+         "QBT_SID_<port>" shape therefore holds with <port> = the upstream
+         WebUI port in both cases. This is a naming observation, not a
+         defect: the forwarded cookie is the one that authenticates.
+  ARM B  :7185 -> 401 Unauthorized, NO set-cookie.              PASS
+         :7186 -> 401 Unauthorized, NO set-cookie.              PASS
+         This is the arm that matters most. The security regression under
+         suspicion (a wrong password returning 204 because auth had been
+         disabled for loopback and all RFC1918) is ABSENT: both ports
+         refuse, and neither issues a session cookie. The proxy's 401 is
+         rendered as an HTML error page rather than the bare
+         "Unauthorized" string — a presentation difference of the proxy
+         layer, with the same status code and the same no-cookie outcome.
+  ARM C  :7185 -> 403 Forbidden.                                PASS
+         :7186 -> 403 Forbidden.                                PASS
+
+-------------------------------------------------------------------------------
+§2.3  qBittorrent mints NO temporary password on boot
+-------------------------------------------------------------------------------
+$ podman logs qbittorrent 2>&1 | grep -inE "temporary password|WebUI administrator|randomly generated"
+(no output — zero matches)
+$ podman logs qbittorrent 2>&1 | wc -l
+128
+
+Instrument honesty (§11.4.201(7)(b)): a zero from a grep is only evidence
+if the instrument can see through the same path. Control needle — the SAME
+log, same pipeline, searched for a string known to be present, returns it:
+$ podman logs qbittorrent 2>&1 | tail -25
+...
+Linuxserver.io version: 5.2.3_v2.0.14-ls474
+Build-date: 2026-08-30T12:20:13+00:00
+[custom-init] No custom files found, skipping...
+WebUI will be started shortly after internal preparations. Please wait...
+
+******** Information ********
+To control qBittorrent, access the WebUI at: http://localhost:7185
+Connection to localhost (127.0.0.1) 7185 port [tcp/*] succeeded!
+[ls.io-init] done.
+
+The instrument reads the log (128 lines, boot banner and the WebUI-ready
+line both visible), and finds no temporary-password mint. The absence is
+therefore a real absence, not a blind zero.
+
+VERDICT §2: PASS on all three arms, on both ports, with the negative
+control refusing correctly and no temporary password minted.
+
+================================================================================
+§3  NO AUTH BYPASS — live config inside the container
+================================================================================
+$ podman exec qbittorrent sh -c 'grep -nE "LocalHostAuth|AuthSubnetWhitelist|Username|Password_PBKDF2|ServerDomains|CSRFProtection|ClickjackingProtection|HostHeaderValidation" /config/qBittorrent/qBittorrent.conf'
+52:WebUI\AuthSubnetWhitelist=127.0.0.1/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+53:WebUI\AuthSubnetWhitelistEnabled=false
+56:WebUI\LocalHostAuth=true
+58:WebUI\Password_PBKDF2=<REDACTED per §11.4.10 — hash never printed>
+60:WebUI\ServerDomains=*
+61:WebUI\Username=admin
+
+Required values:
+  LocalHostAuth              = true     REQUIRED true     PASS
+  AuthSubnetWhitelistEnabled = false    REQUIRED false    PASS
+
+Second, independent read of the same two invariants through the running
+process's own API (not the file) — so the assertion does not rest on one
+instrument:
+$ curl -s -b cj7185.txt http://localhost:7185/api/v2/app/preferences
+bypass_local_auth = False
+bypass_auth_subnet_whitelist_enabled = False
+bypass_auth_subnet_whitelist = '127.0.0.0/8\n::1/128\n10.0.0.0/8\n172.16.0.0/12\n192.168.0.0/16'
+web_ui_username = 'admin'
+web_ui_port = 7185
+web_ui_csrf_protection_enabled = True
+web_ui_clickjacking_protection_enabled = True
+web_ui_host_header_validation_enabled = True
+
+File and running process AGREE. Note stated honestly: the subnet
+whitelist LIST still contains the RFC1918 ranges, but the ENABLED flag is
+false in both readings, and §2.2 ARM B proves behaviourally that the list
+is not honoured — a wrong password from loopback is refused with 401. The
+residual list content is inert configuration, not an active bypass.
+
+VERDICT §3: PASS — no auth bypass, asserted from two independent sources
+plus a behavioural negative control.
+
+================================================================================
+§4  VANILLA WEBUI ON :7186 — themed overlay gone
+================================================================================
+$ curl -s -b cj7185.txt "http://localhost:7186/" -o webui7186.html -w "HTTP_CODE=%{http_code} bytes=%{size_download}\n"
+HTTP_CODE=200 bytes=26129
+
+$ grep -o '<title>[^<]*</title>' webui7186.html
+<title>qBittorrent WebUI</title>
+
+Injection-marker census over the served HTML (counts, not absence claims):
+Боба               count=0
+__qbit_theme__     count=0
+theme_injector     count=0
+boba               count=0
+Boba               count=0
+BOBA               count=0
+injected           count=0
+
+$ head -20 webui7186.html
+<!DOCTYPE html>
+<!-- Add the 'dark' class to prevent bright flash on page load -->
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=10">
+    <meta name="application-name" content="qBittorrent">
+    <meta name="description" content="qBittorrent WebUI">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>qBittorrent WebUI</title>
+
+    <link rel="icon" type="image/png" href="images/qbittorrent32.png" sizes="32x32">
+    <link rel="icon" type="image/svg+xml" href="images/qbittorrent-tray.svg" sizes="any">
+    <link rel="stylesheet" type="text/css" href="css/dynamicTable.css?v=937541">
+    <link rel="stylesheet" type="text/css" href="css/style.css?v=937541">
+    <link rel="stylesheet" type="text/css" href="css/Core.css?v=937541">
+    <link rel="stylesheet" type="text/css" href="css/Layout.css?v=937541">
+    <link rel="stylesheet" type="text/css" href="css/Window.css?v=937541">
+
+The instrument is proven non-blind: the very same 26129-byte document
+yields a positive match for `qBittorrent` (the title grep above) through
+the same read path that returns zero for every injection marker.
+
+VERDICT §4: PASS — :7186 serves stock qBittorrent WebUI; zero occurrences
+of Боба, __qbit_theme__, or any injection marker.
+
+================================================================================
+§5  ANGULAR DASHBOARD ON :7187
+================================================================================
+$ curl -s "http://localhost:7187/" -o dash.html -w "HTTP_CODE=%{http_code} ctype=%{content_type} bytes=%{size_download}\n"
+HTTP_CODE=200 ctype=text/html; charset=utf-8 bytes=2859
+
+Not the JSON fallback — the served body is real Angular HTML:
+$ head -16 dash.html
+<!doctype html>
+<html lang="en" data-beasties-container>
+<head>
+  <meta charset="utf-8">
+  <title>Боба Dashboard</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Боба Dashboard — multi-tracker meta-search, private-tracker bridge, real-time SSE results.">
+  <meta name="theme-color" content="#0f1a30">
+
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512x512.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <style>:root{--color-bg-primary:#2b2b2b; ... (inlined critical CSS) }</style>
+  <link rel="stylesheet" href="styles-GCTY6SPV.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="styles-GCTY6SPV.css"></noscript>
+</head>
+
+The `{"dashboard":"not found"}` JSON fallback is absent — the literal
+`dashboard` appears 0 times in the body, and content-type is text/html,
+not application/json.
+
+Asset refs declared by the document:
+<link rel="modulepreload" href="chunk-BLMHHXNZ.js">
+<link rel="modulepreload" href="chunk-2VMXMS7J.js">
+<script src="polyfills-DOYHMSTV.js" type="module">
+<script src="main-CLXE6FZU.js" type="module">
+
+Every referenced bundle actually RESOLVES (this is the check that
+distinguishes a served index.html from a working app):
+main-CLXE6FZU.js      -> HTTP 200 ctype=text/javascript; charset=utf-8 bytes=199634
+polyfills-DOYHMSTV.js -> HTTP 200 ctype=text/javascript; charset=utf-8 bytes=35726
+styles-GCTY6SPV.css   -> HTTP 200 ctype=text/css; charset=utf-8 bytes=2226
+chunk-BLMHHXNZ.js     -> HTTP 200 ctype=text/javascript; charset=utf-8 bytes=225870
+
+VERDICT §5: PASS — real HTML, not the JSON fallback, and the main-*.js
+bundle resolves 200 with a 199 KB JavaScript payload.
+
+Honest boundary (§11.4.6): this proves the documents and bundles are
+SERVED and resolvable. It does not prove the app renders without a runtime
+console error — that needs a browser oracle (§11.4.170) and is outside
+this run's scope.
+
+================================================================================
+§6  CONTENT TAGGING END-TO-END — the most important functional check
+================================================================================
+
+-------------------------------------------------------------------------------
+§6.1  BEFORE state (captured FIRST, so restoration is provable)
+-------------------------------------------------------------------------------
+$ curl -s -b cj7185.txt "http://localhost:7185/api/v2/torrents/tags"
+["1080p","Boba","Боба"]
+
+$ curl -s -b cj7185.txt "http://localhost:7185/api/v2/torrents/info"
+count= 0
+
+Cross-checked through a DIFFERENT endpoint, because a zero from one
+endpoint is not evidence (§11.4.201(6) false-null):
+$ curl -s -b cj7185.txt "http://localhost:7185/api/v2/sync/maindata?rid=0"
+torrents keys: []
+tags: ['1080p', 'Boba', 'Боба']
+categories: ['no-such-category-7e2fe1']
+server_state.dl_info_data: 7486831553
+$ curl -s -b cj7185.txt "http://localhost:7185/api/v2/torrents/info?filter=all"
+[]
+
+>>> FINDING F-1 (recorded, not a §6 failure) <<<
+The instance held ZERO torrent registrations BEFORE this run added
+anything. Two independent endpoints agree, and the instrument is proven
+seeing (the same maindata read returns the real tag list and a real
+category, so it is not returning a blanket empty document).
+
+The operator's DOWNLOADED DATA is intact:
+$ podman exec qbittorrent sh -c 'for d in Movies Series Books Cartoons Games Torrents; do ... done'
+Movies     files=10 size=40G
+Series     files=8  size=18G
+Books      files=1  size=357M
+Cartoons   files=10 size=16G
+Games      files=1  size=4.8G
+Torrents   files=0  size=12K
+
+But the client holds no registration for any of it:
+$ podman exec qbittorrent sh -c 'ls -la /config/qBittorrent/BT_backup/'
+total 12
+drwxr-xr-x 2 root root 4096 Sep 19 15:17 .
+drwxr-xr-x 8 root root 4096 Sep 19 15:18 ..
+-rw-r--r-- 1 root root   41 Sep 19 15:17 queue
+counts: 0 fastresume files, 1 entry total
+
+So: ~79 GB of operator content is SAFE on disk, and zero torrents are
+registered in qBittorrent. The de-registration predates this run — proven
+by the BEFORE capture above, taken before the first mutating call. This
+run neither caused it nor repaired it; repairing it (re-adding torrents
+against existing data) is an operator decision, not something to do
+unasked.
+
+>>> FINDING F-2 <<<
+Category `no-such-category-7e2fe1` exists in the live instance. Not
+created by this run, so per the hygiene contract it was left untouched.
+
+-------------------------------------------------------------------------------
+§6.2  NEGATIVE CONTROL FIRST — empty URL must be REFUSED with 422
+-------------------------------------------------------------------------------
+Run before the positive case, because it is side-effect free and it is the
+arm that previously produced a PASS-bluff (an empty URL reached
+qBittorrent as the no-payload 409 and was falsely reported as "added").
+
+$ curl -s -w "\nHTTP_CODE=%{http_code}\n" -X POST "http://localhost:7187/api/v1/download" \
+    -H 'Content-Type: application/json' \
+    -d '{"result_id":"neg-ctl-empty-url","download_urls":[""]}'
+{"detail":[{"type":"value_error","loc":["body","download_urls"],"msg":"Value error, download_urls must contain at least one non-empty URL","input":[""],"ctx":{"error":{}}}]}
+HTTP_CODE=422
+
+And the state delta is asserted, not assumed — nothing was added:
+$ curl -s -b cj7185.txt "http://localhost:7185/api/v2/torrents/info"
+count= 0
+
+VERDICT §6.2: PASS — 422 with a field-precise error, and zero torrents
+created. The empty-URL bluff does not reproduce.
+
+-------------------------------------------------------------------------------
+§6.3  POSITIVE CASE — real .torrent over local HTTP, real API, real client
+-------------------------------------------------------------------------------
+Probe torrent: tests/test_torrents/debian.iso.torrent, copied to
+serve_probe.torrent and served from the host loopback. Chosen as the
+smallest available real torrent (662,700,032 B payload,
+debian-12.9.0-amd64-netinst.iso) to bound the download window.
+
+$ python3 -m http.server 48731 --bind 127.0.0.1 &
+$ curl -s -o /dev/null -w "HTTP %{http_code} bytes=%{size_download}\n" "http://127.0.0.1:48731/serve_probe.torrent"
+HTTP 200 bytes=51030          <- local server serves the real .torrent
+
+$ curl -s -w "\nHTTP_CODE=%{http_code}\n" -X POST "http://localhost:7187/api/v1/download" \
+    -H 'Content-Type: application/json' \
+    -d '{"result_id":"live-reverify-probe-<epoch>",
+         "download_urls":["http://127.0.0.1:48731/serve_probe.torrent"],
+         "title":"Debian Netinst 2001 1080p BluRay",
+         "content_type":"movie","year":2001,"genres":["Action"]}'
+{"download_id":"ca052585-d1de-4855-99d2-6ed0cd78b19f","status":"initiated","urls_count":1,"added_count":1,"results":[{"url":"http://127.0.0.1:48731/serve_probe.torrent","status":"added"}]}
+HTTP_CODE=200
+
+Assertion (a): THE API REPORTS SUCCESS
+  results[0].status = "added"   (NOT "failed")   PASS
+  added_count       = 1                          PASS
+  urls_count        = 1
+  status            = "initiated"
+A URL add returns 202 from qBittorrent; it is correctly classified as
+added rather than failed.
+
+Assertion (b): THE TORRENT ACTUALLY LANDED, CARRYING EVERY DIMENSION
+$ curl -s -b cj7185.txt "http://localhost:7185/api/v2/torrents/info"
+count= 1
+hash    = b4820792c93ba7f5dacbb84e0731cbae62833d66
+name    = debian-12.9.0-amd64-netinst.iso
+state   = downloading
+tags    = '1080p, 2001, Action, Boba, Movie, Боба'
+category= ''
+progress= 0.7031002768987342 downloaded= 421447583
+
+Six required tag dimensions, each matched against the live value:
+  content type  -> Movie     present   PASS
+  quality       -> 1080p     present   PASS   (parsed from the title)
+  year          -> 2001      present   PASS
+  genre         -> Action    present   PASS
+  promo (Latin) -> Boba      present   PASS
+  promo (Cyr.)  -> Боба      present   PASS
+All four operator-chosen dimensions AND both promo tags landed on the
+torrent in the real client. This is a user-observable state delta read
+back from qBittorrent, not a return code.
+
+VERDICT §6.3: PASS on both (a) and (b).
+
+-------------------------------------------------------------------------------
+§6.4  CLEAN-UP — probe torrent stopped, then deleted, then verified gone
+-------------------------------------------------------------------------------
+Stopped immediately after the read, to bound the real download:
+$ curl -s -b cj7185.txt -X POST "http://localhost:7185/api/v2/torrents/stop" --data-urlencode "hashes=b4820792c93ba7f5dacbb84e0731cbae62833d66"
+stop HTTP 200
+
+Deleted — hash-pinned to THIS RUN's probe only; this is the one and only
+deleteFiles=true of the run:
+$ curl -s -b cj7185.txt -X POST "http://localhost:7185/api/v2/torrents/delete" \
+    --data-urlencode "hashes=b4820792c93ba7f5dacbb84e0731cbae62833d66" \
+    --data-urlencode "deleteFiles=true"
+delete HTTP 200
+
+Verified gone by LIVE RE-READ (not by trusting the 200):
+$ curl -s -b cj7185.txt "http://localhost:7185/api/v2/torrents/info"
+count= 0
+hashes= []
+
+No file residue from the probe:
+$ podman exec qbittorrent sh -c 'ls -la /downloads/; ls -la /downloads/Incomplete'
+total 36
+drwxr-xr-x ... Books Cartoons Games Incomplete Movies Series Torrents
+/downloads/Incomplete:
+total 8
+drwxrwsr-x 2 root root 4096 Sep 19 15:17 .
+drwxrws--- 9 root root 4096 Sep 17 14:11 ..       <- empty
+$ podman exec qbittorrent sh -c 'find /downloads -iname "*debian-12.9*"'
+(empty — clean)
+
+The local probe HTTP server was stopped:
+local httpd stopped (pid 682622)
+
+-------------------------------------------------------------------------------
+§6.5  TAG RESTORATION — every tag this run created, removed and verified
+-------------------------------------------------------------------------------
+Tags persist in qBittorrent after the torrent carrying them is deleted, so
+the tag list was re-read to see exactly what was owed:
+$ curl -s -b cj7185.txt "http://localhost:7185/api/v2/torrents/tags"
+["1080p","2001","Action","Boba","Movie","Боба"]
+
+Three tags were created by this run — Movie, 2001, Action (1080p, Boba and
+Боба pre-existed per §6.1 and were NOT created here, so they stay):
+$ curl -s -b cj7185.txt -X POST "http://localhost:7185/api/v2/torrents/deleteTags" --data-urlencode "tags=Movie,2001,Action"
+deleteTags HTTP 200
+
+AFTER state, machine-compared against the required end state:
+$ curl -s -b cj7185.txt "http://localhost:7185/api/v2/torrents/tags"
+["1080p","Boba","Боба"]
+after    = ['1080p', 'Boba', 'Боба']
+expected = ['1080p', 'Boba', 'Боба']
+MATCH    = True
+
+VERDICT §6: PASS. API success correctly reported, all six tag dimensions
+landed in the live client, empty-URL negative control refused with 422,
+and the instance restored to exactly its BEFORE tag list with zero probe
+residue.
+
+================================================================================
+§7  FILE MODES
+================================================================================
+$ stat -c '%a %U:%G %n' .env config/boba.db
+600 milosvasic:milosvasic .env
+600 milosvasic:milosvasic config/boba.db
+
+  .env            0600   REQUIRED 0600   PASS
+  config/boba.db  0600   REQUIRED 0600   PASS
+
+VERDICT §7: PASS.
+
+================================================================================
+§8  SYSTEMD
+================================================================================
+-------------------------------------------------------------------------------
+§8.1  Five user units installed; boba.target enabled; linger on
+-------------------------------------------------------------------------------
+$ ls -1 ~/.config/systemd/user/boba*
+/home/milosvasic/.config/systemd/user/boba-resource-pressure-check.service
+/home/milosvasic/.config/systemd/user/boba-resource-pressure-check.timer
+/home/milosvasic/.config/systemd/user/boba-stack.service
+/home/milosvasic/.config/systemd/user/boba-webui-bridge.service
+/home/milosvasic/.config/systemd/user/boba.target
+                                              -> 5 unit files   PASS
+
+$ systemctl --user list-unit-files 'boba*'
+UNIT FILE                            STATE    PRESET
+boba-resource-pressure-check.service static   -
+boba-stack.service                   disabled enabled
+boba-webui-bridge.service            disabled enabled
+boba.target                          enabled  enabled
+boba-resource-pressure-check.timer   enabled  enabled
+
+5 unit files listed.
+
+$ systemctl --user is-enabled boba.target
+enabled                                                          PASS
+$ systemctl --user is-active boba.target
+active
+$ loginctl show-user milosvasic -p Linger
+Linger=yes                                                       PASS
+
+-------------------------------------------------------------------------------
+§8.2  Why the two "disabled" services are correct, not a gap
+-------------------------------------------------------------------------------
+Their enablement is by the TARGET, which is itself enabled — the units
+declare WantedBy=boba.target and boba.target declares Wants= for both, so
+enabling the target is the whole mechanism. Asserted rather than assumed:
+
+$ systemctl --user show boba.target -p Wants -p Requires -p After
+Requires=
+Wants=boba-webui-bridge.service boba-stack.service
+After=boba-webui-bridge.service default.target boba-stack.service
+
+$ grep -A2 '^\[Install\]' ~/.config/systemd/user/boba-{webui-bridge,stack}.service
+boba-webui-bridge.service:[Install]
+boba-webui-bridge.service-WantedBy=boba.target
+boba-stack.service:[Install]
+boba-stack.service-WantedBy=boba.target
+
+boba.target's own [Unit] section carries both Wants= lines in the FILE
+(not only via a .wants symlink dir), and its [Install] is
+WantedBy=default.target:
+  [Unit]
+  ...
+  Wants=boba-stack.service
+  Wants=boba-webui-bridge.service
+  [Install]
+  WantedBy=default.target
+
+Live unit states:
+boba-stack.service                         active=active     enabled=disabled
+boba-webui-bridge.service                  active=active     enabled=disabled
+boba-resource-pressure-check.timer         active=active     enabled=enabled
+boba-resource-pressure-check.service       active=inactive   enabled=static
+(the .service is `static` + inactive BY DESIGN — it is the timer's
+one-shot payload; and the target deliberately does NOT Want it, so host
+resource-pressure monitoring keeps running when the stack is down. That
+intent is documented in boba.target's own header comment.)
+
+-------------------------------------------------------------------------------
+§8.3  FINDING F-3 — a FALSE NULL in this run's own probe, diagnosed
+-------------------------------------------------------------------------------
+Recorded because the first reading would have wrongly reported a missing
+boot-enablement symlink — a §11.4.201 false negative produced by the
+instrument, not by the system.
+
+FIRST (wrong) reading. This chain printed
+"(no boba symlink in default.target.wants)":
+  ... && ls -la ~/.config/systemd/user/boba.target.wants/ 2>&1 \
+      && echo && echo "=== default.target.wants/ ===" \
+      && ls -la ~/.config/systemd/user/default.target.wants/ 2>&1 | grep -i boba \
+      || echo "(no boba symlink in default.target.wants)"
+The earlier link FAILED —
+  ls: cannot access '/home/milosvasic/.config/systemd/user/boba.target.wants/': No such file or directory
+— so the whole left side of the `||` was false and the shell jumped
+straight to the `||` message. The default.target.wants listing and its
+grep NEVER RAN. The message asserted a checked-and-empty result for a
+check that was never executed: the exact §11.4.201(7)(c) footgun where the
+PATH, not the data, produces a clean confident wrong answer.
+
+Reproduced under control — the same construct, with the failing link
+removed, returns the match:
+$ ( echo "=== default.target.wants ===" && ls -la ~/.config/systemd/user/default.target.wants/ 2>&1 | grep -i boba || echo "(no boba symlink)" )
+=== default.target.wants ===
+lrwxrwxrwx 1 milosvasic milosvasic 49 Sep 1 17:40 boba.target -> /home/milosvasic/.config/systemd/user/boba.target
+--- rc=0 ---
+$ ls -la ~/.config/systemd/user/default.target.wants/ | grep -ci boba
+1
+
+CORRECTED reading, from two independent instruments:
+$ ls -la ~/.config/systemd/user/default.target.wants/
+lrwxrwxrwx 1 milosvasic milosvasic   49 Sep  1 17:40 boba.target -> /home/milosvasic/.config/systemd/user/boba.target
+  (plus 17 unrelated host units)
+$ find ~/.config/systemd ~/.local/share/systemd -name 'boba.target' -type l -exec ls -la {} \;
+lrwxrwxrwx 1 milosvasic milosvasic 49 Sep  1 17:40 /home/milosvasic/.config/systemd/user/default.target.wants/boba.target -> /home/milosvasic/.config/systemd/user/boba.target
+$ systemctl --user show boba.target -p WantedBy -p Id
+Id=boba.target
+WantedBy=default.target
+
+FACT: the boot-enablement symlink EXISTS, at
+~/.config/systemd/user/default.target.wants/boba.target, dated 2026-09-01
+17:40, and systemd resolves WantedBy=default.target. `boba.target.wants/`
+does not exist and does not need to — the target's Wants= live in its own
+file (§8.2).
+
+-------------------------------------------------------------------------------
+§8.4  REBOOT SURVIVAL — STAGED-NOT-PROVEN
+-------------------------------------------------------------------------------
+STATUS: STAGED-NOT-PROVEN. Everything a reboot needs is in place and
+verified above — 5 units installed, boba.target enabled with a resolved
+default.target.wants symlink, Wants= on both services in the target file,
+and Linger=yes so the user manager starts at host boot rather than at
+login. But the ONLY proof that the stack comes back after a reboot is an
+actual reboot, and host power-state transitions are hard-banned here
+(CONST-033 / §12): no reboot, suspend, hibernate, poweroff or halt was
+attempted, and none may be attempted by an agent.
+
+OPERATOR ACTION REQUIRED to convert this to PROVEN: reboot the host at a
+time of your choosing, then confirm without logging into a graphical
+session that `systemctl --user is-active boba.target` reports active and
+all four containers report (healthy).
+
+VERDICT §8: PASS on every mechanically checkable element; reboot survival
+STAGED-NOT-PROVEN and owed to an operator-run reboot.
+
+================================================================================
+§9  WORKING-TREE CLEANLINESS
+================================================================================
+BEFORE (session start):
+$ git status --porcelain
+(empty — clean tree)
+
+AFTER:
+$ git status --porcelain
+ M .gitignore
+ M docs/qa/2026-09-01-qbittorrent-login-repair/runs/pytest_full_sweep_final.txt
+ M docs/qa/BOB-095/evidence/chaos_producer_flood.json
+ M docs/qa/BOB-095/evidence/latency.json
+?? docs/qa/2026-09-01-qbittorrent-login-repair/runs/live_reverify_final.txt
+
+The tree is NOT clean, and the reason is NOT this run. Reported plainly
+rather than glossed, because the requested end-state was "ONLY your
+evidence file".
+
+>>> FINDING F-4 — CONCURRENT WRITER IN THE SAME CHECKOUT (§11.4.84) <<<
+This run created/modified EXACTLY ONE repository path:
+  ?? docs/qa/2026-09-01-qbittorrent-login-repair/runs/live_reverify_final.txt
+The four ` M` entries were written by ANOTHER, concurrent agent session
+working in this same checkout while this verification ran. Evidence:
+
+  a) They did not exist at BEFORE capture. Session-start
+     `git status --porcelain` returned EMPTY (clean tree) — recorded above.
+
+  b) Their mtimes fall inside this run's window but their CONTENT belongs
+     to a different workstream entirely:
+       .gitignore                       2026-09-19 14:17:00 (+0200)
+       pytest_full_sweep_final.txt      2026-09-19 14:22:11
+       BOB-095/evidence/chaos_...json   2026-09-19 14:18:29
+       BOB-095/evidence/latency.json    2026-09-19 14:18:28
+
+  c) What the other writer did, by diff:
+     * .gitignore — added a `.superpowers/` stanza for
+       "Subagent-Driven-Development coordination ledgers". The
+       corresponding directory exists and is newer than this run's start:
+       $ ls -la .superpowers/
+       drwxrwxr-x 3 milosvasic milosvasic 4096 Sep 19 14:16 .
+       drwxrwxr-x 3 milosvasic milosvasic 4096 Sep 19 14:16 sdd
+     * pytest_full_sweep_final.txt — prepended a 49-line
+       "=== STALE — READ THIS FIRST (annotated 2026-09-02, §11.4.6) ==="
+       header about three pytest failures and commit 60729c9.
+     * BOB-095 latency.json / chaos_producer_flood.json — a fresh
+       benchmark re-run: evidence_recorded_at_ns moved
+       1788295793118072160 -> 1789820308682417857 and the percentiles
+       shifted (p50 3450->3640, p95 5580->5620, p99 10470->11010 ns).
+
+  d) None of it is reachable from anything this run did. This run issued
+     no git command other than `status`, wrote no file inside the
+     repository except its own evidence file, and ran no pytest, no
+     benchmark, and no gitignore edit. Its only mutations were HTTP calls
+     to :7185/:7186/:7187 and read-only `podman exec` inspections.
+
+Consequence for the verification itself: NONE of the eight checks depends
+on those four files, and none of this run's readings came from them — every
+§1-§8 verdict is grounded in live HTTP responses, live container state, or
+`stat`/`systemctl` output captured in this file. The concurrent writer does
+not invalidate any verdict above.
+
+Consequence for the operator: the checkout is NOT quiescent (§11.4.84 —
+no commit should be taken from this tree until the other session's work is
+accounted for, because a broad `git add -A` here would sweep a second
+workstream's in-flight changes into an unrelated commit). Those four paths
+belong to that other session and were deliberately left untouched by this
+run.
+
+All of this run's scratch artefacts (cookie jars, response bodies, the
+served probe .torrent, the local HTTP server log) live in the session
+scratchpad, outside the repository.
+
+================================================================================
+§10  HONEST BOUNDARIES OF THIS RUN (§11.4.6)
+================================================================================
+* §5 proves the dashboard HTML and bundles are served and resolvable; it
+  does NOT prove the Angular app renders without runtime console errors.
+  That needs a browser/vision oracle and was not run.
+* §6 proves ONE content item, with one content_type / year / genre shape,
+  tags correctly end-to-end. It is not an exhaustive sweep of the tagging
+  matrix across every content type.
+* F-1 (zero torrent registrations) is reported as a measured FACT with
+  its two-endpoint cross-check. Its CAUSE is UNKNOWN to this run — no
+  forensics were performed on how the registrations were lost, and none
+  are claimed.
+* Reboot survival is STAGED-NOT-PROVEN, per §8.4.
+* No claim in this file rests on a return code alone; every PASS above
+  cites either a user-observable state delta read back from the live
+  system or a captured document.
+
+================================================================================
+END OF EVIDENCE — live_reverify_final
+================================================================================

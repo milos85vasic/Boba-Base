@@ -295,6 +295,16 @@ qa-results/docs_chain/
 # + artifacts/; investigation by Agent Q 2026-08-10, task #26)
 scratchpad/
 
+# Subagent-Driven-Development coordination ledgers (§11.4.30 temp-file class).
+# Per-plan scratch: ledger, task briefs, implementer reports, review packages.
+# Deliberately NOT tracked — the binding record is the evidence pack under
+# docs/qa/ plus git history (§11.4.215: a doc that BINDS work lives tracked;
+# this one only coordinates, so it does not). Kept in-repo rather than in the
+# session scratchpad because the scratchpad path is keyed to the session id,
+# so a session restart orphans it — which is exactly the failure this ledger
+# exists to prevent.
+.superpowers/
+
 # §11.4.10 CRITICAL (operator mandate 2026-08-15) — cookies txt files
 # MUST NEVER be git-versioned. Convention: ~/Downloads/cookies_<TRACKER>.txt
 # is the DEFAULT external source; the file itself should live OUTSIDE the repo,

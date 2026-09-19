@@ -58,71 +58,83 @@ def script() -> str:
     return _script_block()
 
 
+_TS_DIR = _REPO_ROOT / "frontend" / "node_modules" / "typescript"
+
+#: Node program that parses the script with the REAL TypeScript parser and
+#: prints every function reachable at top-level scope, one per line.
+#: Covers both `function f(){}` and `var f = function(){}` / `const f = () => {}`,
+#: because all three are callable from a sibling and the earlier scanner only
+#: understood the first (a §11.4.201(1) false-negative on the other two).
+_TS_PROBE = r"""
+const ts = require(process.argv[2]);
+const fs = require('fs');
+const src = fs.readFileSync(process.argv[3], 'utf8');
+const sf = ts.createSourceFile('d.js', src, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+const names = new Set();
+for (const st of sf.statements) {
+  if (ts.isFunctionDeclaration(st) && st.name) names.add(st.name.text);
+  if (ts.isVariableStatement(st)) {
+    for (const d of st.declarationList.declarations) {
+      if (!d.name || !d.initializer) continue;
+      if (ts.isFunctionExpression(d.initializer) || ts.isArrowFunction(d.initializer)) {
+        names.add(d.name.getText(sf));
+      }
+    }
+  }
+}
+for (const n of names) console.log(n);
+"""
+
+
 def _top_level_function_names(src: str) -> set[str]:
-    """Names of functions declared at BRACE DEPTH ZERO of the script block.
+    """Names of functions reachable at TOP-LEVEL scope, per a real JS parser.
 
-    SCOPE IS BRACES, NOT INDENTATION. The first version of this helper used
-    indentation as a proxy for scope, and a paired mutation proved it worthless:
-    re-nesting `_tagFacts` inside `generateMagnet` WITHOUT changing its
-    indentation left the detector completely blind, so the guard passed against
-    the exact defect it was written for (§1.1 — a test that cannot catch its own
-    negation is a bluff). JavaScript scope is determined by braces, so braces
-    are what this counts.
+    WHY A PARSER AND NOT A SCANNER (review #4, IMPORTANT-3)
+    ------------------------------------------------------
+    Two hand-rolled versions of this helper were wrong in two different ways,
+    which is the tell §11.4.250 names: when layer after layer is needed to prop
+    up a heuristic, the heuristic is the defect.
 
-    String literals, template literals, regex-ish quotes and both comment forms
-    are skipped so that a `{` inside them cannot shift the depth.
+      v1 used INDENTATION as a proxy for scope. A paired mutation proved it
+      worthless — re-nesting the helper without changing its indentation left
+      it completely blind.
+
+      v2 counted BRACE DEPTH while skipping strings and comments, but had no
+      REGEX-LITERAL handling. `/filename="?([^"]+)"?/` at dashboard.html:1155
+      contains a double quote, so the scanner opened a phantom string there and
+      went blind over ~170 lines. Inside that region it FAILED CORRECT CODE —
+      a §11.4.201(1) false-positive refusal, the same defect class this suite
+      exists to catch. Its depth happened to land back on 0, so the tests still
+      passed and nothing revealed the blindness.
+
+    A JavaScript tokenizer is genuinely hard: regex-vs-division is ambiguous
+    without parser context, and template literals nest arbitrarily. Rather than
+    add a third layer, this asks TypeScript — already vendored for the Angular
+    app — which is the same parser the real toolchain uses.
+
+    HONEST SKIP (§11.4.3): when node or the vendored TypeScript is absent this
+    raises RuntimeError and the callers skip with a named reason. It never
+    silently falls back to the broken scanner — a quiet downgrade to a known-bad
+    instrument is worse than an honest "could not check" (§11.4.201(6)).
     """
-    depth = 0
-    names: set[str] = set()
-    i = 0
-    n = len(src)
-    fn_re = re.compile(r"(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(")
-
-    while i < n:
-        ch = src[i]
-
-        # line comment
-        if ch == "/" and i + 1 < n and src[i + 1] == "/":
-            j = src.find("\n", i)
-            i = n if j == -1 else j + 1
-            continue
-        # block comment
-        if ch == "/" and i + 1 < n and src[i + 1] == "*":
-            j = src.find("*/", i + 2)
-            i = n if j == -1 else j + 2
-            continue
-        # string / template literal
-        if ch in "\"'`":
-            quote = ch
-            i += 1
-            while i < n:
-                if src[i] == "\\":
-                    i += 2
-                    continue
-                if src[i] == quote:
-                    i += 1
-                    break
-                i += 1
-            continue
-
-        if ch == "{":
-            depth += 1
-            i += 1
-            continue
-        if ch == "}":
-            depth -= 1
-            i += 1
-            continue
-
-        if depth == 0:
-            m = fn_re.match(src, i)
-            if m:
-                names.add(m.group(1))
-                i = m.end()
-                continue
-        i += 1
-
-    return names
+    node = shutil.which("node")
+    if not node or not _TS_DIR.is_dir():
+        raise RuntimeError(
+            f"node={'present' if node else 'ABSENT'}, "
+            f"typescript={'present' if _TS_DIR.is_dir() else 'ABSENT'}"
+        )
+    with tempfile.TemporaryDirectory() as td:
+        js = Path(td) / "d.js"
+        js.write_text(src, encoding="utf-8")
+        probe = Path(td) / "probe.js"
+        probe.write_text(_TS_PROBE, encoding="utf-8")
+        proc = subprocess.run(
+            [node, str(probe), str(_TS_DIR), str(js)],
+            capture_output=True, text=True, timeout=60,
+        )
+    if proc.returncode != 0:
+        raise RuntimeError(f"TypeScript parse failed: {proc.stderr[:400]}")
+    return {line.strip() for line in proc.stdout.splitlines() if line.strip()}
 
 
 class TestDashboardScriptIntegrity:
@@ -153,7 +165,11 @@ class TestDashboardScriptIntegrity:
         """
         if "_tagFacts" not in script:
             pytest.skip("SKIP-reason=helper_absent: _tagFacts is not used in this template")
-        assert "_tagFacts" in _top_level_function_names(script), (
+        try:
+            top = _top_level_function_names(script)
+        except RuntimeError as exc:
+            pytest.skip(f"SKIP-reason=parser_absent: {exc}")
+        assert "_tagFacts" in top, (
             "_tagFacts is declared but NOT at top-level scope — it is nested inside "
             "another function and its sibling call sites will throw "
             "'ReferenceError: _tagFacts is not defined' before their fetch fires"
@@ -168,7 +184,10 @@ class TestDashboardScriptIntegrity:
         checked. (Underscore-prefixed only: that is this template's convention
         for its own helpers, and it keeps browser/library globals out of scope.)
         """
-        top = _top_level_function_names(script)
+        try:
+            top = _top_level_function_names(script)
+        except RuntimeError as exc:
+            pytest.skip(f"SKIP-reason=parser_absent: {exc}")
         declared = {
             m.group(1)
             for m in re.finditer(r"function\s+(_[A-Za-z_$][\w$]*)\s*\(", script)

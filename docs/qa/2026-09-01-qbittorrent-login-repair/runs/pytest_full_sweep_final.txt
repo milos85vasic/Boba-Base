@@ -1,3 +1,52 @@
+=== STALE — READ THIS FIRST (annotated 2026-09-02, §11.4.6) ===
+
+This log reports "3 failed, 4447 passed". Those three failures NO LONGER EXIST
+and this log MUST NOT be cited as the current state.
+
+It was written 2026-09-01 20:48:38 after a 22-minute run, so it STARTED ~20:26
+on Sept 1 — roughly 16 hours BEFORE commit 60729c9 (2026-09-02 12:15:23), which
+is the commit that fixed two of the three. Re-run on the current tree, all three
+files pass (42 passed, verified 2026-09-02 14:05).
+
+  1. test_bob129_slowapi_response_contract — ROOT-CAUSED 2026-09-02, see below.
+  2. test_merge_api_route_contracts::test_download_empty_urls — reconciled per
+     §11.4.120: the empty-URL boundary now returns 422 by design, and the test
+     was rewritten to assert the NEW contract rather than the old permissive 200.
+  3. test_no_runtime_service_skips — the 5 offender skips now carry
+     `SKIP-OK BOB-109` markers, the sanctioned tracked form.
+
+ROOT CAUSE of #1 (§11.4.102 four-phase arc, completed 2026-09-02 — review #3
+had recorded this as "cause not attributed, UNKNOWN, needs §11.4.102"):
+
+`api._rate_limits_active` is latched ONCE, when `api` is first imported, from
+`RATE_LIMIT_DISABLED` as it stood AT THAT MOMENT (api/__init__.py:178). Four
+test modules purge `api*` from `sys.modules` and re-import it with that flag
+SET — tests/unit/test_tracker_stats_shape.py, tests/unit/test_bob129_* itself,
+tests/unit/api_layer/test_routes_coverage.py, and
+tests/unit/api_layer/test_theme_stream_probe_failure.py. When monkeypatch then
+restores the environment, the flag leaves the env but the CACHED module keeps
+its False latch. The env and the module now disagree, and this test reads the
+module — so it saw "rate limiting inactive" and its registry came back empty.
+
+Measured proof of the hazard AND of the fix (control needle, 2026-09-02):
+    1. import WITH flag=1       -> _rate_limits_active = False
+    2. flag unset, module cached-> _rate_limits_active = False   <-- HAZARD
+    3. purge 7 modules, reimport-> _rate_limits_active = True    <-- REPAIRED
+
+60729c9 added `_api_with_rate_limits_active()` (+211 lines) with a deliberate
+THREE-WAY resolution rather than a skip: flag genuinely set in the CURRENT env
+-> SKIP naming the variable; flag unset but module says disabled -> REPAIR by
+purging and re-importing; still False after a clean re-import -> FAIL loudly,
+because a skip there would assert "nothing to check" when the truth is "unable
+to check" (§11.4.201(6) false-null).
+
+CLASSIFICATION: this is NOT a §11.4.248 quarantine candidate. It was a genuine
+order-dependent defect with an attributed mechanism and a root-cause fix, not a
+flaky test that quietly stopped failing. Four orderings of the known hazard set
+were re-run against the current tree and all pass.
+
+=== original log follows, unmodified ===
+
 ........................................................................ [  1%]
 ........................................................................ [  3%]
 ........................................................................ [  4%]

@@ -366,6 +366,25 @@ def _build_tag_field(request: object | None, fallback_name: str) -> str:
         return ""
 
 
+def _is_plausible_torrent_source(url: str) -> bool:
+    """True when ``url`` is a shape qBittorrent can resolve as a torrent source.
+
+    DISTINCT from :func:`_is_safe_fetch_url`, which answers a different
+    question — "is it safe for US to fetch this" — and therefore rejects
+    magnets (legitimate sources that involve no fetch) and private hosts
+    (legitimate on a LAN). Reusing it here would refuse valid input; this is a
+    separate predicate by necessity, not a fork of it (§11.4.251).
+
+    Deliberately narrow: scheme only. Whether a well-formed URL actually
+    resolves is qBittorrent's to determine and report — guessing at that here
+    would be the heuristic tower §11.4.250 warns about.
+    """
+    if not url:
+        return False
+    lowered = url.strip().lower()
+    return lowered.startswith(("magnet:", "http://", "https://"))
+
+
 class DownloadRequest(BaseModel):
     result_id: str = Field(..., description="Merged result ID")
     download_urls: list[str] = Field(..., description="URLs to download")
@@ -402,9 +421,40 @@ class DownloadRequest(BaseModel):
         fix belongs where the bad input enters, not where a good signal is
         interpreted.
         """
-        cleaned = [u for u in v if u and u.strip()]
+        cleaned = [u.strip() for u in v if u and u.strip()]
         if not cleaned:
             raise ValueError("download_urls must contain at least one non-empty URL")
+
+        # BLOCKING-1 (review #4, live-proven 2026-09-19). Rejecting only EMPTY
+        # strings narrowed the bluff without closing it:
+        #
+        #     POST /api/v1/download {"download_urls": ["not-a-url"]}
+        #       -> HTTP 200  "status":"added"  added_count:1
+        #       -> torrents in qBittorrent: 0
+        #       -> qBittorrent log: Failed to add torrent. Source: "not-a-url".
+        #                           Reason: "No such file or directory"
+        #
+        # The mechanism: qBittorrent answers ANY unresolvable source with 409 —
+        # the same status it uses for a genuine duplicate — and the shared
+        # predicate reads 409 as duplicate-success. Status alone cannot tell the
+        # two apart, so the empty-string filter only removed one member of an
+        # open-ended class.
+        #
+        # This asserts the precondition qBittorrent actually documents for its
+        # `urls` parameter: a magnet link, or an http(s) URL. A string carrying
+        # no scheme is not a source at all, and refusing it here makes the 409
+        # the predicate sees mean what the predicate assumes it means.
+        #
+        # It is a CONTRACT check, not a heuristic layer (§11.4.250): it does not
+        # try to guess whether a well-formed URL will resolve — that stays
+        # qBittorrent's job, and an http(s) URL that 404s is reported honestly by
+        # the body. It only refuses input that could never have been a source.
+        bad = [u for u in cleaned if not _is_plausible_torrent_source(u)]
+        if bad:
+            raise ValueError(
+                "download_urls entries must be a magnet link or an http(s) URL; "
+                f"refused: {bad!r}"
+            )
         return cleaned
 
     title: str | None = Field(None, description="Content title, for tag derivation")

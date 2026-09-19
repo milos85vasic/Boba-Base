@@ -218,7 +218,25 @@ def _detect_result_metadata(name: str, size: str) -> tuple[str | None, str | Non
         quality = "full_hd"
     elif _re.search(r"720p|hdrip", n):
         quality = "hd"
-    elif _re.search(r"480p|sd|camrip", n):
+    elif _re.search(r"480p|\bsd(?:rip|tv)?\b|camrip", n):
+        # `sd` is WORD-BOUNDED. As a bare substring it matched any name merely
+        # containing those two letters — measured false positives: "Sdorica",
+        # "Wasdd", a "?sdid=" query parameter, a "/sdcard/" path. Every one was
+        # labelled standard-definition in the search results the user sees.
+        #
+        # `sdrip` / `sdtv` are kept explicitly: they ARE standard-definition and
+        # the bare-substring version caught them by accident. Word-bounding
+        # without them would fix the false positive by breaking a true one —
+        # the both-factors trap (§11.4.194(1)) that this exact pattern already
+        # fell into once in enricher.py.
+        #
+        # §11.4.251 DEBT, stated rather than hidden: this is the SECOND quality
+        # detector in the codebase. merge_service/enricher.py:360 carries the
+        # same pattern and was fixed first; this copy was missed, so the defect
+        # stayed live in search results for one round. They are not a pure fork
+        # — this one emits internal codes (uhd_4k/full_hd/hd/sd), the enricher
+        # emits display labels (4K/1080p/720p/SD) — so collapsing them needs a
+        # mapping layer and its own tests. Tracked as owed, NOT done here.
         quality = "sd"
     elif "bluray" in n or "blu-ray" in n or "bdrip" in n or "bd-remux" in n:
         quality = "full_hd"
