@@ -123,15 +123,19 @@ latency grows with `deadline × ceil(trackers / max_concurrent)`.
 
 ### `ENABLE_DEAD_TRACKERS`
 
-Default: `0` (dead trackers HIDDEN by default; only 24 known-live
-public trackers active — the 14 known-dead ones filtered by
-`DEAD_PUBLIC_TRACKERS`). Corrected by BOB-119 bluff-audit finding
-2026-08-18: prior text said default=1 but `search.py:1032`
-(`os.getenv("ENABLE_DEAD_TRACKERS", "0")`) + `docker-compose.yml:177`
-(`${ENABLE_DEAD_TRACKERS:-0}`) both default to `0`; sibling doc
-`docs/DEAD_TRACKERS_EXPLAINED.md` already stated 0 correctly.
+Default: `0` (dead trackers HIDDEN by default; only 19 known-live
+public trackers active — the 19 known-dead ones filtered by
+`DEAD_PUBLIC_TRACKERS`, out of 38 total in `PUBLIC_TRACKERS`; counts
+verified live 2026-09-22 against the running `search.py`, up from
+14 dead / 24 live as of the original 2026-04-23 audit). Corrected by
+BOB-119 bluff-audit finding 2026-08-18: prior text said default=1 but
+`search.py:1032` (`os.getenv("ENABLE_DEAD_TRACKERS", "0")`) +
+`docker-compose.yml:177` (`${ENABLE_DEAD_TRACKERS:-0}`) both default
+to `0`; sibling doc `docs/DEAD_TRACKERS_EXPLAINED.md` already stated
+0 correctly.
 
-Public trackers that are empirically known-dead as of 2026-04-23 live
+Public trackers that are empirically known-dead (as of 2026-04-23,
+extended 2026-09-22 by a live systematic-debugging re-audit) live
 in `DEAD_PUBLIC_TRACKERS` in `search.py` and are excluded from the
 fan-out. Set `ENABLE_DEAD_TRACKERS=1` to include them for testing
 whether an upstream has recovered, or when operating through a
@@ -141,7 +145,14 @@ keeps them hidden.
 The known-dead list:
 
 * HTTP 403 (Cloudflare/geoblock): `eztv`, `bt4g`,
-  `extratorrent`, `one337x`, `bitru`
+  `extratorrent`, `one337x`, `bitru`, `kickass` (Cloudflare Turnstile
+  "Just a moment..." interstitial — `cf-mitigated: challenge` response
+  header, identical whether curl sent a spoofed browser User-Agent or
+  its own default; confirmed 2026-09-22, same unfixable-from-our-side
+  class as rutracker/BOB-172), `tokyotoshokan` (Cloudflare Managed
+  Challenge gates specifically `/search.php` — the homepage `/` is
+  NOT challenged and returns a clean 200; reproduced across 3 distinct
+  User-Agents and both http/https; confirmed 2026-09-22)
 * HTTP 404 (site down): `ali213`
 * Gateway timeout: `audiobookbay`
 * DNS failure (domain dead): `pctorrent`, `yihua`
@@ -151,7 +162,20 @@ The known-dead list:
 * Site rebrand/redesign: `solidtorrents` (→ bitsearch.to), `therarbg`
   (new HTML), `gamestorrents` (WordPress redesign), `btsow`
   (JS redirect challenge)
-* Upstream dead: `torrentfunk` (HTTP 500)
+* Upstream dead: `torrentfunk` (HTTP 500), `glotorrents` (glodls.to is
+  now a Namecheap domain-auction parking page — plain HTTP/80 serves
+  the parking template with a 200, port 443 resets the TCP connection
+  with zero bytes right after the TLS ClientHello, before any
+  certificate exchange; confirmed 2026-09-22 via curl + openssl
+  s_client against both resolved IPs, and re-confirmed from inside the
+  production container itself), `torrentproject` (same evidence
+  pattern at torrentproject.com.se — domain lapsed to the identical
+  Namecheap parking template; confirmed 2026-09-22), `rockbox`
+  (rawkbawx.rocks — DNS resolves cleanly via two independent
+  resolvers, but TCP connect to both port 80 and 443 times out with
+  zero SYN-ACK/RST, ICMP ping is 100% loss, and a 13-hop mtr
+  traceroute reaches a clean backbone path all the way to the last
+  hop before the destination then goes silent; confirmed 2026-09-22)
 
 These plugins are still installed and the classifier still reports
 their real reasons when `ENABLE_DEAD_TRACKERS=1`, so it's easy to

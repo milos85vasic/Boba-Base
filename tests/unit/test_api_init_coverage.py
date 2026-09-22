@@ -49,7 +49,12 @@ class TestHealthCheck:
         result = await health_check()
         assert result["status"] == "healthy"
         assert result["service"] == "merge-search"
-        assert result["version"] == "1.0.0"
+        # Real shipped app version (download-proxy/src/api/__init__.py), not
+        # a magic constant -- was left stale at the pre-1.3.0 value when the
+        # version bump landed (a66188d/3eac270); caught 2026-09-22 by a
+        # deep, all-tests re-run during a separate systematic-debugging
+        # investigation.
+        assert result["version"] == "1.3.0"
 
 
 class TestBridgeHealth:

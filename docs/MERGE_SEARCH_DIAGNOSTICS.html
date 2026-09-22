@@ -353,18 +353,21 @@ remember that the orchestrator runs up to
 wall-clock latency grows with
 <code>deadline × ceil(trackers / max_concurrent)</code>.</p>
 <h3 id="enable_dead_trackers"><code>ENABLE_DEAD_TRACKERS</code></h3>
-<p>Default: <code>0</code> (dead trackers HIDDEN by default; only 24
-known-live public trackers active — the 14 known-dead ones filtered by
-<code>DEAD_PUBLIC_TRACKERS</code>). Corrected by BOB-119 bluff-audit
-finding 2026-08-18: prior text said default=1 but
-<code>search.py:1032</code>
+<p>Default: <code>0</code> (dead trackers HIDDEN by default; only 19
+known-live public trackers active — the 19 known-dead ones filtered by
+<code>DEAD_PUBLIC_TRACKERS</code>, out of 38 total in
+<code>PUBLIC_TRACKERS</code>; counts verified live 2026-09-22 against
+the running <code>search.py</code>, up from 14 dead / 24 live as of the
+original 2026-04-23 audit). Corrected by BOB-119 bluff-audit finding
+2026-08-18: prior text said default=1 but <code>search.py:1032</code>
 (<code>os.getenv("ENABLE_DEAD_TRACKERS", "0")</code>) +
 <code>docker-compose.yml:177</code>
 (<code>${ENABLE_DEAD_TRACKERS:-0}</code>) both default to
 <code>0</code>; sibling doc <code>docs/DEAD_TRACKERS_EXPLAINED.md</code>
 already stated 0 correctly.</p>
-<p>Public trackers that are empirically known-dead as of 2026-04-23 live
-in <code>DEAD_PUBLIC_TRACKERS</code> in <code>search.py</code> and are
+<p>Public trackers that are empirically known-dead (as of 2026-04-23,
+extended 2026-09-22 by a live systematic-debugging re-audit) live in
+<code>DEAD_PUBLIC_TRACKERS</code> in <code>search.py</code> and are
 excluded from the fan-out. Set <code>ENABLE_DEAD_TRACKERS=1</code> to
 include them for testing whether an upstream has recovered, or when
 operating through a proxy/VPN that bypasses geoblocks. The default
@@ -373,7 +376,15 @@ operating through a proxy/VPN that bypasses geoblocks. The default
 <ul>
 <li>HTTP 403 (Cloudflare/geoblock): <code>eztv</code>,
 <code>bt4g</code>, <code>extratorrent</code>, <code>one337x</code>,
-<code>bitru</code></li>
+<code>bitru</code>, <code>kickass</code> (Cloudflare Turnstile “Just a
+moment…” interstitial — <code>cf-mitigated: challenge</code> response
+header, identical whether curl sent a spoofed browser User-Agent or its
+own default; confirmed 2026-09-22, same unfixable-from-our-side class as
+rutracker/BOB-172), <code>tokyotoshokan</code> (Cloudflare Managed
+Challenge gates specifically <code>/search.php</code> — the homepage
+<code>/</code> is NOT challenged and returns a clean 200; reproduced
+across 3 distinct User-Agents and both http/https; confirmed
+2026-09-22)</li>
 <li>HTTP 404 (site down): <code>ali213</code></li>
 <li>Gateway timeout: <code>audiobookbay</code></li>
 <li>DNS failure (domain dead): <code>pctorrent</code>,
@@ -384,7 +395,20 @@ operating through a proxy/VPN that bypasses geoblocks. The default
 <li>Site rebrand/redesign: <code>solidtorrents</code> (→ bitsearch.to),
 <code>therarbg</code> (new HTML), <code>gamestorrents</code> (WordPress
 redesign), <code>btsow</code> (JS redirect challenge)</li>
-<li>Upstream dead: <code>torrentfunk</code> (HTTP 500)</li>
+<li>Upstream dead: <code>torrentfunk</code> (HTTP 500),
+<code>glotorrents</code> (glodls.to is now a Namecheap domain-auction
+parking page — plain HTTP/80 serves the parking template with a 200,
+port 443 resets the TCP connection with zero bytes right after the TLS
+ClientHello, before any certificate exchange; confirmed 2026-09-22 via
+curl + openssl s_client against both resolved IPs, and re-confirmed from
+inside the production container itself), <code>torrentproject</code>
+(same evidence pattern at torrentproject.com.se — domain lapsed to the
+identical Namecheap parking template; confirmed 2026-09-22),
+<code>rockbox</code> (rawkbawx.rocks — DNS resolves cleanly via two
+independent resolvers, but TCP connect to both port 80 and 443 times out
+with zero SYN-ACK/RST, ICMP ping is 100% loss, and a 13-hop mtr
+traceroute reaches a clean backbone path all the way to the last hop
+before the destination then goes silent; confirmed 2026-09-22)</li>
 </ul>
 <p>These plugins are still installed and the classifier still reports
 their real reasons when <code>ENABLE_DEAD_TRACKERS=1</code>, so it’s

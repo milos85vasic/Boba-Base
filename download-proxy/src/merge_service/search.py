@@ -586,10 +586,19 @@ PUBLIC_TRACKERS = {
     "yts": "https://yts.lt",
 }
 
-# Known-dead public trackers as of 2026-04-23. Categorised by the
-# classifier during the comprehensive tracker audit:
+# Known-dead public trackers as of 2026-04-23, extended 2026-09-22 by a
+# live systematic-debugging re-audit (5 subagents, one per then-uncategorised
+# fan-out failure, each independently re-probing DNS/TLS/HTTP against the
+# real upstream — no guessing, §11.4.6). Categorised by the classifier:
 #
-#   upstream_http_403:  eztv, kickass, bt4g, extratorrent, one337x, bitru
+#   upstream_http_403:  eztv, kickass, bt4g, extratorrent, one337x, bitru,
+#                       tokyotoshokan (Cloudflare Managed Challenge gates
+#                       specifically /search.php — the homepage / is NOT
+#                       challenged and returns a clean 200; reproduced
+#                       header/scheme-independent across 3 distinct
+#                       User-Agents incl. the plugin's own computed Firefox
+#                       UA, and both http:// and the https:// redirect
+#                       target; captured 2026-09-22)
 #   upstream_http_404:  megapeer, ali213
 #   upstream_timeout:   nyaa, audiobookbay, torlock
 #   dns_failure:        pctorrent, yihua, torrentgalaxy
@@ -597,8 +606,35 @@ PUBLIC_TRACKERS = {
 #   plugin_crash:       torrentgalaxy (site down → empty HTML → index error)
 #   site_rebrand:       solidtorrents (redirects to bitsearch.to)
 #   site_redesign:      therarbg, gamestorrents, btsow (JS challenge)
-#   upstream_dead:      torrentfunk (redirects to rakix), torrentkitty
+#   upstream_dead:      torrentfunk (redirects to rakix), torrentkitty,
+#                       glotorrents (glodls.to now a Namecheap domain-auction
+#                       parking page — plain HTTP/80 serves the parking
+#                       template with a 200, port 443 resets the TCP
+#                       connection with zero bytes right after the TLS
+#                       ClientHello, before any certificate exchange;
+#                       captured 2026-09-22, curl + openssl s_client against
+#                       both resolved IPs), torrentproject (same evidence
+#                       pattern at torrentproject.com.se — domain lapsed to
+#                       the identical Namecheap parking template; captured
+#                       2026-09-22), rockbox (rawkbawx.rocks — DNS resolves
+#                       cleanly via two independent resolvers, but TCP
+#                       connect to both port 80 and 443 times out with zero
+#                       SYN-ACK/RST, ICMP ping is 100% loss, and a 13-hop
+#                       mtr traceroute reaches a clean backbone path all the
+#                       way to the last hop before the destination then goes
+#                       silent — the host itself is unreachable, not merely
+#                       slow; captured 2026-09-22)
 #   api_changed:        anilibra (returns 400 Unknown query)
+#
+# kickass was DOCUMENTED as upstream_http_403 in this comment since the
+# original 2026-04-23 audit but never actually LANDED in the frozenset below
+# — a real doc-vs-code drift (§11.4.186), not a taxonomy dispute. Re-confirmed
+# live 2026-09-22: HTTP/2 403 with `cf-mitigated: challenge` / `server:
+# cloudflare` response headers (authoritative, not body-inferred) and a
+# Cloudflare Turnstile "Just a moment..." interstitial, IDENTICAL whether
+# curl sent a spoofed real-browser User-Agent or its own default UA — ruling
+# out a header fix, same class of unfixable-from-our-side wall this project
+# already documents for rutracker under BOB-172.
 #
 # They stay in `PUBLIC_TRACKERS` so the classifier keeps reporting the
 # real reason (useful when an upstream comes back), but by default
@@ -616,11 +652,16 @@ DEAD_PUBLIC_TRACKERS = frozenset(
         "btsow",
         "extratorrent",
         "eztv",
+        "glotorrents",
+        "kickass",
         "one337x",
         "pctorrent",
+        "rockbox",
         "solidtorrents",
         "therarbg",
+        "tokyotoshokan",
         "torrentfunk",
+        "torrentproject",
         "xfsub",
         "yihua",
     }
