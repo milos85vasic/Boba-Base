@@ -220,6 +220,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Kinozal and NNMClub parsing is fixed but requires valid credentials in `.env` for live testing
 - RuTracker may require CAPTCHA solve for login; cookies expire periodically
 
+## [1.3.0] - 2026-09-22
+
+### Added
+
+- New `BOBA_API_TOKEN` LAN-authentication mechanism for the download-proxy: when set, requests must present `Authorization: Bearer <token>` or `X-Boba-Token: <token>` (constant-time `hmac.compare_digest` comparison); unset/empty stays open for backwards compatibility.
+- `download-proxy/src/merge_service/quality.py` — unified quality-detector logic shared between `enricher.py` and `search.py`, removing duplicated heuristics.
+- `setup.sh` gained a Step 6/6 that wires systemd reboot-survival (delegates to `scripts/boba-svc.sh install`+`enable`) so a fresh `./setup.sh` → `./start.sh` path actually survives a reboot out of the box.
+
+### Fixed
+
+- **BLOCKING-1**: malformed magnet BTIH info-hashes are now rejected at the API boundary (`_BTIH_RE` structural validator in `download-proxy/src/api/routes.py`) instead of being silently accepted as an unusable hash.
+- **BOB-204**: `qBitTorrent-go`'s jackettapi credential delete now fails closed on an unexpected backend response instead of reporting success on an operation that never happened.
+- Process-group signal safety (§11.4.263): guards added so no `killpg`/`kill(-pid, sig)` call ever fires on an unvalidated or mock-derived PID/PGID ≤ 1.
+- `scripts/hooks/unattributed-commit-guard.sh` widened to also catch the `Auto-commit <epoch-ms>` bare-commit shape (BOB-068 follow-up).
+- `scripts/install-resource-pressure-timer.sh` now renders `@@BOBA_REPO_ROOT@@` token substitution instead of shipping unrendered unit templates that hit `LoadState=bad-setting`.
+- webui-bridge (:7188) ownership switched to the systemd-managed Go binary (`boba-webui-bridge.service`); the legacy `qbit-webui-bridge.service` unit stopped and disabled.
+
+### Note
+
+- The `1.2.1`, `1.2.2`, and `1.2.3` release sections are honestly known-missing from this file (the file jumped from `1.2.0` straight to `1.0.0`-era entries) — this is a pre-existing gap discovered while preparing this release, not something reconstructed here. GitHub itself has entries titled "Version 1.2.2 - Critical Magnet Link Fix" and "Version 1.2.3 - Critical Torrent File Upload Fix"; backfilling accurate changelog bodies for those needs a dedicated git-history pass rather than a guess, and is left as a tracked follow-up.
+
 ## [1.2.0] - 2025-03-11
 
 ### Critical Changes - WebUI Compatibility
@@ -356,6 +377,7 @@ All plugins now return **magnet links** by default for full WebUI download compa
 - RuTracker plugin integration
 - Environment variable configuration
 
-[Unreleased]: https://github.com/milos85vasic/qBitTorrent/compare/v1.2.0...HEAD
-[1.2.0]: https://github.com/milos85vasic/qBitTorrent/compare/v1.0.0...v1.2.0
-[1.0.0]: https://github.com/milos85vasic/qBitTorrent/releases/tag/v1.0.0
+[Unreleased]: https://github.com/milos85vasic/Boba-Base/compare/1.3.0...HEAD
+[1.3.0]: https://github.com/milos85vasic/Boba-Base/compare/1.2.3...1.3.0
+[1.2.0]: https://github.com/milos85vasic/Boba-Base/compare/v1.0.0...v1.2.0
+[1.0.0]: https://github.com/milos85vasic/Boba-Base/releases/tag/v1.0.0

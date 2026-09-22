@@ -185,7 +185,7 @@ href="https://keepachangelog.com/en/1.0.0/">Keep a Changelog</a>, and
 this project adheres to <a
 href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
 <h2 id="unreleased-completion-initiative-phases-010"><a
-href="https://github.com/milos85vasic/qBitTorrent/compare/v1.2.0...HEAD">Unreleased</a>
+href="https://github.com/milos85vasic/Boba-Base/compare/1.3.0...HEAD">Unreleased</a>
 — Completion Initiative (Phases 0–10)</h2>
 <h3 id="phase-0-safety-net-baseline">Phase 0 — Safety net &amp;
 baseline</h3>
@@ -376,7 +376,7 @@ cross-checks each §A finding to its resolution commit.</li>
 reviewed — all principles remain satisfied.</li>
 </ul>
 <h2 id="unreleased---2026-04-18"><a
-href="https://github.com/milos85vasic/qBitTorrent/compare/v1.2.0...HEAD">Unreleased</a>
+href="https://github.com/milos85vasic/Boba-Base/compare/1.3.0...HEAD">Unreleased</a>
 - 2026-04-18</h2>
 <h3 id="fixed-1">Fixed</h3>
 <ul>
@@ -637,13 +637,68 @@ in <code>.env</code> for live testing</li>
 periodically</li>
 </ul>
 <h2 id="section"><a
-href="https://github.com/milos85vasic/qBitTorrent/compare/v1.0.0...v1.2.0">1.2.0</a>
+href="https://github.com/milos85vasic/Boba-Base/compare/1.2.3...1.3.0">1.3.0</a>
+- 2026-09-22</h2>
+<h3 id="added-10">Added</h3>
+<ul>
+<li>New <code>BOBA_API_TOKEN</code> LAN-authentication mechanism for the
+download-proxy: when set, requests must present
+<code>Authorization: Bearer &lt;token&gt;</code> or
+<code>X-Boba-Token: &lt;token&gt;</code> (constant-time
+<code>hmac.compare_digest</code> comparison); unset/empty stays open for
+backwards compatibility.</li>
+<li><code>download-proxy/src/merge_service/quality.py</code> — unified
+quality-detector logic shared between <code>enricher.py</code> and
+<code>search.py</code>, removing duplicated heuristics.</li>
+<li><code>setup.sh</code> gained a Step 6/6 that wires systemd
+reboot-survival (delegates to
+<code>scripts/boba-svc.sh install</code>+<code>enable</code>) so a fresh
+<code>./setup.sh</code> → <code>./start.sh</code> path actually survives
+a reboot out of the box.</li>
+</ul>
+<h3 id="fixed-3">Fixed</h3>
+<ul>
+<li><strong>BLOCKING-1</strong>: malformed magnet BTIH info-hashes are
+now rejected at the API boundary (<code>_BTIH_RE</code> structural
+validator in <code>download-proxy/src/api/routes.py</code>) instead of
+being silently accepted as an unusable hash.</li>
+<li><strong>BOB-204</strong>: <code>qBitTorrent-go</code>’s jackettapi
+credential delete now fails closed on an unexpected backend response
+instead of reporting success on an operation that never happened.</li>
+<li>Process-group signal safety (§11.4.263): guards added so no
+<code>killpg</code>/<code>kill(-pid, sig)</code> call ever fires on an
+unvalidated or mock-derived PID/PGID ≤ 1.</li>
+<li><code>scripts/hooks/unattributed-commit-guard.sh</code> widened to
+also catch the <code>Auto-commit &lt;epoch-ms&gt;</code> bare-commit
+shape (BOB-068 follow-up).</li>
+<li><code>scripts/install-resource-pressure-timer.sh</code> now renders
+<code>@@BOBA_REPO_ROOT@@</code> token substitution instead of shipping
+unrendered unit templates that hit
+<code>LoadState=bad-setting</code>.</li>
+<li>webui-bridge (:7188) ownership switched to the systemd-managed Go
+binary (<code>boba-webui-bridge.service</code>); the legacy
+<code>qbit-webui-bridge.service</code> unit stopped and disabled.</li>
+</ul>
+<h3 id="note-1">Note</h3>
+<ul>
+<li>The <code>1.2.1</code>, <code>1.2.2</code>, and <code>1.2.3</code>
+release sections are honestly known-missing from this file (the file
+jumped from <code>1.2.0</code> straight to <code>1.0.0</code>-era
+entries) — this is a pre-existing gap discovered while preparing this
+release, not something reconstructed here. GitHub itself has entries
+titled “Version 1.2.2 - Critical Magnet Link Fix” and “Version 1.2.3 -
+Critical Torrent File Upload Fix”; backfilling accurate changelog bodies
+for those needs a dedicated git-history pass rather than a guess, and is
+left as a tracked follow-up.</li>
+</ul>
+<h2 id="section-1"><a
+href="https://github.com/milos85vasic/Boba-Base/compare/v1.0.0...v1.2.0">1.2.0</a>
 - 2025-03-11</h2>
 <h3 id="critical-changes---webui-compatibility">Critical Changes - WebUI
 Compatibility</h3>
 <p>All plugins now return <strong>magnet links</strong> by default for
 full WebUI download compatibility!</p>
-<h3 id="added-10">Added</h3>
+<h3 id="added-11">Added</h3>
 <h4 id="magnet-link-support---all-plugins-updated">Magnet Link Support -
 ALL Plugins Updated</h4>
 <ul>
@@ -761,8 +816,8 @@ magnet:// and http(s):// URLs</li>
 </tr>
 </tbody>
 </table>
-<h2 id="section-1">[1.1.0] - 2025-03-11</h2>
-<h3 id="added-11">Added</h3>
+<h2 id="section-2">[1.1.0] - 2025-03-11</h2>
+<h3 id="added-12">Added</h3>
 <h4 id="plugins-12-total---100-working">Plugins (12 Total - 100%
 Working)</h4>
 <ul>
@@ -847,7 +902,7 @@ URLs</li>
 <li>Never commits <code>.env</code> files with real credentials</li>
 <li>Mandatory admin/admin credentials for WebUI (see CLAUDE.md)</li>
 </ul>
-<h3 id="fixed-3">Fixed</h3>
+<h3 id="fixed-4">Fixed</h3>
 <ul>
 <li>WebUI downloads now work for all trackers including private
 ones</li>
@@ -856,10 +911,10 @@ ones</li>
 <li>Download proxy authentication</li>
 <li>Plugin loading and registration</li>
 </ul>
-<h2 id="section-2"><a
-href="https://github.com/milos85vasic/qBitTorrent/releases/tag/v1.0.0">1.0.0</a>
+<h2 id="section-3"><a
+href="https://github.com/milos85vasic/Boba-Base/releases/tag/v1.0.0">1.0.0</a>
 - 2024-01-01</h2>
-<h3 id="added-12">Added</h3>
+<h3 id="added-13">Added</h3>
 <ul>
 <li>Initial release</li>
 <li>Docker/Podman Compose configuration for qBitTorrent</li>

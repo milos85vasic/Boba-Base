@@ -103,7 +103,7 @@ async def lifespan(app: FastAPI):  # type: ignore[no-untyped-def]
 app = FastAPI(
     title="Боба Search Service",
     description="Search and merge results across multiple torrent trackers",
-    version="1.0.0",
+    version="1.3.0",
     lifespan=lifespan,
 )
 
@@ -195,7 +195,7 @@ async def global_exception_handler(request: Request, exc: Exception):  # type: i
 
 @app.get("/health")
 async def health_check():  # type: ignore[no-untyped-def]
-    return {"status": "healthy", "service": "merge-search", "version": "1.0.0"}
+    return {"status": "healthy", "service": "merge-search", "version": "1.3.0"}
 
 
 @app.get("/api/v1/bridge/health")
@@ -357,7 +357,7 @@ def _serve_index_html():  # type: ignore[no-untyped-def]
         )
     return {
         "message": "Merge Search API",
-        "version": "1.0.0",
+        "version": "1.3.0",
         "dashboard": "not found",
     }
 

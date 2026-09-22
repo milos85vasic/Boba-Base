@@ -77,7 +77,7 @@ def healthz():  # type: ignore[no-untyped-def]
     mirrors the app-level ``/health`` endpoint so existing consumers are
     unaffected; ``status: "ok"`` is the canonical machine-probe signal.
     """
-    return {"status": "ok", "service": "merge-search", "version": "1.0.0"}
+    return {"status": "ok", "service": "merge-search", "version": "1.3.0"}
 
 
 def _get_orchestrator(request: Request) -> Any:

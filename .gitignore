@@ -222,6 +222,7 @@ artifacts/
 # Go build artifacts
 qBitTorrent-go/qbittorrent-proxy
 qBitTorrent-go/webui-bridge
+qBitTorrent-go/boba-jackett
 qBitTorrent-go/bin/
 shellcheck-v0.11.0/
 config/jackett/

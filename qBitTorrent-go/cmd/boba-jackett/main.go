@@ -47,7 +47,7 @@ const (
 	// serviceVersion is the build-time version stamp surfaced through
 	// /healthz. Bumped manually on releases — keeping it in source avoids
 	// pulling a build-info dependency for a single string.
-	serviceVersion = "0.1.0"
+	serviceVersion = "1.3.0"
 )
 
 // env returns os.Getenv(name) trimmed of surrounding whitespace, or
