@@ -124,7 +124,31 @@ count_frontend_tests() {
     local vitest_bin="${frontend}/node_modules/.bin/vitest"
     if [[ -x "${vitest_bin}" ]]; then
         local out
-        if out="$(cd "${frontend}" && timeout 120 "${vitest_bin}" list --run 2>&1)"; then
+        # BOB-224 root cause (captured evidence, not guessed — see the BOB-224
+        # investigation notes): `timeout N <cmd>` with NO `-k`/`--kill-after`
+        # sends only SIGTERM at the deadline and then WAITS for the child to
+        # actually exit — it does NOT forcibly bound execution. vitest's CLI
+        # installs its own `process.once("SIGTERM", ...)` handler (Node
+        # cooperative signal handling: the JS callback only runs once the
+        # event loop is free), and `vitest list --run` spends its opening
+        # phase in synchronous, CPU-heavy work (esbuild-transforming every
+        # *.spec.ts file). Under host CPU/memory pressure that synchronous
+        # phase can starve the event loop well past the nominal 120s budget,
+        # so the "timeout" never actually fires — the whole chain (this
+        # command substitution, its caller's command substitution, and every
+        # calling shell up the stack) blocks for however long vitest's
+        # synchronous phase takes, with no hard upper bound of its own; the
+        # process only ever stops because SOME outer wrapper (e.g. a test
+        # runner's own 300s timeout) eventually SIGKILLs the whole tree.
+        # Reproduced in isolation: a Node script that installs a SIGTERM
+        # handler and then busy-loops synchronously runs to the END of its
+        # busy loop under `timeout 3 node script.js` with NO `-k` — the
+        # 3-second budget is not enforced. `-k <grace>` closes the wedge:
+        # SIGKILL cannot be caught, blocked, or delayed by JS execution state,
+        # so it terminates the process at the OS level regardless of what the
+        # event loop is doing — a genuine hard bound instead of a cooperative
+        # one. Regression guard: tests/unit/test_compute_badges_frontend_timeout_bound.sh
+        if out="$(cd "${frontend}" && timeout -k 10 120 "${vitest_bin}" list --run 2>&1)"; then
             local n
             n="$(grep -c ' > ' <<<"${out}" || true)"
             if [[ "${n}" -gt 0 ]]; then

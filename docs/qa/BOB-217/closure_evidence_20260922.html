@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260922</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260922</h1>
+</header>
+<h1 id="bob-217-closure-evidence-2026-09-2223">BOB-217 closure evidence
+— 2026-09-22/23</h1>
+<h2 id="fix">Fix</h2>
+<p><code>tools/plugin_update_automation.py</code>: - New
+<code>PLUGIN_PINNED_HASHES: Dict[str, str]</code> registry (14 real
+SHA-256 content hashes, fetched live from each of the 14
+<code>UPSTREAM_SOURCES</code> URLs on 2026-09-23 — a documented “trust
+on first use” baseline). - <code>PluginUpdateManager.__init__</code>
+accepts an optional <code>pinned_hashes</code> override (for tests),
+defaulting to the module registry. - New
+<code>_verify_pinned_hash(plugin_name, content)</code> — the actual
+safety gate: SHA-256(content) compared against the pin, called from
+<code>update_plugin()</code> AFTER the syntax check but BEFORE any write
+(including on <code>--dry-run</code>, so previews stay honest). Returns
+a distinct, named reason for every refusal — “no pin configured for this
+URL” vs. “hash mismatch … expected X, got Y” — never conflated. -
+<code>_validate_plugin()</code>’s docstring rewritten to explicitly
+disclaim it as a safety/security gate — it is syntax-only.</p>
+<h2
+id="red-evidence-against-the-immutable-pre-fix-commit-eb5cfce-not-the">RED
+evidence (against the immutable pre-fix commit <code>eb5cfce</code>, not
+the</h2>
+<p>mutable working tree, so it stays valid regardless of local
+edits)</p>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/test_bob217_plugin_update_pinned_hash_verification.py -v
+7 failed, 1 passed  (before the fix)</code></pre>
+<p>The one PASS
+(<code>test_prefix_commit_accepts_hostile_payload_via_syntax_check_alone</code>)
+loads the tool’s source AS IT EXISTED at commit <code>eb5cfce</code> and
+proves the pre-fix code: (1) a hostile-but-syntactically-valid payload
+passes the syntax-only gate, (2) <code>update_plugin()</code> returns
+<code>status == "success"</code> and ACTUALLY WRITES the hostile file to
+<code>plugins/eztv.py</code> on disk.</p>
+<h2 id="green-evidence-independently-re-verified-this-session">GREEN
+evidence (independently re-verified this session)</h2>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/test_bob217_plugin_update_pinned_hash_verification.py -v --no-cov
+test_current_code_dry_run_still_verifies_pin_before_reporting_success PASSED
+test_current_code_refuses_plugin_with_no_pin_configured PASSED
+test_current_code_refuses_hostile_unpinned_payload PASSED
+test_validate_plugin_docstring_documents_it_is_not_a_safety_gate PASSED
+test_prefix_commit_accepts_hostile_payload_via_syntax_check_alone PASSED
+test_pinned_hashes_registry_covers_every_upstream_source PASSED
+test_current_code_accepts_legitimate_correctly_pinned_content PASSED
+7 passed in 0.78s
+
+$ .venv/bin/ruff check tools/plugin_update_automation.py tests/unit/test_bob217_plugin_update_pinned_hash_verification.py
+All checks passed!</code></pre>
+<h2 id="golden-false-false-positive-guard-11.4.2011">Golden-FALSE
+(false-positive guard, §11.4.201(1))</h2>
+<p><code>test_current_code_accepts_legitimate_correctly_pinned_content</code>
+proves a correctly-pinned legitimate update still succeeds and writes
+the exact content — the gate does not simply refuse everything.</p>
+<h2
+id="independent-spot-check-of-a-real-pin-against-a-live-fetch-coordinator-this-session">Independent
+spot-check of a real pin against a live fetch (coordinator, this
+session)</h2>
+<pre><code>$ python3 -c &quot;
+import urllib.request, hashlib
+url = &#39;https://raw.githubusercontent.com/qbittorrent/search-plugins/master/nova3/engines/eztv.py&#39;
+content = urllib.request.urlopen(url, timeout=10).read().decode(&#39;utf-8&#39;)
+print(hashlib.sha256(content.encode(&#39;utf-8&#39;)).hexdigest())
+&quot;
+22a051ae9de6403a5735540c074b78d4eb247de9d6366ef896dc750b8c51c4bb</code></pre>
+<p>Matches the pinned <code>eztv</code> hash in
+<code>PLUGIN_PINNED_HASHES</code> exactly. Also verified all 14 registry
+entries are genuinely 64 hex characters (a real SHA-256 digest length),
+not a formatting artifact.</p>
+<h2 id="honest-notes-not-silenced">Honest notes (not silenced)</h2>
+<ul>
+<li>All 14 pins are “trust on first use” against content as it existed
+on 2026-09-23 — a legitimate future upstream change will also fail the
+pin by design, requiring deliberate operator re-pin review.</li>
+<li>Several locally-installed plugin copies already differ from these
+upstream pins in either direction (pre-existing drift, unrelated to this
+fix) — confirmed via a read-only <code>--check</code> run;
+<code>--update</code> against any of them now correctly refuses until
+reviewed and re-pinned.</li>
+<li><code>check_for_updates()</code>’s MD5-based local-vs-upstream diff
+heuristic was left untouched — a change-detection convenience, not a
+trust boundary, out of scope.</li>
+<li><code>--update</code> was never run for real against live GitHub
+during this fix.</li>
+</ul>
+<h2 id="git-diff-stat">git diff –stat</h2>
+<pre><code>tools/plugin_update_automation.py | 101 ++++++++++++++++++++++++++++++++++++--
+1 file changed, 98 insertions(+), 3 deletions(-)</code></pre>
+<p>Plus new untracked
+<code>tests/unit/test_bob217_plugin_update_pinned_hash_verification.py</code>
+(312 lines).</p>
+</body>
+</html>

@@ -314,7 +314,7 @@ Status/video-confirmation format.
 - [`CLAUDE.md`](CLAUDE.md) — Claude Code agent protocol (TDD + rebuild-reboot)
 - [`AGENTS.md`](AGENTS.md) — runtime development guidance
 - [`.specify/memory/constitution.md`](.specify/memory/constitution.md) — **binding architectural contract (v1.1.0)**
-- [`docs/scripts/`](docs/scripts/) — per-script user guides (§11.4.18), one `<name>.md` per `scripts/*.sh` / `challenges/scripts/*.sh` — e.g. [`commit-push-all.md`](docs/scripts/commit-push-all.md), [`capture-workable-items-db-delta.md`](docs/scripts/capture-workable-items-db-delta.md), [`regenerate-continuation-exports.md`](docs/scripts/regenerate-continuation-exports.md)
+- [`docs/scripts/`](docs/scripts/) — per-script user guides (§11.4.18), one `<name>.md` per `scripts/*.sh` / `challenges/scripts/*.sh` — e.g. [`commit-push-all.md`](docs/scripts/commit-push-all.md), [`capture-workable-items-db-delta.md`](docs/scripts/capture-workable-items-db-delta.md), [`regenerate-continuation-exports.md`](docs/scripts/regenerate-continuation-exports.md), [`check_cm_lan_routes_authenticated.md`](docs/scripts/check_cm_lan_routes_authenticated.md) (BOB-228)
 
 ### Courses (self-paced, Asciinema)
 

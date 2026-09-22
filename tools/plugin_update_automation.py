@@ -81,13 +81,57 @@ UPSTREAM_SOURCES = {
     "nyaa": "https://raw.githubusercontent.com/MadeOfMagicAndWires/qBit-plugins/master/engines/nyaasi.py",
 }
 
+# BOB-217 -- SECURITY (supply-chain): pinned SHA-256 content hashes.
+#
+# THREE of the four repositories in UPSTREAM_SOURCES above are third-party
+# PERSONAL GitHub accounts, not the official qbittorrent organisation:
+# LightDestory/qBittorrent-Search-Plugins and MadeOfMagicAndWires/qBit-plugins.
+# `update_plugin()` combines UNTRUSTED INPUT (these URLs) + MUTATION (writes
+# plugins/<name>.py) + DEFERRED CODE EXECUTION (qBittorrent imports and runs
+# that file as a search engine). Until this fix, the ONLY gate was
+# `compile()` in `_validate_plugin()` -- a SYNTAX check. A syntactically
+# valid file is exactly what a hostile payload is.
+#
+# This registry is the actual safety gate: fetched content is written to
+# disk ONLY when its SHA-256 hash matches the pin recorded here. This is a
+# "trust on first use" baseline -- every hash below was computed from each
+# URL's content as fetched on 2026-09-23. A legitimate upstream change
+# (a real bugfix, a tracker moving domains, etc.) will therefore fail this
+# check too, by design: an operator must explicitly review the diff and
+# re-pin the new hash before `--update` will install it. A plugin with no
+# entry here is refused with "no pin configured", never silently accepted.
+#
+# `python3 tools/plugin_update_automation.py --check` still works without
+# consulting this registry (it only diffs against the locally-installed
+# copy, never writes); this registry is consulted by `--update` only, at
+# `PluginUpdateManager._verify_pinned_hash()`.
+PLUGIN_PINNED_HASHES: Dict[str, str] = {
+    "eztv": "22a051ae9de6403a5735540c074b78d4eb247de9d6366ef896dc750b8c51c4bb",
+    "jackett": "d035fca325dce689d87bd900fa1951ff5bca535aedfa71f6e040b7ca954537bf",
+    "limetorrents": "aca3fbc4956970474a66295f5e61f02532bcdf5399ae97c144bf826a7c8fddce",
+    "piratebay": "b37f13d21ff5f22ff2154a497cd3ed2d727784024d09d393c1bead88e438dab5",
+    "solidtorrents": "e10e039b02c675fbeae6503482f1fb12683bba1c39f5424e7c2729dc44d12a71",
+    "torlock": "8571dfd3db7d9ea9f31df245e0ba1c04b5e9373824a3332a0db98f2240dca632",
+    "torrentproject": "64960bb8d7ebde829b55fdb5a669f96cb0694d8d49cc87aaf960f1f1dae793f0",
+    "torrentscsv": "7c7c8a54249e5f2ce237df6421a735a5c1bd7acefd1304d736ee8f925fd6031b",
+    "academictorrents": "5a4e025814e1fc8ae97a6c267fb706e03976fef1b629cb63eeb9944ebd9b49d3",
+    "bt4g": "401100cd935591cb91c4720061f13b02dad8f0ee0a276c19e8757937a66a8cfe",
+    "glotorrents": "66f7ac3ec14f7739451d4614823f82acda619430dda59bb521c51f507b5966ca",
+    "kickass": "b3e9f714f06936a9185b3a54bd58a6f4230d13d1378d87012284f2955bf68d69",
+    "linuxtracker": "7c24908e39935c5c13046afc0969c952aec587f6fd4c16cdf86cf89b5da9a411",
+    "nyaa": "8b38deb7d22d86c3d64300cd58d55810260ea61b96b0fd552c3748201de44e46",
+}
+
 
 class PluginUpdateManager:
     """Manages plugin updates from upstream sources."""
 
-    def __init__(self, plugins_dir: str, backup_dir: str = None):
+    def __init__(self, plugins_dir: str, backup_dir: str = None, pinned_hashes: Dict[str, str] | None = None):
         self.plugins_dir = plugins_dir
         self.backup_dir = backup_dir or os.path.join(plugins_dir, ".backups")
+        # BOB-217: defaults to the module-level registry, but is
+        # overridable (e.g. by tests) without touching the real registry.
+        self.pinned_hashes = PLUGIN_PINNED_HASHES if pinned_hashes is None else pinned_hashes
 
     def check_for_updates(self) -> List[Dict]:
         """Check all plugins for available updates."""
@@ -150,7 +194,21 @@ class PluginUpdateManager:
         try:
             if not self._validate_plugin(upstream_content):
                 result["status"] = "failed"
-                result["error"] = "Validation failed"
+                result["error"] = "Validation failed (syntax check)"
+                print_error(f"{plugin_name}: Validation failed (syntax check)")
+                return result
+
+            # BOB-217: the syntax check above is NOT a safety gate (see its
+            # docstring). This IS the safety gate -- content that has not
+            # been explicitly reviewed and pinned is refused before it is
+            # ever written to disk, dry-run or not (checked before the
+            # dry-run early-return, so a preview reflects what --update
+            # would actually do).
+            pin_ok, pin_reason = self._verify_pinned_hash(plugin_name, upstream_content)
+            if not pin_ok:
+                result["status"] = "failed"
+                result["error"] = f"Pinned-hash verification failed: {pin_reason}"
+                print_error(f"{plugin_name}: Pinned-hash verification failed - {pin_reason}")
                 return result
 
             if dry_run:
@@ -208,12 +266,49 @@ class PluginUpdateManager:
         return "unknown"
 
     def _validate_plugin(self, content: str) -> bool:
-        """Validate plugin syntax."""
+        """Compile-check plugin syntax.
+
+        BOB-217 SECURITY NOTE: this is a SYNTAX check ONLY -- it proves
+        `content` is parseable Python, NOT that it is safe. A hostile
+        payload (credential exfiltration, a backdoor dropped on import,
+        arbitrary code that runs the moment qBittorrent loads this file
+        as a search engine) is syntactically valid Python and WILL pass
+        this check. This method is NOT, and must NOT be treated as, a
+        safety/security gate. The actual safety gate for untrusted
+        fetched content is `_verify_pinned_hash()`, called separately
+        (and required to pass) in `update_plugin()` before anything is
+        written to disk.
+        """
         try:
             compile(content, "<string>", "exec")
             return True
         except SyntaxError:
             return False
+
+    def _verify_pinned_hash(self, plugin_name: str, content: str) -> tuple[bool, str]:
+        """BOB-217 safety gate: verify fetched content against its pinned
+        SHA-256 content hash BEFORE it is ever written to disk.
+
+        Returns (ok, reason). `reason` always names the specific check
+        that passed or failed -- "no pin configured for this URL" vs.
+        "hash mismatch" are deliberately distinct, observable facts
+        (constitution SS11.4.6 no-guessing) so an operator (or an
+        automated caller) never has to infer why an update was refused.
+        """
+        expected = self.pinned_hashes.get(plugin_name)
+        if expected is None:
+            return False, f"no pin configured for this URL (plugin '{plugin_name}')"
+
+        actual = hashlib.sha256(content.encode("utf-8")).hexdigest()
+        if actual != expected:
+            return (
+                False,
+                f"hash mismatch for plugin '{plugin_name}': "
+                f"fetched content does not match the declared pinned hash "
+                f"(expected {expected}, got {actual})",
+            )
+
+        return True, "pinned hash verified"
 
     def _create_backup(self, filepath: str) -> str:
         """Create backup of existing plugin."""

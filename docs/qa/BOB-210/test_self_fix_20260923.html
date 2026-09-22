@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>test_self_fix_20260923</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">test_self_fix_20260923</h1>
+</header>
+<h1 id="bob-210-test-suite-self-fix-2026-09-23">BOB-210 test-suite
+self-fix — 2026-09-23</h1>
+<h2 id="what-broke-and-why-it-is-not-a-product-regression">What broke,
+and why it is not a product regression</h2>
+<p><code>tests/unit/test_ownership_precondition_docker_premise.sh</code>’s
+Case 4 (the RED-baseline control) pinned its “pre-fix” reference to
+<code>git show HEAD</code>, captured at <em>run time</em>. That is only
+a valid pre-fix baseline in the narrow window between authoring the fix
+and committing it. Once the fix commit (<code>03bf860</code>) landed and
+became <code>HEAD</code> — which is the normal, expected state of any
+checkout after the commit that carries both the fix and this test —
+<code>HEAD</code> is <em>post</em>-fix, so the control diffed the fixed
+file against itself: it found the claim’s text (kept deliberately, as an
+explicitly-refuted historical citation — Case 1’s own documented,
+intended design) <em>and</em> found the nearby refutation that marks it
+refuted, and correctly reported that as “this is no longer a pre-fix
+baseline” via its <code>fail</code> branch.</p>
+<p>This is exactly the failure mode
+<code>docs/qa/BOB-217/closure_evidence_20260922.md</code> already worked
+around by pinning to an immutable SHA (<code>eb5cfce</code>) instead of
+<code>HEAD</code> — this suite (authored in the same batch) used the
+less robust <code>HEAD</code> form and hit the footgun once
+<code>HEAD</code> genuinely advanced past the fix.</p>
+<h2 id="root-cause-confirmed-not-guessed-11.4.6">Root cause (confirmed,
+not guessed — §11.4.6)</h2>
+<pre><code>$ git log --oneline -3 -- scripts/ownership_precondition.sh
+03bf860 fix(security,ownership,ratelimit): close 12 tracked defects — ...
+5c9b9e0 test-probe-do-not-use [skip-ci]
+af48019 feat(BOB-183,BOB-187): a freshness gate for the served bundle, ...
+
+$ git show HEAD:scripts/ownership_precondition.sh | grep -B2 -A2 -F &quot;an unverified reading can never&quot;
+# ... claim text present ...
+# claim is FALSE for the branch as shipped and was corrected here rather than
+# left standing: ...</code></pre>
+<p><code>HEAD</code> (<code>eb5cfce</code>, built on
+<code>03bf860</code>) already carries the fix’s refutation text next to
+the claim — confirming the control’s premise (“HEAD reproduces the
+pre-fix defect”) no longer holds, by direct evidence, not inference.</p>
+<pre><code>$ git show af48019:scripts/ownership_precondition.sh | grep -B2 -A2 -F &quot;an unverified reading can never&quot;
+#               indicator and is UNMEASURED here. It is deliberately built to
+#               fail toward `unknown` (a named skip) rather than toward a
+#               confident `rootful`, so an unverified reading can never
+#               manufacture a refusal.</code></pre>
+<p><code>af48019</code> (the commit immediately preceding the fix on
+this file’s history) carries the claim with NO nearby refutation — a
+genuine, immutable pre-fix baseline.</p>
+<h2 id="fix">Fix</h2>
+<p><code>tests/unit/test_ownership_precondition_docker_premise.sh</code>
+Case 4: pinned <code>git show HEAD:...</code> →
+<code>git show af48019:...</code> (an immutable commit SHA, per the same
+pattern already used by
+<code>tests/unit/test_bob217_plugin_update_pinned_hash_verification.py</code>),
+with the in-source comment rewritten to explain why <code>HEAD</code> is
+unusable here and why this specific SHA is the correct pin. Behaviour of
+the three substantive cases (1-3) is completely unchanged.</p>
+<h2 id="independently-re-verified-this-session">Independently
+re-verified this session</h2>
+<pre><code>$ bash -n tests/unit/test_ownership_precondition_docker_premise.sh
+(clean)
+
+$ bash tests/unit/test_ownership_precondition_docker_premise.sh
+== BOB-210: the docker-branch header claim must match measured behaviour ==
+  PASS: the false claim&#39;s text is present only as an explicitly-refuted historical citation, not a standing assertion
+  PASS: case 2: a successful, non-empty, marker-absent docker read still refuses (measured ROOTFUL, exit 1) — the corrected header describes this correctly as confident, not unknown
+  PASS: the header now honestly states the docker branch is unvalidated against a real docker install
+  PASS: control: pinned pre-fix commit af48019&#39;s header asserts the claim with NO nearby refutation, reproducing the reported defect — Case 1 is discriminating
+RESULT: 4 passed, 0 failed, 0 skipped</code></pre>
+<h2 id="determinism-11.4.50-3-consecutive-runs">Determinism (§11.4.50, 3
+consecutive runs)</h2>
+<pre><code>run 1: exit=0 RESULT: 4 passed, 0 failed, 0 skipped
+run 2: exit=0 RESULT: 4 passed, 0 failed, 0 skipped
+run 3: exit=0 RESULT: 4 passed, 0 failed, 0 skipped</code></pre>
+<h2 id="trigger">Trigger</h2>
+<p>This was caught by <code>scripts/commit-push-all.sh</code>’s stage-3
+<code>pre_build_verification.sh</code> invariant
+<code>[30/55] CM-BASH-UNIT-TESTS-EXECUTED</code>
+(<code>FAIL [1]: 1/52 bash unit/pre_build test(s) FAILED — test_ownership_precondition_docker_premise.sh</code>)
+on the batch-3 commit attempt for BOB-217/BOB-224/BOB-228-partial. The
+wrapper correctly refused the commit rather than landing a broken suite
+— exactly its designed behaviour. Bug in the test, not the product; no
+<code>scripts/ownership_precondition.sh</code> behaviour changed.</p>
+</body>
+</html>

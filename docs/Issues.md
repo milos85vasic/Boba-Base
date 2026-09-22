@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 90
-**Last modified:** 2026-09-22T21:48:15Z
+**Revision:** 91
+**Last modified:** 2026-09-22T22:30:19Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -1608,28 +1608,6 @@ ACCEPTANCE: (1) the operator decision above is taken and recorded; (2) whichever
 
 DISCOVERY CHANNEL (§11.4.238): found by the BOB-195 round-7 remediation stream while closing a different finding, NOT by the automated QA regime and NOT by the independent reviewer that audited the same file in round 6.
 
-## BOB-217 — plugin_update_automation downloads executable plugin code from third-party personal GitHub repos and gates it with a SYNTAX check only — no signature, no pinned commit, no hash allowlist
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** critical
-
-WHAT: tools/plugin_update_automation.py update_plugin() combines three §11.4.252 dangerous capabilities and is gated by nothing that could stop a hostile payload:
- - UNTRUSTED INPUT: 14 URLs across four GitHub repositories, THREE of which are third-party PERSONAL repos, not the official qbittorrent organisation.
- - MUTATION: writes plugins/<name>.py.
- - DEFERRED CODE EXECUTION: qBittorrent EXECUTES those engine files. The bytes fetched over the network become running code on the operator's host.
-The ONLY validation is compile(content, "<string>", "exec") at tools/plugin_update_automation.py:213 — conductor-verified as the sole compile call. That is a SYNTAX check. A syntactically valid file is exactly what a hostile payload is. There is NO signature verification, NO pinned commit SHA, NO hash allowlist, NO provenance check of any kind.
-
-§11.4.252 requires a path combining >=2 dangerous capabilities to FAIL CLOSED — verify every precondition, refuse when any is unverifiable. This path combines THREE and verifies none of them. §11.4.246's supply-chain clause is the direct counterpart: dependencies are either vendored hash-verified, provenance-attested, or mirrored through a hash-pinning registry — an unattested public source is an integrity risk, and here the unattested public source becomes EXECUTED CODE.
-
-THE SHARPEST FACT ABOUT THIS FINDING: the fail-closed gate produced THREE FALSE POSITIVES in this same file (:189, :198, :215 — all triaged FALSE POSITIVE, see BOB-214's correction) while MISSING this, the one genuine dangerous combination in it. That is the §11.4.201 both-directions failure — false-positive and false-negative — demonstrated inside a single file. It is the strongest available evidence that the detector classifies by local syntactic shape and never consults semantic role (the §11.4.250 primitive named in BOB-191/BOB-216).
-
-REACHABILITY, STATED HONESTLY (§11.4.6): the script is invoked by NOTHING — control-needle-proven (91 needle hits, 0 negative control) it is referenced only by its own README, its own docstring, and a tracker note; zero hits across *.sh / *.yml / *.py / Makefile outside tools/. Its own README self-declares "not invoked by the normal start/stop flow". Last functional commit 2026-04-12. So this is NOT live in any automated path. It IS reachable by a hand-run --update, which is exactly what the tool exists for. Severity is Critical on the capability combination, bounded by that reachability — not on an active exploitation path.
-
-ACCEPTANCE: (1) plugin sources are pinned (commit SHA or content hash) and verified before write; (2) an unverifiable source REFUSES and names which check failed (§11.4.252) rather than proceeding on a syntax pass; (3) the compile() call is documented in-source as a syntax check that is NOT a safety gate, so nobody reads it as one; (4) a RED serving a syntactically-valid hostile payload and asserting it is REFUSED pre-fix-absent / post-fix-present; (5) golden-FALSE proving a legitimate pinned update still succeeds (§11.4.201(1)).
-
-DISCOVERY CHANNEL (§11.4.238): found by the concealed-hits triage stream while establishing that the gate's four hits in this area were false positives. Not by the automated QA regime — and the regime that WAS pointed here reported the wrong three lines.
-
 ## BOB-218 — tools/README documents a rollback that does not exist: the plugin writer truncates on open and never restores the .bak, leaving a corrupt plugin while reporting the update FAILED
 
 **Status:** Queued
@@ -1710,27 +1688,6 @@ ACCEPTANCE: (1) either CM-SCRIPT-DOCS-SYNC is implemented, or it is registered a
 HONEST NOTE ON SCOPE: this item does not argue §11.4.18 should be enforced immediately — that is an operator call about gate debt priority (§11.4.66). It argues the CURRENT state is incoherent: an unenforced mandate whose observance triggers a different gate's failure. Either enforce both ends or neither.
 
 DISCOVERY CHANNEL (§11.4.238): found by the T042 readiness preflight while explaining why a new file broke invariant 16. Not by the automated QA regime.
-
-## BOB-224 — tests/unit/test_compute_badges_carrier_match.sh HANGS to the full 300s timeout (rc=124) and blocks invariant 30 independently of any RED-test question
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** critical
-
-WHAT: a replication of invariant 30 (same glob, same skip list, same BOBA_PREBUILD_NESTED=1, same timeout 300) measured RAN=38 FAILED=4 SKIPPED=2. One of the four failures is tests/unit/test_compute_badges_carrier_match.sh exiting **rc=124 after the FULL 300 seconds** — it does not fail, it HANGS.
-
-WHY IT IS FILED SEPARATELY AND URGENTLY: it blocks invariant 30, and therefore T042, INDEPENDENTLY of BOB-221. The assumption in BOB-221 that landing an expected-RED mechanism unblocks T042 is FALSE as stated — two of the four failures are REDs, one is this hang, one is contaminated. Landing the mechanism alone leaves T042 blocked by this suite.
-
-IT MUST NOT BE SILENCED BY A DECLARATION. A hang is a §11.4.232(C) liveness failure, not a verdict: a wedged op and a progressing op both look like "not finished yet", and marking it expected-to-fail would convert a §11.4.201(6) false-null into permanent cover. That is exactly the abuse the expected-RED design property (2) exists to prevent, so it must be triaged as its own defect.
-
-INVESTIGATION DIRECTION (§11.4.102 first, no guessing): rc=124 is the timeout(1) signature. Determine WHERE it wedges — a consumer blocked on an unclosed producer write-end is the documented shape here (§11.4.201(12) records that a background watchdog spawned inside a $(...) command-substitution inherits the pipe write-end, and an early disarm orphans its sleep grandchild, so the substitution stalls for the FULL budget while every verdict and exit code stays CORRECT). That signature — full budget, correct verdicts — matches rc=124 exactly and should be the FIRST hypothesis tested, not the last. The countermeasure is documented: redirect the watchdog subshell fds away from the cmd-subst pipe, or have the probe write to a file.
-Do NOT assume that is the cause; it is the highest-prior hypothesis given the recorded precedent.
-
-ACCEPTANCE: (1) the wedge point is identified with captured evidence, not inferred; (2) the suite completes deterministically well inside the budget; (3) a RED reproducing the hang, so a regression cannot silently re-wedge (a timeout-based assertion, since the failure IS the duration); (4) NOT closed by a declaration or by raising the timeout — raising the budget hides it.
-
-FILE DATE: the suite is dated 2026-08-21, so the hang predates this session.
-
-DISCOVERY CHANNEL (§11.4.238): found by the BOB-221 design stream while surveying invariant 30 more widely than its brief required — the T042 preflight had verified only 3 of 38 suites and stated that boundary honestly, which is what prompted the wider survey.
 
 ## BOB-225 — *.docx is globally gitignored while the §11.4.65 exporters generate .docx twins — every DOCX artifact this project produces is untrackable by construction
 

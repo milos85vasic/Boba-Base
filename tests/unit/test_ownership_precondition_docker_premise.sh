@@ -178,29 +178,46 @@ fi
 
 # ===========================================================================
 # CASE 4 (THE CONTROL, RED reproduced) — Case 1's context-aware check must
-# genuinely FAIL against the PRE-FIX header (git HEAD, captured at run time),
-# where the claim stood unqualified with no refutation nearby — proving
-# Case 1 discriminates rather than being satisfied by any file whatsoever.
+# genuinely FAIL against an IMMUTABLE PRE-FIX commit, where the claim stood
+# unqualified with no refutation nearby — proving Case 1 discriminates
+# rather than being satisfied by any file whatsoever.
 # ===========================================================================
+# `git HEAD` is NOT usable as this baseline: the fix this suite guards
+# landed in commit 03bf860, and once that commit is HEAD (as it is on this
+# checkout, and on any checkout after this suite is committed alongside its
+# own fix), `HEAD` is POST-fix, not pre-fix — the control would then be
+# diffing the fixed file against itself, which trivially "passes" the
+# nearby-refutation check for the wrong reason (the refutation is only
+# absent BEFORE the fix, never after). §11.4.115(F): a RED-baseline control
+# needs a STABLE reference to the pre-fix state, not "whatever HEAD happens
+# to be when this test runs" — HEAD moves forward with every commit
+# INCLUDING the fix being verified. The BOB-217 suite in this same batch
+# hit the identical footgun and pins a specific immutable SHA instead; this
+# case does the same, pinning the last commit to touch this file BEFORE the
+# fixing commit (03bf860's parent for this path, `af48019`), which is
+# immutable and stays a genuine pre-fix baseline regardless of how far HEAD
+# subsequently advances.
+#
 # The pre-fix wording wraps "...can never" / "manufacture a refusal." across
 # TWO comment lines, so the single-line joined FALSE_CLAIM used above (which
 # quotes it collapsed onto one line, `grep -F` cannot match across a real
 # newline) will never match the pre-fix file even though it carries the same
 # claim — a distinct, line-safe fragment is used here instead, on purpose.
 PRE_FRAGMENT="an unverified reading can never"
+PRE_FIX_COMMIT="af48019"
 PRE_SCRIPT="${WORK}/ownership_precondition_prefix.sh"
-if git -C "${PROJECT_ROOT}" show HEAD:scripts/ownership_precondition.sh > "${PRE_SCRIPT}" 2>/dev/null && [[ -s "${PRE_SCRIPT}" ]]; then
+if git -C "${PROJECT_ROOT}" show "${PRE_FIX_COMMIT}:scripts/ownership_precondition.sh" > "${PRE_SCRIPT}" 2>/dev/null && [[ -s "${PRE_SCRIPT}" ]]; then
     if grep -qF "${PRE_FRAGMENT}" "${PRE_SCRIPT}"; then
         if grep -B2 -A2 -F "${PRE_FRAGMENT}" "${PRE_SCRIPT}" | grep -qiE 'FALSE for the (branch|docker)|was corrected'; then
-            fail "control: git HEAD's header ALREADY carries a nearby refutation — the pre-fix baseline no longer reproduces the reported defect, Case 1's PASS above needs re-derivation against a different baseline"
+            fail "control: pinned pre-fix commit ${PRE_FIX_COMMIT}'s header ALREADY carries a nearby refutation — this is no longer a valid pre-fix baseline, Case 1's PASS above needs re-derivation against an earlier commit"
         else
-            pass "control: git HEAD's pre-fix header asserts the claim with NO nearby refutation, reproducing the reported defect — Case 1 is discriminating"
+            pass "control: pinned pre-fix commit ${PRE_FIX_COMMIT}'s header asserts the claim with NO nearby refutation, reproducing the reported defect — Case 1 is discriminating"
         fi
     else
-        skip "control: git HEAD's scripts/ownership_precondition.sh no longer contains the fragment '${PRE_FRAGMENT}' at all — HEAD has moved past the captured baseline, Case 1's verdict above stands on its own"
+        skip "control: pinned pre-fix commit ${PRE_FIX_COMMIT}'s scripts/ownership_precondition.sh does not contain the fragment '${PRE_FRAGMENT}' — the pinned SHA does not predate the fix as expected, not asserted"
     fi
 else
-    skip "control: could not read scripts/ownership_precondition.sh from git HEAD — not asserted"
+    skip "control: could not read scripts/ownership_precondition.sh from pinned commit ${PRE_FIX_COMMIT} (shallow clone or unreachable object) — not asserted"
 fi
 
 finish
