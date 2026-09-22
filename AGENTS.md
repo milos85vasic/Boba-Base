@@ -265,9 +265,15 @@ scripts/run-tests.sh live              # Integration + e2e only (slow, needs con
 
 ### Single test / subset
 ```bash
-python3 -m pytest tests/unit/test_freeleech.py -v --import-mode=importlib
-python3 -m pytest tests/unit/merge_service/ -v --import-mode=importlib
-python3 -m pytest tests/unit/ -k "search" -v --import-mode=importlib
+# BOB-165: use .venv/bin/python, not system python3 — system python3 on this
+# host either lacks pytest entirely or (per an earlier measurement) carries a
+# stale-ABI rpds-py .so left over from an interpreter upgrade; either way
+# system python3 -m pytest cannot even reach collection. .venv/bin/python is
+# the ONLY verified-working runner (CLAUDE.md already documents it correctly
+# — this file had drifted out of §11.4.157 lockstep with it).
+.venv/bin/python -m pytest tests/unit/test_freeleech.py -v --import-mode=importlib
+.venv/bin/python -m pytest tests/unit/merge_service/ -v --import-mode=importlib
+.venv/bin/python -m pytest tests/unit/ -k "search" -v --import-mode=importlib
 ```
 
 ### Go Backend Tests

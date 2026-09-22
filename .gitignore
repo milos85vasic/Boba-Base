@@ -39,6 +39,13 @@ docs/build-stats.ndjson
 !challenges/scripts/credentials_wired_challenge.sh
 !qBitTorrent-go/internal/jackettapi/credentials.go
 !qBitTorrent-go/internal/jackettapi/credentials_test.go
+# BOB-212 live instance, caught by scripts/pre_build/check_gitignore_swallow.sh
+# (invariant 56): these two gate/test files enforce qBittorrent WebUI
+# credentials are set (§11.4.239 CM-QBITTORRENT-WEBUI-CREDENTIALS) — no
+# secret material, plain bash — and had silently never been committed since
+# 2026-09-01 despite being in daily use by pre_build_verification.sh.
+!scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh
+!tests/pre_build/test_check_cm_qbittorrent_webui_credentials.sh
 # Angular frontend credentials management UI (source, no secrets).
 !frontend/src/app/jackett/credentials/
 !frontend/src/app/jackett/credentials/credential-edit-dialog.component.ts

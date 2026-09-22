@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260923</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260923</h1>
+</header>
+<h1 id="bob-229-closure-evidence-2026-09-23">BOB-229 closure evidence —
+2026-09-23</h1>
+<h2 id="discovery">Discovery</h2>
+<p>The very first real-repo run of the new BOB-212 guard
+(<code>scripts/pre_build/check_gitignore_swallow.sh</code>, wired into
+<code>scripts/pre_build_verification.sh</code> as invariant 56 this
+session) immediately caught a live, real instance of exactly the defect
+class it was built to detect:</p>
+<pre><code>[56/56] CM-GITIGNORE-SWALLOW-GUARD: no first-party source file is silently swallowed by .gitignore (§11.4.201(6), BOB-212)
+FAIL [4]: CM-GITIGNORE-SWALLOW-GUARD: exit 1 — a first-party source file is silently swallowed by .gitignore
+BOB-212 swallow-guard: REFUSED — 2 first-party source file(s) are silently swallowed by .gitignore.
+SWALLOWED (first-party source, silently ignored): scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh
+blocked by: .gitignore:31:*credentials* scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh
+SWALLOWED (first-party source, silently ignored): tests/pre_build/test_check_cm_qbittorrent_webui_credentials.sh
+blocked by: .gitignore:31:*credentials* tests/pre_build/test_check_cm_qbittorrent_webui_credentials.sh</code></pre>
+<h2
+id="independently-confirmed-real-not-a-guard-false-positive">Independently
+confirmed real, not a guard false-positive</h2>
+<pre><code>$ ls -la scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh tests/pre_build/test_check_cm_qbittorrent_webui_credentials.sh
+-rwxrwxr-x ... Sep  1 18:26 scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh
+-rwxrwxr-x ... Sep  1 18:27 tests/pre_build/test_check_cm_qbittorrent_webui_credentials.sh
+
+$ git ls-files scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh tests/pre_build/test_check_cm_qbittorrent_webui_credentials.sh
+(empty — confirmed NOT tracked)
+
+$ git status --short scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh tests/pre_build/test_check_cm_qbittorrent_webui_credentials.sh
+(empty — the exact false-null: a file exists, is functional, and produces zero signal)
+
+$ git check-ignore -v scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh tests/pre_build/test_check_cm_qbittorrent_webui_credentials.sh
+.gitignore:31:*credentials* scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh
+.gitignore:31:*credentials* tests/pre_build/test_check_cm_qbittorrent_webui_credentials.sh</code></pre>
+<p>These two files have been in DAILY FUNCTIONAL USE by
+<code>scripts/pre_build_verification.sh</code> invariant 53
+(<code>CM-QBITTORRENT-WEBUI-CREDENTIALS</code>, §11.4.239), which has
+passed cleanly every single run this whole session — the gate script
+runs perfectly fine FROM DISK regardless of git tracking state, so
+nothing in the ordinary development flow ever surfaced that these files
+had never actually landed in version control. A fresh clone, a different
+environment, or an accidental <code>git clean</code> would have silently
+lost an entire gate implementation plus its 8-case self-validated
+paired-mutation meta-test.</p>
+<h2 id="fix">Fix</h2>
+<p><code>.gitignore</code>: added two explicit <code>!</code> negation
+lines for these exact paths, matching the codebase’s existing
+hand-maintained per-file allowlist pattern (lines 34-50) that already
+carves out other legitimately credential-named source files
+(<code>credentials.go</code>, the frontend credentials-management UI,
+etc.).</p>
+<h2 id="independently-verified-this-session">Independently verified this
+session</h2>
+<pre><code>$ git check-ignore -v scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh tests/pre_build/test_check_cm_qbittorrent_webui_credentials.sh
+.gitignore:47:!scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh  scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh
+.gitignore:48:!tests/pre_build/test_check_cm_qbittorrent_webui_credentials.sh   tests/pre_build/test_check_cm_qbittorrent_webui_credentials.sh
+(negation now wins — confirmed no longer ignored)
+
+$ git status --short scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh tests/pre_build/test_check_cm_qbittorrent_webui_credentials.sh
+?? scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh
+?? tests/pre_build/test_check_cm_qbittorrent_webui_credentials.sh
+(now genuinely visible)
+
+$ bash scripts/pre_build/check_gitignore_swallow.sh &quot;$(pwd)&quot;
+BOB-212 swallow-guard: OK — no first-party source files are silently swallowed by .gitignore.
+
+$ bash -n scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh &amp;&amp; echo OK
+$ bash -n tests/pre_build/test_check_cm_qbittorrent_webui_credentials.sh &amp;&amp; echo OK
+(both clean — the rescued files are syntactically intact)
+
+$ timeout 60 bash tests/pre_build/test_check_cm_qbittorrent_webui_credentials.sh
+=== paired-mutation meta-test: CM-QBITTORRENT-WEBUI-CREDENTIALS ===
+PASS: golden-good (rc=0 as expected)
+PASS: golden-bad-1 (rc=1 as expected)
+PASS: golden-bad-2 (rc=1 as expected)
+PASS: golden-bad-3 (rc=1 as expected)
+PASS: golden-bad-4 (rc=1 as expected)
+PASS: negative-control-quoted (rc=0 as expected)
+PASS: negative-control-carrier (rc=0 as expected)
+PASS: negative-control-fresh (rc=0 as expected)
+=== META-TEST PASS: gate fires on every broken arm and stays clean on every good arm ===</code></pre>
+<p>The rescued gate + its meta-test are both fully functional (8/8
+self-check cases pass) — this is a genuine, working, no-longer-at-risk
+artifact.</p>
+<h2 id="honest-boundary">Honest boundary</h2>
+<p>This item is filed and closed in the same session per this project’s
+own §11.4.202 reporting-directive discipline (a discovered defect always
+lands as a tracked item, even when fixed immediately) — it is not a
+hypothetical or a design exercise, it is a real incident the new guard
+genuinely caught on its very first real-repo run.</p>
+<h2 id="git-diff-stat">git diff –stat</h2>
+<pre><code>.gitignore | 7 +++++++
+1 file changed, 7 insertions(+)</code></pre>
+<p>Plus two previously-untracked files now staged for the first time:
+<code>scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh</code>,
+<code>tests/pre_build/test_check_cm_qbittorrent_webui_credentials.sh</code>.</p>
+</body>
+</html>

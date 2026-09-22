@@ -214,6 +214,11 @@ class SSEHandler:
 
         last_count = 0
         seen_hashes = set()
+        # BOB-193: hashes that have already had ONE failed emit attempt and
+        # are therefore eligible for exactly one retry on the next poll.
+        # See the ``result_hash in seen_hashes`` block below for the full
+        # bound contract.
+        retry_attempted_hashes: set[str] = set()
         # merged_update throttle state. We re-merge (O(n²)) at most once
         # per MERGED_UPDATE_MIN_INTERVAL_S and only when the raw result
         # count advanced past the last value we re-merged at.
@@ -280,13 +285,30 @@ class SSEHandler:
             # Check if search completed
             if metadata.status in ("completed", "failed"):
                 # IMPORTANT: If search completed, emit any pending results first
+                #
+                # BOB-193: ``seen_hashes_local`` is written BEFORE the yield
+                # (so a result that succeeds is still deduped if this same
+                # local set were ever consulted again). If the yielded
+                # ``format_event`` call raises, the hash is REMOVED again
+                # before the exception propagates, mirroring the identical
+                # fix in the main polling loop below (the item measured the
+                # defect at both sites). A single completion pass has no
+                # later poll of its own, so a retry here can only matter if
+                # this branch is ever entered more than once for the same
+                # result; the discard-on-failure keeps that path correct by
+                # construction rather than leaving a phantom "already seen"
+                # entry for a result that was never actually sent.
                 try:
                     live_results = orchestrator.get_live_results(search_id)
-                    seen_hashes_local = set()
+                    seen_hashes_local: set[str] = set()
+                    retry_attempted_local: set[str] = set()
                     for result in live_results:
                         result_hash = getattr(result, "hash", None) or str(id(result))
-                        if result_hash not in seen_hashes_local:
-                            seen_hashes_local.add(result_hash)
+                        if result_hash in seen_hashes_local:
+                            continue
+                        already_retried_local = result_hash in retry_attempted_local
+                        seen_hashes_local.add(result_hash)
+                        try:
                             yield SSEHandler.format_event(
                                 event="result_found",
                                 data={
@@ -302,6 +324,19 @@ class SSEHandler:
                                 },
                                 event_id=search_id,
                             )
+                        except Exception:
+                            if already_retried_local:
+                                # Second failure for this hash: give up
+                                # permanently. seen_hashes_local already
+                                # has it (added above) - leave it there.
+                                retry_attempted_local.discard(result_hash)
+                            else:
+                                # First failure: allow exactly one retry.
+                                seen_hashes_local.discard(result_hash)
+                                retry_attempted_local.add(result_hash)
+                            raise
+                        else:
+                            retry_attempted_local.discard(result_hash)
                 except Exception:  # noqa: S110
                     pass
 
@@ -326,13 +361,41 @@ class SSEHandler:
                 yield SSEHandler.format_event(event="search_complete", data=metadata.to_dict(), event_id=search_id)
                 break
 
-            # Stream individual results as they arrive
+            # Stream individual results as they arrive.
+            #
+            # BOB-193: the dedup hash MUST NOT be a permanent record of an
+            # emit attempt that never actually reached the client. It is
+            # added BEFORE the yield (so a genuinely-successful emit is
+            # still deduped on the very next poll - the success path below
+            # is unchanged) but REMOVED again if the yielded
+            # ``format_event`` call raises, so the SAME result is retried
+            # on the NEXT poll rather than being lost forever.
+            #
+            # BOUND (exactly one retry per result, decided 2026-09-23 per
+            # BOB-193 option (c)): ``retry_attempted_hashes`` records a
+            # hash that has ALREADY had one failed attempt. A SECOND
+            # failure for a hash already in ``retry_attempted_hashes`` is
+            # treated as a permanent give-up - the hash is left in
+            # ``seen_hashes`` (added right before the failing yield, never
+            # discarded on this second failure) so it will NEVER be
+            # attempted a third time, on this or any future poll. Total
+            # attempts per result across the life of one stream: at most 2
+            # (1 initial + 1 retry). This is a per-result, per-stream
+            # bound, not a per-poll bound - polling itself stays unbounded
+            # in COUNT (the stream polls forever until the search
+            # completes or the client disconnects), but each individual
+            # result's hash-presence check is what bounds its own
+            # re-processing to at most 2 attempts, never an unbounded
+            # retry storm.
             try:
                 live_results = orchestrator.get_live_results(search_id)
                 for result in live_results:
                     result_hash = getattr(result, "hash", None) or str(id(result))
-                    if result_hash not in seen_hashes:
-                        seen_hashes.add(result_hash)
+                    if result_hash in seen_hashes:
+                        continue
+                    already_retried = result_hash in retry_attempted_hashes
+                    seen_hashes.add(result_hash)
+                    try:
                         yield SSEHandler.format_event(
                             event="result_found",
                             data={
@@ -348,6 +411,20 @@ class SSEHandler:
                             },
                             event_id=search_id,
                         )
+                    except Exception:
+                        if already_retried:
+                            # Second failure for this hash: give up
+                            # permanently. seen_hashes already has it
+                            # (added above) - leave it there.
+                            retry_attempted_hashes.discard(result_hash)
+                        else:
+                            # First failure: allow exactly one retry on
+                            # the next poll.
+                            seen_hashes.discard(result_hash)
+                            retry_attempted_hashes.add(result_hash)
+                        raise
+                    else:
+                        retry_attempted_hashes.discard(result_hash)
             except Exception:  # noqa: S110
                 pass
 

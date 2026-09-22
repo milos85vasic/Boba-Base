@@ -655,6 +655,19 @@ ownership_split_tsv() {
 #
 # `..` above the root of an absolute path is the root itself, per POSIX
 # (`/..` == `/`) — so a `..` climb can never escape upward into nothing.
+#
+# THIS FUNCTION ITSELF STAYS LEXICAL (BOB-201, resolved 2026-09-23). Rationale
+# (b) above — "find's -P does not descend a symlinked root, so it buys
+# nothing" — was TRUE for a symlinked FINAL component (pinned by Case 17) and
+# FALSE for an EXISTING symlink at a NON-FINAL component: MEASURED, no race
+# required, the walk names items under the link's TARGET. The fence now
+# resolves NON-FINAL components before it judges the path — see
+# ownership_resolve_symlinks() immediately below, and ownership_path_fence()'s
+# own header for why the resolution step lives THERE and not here: rationale
+# (c) above (paths that do not exist yet MUST still be judgeable) still binds
+# this function, and every OTHER caller of ownership_normalise_path() (the
+# project-root and container-runtime-tree computations) still wants the pure
+# lexical answer.
 # ---------------------------------------------------------------------------
 ownership_normalise_path() {
     local p="$1" abs=0 seg rest joined="" i
@@ -686,6 +699,134 @@ ownership_normalise_path() {
     else
         printf '%s' "${joined:+${joined#/}}"
     fi
+}
+
+# ---------------------------------------------------------------------------
+# ownership_resolve_symlinks <lexically-normalised-abs-path> — resolves every
+# EXISTING symlink at a NON-FINAL path component and returns the resolved
+# absolute path on stdout (BOB-201).
+#
+# WHAT IT RESOLVES, AND WHAT IT DELIBERATELY DOES NOT (§11.4.6):
+#   * Every component EXCEPT THE LAST is checked. A NON-FINAL component that
+#     is an existing, resolvable symlink is replaced by its REAL target
+#     (following the whole chain, so a symlink-to-a-symlink resolves fully).
+#   * The FINAL (leaf) component is never resolved and is always appended
+#     lexically, exactly as declared. Case 17 already pins that a symlinked
+#     FINAL component is contained by find's own default -P (it does not
+#     descend it) — a SEPARATE, already-closed question from the one BOB-201
+#     records (an intermediate symlink that steers the WALK ITSELF outside
+#     the declared scope). Resolving the final component too would only add a
+#     new false-positive-refusal surface (§11.4.201(1)) for no security gain.
+#   * A component that DOES NOT EXIST AT ALL — no directory entry present,
+#     never a symlink — is NOT a resolution failure. It is appended lexically
+#     and resolution STOPS (nothing beneath an absent parent can exist
+#     either), matching data-model E1: an absent NON-optional declared path
+#     already fails later, per-entry, at ownership_repair.sh's own
+#     `[[ ! -e "${e_path}" ]]` check; this predicate must not turn that
+#     already-supported case into a NEW whole-scope fence refusal
+#     (§11.4.201(1) — over-refusing is a FAIL-bluff of the same severity as
+#     under-refusing). `[[ -e ]] || [[ -L ]]` is the existence test, not `-e`
+#     alone: `-e` follows a symlink and is FALSE for a broken one, which would
+#     misclassify "an existing-but-dangling link" as "no entry here at all".
+#
+# FAIL-CLOSED ON A SYMLINK THAT CANNOT BE RESOLVED (§11.4.252): a NON-FINAL
+# component that IS a symlink (`-L` true) but whose resolution cannot be
+# determined — a broken/dangling target, a resolution loop, or a permission
+# denial encountered while resolving it — REFUSES (return 1, reason on
+# stderr). This is the fail-closed case the caller must never fall back to
+# the unresolved lexical path for.
+#
+# THE RESOLUTION COMMAND, MEASURED on THIS host 2026-09-23 (/usr/bin/readlink
+# and /usr/bin/realpath here are the uutils-coreutils 0.8.0 reimplementation,
+# NOT GNU — BOB-220 already found a behavioural divergence on this exact host,
+# so nothing here is trusted from a man page, §11.4.6):
+#
+#   `readlink -f <path>` — canonicalises every component; on THIS host,
+#   MEASURED, it succeeds (rc=0) when every component up to and including the
+#   given one exists (following any chain of REAL symlinks to their target),
+#   and FAILS (rc<>0, empty stdout) when the given component is a symlink
+#   whose target does not (yet, or ever) exist, or when resolving it would
+#   loop. `realpath -e` was rejected because it also fails on an ordinary
+#   component that has simply never been created (no symlink involved at
+#   all) — the exact case this function must still ACCEPT — and `realpath -m`
+#   was rejected because, MEASURED, it happily substitutes a BROKEN symlink's
+#   raw target text and keeps going rather than refusing an indeterminate
+#   resolution, which is the opposite of what §11.4.252 requires here.
+#   `readlink -f` is called per DETECTED symlink component (never once on the
+#   whole path) precisely so a genuinely-absent-but-never-a-symlink component
+#   is never handed to it at all — that is the row that made a whole-path
+#   call unusable.
+#
+# Returns 0 with the resolved path on stdout. Returns 1 (refused, reason on
+# stderr) when a non-final EXISTING symlink cannot be resolved.
+# ---------------------------------------------------------------------------
+ownership_resolve_symlinks() {
+    local input="$1" resolved="" candidate seg target rc
+    local -a comps=()
+    [[ "${input}" == /* ]] || { printf '%s' "${input}"; return 0; }
+    if [[ "${input}" == "/" ]]; then
+        printf '%s' "/"
+        return 0
+    fi
+    local rest="${input#/}"
+    while [[ -n "${rest}" ]]; do
+        seg="${rest%%/*}"
+        if [[ "${seg}" == "${rest}" ]]; then rest=""; else rest="${rest#*/}"; fi
+        comps+=("${seg}")
+    done
+
+    local i n="${#comps[@]}"
+    # Resolve every component EXCEPT the last (the leaf) — see WHAT IT
+    # DELIBERATELY DOES NOT above.
+    for (( i = 0; i < n - 1; i++ )); do
+        candidate="${resolved}/${comps[${i}]}"
+        if [[ -L "${candidate}" ]]; then
+            target="$(readlink -f -- "${candidate}" 2>/dev/null)"
+            rc=$?
+            if [[ "${rc}" -ne 0 || -z "${target}" || "${target}" != /* ]]; then
+                echo "ownership: '${candidate}' is a symlink that could not be resolved (broken target, loop, or permission denied) — refusing" >&2
+                return 1
+            fi
+            # MEASURED 2026-09-23: `readlink -f` on a DANGLING symlink taken
+            # ALONE (no further path components in the same invocation)
+            # SUCCEEDS (rc=0) and prints the link's raw, nonexistent target
+            # text — it only fails closed on a broken link when there is MORE
+            # PATH after it in the SAME call, which this per-component walk
+            # deliberately never does (the tail is appended afterwards,
+            # lexically, only once resolution of THIS component is done). A
+            # broken NON-FINAL component must still refuse (§11.4.252 — its
+            # resolution is not actually determined, only its raw spelling
+            # is), so the target readlink -f handed back is independently
+            # verified to exist before it is trusted.
+            if [[ ! -e "${target}" ]]; then
+                echo "ownership: '${candidate}' is a symlink to '${target}', which does not exist — refusing (a non-final component must resolve to a real location)" >&2
+                return 1
+            fi
+            # `resolved` carries the resolved prefix WITHOUT a trailing slash
+            # (empty string means "root") so every subsequent
+            # `${resolved}/${comp}` concatenation stays single-slash; a
+            # symlink that resolves to the filesystem root itself would
+            # otherwise leave `resolved` as the literal "/" and double the
+            # slash on the next append.
+            resolved="${target}"
+            [[ "${resolved}" == "/" ]] && resolved=""
+        elif [[ -e "${candidate}" ]]; then
+            resolved="${candidate}"
+        else
+            # No directory entry here at all (real ENOENT, never a symlink —
+            # a symlink, even a dangling one, is always caught by the -L
+            # branch above). Append the remainder lexically and stop: nothing
+            # beneath an absent parent can exist either.
+            resolved="${candidate}"
+            for (( i = i + 1; i < n - 1; i++ )); do
+                resolved="${resolved}/${comps[${i}]}"
+            done
+            break
+        fi
+    done
+    resolved="${resolved}/${comps[$(( n - 1 ))]}"
+    printf '%s' "${resolved}"
+    return 0
 }
 
 # ---------------------------------------------------------------------------
@@ -750,29 +891,35 @@ ownership_normalise_path() {
 #   with operator-owned content beneath it is the ordinary state of a removable
 #   disk, and refusing it would refuse the very case the feature exists for.
 #
-#   IT JUDGES THE SPELLING; THE KERNEL RESOLVES THE PATH (R2-N1, MEASURED
-#   2026-08-26). ownership_normalise_path() is LEXICAL, so an existing symlink
-#   in a NON-FINAL component of a declared path is invisible here: the kernel
-#   resolves it at walk time and the walk names items under the link's TARGET.
-#   Measured with a pre-existing `…/piv/hop → real` and a declared
-#   `…/piv/hop/data`, the walk named `…/real/data/victim` — no race required,
-#   so this is not merely the TOCTOU artifact the normaliser's own rationale
-#   describes. A symlinked FINAL component IS contained (find's default -P does
-#   not descend it, and the trailing slash that would defeat that is stripped —
-#   pinned by Case 17). What bounds the intermediate case is not this fence but
-#   WHO CAN WRITE those components: they sit ABOVE the declared root, outside
-#   every container bind mount, and an actor able to write there can edit the
-#   untracked `.env` that supplies the root anyway — so no capability is
-#   gained. Tracked as BOB-201 — the item that RECORDS this static reach, with
-#   its scope and severity bounds and an operator-owned resolve-or-accept
-#   decision (§11.4.66). Round 3 cited BOB-159 here, which is the WARM-START
-#   repair-window item and whose body never mentioned symlinks at all: a
-#   pointer that looked like coverage and was none, so no tracker query could
-#   have found this reach (§11.4.214). Case 24 now reads this id out of the
-#   fence and asks the tracker whether it exists AND records the reach, so the
-#   next dangling citation fails a check instead of passing one. Stated here
-#   because a fence that let a reader infer symlink safety it does not provide
-#   would be the overstatement §11.4.6 forbids.
+#   RESOLVED, NOT MERELY SPELLED (R2-N1, BOB-201, RESOLVED 2026-09-23).
+#   ownership_normalise_path() is itself still LEXICAL (see its own header),
+#   so on its own an existing symlink in a NON-FINAL component of a declared
+#   path was invisible to it: the kernel resolves it at walk time and the
+#   walk names items under the link's TARGET. Measured with a pre-existing
+#   `…/piv/hop → real` and a declared `…/piv/hop/data`, the walk named
+#   `…/real/data/victim` — no race required, so this was not merely the
+#   TOCTOU artifact the normaliser's own rationale describes. THIS FENCE NOW
+#   CLOSES THAT GAP ITSELF: immediately after normalising, it calls
+#   ownership_resolve_symlinks() and every check below judges the RESOLVED
+#   path, never the declared spelling — see that function's own header for
+#   exactly what it resolves (every NON-FINAL component) and what it
+#   deliberately does not (the FINAL component: a symlinked final component
+#   IS already contained by find's default -P, which does not descend it —
+#   pinned by Case 17 — a separate, already-closed question this fix leaves
+#   alone). THE RESIDUAL EXPOSURE IS TOCTOU, ACCEPTED (§11.4.66): resolving
+#   answers a question about the filesystem AT FENCE TIME, and the walk
+#   happens LATER — a symlink swapped in between the two would make the
+#   fence judge a path the repair never touches. The operator was asked to
+#   choose between (a) resolve-and-re-fence, accepting that residual TOCTOU
+#   window, and (b) keep this an accepted, documented lexical limit; the
+#   operator chose (a). Tracked as BOB-201 — the item that RECORDS the
+#   original static reach and that operator-owned decision. Round 3 once
+#   cited BOB-159 here, which is the WARM-START repair-window item and whose
+#   body never mentioned symlinks at all: a pointer that looked like coverage
+#   and was none, so no tracker query could have found this reach
+#   (§11.4.214). Case 24 reads this id out of the fence and asks the tracker
+#   whether it exists AND records the reach, so a dangling citation fails a
+#   check instead of passing one.
 #
 #   ONE WELL-SHAPED PATH IS DENIED BY COMPUTATION, NOT BY SHAPE (R2-N2): the
 #   container runtime's own storage under $HOME — see
@@ -884,6 +1031,19 @@ ownership_path_fence() {
     norm="$(ownership_normalise_path "${p}")"
     if [[ -z "${norm}" || "${norm}" != /* ]]; then
         echo "ownership: '${p}' could not be normalised — refusing" >&2
+        return 1
+    fi
+
+    # RESOLVE, THEN RE-FENCE (BOB-201). Every check below this point judges
+    # `norm` — from here on `norm` is the RESOLVED path (every existing,
+    # resolvable symlink at a non-final component replaced by its real
+    # target), never the original spelling, so an intermediate symlink that
+    # steers the declared path outside its scope is judged on where it really
+    # lands, not on how it was written. See ownership_resolve_symlinks()'s own
+    # header for what is and is not resolved, and why.
+    norm="$(ownership_resolve_symlinks "${norm}")" || return 1
+    if [[ -z "${norm}" || "${norm}" != /* ]]; then
+        echo "ownership: '${p}' resolved to an unusable path — refusing" >&2
         return 1
     fi
 

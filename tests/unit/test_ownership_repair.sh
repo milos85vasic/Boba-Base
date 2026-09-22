@@ -2697,15 +2697,19 @@ fi
 # ===========================================================================
 # CASE 24 — THE FENCE'S TWO NAMED BOUNDARIES (R2-N1, R2-N2).
 #
-# R2-N1 is documentation-only BY DECISION: an existing symlink in a NON-FINAL
-# component of a declared path steers the walk to the link's target (MEASURED,
-# no race needed), and the fence — lexical by design, so that it cannot be
-# raced and can judge paths that do not exist yet — cannot see it. The reach is
-# bounded by who can write components ABOVE the declared root, which is outside
-# every container bind mount and is already the trust boundary that the
-# untracked `.env` sits on. What was owed is the SENTENCE: a fence whose stated
-# limits let a reader infer symlink safety it does not provide is the
-# overstatement §11.4.6 forbids. This case pins that the sentence is there.
+# R2-N1 was DOCUMENTATION-ONLY through Round 3: an existing symlink in a
+# NON-FINAL component of a declared path steers the walk to the link's target
+# (MEASURED, no race needed), and the (deliberately lexical)
+# ownership_normalise_path() cannot see it on its own. BOB-201 recorded that
+# reach — bounded by who can write components ABOVE the declared root, which
+# is outside every container bind mount and is already the trust boundary the
+# untracked `.env` sits on — and asked the operator to choose between keeping
+# it a documented lexical limit or resolving and re-fencing. The operator
+# chose resolve-and-re-fence (BOB-201, RESOLVED 2026-09-23): the fence now
+# calls ownership_resolve_symlinks() and judges the RESOLVED path. This case
+# now pins that BOTH halves of that history are true in-source — the fence
+# states what it resolves AND its residual (TOCTOU) limit, never letting a
+# reader infer more safety than it actually provides (§11.4.6).
 #
 # R2-N2 is a real DENY, not just a sentence: `/home/<user>` clears the depth
 # floor and is deliberately not denylisted (`/home/<user>/Downloads` is an
@@ -2721,14 +2725,16 @@ fi
 # still really repair end to end.
 # ===========================================================================
 echo
-echo "Case 24: the fence names its symlink limit and denies container storage without refusing \$HOME (R2-N1, R2-N2)"
+echo "Case 24: the fence names its symlink resolution + its residual limit, and denies container storage without refusing \$HOME (R2-N1, R2-N2)"
 
-# --- R2-N1: the honest boundary states the intermediate-symlink limit -------
+# --- R2-N1: the honest boundary states BOTH that intermediate symlinks are
+#     now resolved AND the residual (TOCTOU) limit that resolving does not
+#     remove — never letting a reader infer more safety than is provided ----
 if grep -qiE 'intermediate|NON-FINAL component' "${LIB}" \
-   && grep -qi 'judges the spelling' "${LIB}"; then
-    pass "fence boundary [R2-N1]: the fence's honest boundary states that it judges the SPELLING and that the kernel resolves intermediate components"
+   && grep -qi 'resolved, not merely spelled' "${LIB}"; then
+    pass "fence boundary [R2-N1]: the fence's honest boundary states that intermediate components are RESOLVED, not merely spelled, and names its residual limit"
 else
-    fail "fence boundary [R2-N1]: the fence declares its limits without naming static intermediate-symlink resolution — a reader can infer symlink safety the fence does not provide (§11.4.6)"
+    fail "fence boundary [R2-N1]: the fence declares its limits without naming its intermediate-symlink resolution — a reader can infer more, or less, safety than the fence actually provides (§11.4.6)"
 fi
 # THE STRING IS NOT THE TRACKING (R3-M1, MEASURED 2026-08-26). Round 3 cited
 # BOB-159 here; that item's 4674-character body contains ZERO occurrences of
@@ -2897,5 +2903,148 @@ if [[ "${RUN_RC}" -eq 0 ]] && [[ "$(wrong_owned_count "${SB24}/fakehome/Download
 else
     fail "fence boundary [golden-FALSE end-to-end]: exit ${RUN_RC}, $(wrong_owned_count "${SB24}/fakehome/Downloads") item(s) still wrongly owned — the container-storage deny broke a legitimate \$HOME-rooted root"
 fi
+
+# ===========================================================================
+# CASE 25 — AN INTERMEDIATE SYMLINK IS RESOLVED, NOT JUST SPELLED (BOB-201).
+#
+# Case 24's R2-N1 recorded, as a DOCUMENTED LIMIT, that an EXISTING symlink at
+# a NON-FINAL component of a declared path steers the walk to the link's
+# TARGET while the (deliberately lexical) fence judges only the link's own
+# SPELLING — no race required, MEASURED with a real `…/piv/hop → real` link.
+# BOB-201 is the operator-owned decision on that limit: resolve (realpath) and
+# re-fence, rather than keep accepting it. This case is that decision's RED
+# test, and — once the fix lands — its regression guard.
+#
+# WHY THIS DRIVES ownership_path_fence() DIRECTLY, not the CLI: the defect is
+# in the PREDICATE, and Case 8/9 already prove the WALK stays fenced once the
+# predicate is right (find's own -P never descends an internal symlink). What
+# was missing is upstream of the walk entirely.
+#
+# THE RESOLUTION COMMAND, MEASURED on THIS host (2026-09-23; /usr/bin/readlink
+# and /usr/bin/realpath here are the uutils-coreutils 0.8.0 reimplementation,
+# NOT GNU — see BOB-220 for why that distinction is load-bearing on this exact
+# host, and never trust a man page over a real run here, §11.4.6):
+#
+#   (a) every component exists ......... readlink -f  -> resolves, rc=0
+#   (b)/(c) intermediate is a REAL symlink,
+#       leaf does not exist yet ........ readlink -f  -> resolves through the
+#                                          symlink, appends the missing leaf
+#                                          lexically, rc=0
+#   (d) the LEAF ITSELF is a dangling
+#       symlink (no further components) . readlink -f  -> prints the dangling
+#                                          target text, rc=0 (this fence does
+#                                          not resolve the FINAL component at
+#                                          all — see WHY BELOW)
+#   an intermediate component that is a
+#   BROKEN symlink WITH more path after
+#   it ................................. readlink -f  -> EMPTY output, rc=1
+#   (e) a symlink LOOP ................. readlink -f  -> EMPTY output, rc=1
+#   a component that plain DOES NOT
+#   EXIST AT ALL (never a symlink) ..... readlink -f  -> EMPTY output, rc=1
+#
+# The LAST row is why `readlink -f`/`realpath -e` on the WHOLE path cannot be
+# used directly: it cannot tell "an existing symlink could not be resolved"
+# (refuse, §11.4.252) apart from "this declared root has simply not been
+# created yet" (E1 — data-model's own supported case: an absent NON-optional
+# entry already fails per-entry at ownership_repair.sh's own `[[ ! -e
+# "${e_path}" ]]` check, and the fence turning that into a whole-scope refusal
+# it never was before would be a NEW §11.4.201(1) false-positive this fix must
+# not introduce). So resolution below walks the path ONE COMPONENT AT A TIME:
+# a component that does not exist at all (no `-e`, no `-L` — a real ENOENT,
+# never a symlink, since a symlink that exists as a directory ENTRY is always
+# `-L` true even when its target is dangling) is appended lexically and
+# resolution STOPS there, exactly matching the pre-fix (lexical) answer for
+# that case; a component that IS a symlink is resolved with `readlink -f` and
+# an unresolvable result (rc<>0, empty, or non-absolute) REFUSES.
+#
+# WHY THE FINAL COMPONENT IS NEVER RESOLVED: Case 17 already pins that a
+# symlinked FINAL component is contained by find's own -P (it does not descend
+# it), and that is a SEPARATE, already-closed question from BOB-201's — an
+# INTERMEDIATE component that steers the WALK ITSELF outside the declared
+# scope. Resolving the final component too would risk a new false-positive
+# refusal of an already-supported, already-tested case for no security gain
+# (§11.4.201(1)), so this fix stays scoped to the defect it closes.
+# ===========================================================================
+echo
+echo "Case 25: an intermediate symlink is resolved before the fence judges the path (BOB-201)"
+
+_c25_fence() {
+    local label="$1" path="$2" was_rel="$3" root="$4" expect="$5" out rc
+    out="$(
+        # shellcheck disable=SC1090
+        source "${LIB}"
+        ownership_path_fence "${path}" "${was_rel}" "${root}" 2>&1
+    )"
+    rc=$?
+    if [[ "${expect}" == "refuse" ]]; then
+        if [[ "${rc}" -ne 0 ]]; then
+            pass "fence [${label}]: REFUSED — ${out}"
+        else
+            fail "fence [${label}]: ACCEPTED '${path}' — an intermediate symlink steered a declared path outside its scope and the fence waved it through (BOB-201, §11.4.252)"
+        fi
+    else
+        if [[ "${rc}" -eq 0 ]]; then
+            pass "fence [${label}]: ACCEPTED — ${out:-no output}"
+        else
+            fail "fence [${label}]: REFUSED '${path}' — ${out} — a false-positive refusal of a legitimate symlinked-but-in-scope path (§11.4.201(1))"
+        fi
+    fi
+}
+
+SB25="${RUN_ROOT}/c25"
+mkdir -p "${SB25}/project/piv" "${SB25}/project/legit_target" "${SB25}/outside/real/data"
+
+# an intermediate symlink that escapes the declared (relative) scope root
+ln -s "${SB25}/outside/real" "${SB25}/project/piv/escape"
+# an intermediate symlink that stays INSIDE the declared scope root — the
+# golden-FALSE half (§11.4.201(1)): a fence that over-refuses is a FAIL-bluff
+# of exactly the severity of one that under-refuses
+ln -s "${SB25}/project/legit_target" "${SB25}/project/piv/inscope"
+# a BROKEN (dangling) intermediate symlink — resolution cannot be determined
+ln -s "${SB25}/project/piv/does-not-exist-xyz" "${SB25}/project/piv/broken"
+# a symlink LOOP as an intermediate component
+ln -s "${SB25}/project/piv/loopB" "${SB25}/project/piv/loopA"
+ln -s "${SB25}/project/piv/loopA" "${SB25}/project/piv/loopB"
+# an intermediate symlink pointing at the filesystem root itself — the exact
+# catastrophic shape the fence's absolute-shape/depth-floor rule exists to
+# refuse (see the header block above ownership_path_fence), reached here via a
+# symlink instead of via `.env`
+ln -s "/" "${SB25}/project/piv/hop_root"
+
+# --- (RED) an intermediate symlink escapes a RELATIVE declared root --------
+_c25_fence 'relative escape via intermediate symlink' \
+    "${SB25}/project/piv/escape/data" 1 "${SB25}/project" refuse
+
+# --- golden-FALSE: an intermediate symlink that stays IN scope -------------
+_c25_fence 'relative symlink resolving back INSIDE scope' \
+    "${SB25}/project/piv/inscope/data" 1 "${SB25}/project" accept
+
+# --- an intermediate symlink escapes an ABSOLUTE declared root, landing on
+#     the filesystem root — recreates the fence's own motivating incident
+#     (a recursive walk of `/`) reached through a symlink -------------------
+_c25_fence 'absolute entry resolving to the filesystem root via symlink' \
+    "${SB25}/project/piv/hop_root/somewhere" 0 "${SB25}/project" refuse
+
+# --- a BROKEN intermediate symlink cannot be resolved -> fail-closed -------
+_c25_fence 'broken (dangling) intermediate symlink' \
+    "${SB25}/project/piv/broken/data" 1 "${SB25}/project" refuse
+
+# --- a symlink LOOP as an intermediate component -> fail-closed ------------
+_c25_fence 'intermediate symlink loop' \
+    "${SB25}/project/piv/loopA/data" 1 "${SB25}/project" refuse
+
+# --- (c) intermediate symlink is REAL, only the LEAF is missing -----------
+# this is the legitimate "declared root before the first download created it"
+# case (Known cross-cutting hazard (c)) and MUST still be accepted.
+_c25_fence 'real intermediate symlink, leaf not yet created' \
+    "${SB25}/project/piv/inscope/not_yet_created_leaf" 1 "${SB25}/project" accept
+
+# --- a genuinely NONEXISTENT intermediate component, never a symlink at all,
+#     must still be accepted BY THE FENCE (E1: an absent non-optional entry
+#     fails later, per-entry, at ownership_repair.sh's own `-e` check — the
+#     fence must not turn that into a NEW whole-scope refusal it never was
+#     before) ------------------------------------------------------------
+_c25_fence 'ordinary not-yet-created path, no symlink anywhere' \
+    "${SB25}/project/never_created/deeper/leaf" 1 "${SB25}/project" accept
 
 finish

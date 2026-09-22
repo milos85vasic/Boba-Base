@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260923</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260923</h1>
+</header>
+<h1 id="bob-181-closure-evidence-2026-09-23">BOB-181 closure evidence —
+2026-09-23</h1>
+<h2
+id="status-fix-already-present-uncredited-on-main-since-2026-09-02">Status:
+fix already present, uncredited, on <code>main</code> since
+2026-09-02</h2>
+<p>Independent investigation (subagent + coordinator, both confirmed
+independently) found <code>scripts/generate_markdown_exports.sh</code>
+<strong>already</strong> implements fix direction (a) from the item’s
+own acceptance criteria: it accepts optional <code>.md</code> path
+arguments and, when given, scopes the run to exactly those files
+(hard-erroring on a non-existent/non-<code>.md</code> path), only
+falling back to the historical whole-tree sweep when invoked with zero
+arguments.</p>
+<pre><code>$ git log --oneline -1 60729c9 -- scripts/generate_markdown_exports.sh
+60729c9 fix(qbittorrent,start.sh): repair admin/admin WebUI login, boot abort, and untagged downloads</code></pre>
+<p>The argument-handling landed as an <strong>uncredited
+side-effect</strong> of that unrelated commit (2026-09-02) — its message
+never mentions BOB-181, and the tracker was never synced to this
+reality, leaving BOB-181 <code>Queued</code> against code that had
+already fixed it. This is exactly the doc/DB-vs-code drift class several
+other items closed this session were.</p>
+<h2
+id="independently-verified-this-session-coordinator-re-running-the">Independently
+verified this session (coordinator, re-running the</h2>
+<p>subagent’s own work from a clean shell)</p>
+<pre><code>$ git status --short tests/unit/test_generate_markdown_exports_path_arg.sh scripts/generate_markdown_exports.sh
+?? tests/unit/test_generate_markdown_exports_path_arg.sh</code></pre>
+<p>(<code>scripts/generate_markdown_exports.sh</code> carries no diff —
+genuinely untouched.)</p>
+<pre><code>$ bash tests/unit/test_generate_markdown_exports_path_arg.sh
+...
+  PASS: explicit-arg run: named target.md WAS converted (sanity — the run is not vacuous)
+  PASS: explicit-arg run: no decoy outside the requested scope was touched — run is correctly scoped
+  PASS: no-argument run: full-tree sweep behaviour is UNCHANGED (target + decoys all converted)
+RESULT: 3 passed, 0 failed</code></pre>
+<pre><code>$ bash tests/unit/test_generate_markdown_exports_path_arg.sh historical
+...
+  PASS: explicit-arg run: named target.md WAS converted (sanity — the run is not vacuous)
+  FAIL: explicit-arg run: a decoy OUTSIDE the requested scope was touched — argument was silently discarded (BOB-181)
+  ...
+RESULT: 2 passed, 1 failed</code></pre>
+<p>(RED evidence against the true pre-fix commit content
+<code>d61abdf</code>, embedded hermetically in the test as a fixture —
+the real historical defect genuinely reproduces; the current script
+genuinely does not.)</p>
+<h2 id="what-this-session-actually-added">What this session actually
+added</h2>
+<p>A permanent §11.4.135 regression guard,
+<code>tests/unit/test_generate_markdown_exports_path_arg.sh</code>,
+that: (1) proves the CURRENT script’s argument-scoping behaviour against
+a fully isolated <code>mktemp -d</code> tree (never touches the real
+repo tree), (2) proves the no-argument default (full sweep) is
+unchanged, (3) carries the true historical pre-fix script content as an
+embedded fixture so the defect this guard protects against can be
+demonstrated on demand without a live git history lookup, and (4) is
+deterministic (3 consecutive identical runs).</p>
+<h2 id="honest-boundary">Honest boundary</h2>
+<p>No source change was made — writing a fabricated “fix” onto code that
+already behaves correctly would itself have been a bluff
+(§11.4.115/§11.4.6). The genuine gap this session closes is the MISSING
+regression guard + the tracker/code attribution drift, not a code
+defect.</p>
+<h2 id="git-diff-stat">git diff –stat</h2>
+<pre><code>tests/unit/test_generate_markdown_exports_path_arg.sh | new file, 337 lines</code></pre>
+</body>
+</html>

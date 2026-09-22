@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260923</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260923</h1>
+</header>
+<h1 id="bob-193-closure-evidence-2026-09-23">BOB-193 closure evidence —
+2026-09-23</h1>
+<h2 id="fix-coordinator-decided-option-c-implemented">Fix
+(coordinator-decided option (c), implemented)</h2>
+<p><code>download-proxy/src/api/streaming.py</code>: the SSE dedup sets
+(<code>seen_hashes</code>, <code>seen_hashes_local</code>) previously
+wrote the hash BEFORE the yield/emit — a raising
+<code>format_event</code> therefore permanently dropped the result (its
+hash was already recorded, so no later poll would ever re-emit it), even
+though later polls of the SAME batch that hadn’t yet been added DID
+correctly re-emit — explaining the item’s observed “partial loss”
+symptom.</p>
+<p>Of the item’s three named options — (a) do nothing/log-only, (b)
+add-after- success (risks an unbounded hot loop on a deterministic
+failure), (c) keep add-before-yield but discard the hash on emit failure
+so exactly one retry occurs — the coordinator chose (c): it fixes the
+reported defect (a transient failure is no longer permanently dropped)
+without introducing a new unbounded-retry risk.</p>
+<p><strong>Exact bound implemented</strong>: at most 2 total emit
+attempts per result, per stream, ever (1 initial + at most 1 retry) —
+via a second per-site tracking set (<code>retry_attempted_hashes</code>
+/ <code>retry_attempted_local</code>) recording which hashes have
+already had one failed attempt; a hash’s SECOND failure is left recorded
+in <code>seen_hashes</code> (never discarded again), so no third attempt
+can occur. Applied at both dedup sites named in the item (main polling
+loop and completion-flush branch) — the completion-flush site’s own
+second-attempt path is honestly noted as currently dead code in practice
+(that branch executes at most once per stream lifetime today),
+implemented anyway for code-shape symmetry per the item’s explicit
+“measured at both sites” framing and defensive correctness if that
+control flow is ever refactored.</p>
+<h2
+id="independently-re-verified-this-session-coordinator-from-a-clean-shell">Independently
+re-verified this session (coordinator, from a clean shell,</h2>
+<p>including a genuine paired-mutation revert/restore)</p>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/test_streaming.py::TestBob193EmitFailureDedup -v --import-mode=importlib
+... 4 passed in 0.94s
+
+$ git stash push -m &quot;coordinator-verify-bob193-mutation&quot; -- download-proxy/src/api/streaming.py
+$ .venv/bin/python -m pytest tests/unit/test_streaming.py::TestBob193EmitFailureDedup -v --import-mode=importlib
+FAILED ...test_transient_emit_failure_is_retried_exactly_once_then_recovers
+FAILED ...test_deterministically_failing_result_is_bounded_never_an_infinite_retry_storm
+AssertionError: expected the flaky result to be emitted EXACTLY once after its one retry succeeded, got 0: []
+assert 0 == 1
+2 failed, 2 passed in 1.10s
+
+$ git stash pop
+$ .venv/bin/python -m pytest tests/unit/test_streaming.py::TestBob193EmitFailureDedup -v --import-mode=importlib
+... 4 passed in 0.80s</code></pre>
+<p>Genuine reproduction confirmed independently — reverting the source
+alone (test file untouched) reproduces the exact permanent-loss failure
+signature (<code>0 == 1</code>), and restoring the fix returns to
+green.</p>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/test_streaming.py -v --import-mode=importlib
+... 32 passed in 3.08s</code></pre>
+<p>No regressions across the full streaming test file.</p>
+<h2 id="honest-boundary-not-silenced">Honest boundary (not
+silenced)</h2>
+<p>The completion-flush dedup site’s own second-attempt branch is
+currently unreachable in practice given today’s control flow (noted
+above) — harmless and correct if reached, but not independently
+exercised by real traffic today; only its sibling test
+(<code>test_completion_flush_site_also_discards_hash_on_emit_failure</code>,
+which observes exactly 1 attempt there) covers it.</p>
+<h2 id="git-diff-stat">git diff –stat</h2>
+<pre><code>download-proxy/src/api/streaming.py |  89 +++++++++++-
+tests/unit/test_streaming.py        | 282 +++++++++++++++++++++++++++++++++++-
+2 files changed, 364 insertions(+), 7 deletions(-)</code></pre>
+</body>
+</html>

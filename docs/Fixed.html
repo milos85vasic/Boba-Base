@@ -175,8 +175,8 @@
 </head>
 <body>
 <h1 id="fixed-closed-workable-items">Fixed — Closed Workable Items</h1>
-<p><strong>Revision:</strong> 39 <strong>Last modified:</strong>
-2026-09-22T22:30:19Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 41 <strong>Last modified:</strong>
+2026-09-22T23:35:20Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Closed items
 only. Open items live in <a
 href="Issues.md"><code>Issues.md</code></a>.</p>
@@ -4025,5 +4025,443 @@ session.</p>
 while surveying invariant 30 more widely than its brief required — the
 T042 preflight had verified only 3 of 38 suites and stated that boundary
 honestly, which is what prompted the wider survey.</p>
+<h2
+id="bob-165-every-documented-python3--m-pytest-command-fails-at-collection-user-site-rpds-carries-a-3.13-abi-extension-under-python-3.14">BOB-165
+— Every documented python3 -m pytest command fails at collection:
+user-site rpds carries a 3.13 ABI extension under python 3.14</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong>
+docs/qa/BOB-165/closure_evidence_20260923.md <strong>Severity:</strong>
+High <strong>Created-By:</strong> surfaced while capturing closure
+evidence for BOB-092; diagnosed rather than worked around</p>
+<p><strong>Reported-Via:</strong> §11.4.202 reporting directive
+<code>bug</code> on 2026-08-21T20:00:08Z <strong>Reported-By:</strong>
+surfaced while capturing closure evidence for BOB-092; diagnosed rather
+than worked around</p>
+<p><strong>What (the report, verbatim):</strong> This is a
+STALE-ABI-AFTER-INTERPRETER-UPGRADE defect, not a missing package. The
+package is installed; its compiled half is built for the previous
+interpreter. That distinction matters because ‘pip install rpds-py’
+style advice can appear to succeed while leaving the 313 artefact in
+place.</p>
+<p>WHY IT WAS NOT NOTICED EARLIER, stated as fact: the paths that DO
+work all avoid system python3. ci.sh selects an interpreter through
+_select_python; the long-running suites in this session ran
+.venv/bin/python -m pytest and passed. So the automated regime is green
+while the DOCUMENTED operator command is broken – an 11.4.238-shaped
+gap, since the escape was found by an agent capturing evidence rather
+than by the regime.</p>
+<p>WORKAROUND (measured, not theorised):
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 with the needed plugins passed
+explicitly (-p pytest_timeout …) avoids the schemathesis autoload that
+drags in jsonschema -&gt; referencing -&gt; rpds. That is a workaround,
+NOT the fix: it silences the import path rather than repairing the
+install, and it will surprise the next person who runs the documented
+command verbatim.</p>
+<p>RELATED, and worth deciding together rather than twice: BOB-154 wants
+.venv rebuilt on 3.12 to match the container (which runs CPython 3.12.13
+while both system and venv run 3.14.6). There are therefore THREE
+interpreters in play. Whoever rebuilds the venv should confirm rpds
+resolves for the TARGET interpreter afterwards, or this same class
+reappears one directory over.</p>
+<p>HONEST BOUNDARY (11.4.6): this item does NOT claim any test is wrong
+or any product code is broken. The product and the venv-run suites are
+unaffected. What is broken is the documented entry point.</p>
+<p><strong>Affected scope / file-scope manifest:</strong> host user
+site-packages (~/.local/lib/python3/site-packages/rpds/); every
+CLAUDE.md-documented ‘python3 -m pytest …’ invocation; any tooling that
+uses system python3 rather than .venv/bin/python</p>
+<p><strong>Reproduction / context:</strong> python3 -m pytest
+tests/e2e/test_live_stack_evidence.py -q –import-mode=importlib -&gt;
+ModuleNotFoundError: No module named ‘rpds.rpds’, raised during
+collection via the schemathesis plugin autoload -&gt; jsonschema -&gt;
+referencing._core -&gt; rpds. MEASURED root cause: system python3 is
+3.14.6, but ~/.local/lib/python3/site-packages/rpds/ ships
+rpds.cpython-313-x86_64-linux-gnu.so – an extension built for 3.13.
+rpds/<strong>init</strong>.py does ’from .rpds import *‘, and a
+313-tagged .so is not importable by 3.14, so the submodule genuinely
+does not exist for this interpreter. The venv is CORRECT and unaffected:
+.venv/lib64/python3/site-packages/rpds/ ships
+rpds.cpython-314-x86_64-linux-gnu.so and’.venv/bin/python -c import
+rpds’ succeeds.</p>
+<p><strong>Acceptance criteria:</strong> python3 -m pytest tests/unit/
+-v –import-mode=importlib – the command CLAUDE.md documents – reaches
+collection without ModuleNotFoundError, OR CLAUDE.md is corrected to
+document the supported runner explicitly. Either way the documented
+command and the working command agree (11.4.99: a guide that misleads is
+the documentation-layer equivalent of a PASS-bluff).</p>
+<p>WORKAROUND SIDE EFFECTS MEASURED 2026-08-21 — the recipe is not free,
+and the item previously implied it was. PYTEST_DISABLE_PLUGIN_AUTOLOAD=1
+disables ALL plugin autoload, not just the broken one, so anything the
+suite silently relied on must be re-enabled by hand:</p>
+<ul>
+<li>It BREAKS 5 pre-existing env-dependent tests in
+tests/unit/test_plugin_rutracker.py — TestConfig::test_default_mirrors,
+test_env_mirrors_override, test_get_env_with_default,
+test_get_mirrors_from_env_empty, test_get_mirrors_from_env_whitespace —
+which need an autoloaded env plugin. PROVEN not caused by any in-flight
+change: running HEAD’s OWN copy of that file under identical flags
+produces the same 5 failures.</li>
+<li>It makes –timeout=60 (set in pyproject.toml) an UNKNOWN ARGUMENT
+unless -p pytest_timeout is passed explicitly, so pytest.mark.timeout is
+silently inert under the naive recipe — a test believed to be
+time-bounded is not.</li>
+<li>With autoload ON and only schemathesis disabled (-p
+no:schemathesis), that same file is 96/96 green.</li>
+</ul>
+<p>CONSEQUENCE FOR ANYONE USING THE WORKAROUND:
+<code>-p no:schemathesis</code> alone is strictly better than blanket
+autoload-disabling where it suffices, because it removes only the broken
+plugin. Where the blanket form IS used, -p pytest_timeout must be added
+or timeouts are inert, and the 5 env-dependent failures must be
+recognised as workaround artifacts rather than filed as defects. That
+last point is the real risk: the workaround manufactures failures that
+look exactly like product defects.</p>
+<p>This does not change the root cause (the venv’s rpds ships a
+cpython-313 ABI tag CPython 3.14 cannot import) or the fix (rebuild the
+venv — BOB-154). It documents that the interim recipe has a blast
+radius, so nobody reads a workaround artifact as a regression.</p>
+<h2
+id="bob-181-export-generator-silently-ignores-a-path-argument-and-always-scans-the-whole-tree">BOB-181
+— Export generator silently ignores a path argument and always scans the
+whole tree</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong>
+docs/qa/BOB-181/closure_evidence_20260923.md <strong>Severity:</strong>
+High <strong>Created-By:</strong> Claude <strong>Assigned-To:</strong>
+Claude</p>
+<p>WHAT: scripts/generate_markdown_exports.sh accepts no arguments. It
+unconditionally scans PROJECT_ROOT/*.md, docs/ recursively and scripts/
+recursively (scan loops at lines 105/111/116 as of 2026-08-23; they were
+96-109 when this was filed — line numbers shifted with the BOB-169 fix,
+the substance is unchanged and was independently verified by execution:
+invoking the generator with an explicit path produced an out-of-scope
+export and NOT the requested one), and PROJECT_ROOT is derived from
+BASH_SOURCE (line 17). A caller who writes ‘bash
+scripts/generate_markdown_exports.sh docs/qa/SOME/file.md’ gets a
+WHOLE-TREE run with the argument silently discarded.</p>
+<p>WHY IT MATTERS: the caller reasonably believes the run was scoped to
+one file. It was not. In a shared checkout with parallel work streams
+this regenerates any export whose .md is newer than its derived files
+anywhere in the tree – landing artifacts in other streams’ scopes and,
+with the BOB-068 auto-commit hazard, into another stream’s commit.</p>
+<p>CLASS: a false affordance – the script’s interface implies a
+capability it does not have (11.4.201: an interface must mean what it
+claims).</p>
+<p>FIX DIRECTION: either accept optional path arguments and honour them
+(scoping the run to exactly those files), or REFUSE with a clear message
+when arguments are passed. Silently discarding them is the one option
+that must not remain.</p>
+<p>ACCEPTANCE: passing a path either scopes the run to it, or exits
+non-zero naming the unsupported argument. A RED capturing today’s
+silent-discard behaviour first (11.4.115).</p>
+<p>LIVE INSTANCE, MEASURED 2026-08-23 (this is no longer hypothetical):
+During the BOB-169 fix the conductor invoked the generator with an
+explicit path to regenerate ONE document. The argument was discarded and
+the whole tree was scanned. It generated
+docs/qa/BOB-174/DESIGN_DECISION.{html,pdf,docx} at 11:50 – a SIBLING
+STREAM’s document, while that stream’s author was still editing the
+source (.md mtime 12:00). The exports were therefore stale on arrival,
+and additionally carried the pre-fix BOB-169 charset defect. The sibling
+author independently reported them as stale in its own hand-off, having
+no idea another stream had created them.</p>
+SECOND-ORDER LESSON worth keeping with this item: the conductor’s
+attempt to verify the blast radius ALSO failed, and failed silently.
+‘git status –porcelain | grep -E “.(html|pdf)$”’ returned only its own
+files and read as clean – but docs/qa/BOB-174/ is an UNTRACKED
+DIRECTORY, which porcelain collapses to a single line, so the grep was
+structurally incapable of seeing the files inside it (11.4.201(7)(a):
+matched the wrong surface; the quiet zero read as absence). The
+instrument that DOES see it is ’find
+<dir>
+<p>-newermt <t>‘. Any future verification of ’which files did this run
+touch’ must not use porcelain output as the corpus.</p>
+<h2
+id="bob-193-sse-result-loss-is-add-before-yield-a-raising-emit-permanently-drops-a-result-and-the-dedup-set-already-recorded-it">BOB-193
+— SSE result loss is add-before-yield: a raising emit permanently drops
+a result and the dedup set already recorded it</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong>
+docs/qa/BOB-193/closure_evidence_20260923.md</p>
+<p>WHAT: in download-proxy/src/api/streaming.py the dedup set is written
+BEFORE the yield — seen_hashes.add() / seen_hashes_local.add() execute
+at :317 and :356 ahead of emitting. If format_event raises, the result
+is never sent AND its hash is already recorded, so it is permanently
+dropped. Independently verified by the §11.4.209 reviewer at both sites:
+mid-search the hash persists across subsequent polls so the result never
+re-emits; at completion the stream breaks immediately after, so there is
+no later chance either. Results later in the SAME batch are not yet
+added and do re-emit on the next poll, which is why the observed symptom
+is partial loss rather than total. WHY IT IS FILED SEPARATELY: the
+§11.4.252 fail-open pass made this loss OBSERVABLE by adding a log line,
+which is the right first move — but observability is not repair. The
+underlying at-most-once semantics remain, and per §11.4.226(5) a
+mitigation cannot close the defect it mitigates. THE DECISION IS A REAL
+TRADE, not an oversight to correct blindly: moving to
+add-after-successful-yield gives at-least-once, but a DETERMINISTIC
+serialization failure would then retry the same result on every poll
+forever — trading silent loss for a hot loop. Options are (a) keep
+at-most-once and treat the log line as the contract, (b)
+add-after-successful-yield with a bounded per-hash retry budget, (c)
+add-before-yield but remove the hash on emit failure so exactly one
+retry occurs. ACCEPTANCE: an explicit decision recorded, implemented,
+and covered by a test that drives a raising emit and asserts the chosen
+semantics — with a RED observed first per §11.4.115. Raised as MINOR-1
+by the independent review of the fail-open batch; filed rather than
+absorbed so the residual defect is not retired along with the logging
+that revealed it.</p>
+<h2
+id="bob-229-two-qbittorrent-webui-credentials-gatetest-files-never-committed-since-2026-09-01-silently-swallowed-by-.gitignores-credentials-glob">BOB-229
+— Two qBittorrent-WebUI-credentials gate/test files never committed
+since 2026-09-01 — silently swallowed by .gitignore’s
+<em>credentials</em> glob</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong>
+docs/qa/BOB-229/closure_evidence_20260923.md <strong>Severity:</strong>
+Critical <strong>Created-By:</strong> AI</p>
+<p>Caught live by scripts/pre_build/check_gitignore_swallow.sh
+(BOB-212’s new invariant 56), the very first real-repo run after it was
+wired in. scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh
+and tests/pre_build/test_check_cm_qbittorrent_webui_credentials.sh
+existed on disk (executable, dated 2026-09-01) and were in DAILY
+FUNCTIONAL USE by pre_build_verification.sh invariant 53
+(CM-QBITTORRENT-WEBUI-CREDENTIALS, passing every run this session) yet
+were NEVER tracked by git: git ls-files returned nothing, git status
+–short returned nothing (the exact BOB-212 false-null), git check-ignore
+confirmed .gitignore:31:<em>credentials</em> was the blocking rule. Both
+files existed ONLY on this local checkout — a fresh clone, any other
+environment, or any disk loss would have silently lost an entire gate
+implementation plus its self-validated paired-mutation meta-test with
+zero signal. FIX: added explicit ! negation lines for both exact paths
+to .gitignore (matching the existing hand-maintained allowlist pattern
+at lines 34-50), confirmed git status now shows them as
+untracked-and-visible, confirmed
+scripts/pre_build/check_gitignore_swallow.sh now reports OK, confirmed
+both files are still functional (bash -n clean, and the meta-test’s own
+8-case paired-mutation self-check passes 8/8). This item exists to
+record the incident per this project’s own §11.4.202 reporting-directive
+discipline (every discovered defect lands as a tracked item) even though
+it is being closed in the same session it was found.</p>
+<h2
+id="bob-201-ownership_repair-lexical-fence-does-not-resolve-intermediate-symlink-components---a-static-symlink-can-steer-the-walk-outside-the-declared-scope">BOB-201
+— ownership_repair lexical fence does not resolve intermediate symlink
+components - a static symlink can steer the walk outside the declared
+scope</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong>
+docs/qa/BOB-201/closure_evidence_20260923.md <strong>Severity:</strong>
+Medium</p>
+<p>WHAT: scripts/ownership_repair.sh fences declared scope entries
+LEXICALLY (string normalisation + prefix/traversal refusal). A lexical
+fence cannot see a symlink sitting at an INTERMEDIATE path component. A
+static (already-present, no race required) symlink in the middle of an
+otherwise-legal declared path steers the recursive walk at a tree the
+operator never declared. Measured by the T028 round-2 independent
+reviewer as surviving mutation M5.</p>
+<p>WHY IT IS FILED SEPARATELY: the in-source honest-boundary note and
+Case 24 fixture assert this reach is ‘tracked as BOB-159’. It is NOT.
+VERIFIED 2026-08-26 by direct query: BOB-159’s description is 4685 chars
+with ZERO occurrences of ‘symlink’ or ‘intermediate’ (control-needled -
+the body is readable through the same query path), and no item in the
+tracker recorded this reach at all. A dangling tracker citation means a
+real defect is recorded NOWHERE - the 11.4.214 lost-defect shape, where
+the pointer looks like coverage and is not. This item IS that record;
+the in-source note must now cite THIS id.</p>
+<p>SCOPE / SEVERITY BOUNDS, stated honestly (11.4.6): the reach is
+BOUNDED, not arbitrary. It requires an attacker or accident to have
+already placed a symlink inside a declared scope path. It is NOT
+reachable from the shipped config/owned_paths.yaml as it stands
+(shipped-scope control needle: 6 rows, RC=0). It is a real widening of
+what a recursive chown can touch, not a theoretical one - the reviewer
+measured it, no race needed.</p>
+<p>WHAT THIS ITEM DOES NOT CLAIM: that the lexical fence is broken. The
+fence does what it says - it refuses lexical escapes (‘/’, system trees,
+‘..’ climbs) and was verified doing so under 12 reviewer-authored
+mutations. This is a documented LIMIT of lexical fencing, now recorded
+as a real item instead of a citation to an unrelated one.</p>
+<p>ACCEPTANCE: (1) decide deliberately and record the decision - resolve
+components (realpath/-P semantics) and re-fence the resolved path, OR
+keep the lexical fence and state the limit as an accepted operator-owned
+risk; the choice is operator-owned per 11.4.66 because resolving makes
+the fence depend on filesystem state at check time, which has its own
+failure modes; (2) if resolution is chosen, a golden-FALSE set proving
+legitimate symlinked-but-in-scope download roots still walk (11.4.201(1)
+- a fence that over-refuses is a FAIL-bluff of equal severity); (3) the
+in-source note and the Case 24 fixture cite THIS item, not BOB-159; (4)
+paired 1.1 mutation: restore the un-resolved behaviour and the fixture
+MUST fail.</p>
+<h2
+id="bob-212-.gitignore-deny-all-credentials-glob-plus-a-hand-maintained-allowlist-silently-swallows-new-credential-named-source-files-a-false-null-in-the-commit-path-itself">BOB-212
+— .gitignore deny-all <em>credentials</em> glob plus a hand-maintained
+allowlist silently swallows NEW credential-named source files — a
+false-null in the commit path itself</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong>
+docs/qa/BOB-212/closure_evidence_20260923.md <strong>Severity:</strong>
+critical</p>
+<p>WHAT: .gitignore:31 is a deny-all glob <em>credentials</em>, followed
+by a HAND-MAINTAINED per-file allowlist of ! exceptions (lines 34-50).
+Any NEW source file whose name contains ‘credentials’ (or ‘creds’) is
+silently ignored: git add refuses it and git status shows NOTHING. The
+author gets no signal at all — the file simply does not exist as far as
+the commit path is concerned.</p>
+<p>HOW IT SURFACED: the BOB-204 stream authored a RED test named
+credentials_failclosed_test.go. It vanished. The agent noticed only
+because it went looking for the file it had just written. It renamed to
+bob204_failclosed_test.go to escape both <em>credentials</em> and
+<em>creds</em>, and the file became visible. A silent deliverable loss,
+caught by luck rather than by any gate.</p>
+<p>INDEPENDENTLY RE-CONFIRMED BY THE CONDUCTOR, control-needle proven:
+git check-ignore -v –no-index
+qBitTorrent-go/internal/jackettapi/credentials_failclosed_test.go -&gt;
+.gitignore:31:<em>credentials</em> (IGNORED) git check-ignore -v
+–no-index qBitTorrent-go/internal/jackettapi/zzz_probe_test.go -&gt; no
+match (NOT ignored) &lt;– the needle: instrument proven seeing, so the
+hit above is real git check-ignore -v –no-index
+frontend/e2e/credentials.spec.ts -&gt;
+.gitignore:31:<em>credentials</em> (IGNORED) git ls-files –error-unmatch
+frontend/e2e/credentials.spec.ts -&gt; tracked</p>
+<p>SECOND, LATENT INSTANCE: frontend/e2e/credentials.spec.ts is matched
+by the same rule and survives ONLY because it is already tracked (git
+honours the index over .gitignore for tracked paths). Delete-and-re-add
+it — an ordinary refactor, a branch operation, a file move — and it
+disappears silently. It is one routine operation away from being lost.
+(For contrast, credential-edit-dialog.component.spec.ts is genuinely
+safe: it is covered by the DIRECTORY rule
+!frontend/src/app/jackett/credentials/ at line 43, not by a per-file
+entry.)</p>
+<p>WHY THIS IS A §11.4.201(6) FALSE-NULL, NOT MERELY AN INCONVENIENCE:
+the blind instrument and the clean tree return the identical quiet zero.
+git status showing nothing means BOTH ‘no new files’ AND ‘a new file
+exists but is invisible’. There is no signal that distinguishes them.
+The commit path — the thing every other gate’s output eventually has to
+travel through — cannot see its own blindness.</p>
+<p>WHY IT IS NOT SIMPLY ‘ADD ANOTHER ! LINE’: that is the mechanism that
+produced the defect. A hand-maintained allowlist against a deny-all glob
+has the §11.4.251/§11.4.205 shape — every future legitimate
+credential-named source file needs a hand edit nobody will remember to
+make, and the failure mode of forgetting is SILENT. The same shape as
+BOB-205’s hand-maintained DANGER_ROOTS: a list that must be edited in
+lockstep with the tree, with no guard that notices when it was not.</p>
+<p>TENSION TO RESOLVE HONESTLY (§11.4.10 vs §11.4.201(1)): the glob
+exists for a real reason — §11.4.10 forbids credential material reaching
+git, and a broad deny-all is the conservative-safe default. Narrowing it
+carelessly would re-open a genuine leak channel. So the fix is NOT
+‘delete the glob’. Candidate directions, operator decision (§11.4.66):
+(a) narrow the deny to what actually carries secrets — extensions and
+directories (<em>.env, secrets/,
+</em>credentials*.json|yaml|yml|txt|enc) rather than every path
+containing the word; (b) keep the deny-all but add a GATE that FAILS
+when an untracked file matches an ignore rule AND lives under a
+first-party source root AND has a source extension, so the swallow
+becomes loud instead of silent; (c) both. (b) alone closes the
+false-null even if the glob stays exactly as it is, and is the smaller
+change.</p>
+<p>ACCEPTANCE: (1) a NEW credential-named source file under a
+first-party source root either commits normally or produces a LOUD
+refusal naming the rule that blocked it and the remedy — never silence;
+(2) a RED that creates such a file and asserts the current silence,
+flipping to the loud path post-fix (§11.4.115); (3) a golden-FALSE
+proving real secret material (a .env, a key) is STILL ignored — the
+§11.4.201(1) guard, because a fix that leaks credentials to close a
+false-null is strictly worse than the defect; (4)
+frontend/e2e/credentials.spec.ts is made safe by rule rather than by the
+accident of already being tracked.</p>
+<p>DISCOVERY CHANNEL (§11.4.238): found by the BOB-204 stream when its
+own deliverable disappeared — NOT by the automated QA regime, and not by
+any gate. Nothing in the repo checks that an authored file actually
+became visible to git. Coverage-escape audit: no surface exists for this
+class at all.</p>
+<p>=== SCOPED AND MEASURED 2026-08-26 — RECOMMENDATION (b), AND (a) IS
+DISPROVEN NOT MERELY DISFAVOURED ===</p>
+<p>TASK 1a — TRACKED FILES SURVIVING ONLY BY BEING TRACKED: <strong>3,
+not 157.</strong> A raw sweep of all 2795 tracked paths hit 157 ignore
+rules — but <strong>154 of those are NEGATIONS</strong> (! lines),
+i.e. explicitly re-included and safe BY RULE. Reporting 157 as the blast
+radius would have been a §11.4.201(1) false positive; the investigating
+stream caught this itself. Two independent instruments (check-ignore -v
+filtered on non-negated patterns, and bare check-ignore which emits only
+truly-excluded paths) produced IDENTICAL sets. 1.
+frontend/e2e/credentials.spec.ts — .gitignore:31 <em>credentials</em> —
+HAZARD (the known one, 109-line Playwright spec) 2.
+tests/security/test_jackett_autoconfig_secrets.py — .gitignore:51
+<em>secrets</em> — HAZARD, <strong>NOT NAMED IN THIS ITEM WHEN
+FILED</strong>. Conductor-verified: matched by :51, currently tracked.
+It is a 113-line SECURITY / PEN TEST asserting no credential value
+reaches an HTTP body, traceback, or log. Losing it silently would remove
+the test that guards §11.4.10 — the deny-all glob’s own purpose. That is
+the sharpest instance available: the rule protecting credentials is one
+refactor away from deleting the test that proves credentials are
+protected. 3. submodules/jackett — .gitignore:260 — NOT a hazard: mode
+160000 gitlink, and that entry is documented as deliberately inert for
+git (it steers CodeGraph per §11.4.79).</p>
+<p>THE MECHANIC THAT DECIDES THE FIX: the directory negation at :43
+re-includes the DIRECTORY ONLY. A new
+frontend/src/app/jackett/credentials/credentials.guard.ts is STILL
+swallowed by :31, because <em>credentials</em> contains no slash and is
+therefore BASENAME-scoped — the allowlisted directory buys nothing for
+new files. Of the 154 safe files, 124 are held by ONE robust glob
+negation (!docs/qa/**/*.log) and <strong>13 by fragile hand-maintained
+per-file entries</strong> (all 13 currently live, none stale — but each
+is a future silent loss).</p>
+<p>TASK 1b — ALREADY-SWALLOWED UNTRACKED FILES: 5 of 60,217
+ignored+untracked paths. Two are real losses (the tracker-credentials
+export twins and the BOB-124 .txt evidence — filed as their own item);
+set_password.py is recorded UNKNOWN: provenance and deliberately NOT
+called lost work; download-proxy/qbittorrent_creds.json is the POSITIVE
+CONTROL — shape-inspected keys-only (never values) as [password,
+username], genuinely credential-bearing, CORRECTLY ignored.</p>
+<p>TASK 2 — MEASURED IN A SCRATCH TREE, 10 source paths x 15 secret
+paths: baseline (full 316-line file) swallows 10 | leaks 0 (a) EXACTLY
+AS THIS ITEM WORDED IT swallows 0 | <strong>leaks 3</strong> (a)
+repaired to plug those 3 swallows 1 | leaks 1 (b) deny-all unchanged +
+loud gate swallows 0 | <strong>leaks 0</strong> (a) LEAKS
+download-proxy/qbittorrent_creds.json — A REAL CREDENTIAL FILE SITTING
+IN THE TREE TODAY — because <em>credentials</em>.json does not match
+“creds”. It also leaks my_password.txt and service_credentials.
+Repairing those still leaves service_credentials: <strong>an
+extension-scoped deny cannot cover EXTENSIONLESS secret files without
+collapsing back into the deny-all it was meant to replace.</strong> So
+(a) as this item worded it is DISPROVEN, not merely disfavoured — and I
+wrote (a) first in the candidate list, which was wrong. <strong>WHAT (b)
+NEWLY ALLOWS INTO GIT: NOTHING — the set is EMPTY.</strong> No pattern
+changes, so the §11.4.10-vs-§11.4.201(1) proof obligation discharges
+trivially. No variant of (a) can make that argument.</p>
+<p>TASK 3 — THE RED: tests/security/test_gitignore_swallow_is_loud.sh
+(filename verified not swallowed BEFORE writing — the joke this item is
+about). It asserts the acceptance DISJUNCTION (commits normally OR
+refuses loudly), so it is FIX-DIRECTION-AGNOSTIC and leaves the
+direction an operator decision. The load-bearing assertion is A3: git
+status is BYTE-IDENTICAL with and without the file — world A (authored)
+330ceb52074cdbbe, world B (never made) 330ceb52074cdbbe. That is the
+false-null proven directly, not argued. Proven NOT a tautology:
+RED_MODE=1 -&gt; exit 0; guard stand-in -&gt; exit 0; narrowed glob
+-&gt; exit 0; and the §1.1 mutation DELETING the globs -&gt;
+<strong>exit 2 with 11 leaks caught</strong>, which is what makes the
+golden-FALSE load-bearing rather than decorative. Exit 2 is deliberately
+distinct from exit 1 so a blind harness can never read it as “defect
+present”.</p>
+<p>BEYOND WHAT THIS ITEM FRAMED: it is not a
+<em>credentials</em>/<em>creds</em> problem. **secrets<em>,
+</em>_password* and *_user* have EACH already swallowed something
+real.** *_user* is the broadest — it will match any future *_user*.txt /
+.json evidence or fixture. The fix must be evaluated against the whole
+rule set, not the one glob that surfaced first.</p>
+<p>=== SECOND LIVE TRAP HIT, SAME SESSION (2026-08-26) === The BOB-207
+stream chose the natural filename
+tests/unit/test_ownership_user_owned_gid.sh for its RED.
+Conductor-verified: that path is SWALLOWED by .gitignore:60 *_user<em>.
+The stream checked before writing (having been warned) and renamed to
+test_ownership_gid_agreement.sh, which is clean. That is the SECOND
+deliverable in one session that the deny-all globs would have silently
+eaten — the first (BOB-204’s credentials_failclosed_test.go) was caught
+only after the fact. It also confirms this item’s own “beyond the item”
+warning empirically: </em>_user* is the broadest of the four globs and
+it caught a file whose name contains no secret and no credential —
+merely the word ‘user’ inside ‘user_owned’, which is the FEATURE’S OWN
+NAME (spec 002-user-owned-downloads). Any test named after this feature
+is a candidate for silent loss. Two hits in one session, from two
+independent streams, is not a coincidence rate — it is the defect
+operating normally.</p>
 </body>
 </html>

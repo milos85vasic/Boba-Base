@@ -1,7 +1,7 @@
 import asyncio
 import os
 import sys
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "download-proxy", "src"))
 
@@ -603,3 +603,283 @@ class TestSSEFormatCompliance:
 
         event = SSEHandler.format_event("update", {"key": "line1\nline2"})
         assert event.endswith("\n\n"), f"Multiline event should end with \\n\\n, got: {event!r}"
+
+
+class TestBob193EmitFailureDedup:
+    """BOB-193: ``seen_hashes`` / ``seen_hashes_local`` are written BEFORE
+    the yield in ``search_results_stream``. If ``format_event`` raises
+    after the hash was recorded, the result is never sent AND its hash is
+    already recorded -- so a purely TRANSIENT emit failure permanently
+    drops the result (mid-search: the hash persists across every later
+    poll; at completion: the stream ends immediately after, so there is no
+    later chance either).
+
+    DECISION (coordinator, recorded 2026-09-23, per docs/Issues.md
+    BOB-193): implement option (c) -- keep add-before-yield, but REMOVE
+    the hash on emit failure so exactly ONE retry occurs on the next poll.
+    Option (a) (do nothing) leaves the reported defect unfixed. Option (b)
+    (add-after-successful-yield) gives at-least-once but a DETERMINISTIC
+    failure would then retry forever every poll -- an unbounded hot loop,
+    strictly worse in the failure case that matters most. Option (c) is
+    bounded: at most 2 total emit attempts per result per stream (1
+    initial + 1 retry), never more, regardless of how many further polls
+    occur while that same result keeps failing.
+
+    This class carries the RED-baseline-on-the-broken-artifact +
+    polarity-switch evidence chain (§11.4.115): the assertion below was
+    FIRST authored to characterize the pre-fix defect (asserting the
+    flaky result is PERMANENTLY dropped -- zero ``result_found`` events
+    even though its retry attempt would have succeeded), run and
+    confirmed genuinely reproducing against the unfixed source (captured
+    as this change's RED evidence), THEN flipped to assert the fixed,
+    bounded-single-retry behaviour once option (c) landed. It is this
+    flipped (GREEN) assertion that ships as the permanent regression
+    guard; the pre-flip PASS-on-broken-code run is the RED evidence cited
+    in the accompanying report, not a second test left in the suite
+    (leaving both would make the suite self-contradictory).
+    """
+
+    async def _collect_limit(self, gen, max_iterations=200):
+        results = []
+        async for item in gen:
+            results.append(item)
+            if len(results) >= max_iterations:
+                break
+        return results
+
+    @staticmethod
+    def _make_result(name, result_hash):
+        class R:
+            hash = result_hash
+            seeds = 1
+            leechers = 0
+            tracker = "rutracker"
+            size = 100
+            link = f"magnet:?xt=urn:btih:{result_hash}"
+
+        R.name = name
+        return R()
+
+    def test_transient_emit_failure_is_retried_exactly_once_then_recovers(self):
+        """GREEN (post-fix, permanent regression guard).
+
+        A result whose FIRST ``format_event`` call raises and whose
+        SECOND (next-poll) call succeeds must appear in the SSE output
+        EXACTLY ONCE -- the one bounded retry recovered it. Pre-fix, this
+        same scenario produces ZERO ``result_found`` events for this
+        result (see the RED evidence captured for this change before the
+        source fix landed: this exact assertion, run against the
+        pre-fix ``streaming.py``, FAILS with ``0 == 1`` -- proving the
+        scenario genuinely reproduces BOB-193 rather than merely
+        asserting an assumption).
+        """
+        flaky = self._make_result("Flaky Result", "flaky-hash")
+
+        poll_count = [0]
+        TOTAL_RUNNING_POLLS = 4
+
+        class FakeMeta:
+            status = "running"
+            total_results = 1
+            merged_results = 0
+            trackers_searched = ["rutracker"]
+
+            def to_dict(self):
+                return {"status": "running", "total_results": 1}
+
+        class FakeOrchestrator:
+            def get_search_status(self, sid):
+                poll_count[0] += 1
+                if poll_count[0] > TOTAL_RUNNING_POLLS:
+                    m = FakeMeta()
+                    m.status = "completed"
+                    return m
+                return FakeMeta()
+
+            def get_live_results(self, sid):
+                # The orchestrator's live-result set is unaffected by a
+                # previously-failed emit attempt: the SAME flaky result
+                # keeps showing up on every poll until it is actually
+                # consumed (streamed out), or the search completes.
+                if poll_count[0] > TOTAL_RUNNING_POLLS:
+                    return []
+                return [flaky]
+
+        call_count = {"n": 0}
+        original_format_event = SSEHandler.format_event
+
+        def flaky_format_event(event, data, event_id=None):
+            if event == "result_found" and isinstance(data, dict) and data.get("name") == "Flaky Result":
+                call_count["n"] += 1
+                if call_count["n"] == 1:
+                    raise RuntimeError("simulated transient emit failure")
+            return original_format_event(event, data, event_id)
+
+        with patch.object(SSEHandler, "format_event", staticmethod(flaky_format_event)):
+            gen = SSEHandler.search_results_stream("sid", FakeOrchestrator(), poll_interval=0)
+            events = asyncio.run(self._collect_limit(gen))
+
+        result_events = [e for e in events if "result_found" in e and "Flaky Result" in e]
+        assert len(result_events) == 1, (
+            f"expected the flaky result to be emitted EXACTLY once after its "
+            f"one retry succeeded, got {len(result_events)}: {result_events}"
+        )
+        # Exactly 2 attempts: the failing first attempt + the successful retry.
+        assert call_count["n"] == 2, f"expected exactly 2 format_event attempts, got {call_count['n']}"
+
+    def test_success_path_dedup_is_unchanged(self):
+        """A result whose FIRST emit succeeds must still be deduped on
+        every later poll -- BOB-193's fix touches ONLY the emit-failure
+        path, never the success path (scope constraint, verified here).
+        """
+        ok = self._make_result("Solid Result", "solid-hash")
+
+        poll_count = [0]
+        TOTAL_RUNNING_POLLS = 4
+
+        class FakeMeta:
+            status = "running"
+            total_results = 1
+            merged_results = 0
+            trackers_searched = ["rutracker"]
+
+            def to_dict(self):
+                return {"status": "running", "total_results": 1}
+
+        class FakeOrchestrator:
+            def get_search_status(self, sid):
+                poll_count[0] += 1
+                if poll_count[0] > TOTAL_RUNNING_POLLS:
+                    m = FakeMeta()
+                    m.status = "completed"
+                    return m
+                return FakeMeta()
+
+            def get_live_results(self, sid):
+                if poll_count[0] > TOTAL_RUNNING_POLLS:
+                    return []
+                return [ok]
+
+        gen = SSEHandler.search_results_stream("sid", FakeOrchestrator(), poll_interval=0)
+        events = asyncio.run(self._collect_limit(gen))
+        result_events = [e for e in events if "result_found" in e and "Solid Result" in e]
+        assert len(result_events) == 1, (
+            f"success-path dedup regressed: expected exactly 1 emit across "
+            f"{TOTAL_RUNNING_POLLS} polls of the SAME live result, got "
+            f"{len(result_events)}: {result_events}"
+        )
+
+    def test_deterministically_failing_result_is_bounded_never_an_infinite_retry_storm(self):
+        """A result whose ``format_event`` ALWAYS raises must NOT be
+        retried forever.
+
+        EXACT BOUND IMPLEMENTED (stated precisely, not just "bounded",
+        per §11.4.6): at most 2 total emit ATTEMPTS per result per
+        stream -- the initial attempt plus exactly 1 retry. Once the
+        retry ALSO fails, the hash is left recorded permanently, so a
+        3rd, 4th, ... Nth poll of the SAME still-failing result makes
+        ZERO further ``format_event`` calls for it. Polling itself stays
+        unbounded in COUNT (the stream keeps polling every
+        ``poll_interval`` until the search completes or the client
+        disconnects) -- what is bounded is the number of emit ATTEMPTS
+        made for one given result, which is exactly 2, never more,
+        regardless of how many further polls occur.
+        """
+        cursed = self._make_result("Cursed Result", "cursed-hash")
+
+        poll_count = [0]
+        TOTAL_RUNNING_POLLS = 10  # far more than the 2-attempt bound
+
+        class FakeMeta:
+            status = "running"
+            total_results = 1
+            merged_results = 0
+            trackers_searched = ["rutracker"]
+
+            def to_dict(self):
+                return {"status": "running", "total_results": 1}
+
+        class FakeOrchestrator:
+            def get_search_status(self, sid):
+                poll_count[0] += 1
+                if poll_count[0] > TOTAL_RUNNING_POLLS:
+                    m = FakeMeta()
+                    m.status = "completed"
+                    return m
+                return FakeMeta()
+
+            def get_live_results(self, sid):
+                # Isolate this test to the "running"-loop dedup set
+                # (seen_hashes): no pending results are left for the
+                # completion-flush branch (seen_hashes_local), which is
+                # covered separately below.
+                if poll_count[0] > TOTAL_RUNNING_POLLS:
+                    return []
+                return [cursed]
+
+        call_count = {"n": 0}
+        original_format_event = SSEHandler.format_event
+
+        def cursed_format_event(event, data, event_id=None):
+            if event == "result_found" and isinstance(data, dict) and data.get("name") == "Cursed Result":
+                call_count["n"] += 1
+                raise RuntimeError("simulated deterministic (permanent) emit failure")
+            return original_format_event(event, data, event_id)
+
+        with patch.object(SSEHandler, "format_event", staticmethod(cursed_format_event)):
+            gen = SSEHandler.search_results_stream("sid", FakeOrchestrator(), poll_interval=0)
+            events = asyncio.run(self._collect_limit(gen))
+
+        assert not any("result_found" in e and "Cursed Result" in e for e in events)
+        assert any("search_complete" in e for e in events), "stream must not hang/crash on a permanently-failing result"
+        assert call_count["n"] == 2, (
+            f"expected exactly 2 emit attempts (1 initial + 1 bounded retry) "
+            f"across {TOTAL_RUNNING_POLLS} polls, got {call_count['n']} -- "
+            f"an unbounded retry-storm regression"
+        )
+
+    def test_completion_flush_site_also_discards_hash_on_emit_failure(self):
+        """The SAME add-before-yield-then-discard-on-failure fix must be
+        applied at the OTHER dedup site (``seen_hashes_local`` in the
+        ``status in ("completed", "failed")`` completion-flush branch,
+        around the original line ~356) -- the item explicitly measured
+        the defect at BOTH sites. A single completion pass cannot itself
+        demonstrate a cross-poll retry (there is no later poll once the
+        stream ends), so this test asserts what IS observable there:
+        a raising completion-flush emit does not corrupt the dedup set
+        or crash the stream, and ``search_complete`` still lands.
+        """
+        completion_only = self._make_result("Completion Only Result", "completion-only-hash")
+
+        class FakeMeta:
+            status = "completed"
+            total_results = 1
+            merged_results = 0
+            trackers_searched = ["rutracker"]
+
+            def to_dict(self):
+                return {"status": "completed", "total_results": 1}
+
+        class FakeOrchestrator:
+            def get_search_status(self, sid):
+                return FakeMeta()
+
+            def get_live_results(self, sid):
+                return [completion_only]
+
+        call_count = {"n": 0}
+        original_format_event = SSEHandler.format_event
+
+        def flaky_format_event(event, data, event_id=None):
+            if event == "result_found" and isinstance(data, dict) and data.get("name") == "Completion Only Result":
+                call_count["n"] += 1
+                raise RuntimeError("simulated completion-flush emit failure")
+            return original_format_event(event, data, event_id)
+
+        with patch.object(SSEHandler, "format_event", staticmethod(flaky_format_event)):
+            gen = SSEHandler.search_results_stream("sid", FakeOrchestrator(), poll_interval=0)
+            events = asyncio.run(self._collect_limit(gen))
+
+        assert not any("result_found" in e and "Completion Only Result" in e for e in events)
+        assert any("search_complete" in e for e in events)
+        assert call_count["n"] == 1, "single completion pass: exactly one attempt is possible, no cross-poll retry exists here"
