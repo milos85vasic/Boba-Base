@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260922</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260922</h1>
+</header>
+<h1 id="bob-202-closure-evidence-2026-09-22">BOB-202 closure evidence —
+2026-09-22</h1>
+<h2 id="fix">Fix</h2>
+<p>Root cause confirmed: TAB is an IFS-whitespace character in bash even
+with IFS explicitly set to a single tab, so
+<code>while IFS=$'\t' read -r e_path e_kind e_opt e_pres e_rec</code>
+collapses a RUN of consecutive tabs (an empty <code>kind</code> field)
+into one delimiter, shifting every later field left by one.</p>
+<p>Found the project’s own existing precedent for the correct fix:
+<code>scripts/ownership_precondition.sh</code> already ships
+<code>split_tsv()</code> (<code>readarray -d $'\t'</code>) for exactly
+this row shape. Per §11.4.251 (one dialect for one question — never
+reinvent), this was promoted into the shared library as
+<code>ownership_split_tsv()</code> in
+<code>scripts/lib/ownership.sh</code> (both scripts already
+<code>source</code> it). <code>ownership_repair.sh</code>’s scope-entry
+read loop now calls it instead of <code>IFS=$'\t' read</code>.
+<code>ownership_precondition.sh</code>’s own pre-existing
+<code>split_tsv()</code> was left untouched (out of scope, zero risk,
+already correct).</p>
+<h2
+id="redgreen-evidence-real-repair-runs-with-an-optional-true-kind-omitted-scope-entry">RED/GREEN
+evidence (real repair runs with an <code>optional: true</code>,
+<code>kind</code>-omitted scope entry)</h2>
+<p>Pre-fix: “declared path does not exist and is not optional” (hard
+failure, rc=1) — the <code>optional</code> boolean landed in
+<code>kind</code>’s slot instead. Post-fix: “declared optional —
+skipped” (rc=0, correctly honours the declaration).</p>
+<h2 id="golden-false">Golden-FALSE</h2>
+<p>A fully-specified row (<code>kind</code> present) parses identically
+before and after.</p>
+<h2 id="independently-re-verified-this-session">Independently
+re-verified this session</h2>
+<pre><code>$ bash tests/unit/test_ownership_repair_scope_tsv.sh
+  PASS: control: the pre-fix reader reproduces the reported field-shift (treated non-optional, hard-fails) under this identical harness, proving Case 1 is discriminating
+RESULT: 3 passed, 0 failed, 0 skipped</code></pre>
+<p>Plus the full <code>tests/unit/test_ownership_repair.sh</code>
+(146/146) — confirms no regression to the 6 shipped
+<code>config/owned_paths.yaml</code> entries (all carry
+<code>kind</code>, so this was a latent-defect fix, not a live-behavior
+change, per the item’s own “NOT reachable from the shipped config today”
+statement).</p>
+<p>See <code>docs/qa/BOB-208/closure_evidence_20260922.md</code> for the
+combined <code>git diff --stat</code>.</p>
+</body>
+</html>

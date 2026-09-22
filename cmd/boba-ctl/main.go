@@ -495,32 +495,46 @@ func expandHome(p string) string {
 // authMethod maps the hosts.yaml `auth` field onto the containers submodule's
 // remote.AuthMethod closed set. "key" is the deploy registry's shorthand for
 // SSH-key auth (the submodule const is "ssh_key").
-func authMethod(s string) remote.AuthMethod {
+//
+// BOB-215 (§11.4.252 fail-closed-on-dangerous-combination): this decision
+// selects the CREDENTIAL MECHANISM for a path that also performs remote
+// mutation + an external side effect (a deploy action), so an unrecognised,
+// misspelled, or empty "auth:" value MUST refuse rather than silently
+// resolve to any auth method — substituting a default credential mechanism
+// for a declaration the code never actually understood is exactly the
+// fail-open shape this constitution forbids.
+func authMethod(s string) (remote.AuthMethod, error) {
 	switch strings.ToLower(strings.TrimSpace(s)) {
 	case "key", "ssh_key", "ssh-key":
-		return remote.AuthSSHKey
+		return remote.AuthSSHKey, nil
 	case "agent", "ssh_agent", "ssh-agent":
-		return remote.AuthSSHAgent
+		return remote.AuthSSHAgent, nil
 	case "password":
-		return remote.AuthPassword
+		return remote.AuthPassword, nil
 	default:
-		return remote.AuthSSHKey
+		return "", fmt.Errorf("deploy hosts config: invalid \"auth\" value %q (must be one of: key, ssh_key, ssh-key, agent, ssh_agent, ssh-agent, password)", s)
 	}
 }
 
 // toRemoteHost converts a parsed deployHost into the containers submodule's
 // remote.RemoteHost (§11.4.76 — the SSH executor + remote compose orchestrator
-// consume this type; we do NOT shell out to ssh ourselves).
-func (h *deployHost) toRemoteHost() remote.RemoteHost {
+// consume this type; we do NOT shell out to ssh ourselves). It returns an
+// error (never a silently-substituted default) when the host's declared
+// "auth:" value does not resolve to a recognised auth method (BOB-215).
+func (h *deployHost) toRemoteHost() (remote.RemoteHost, error) {
+	auth, err := authMethod(h.Auth)
+	if err != nil {
+		return remote.RemoteHost{}, fmt.Errorf("host %q: %w", h.Name, err)
+	}
 	return remote.RemoteHost{
 		Name:    h.Name,
 		Address: h.Address,
 		Port:    h.Port,
 		User:    h.User,
 		KeyPath: expandHome(h.KeyPath),
-		Auth:    authMethod(h.Auth),
+		Auth:    auth,
 		Runtime: h.Runtime,
-	}
+	}, nil
 }
 
 func cmdDeploy() {
@@ -556,7 +570,11 @@ func cmdDeploy() {
 		composeFile = "docker-compose.yml"
 	}
 
-	host := dh.toRemoteHost()
+	host, err := dh.toRemoteHost()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 	logger := logging.NewStdLogger("boba-ctl-deploy")
 
 	// §11.4.76: drive the remote boot through the containers submodule's

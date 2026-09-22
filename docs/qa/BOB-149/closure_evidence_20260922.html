@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260922</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260922</h1>
+</header>
+<h1 id="bob-149-closure-evidence-2026-09-22">BOB-149 closure evidence —
+2026-09-22</h1>
+<h2 id="finding">Finding</h2>
+<p>BOB-149 (“Managed-plugin count diverges 43/42/48 across constitution,
+CLAUDE.md and the README badge”) is already resolved in the current
+working tree — fixed by prior commits <code>60729c9</code> and
+<code>9e443d0</code> (“fix(constitution,docs): … refresh stale
+README/TESTING badges”) before this session started. The tracker entry
+(<code>docs/Issues.md</code>, Status: Queued) is stale relative to the
+codebase.</p>
+<p>Independently re-verified this session by a dedicated subagent. Zero
+file edits were made (<code>git diff --stat</code> on every relevant
+file is empty).</p>
+<h2 id="verification">Verification</h2>
+<p>Real count, control-needle verified against
+<code>install-plugin.sh</code>’s <code>PLUGINS=()</code> array
+(extraction validated by confirming known members
+<code>"academictorrents"</code>, <code>"rutracker"</code>,
+<code>"yts"</code> all present before trusting the count): <strong>43
+entries</strong>.</p>
+<p>Current state of the three previously-divergent locations: -
+<code>.specify/memory/constitution.md:632</code> — “every managed plugin
+(43” — already correct. - <code>CLAUDE.md:265</code> — “<strong>43
+search-plugin engines</strong> … <!-- CM-PLUGIN-COUNT: curated -->” —
+already correct. (The “42” the bug cites survives only as historical
+narrative at CLAUDE.md:260 documenting the bug itself, not a live
+claim.) - <code>README.md:30</code> — badge reads
+<code>plugins-43-blue</code> (not 48); README.md:224 prose says “the 43
+plugin engines” — already correct.</p>
+<p>Remaining hits for the old wrong numbers (“42 managed plugin”,
+“plugins-48”) are all intentional: the gate scripts’ own “why this
+exists” commentary
+(<code>scripts/pre_build/check_cm_plugin_count.sh</code>), the
+constitution’s historical Sync Impact Report entry describing drift as
+of when it was authored, the bug report itself
+(<code>docs/Issues.md</code>), and golden-bad test fixtures that
+deliberately embed the wrong numbers to prove the gates catch them
+(<code>tests/unit/test_compute_badges_carrier_match.sh</code>,
+<code>tests/pre_build/test_check_cm_plugin_count.sh</code>). None of
+these are live, currently-wrong documentation claims.</p>
+<h2 id="verification-commands-run-both-pass-exit-0">Verification
+commands run (both PASS, exit 0)</h2>
+<pre><code>$ bash scripts/pre_build/check_cm_plugin_count.sh -v
+  derived (control-needle proven):
+    curated    43   (install-plugin.sh PLUGINS=() — the canonical managed roster)
+    bootstrap  12   (setup.sh PLUGINS=() — one-time-setup subset)
+    engines    43   (distinct engine modules on disk)
+    toplevel   35   (plugins/*.py — engines PLUS utility modules)
+    recursive  68   (plugins/**/*.py — also counts per-dir variants)
+
+    ok  CLAUDE.md: curated = 43
+    ok  CLAUDE.md: engines = 43
+    ok  CLAUDE.md: bootstrap = 12
+    ok  CLAUDE.md: toplevel = 35
+    ok  CLAUDE.md: recursive = 68
+    ok  docs/features/Status.md: curated = 43
+    ok  docs/features/Status.md: engines = 43
+    ok  docs/features/Status.md: toplevel = 35
+PASS: CM-PLUGIN-COUNT — 8 documented count(s) match their derivation
+EXIT: 0
+
+$ bash scripts/compute-badges.sh --check
+compute-badges.sh --check: README badges are in sync with live counts
+EXIT: 0</code></pre>
+<h2 id="git-diff-stat">git diff –stat</h2>
+<pre><code>$ git diff --stat README.md CLAUDE.md .specify/memory/constitution.md docs/features/Status.md
+(empty — no output, zero changes)</code></pre>
+</body>
+</html>

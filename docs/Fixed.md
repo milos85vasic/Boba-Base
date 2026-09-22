@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 36
-**Last modified:** 2026-09-02T11:08:48Z
+**Revision:** 38
+**Last modified:** 2026-09-22T21:48:15Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -1931,4 +1931,333 @@ BLIND-INSTRUMENT GUARD: control needle not found -> exit 3 ABORT, never RED. The
 MEASURED: RED exit 1 (evidence docs/qa/BOB-205/red_run_live_gate.log, gate sha256 c5752428...) — CONTROL 1 hit "instrument PROVEN seeing", PROBE 0 hits. GREEN polarity proof exit 0 against a SCRATCH copy of the driver with the root appended (real driver git diff --stat empty). Determinism 3/3 RED exit 1, 3/3 GREEN exit 0.
 
 FIX DIRECTION (assessed, not applied): §11.4.251 manifest feasible, but the source of truth matters — docker-compose.yml build contexts MISS plugins/, frontend/src, cmd/boba-ctl, webui-bridge.py; language markers (go.mod/package.json) MISS plugins/ and webui-bridge.py. ONLY derive-from-git-tracked-source-extensions minus a declared §11.4.224(E) exclusion fence reaches every gap. The derivation must be built either way: if the operator keeps the hand list, the omission-guard is the SAME computation — the only question is whether it drives the scan or audits the list. The tests/ question (324 files) is an operator §11.4.66 decision; production-only is defensible but currently UNDECLARED.
+
+## BOB-204 — Credential DELETE reports 204 success while the .env plaintext delete error is discarded — credential survives on disk
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-204/closure_evidence_20260922.md
+**Severity:** critical
+
+WHAT: internal/jackettapi/credentials.go:234-253 (boba-jackett, port 7189). The DELETE credential handler checks the DB delete, then discards the errors of BOTH `_ = envfile.Delete(...)` (line 240) and `_ = d.Jackett.DeleteIndexer(id)` (line 249), then returns an UNCONDITIONAL 204 No Content. If the .env delete fails, the plaintext credential variables REMAIN ON DISK while the API reports the credential deleted. Second instance, same file: credentials.go:166-176 returns the error code `env_write_failed_db_rolled_back` while the rollback's OWN error is discarded (`_ =` at :169 and :171) — the response body asserts a rollback that was never confirmed, a §11.4 bluff in the API contract itself.
+
+SCOPE: 4 combined dangerous capabilities on one path (credential access + filesystem mutation + external side effect + irreversible delete) where §11.4.252 fail-closed-on-dangerous-combination requires only 2. Composes §11.4.10 (credentials must never leak — a credential the operator believes deleted, still on disk, IS the leak class) and §11.4.252.
+
+REPRODUCTION: read the cited lines; the discard is syntactic and unconditional. A runtime repro drives DELETE with the .env path made unwritable (chmod 0444 or a directory-level deny) and observes 204 while the variable persists in .env.
+
+WHY IT WAS NOT CAUGHT: the CM-DANGEROUS-COMBINATION-FAIL-CLOSED gate (constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh) enumerates .go at line 243 but gates its ast analyser on *.py at line 537, so Go falls to two text matchers that key on `catch` — a keyword Go does not have. All 106 .go files are structurally unanalysable while being counted as analysed. That blindness is BOB-191; this item is the DEFECT it hid.
+
+ACCEPTANCE: (1) both discard sites either handle the error or the handler returns a non-2xx naming the unresolved precondition per §11.4.252(2); (2) the env_write_failed_db_rolled_back code is only emitted when the rollback actually succeeded, else a distinct honest code; (3) a RED test drives the unwritable-.env path and observes the pre-fix 204, flips GREEN post-fix (§11.4.115); (4) a golden-FALSE fixture proves the new guard does not refuse the healthy path (§11.4.201(1)).
+
+DISCOVERY CHANNEL (§11.4.238): found by an agent reading source during the BOB-191 investigation, NOT by the automated QA regime — this is itself a coverage escape and BOB-191 carries the escape audit.
+
+=== VERIFICATION COMPLETE 2026-08-26 — BOTH DEFECTS CONFIRMED, RED AUTHORED AND WATCHED FAIL ===
+
+Line numbers re-derived, NO drift from the filing: :234-237 DB delete checked (500 on error) · :240-244 envfile.Delete error DISCARDED · :249 DeleteIndexer error DISCARDED · :253 unconditional 204.
+
+NOT AN OVERSIGHT — THE GODOC BLESSES IT. :210-211 reads: ".env and Jackett deletes are best-effort ...; failures are silently swallowed. The 204 status reflects DB success." Any fix MUST delete that sentence or it will read as authorizing the defect (§11.4.120 — the doc asserting the old behaviour is part of what must be reconciled).
+
+MEASURED END STATE when the .env write fails: DB row GONE, plaintext RUTRACKER_USERNAME/RUTRACKER_PASSWORD STILL ON DISK, API says 204. WORSE THAN THIS ITEM ORIGINALLY FRAMED IT: the ENCRYPTED canonical copy is destroyed while the PLAINTEXT copy survives UNMANAGED — the system's own record of the credential is gone, so nothing will ever clean it up.
+
+DEFECT (2) IS WORSE THAN FILED — CHECKING THE ERROR WOULD NOT FIX THE LIE. The rollback calls Repo.Upsert(..., ifSet(prior.Username), ...); ifSet("") returns nil; repos/credentials.go Upsert maps nil to COALESCE(excluded.username_enc, username_enc) = LEAVE UNCHANGED. So when the prior row had an empty field and the failed request set one, the compensating Upsert returns nil — it SUCCEEDS — and leaves the new value in place. The DB is not rolled back, there is NO error to check, and the API asserts a rollback anyway. Verified live by the third RED case. This means defect (2) is NOT one-line-ish: it needs the repo surface to express "set this field back to NULL" (delete-and-reinsert the prior row, or a tri-state in Upsert). Scope it separately from defect (1).
+
+THE RED: qBitTorrent-go/internal/jackettapi/bob204_failclosed_test.go (297 lines, NEW file, gofmt clean, deliberately isolated from credentials_test.go so it cannot widen the T041/T042 diff).
+Failure injection is REAL, not mocked: envfile.mutate writes through <path>.tmp, so the test pre-creates that path as a DIRECTORY -> os.OpenFile returns EISDIR (errno 21 probed) -> envfile.Delete fails WHILE .env stays byte-identical with the credential in it. Chosen over chmod deliberately: opening a directory for writing fails for root too, whereas a chmod mechanism would silently no-op under uid 0 and turn the RED into a FALSE GREEN. A CONTROL NEEDLE inside breakEnvWrites calls the real envfile.Delete and t.Fatal's if it unexpectedly succeeds — a blind instrument cannot produce a conclusion.
+Measured: 3 FAIL (all three defect cases) + 1 PASS (the §11.4.201(1) golden-FALSE proving the REDs are not tautological and that the fix must not refuse the healthy path). Package-wide exactly 3 failures, all this stream's, zero skips. §11.4.10 honoured: no assertion or message prints a credential VALUE — names and booleans only, fixtures are fake-not-a-real-*.
+
+HONEST BOUNDARY (§11.4.6): the GREEN half of the flip is OWED, NOT CLAIMED. The stream was forbidden from editing credentials.go, so RED was watched, GREEN was not.
+
+THE FIX, SCOPED (not applied): defect (1) IS one-line-ish twice — replace the two `_ =` with checked errors returning 5xx naming the unresolved precondition (env_delete_failed, jackett_cascade_delete_failed) and DELETE the :210-211 GoDoc sentence. Defect (2) is a repo-surface change, separate scope.
+
+ADJACENT FINDINGS: (a) credentials.go is strictly WEAKER than its own sibling — indexers.go:207-209 handles the identical DeleteIndexer error and at least LOGS it; credentials.go:249 does not even log. Same package, same call, two standards. (b) Repo is a concrete *repos.Credentials, not an interface, so a rollback-FAILURE path cannot be driven deterministically — relevant to §11.4.240/§11.4.241 if the fix wants that path testable. (c) The .gitignore false-null that nearly ate this deliverable is filed separately.
+
+SPOT-CHECKS of the discards this item called benign — BOTH CONFIRMED BENIGN: client.go:140,153 `_ = resp.Body.Close()` closes a body already being discarded before a retry; runs.go:112 `_, _ = w.Write(...)` is post-WriteHeader, same class as credentials.go:274. Bonus: runs.go:43 `_ = json.Unmarshal(...)` is benign but mildly lossy — a corrupt ErrorsJSON silently reports error_count=0, documented as deliberate degradation in its GoDoc. Cosmetic under-report, not an integrity issue; recorded so it is not re-investigated.
+
+## BOB-149 — Managed-plugin count diverges 43/42/48 across constitution, CLAUDE.md and the README badge; the badge is hand-maintained and unguarded
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-149/closure_evidence_20260922.md
+**Severity:** Low
+**Created-By:** Claude
+
+Managed-plugin count diverges 43/42/48 across constitution, CLAUDE.md and the README badge; the badge is hand-maintained and unguarded
+
+## BOB-221 — Invariant 30 has no RED-test allowance: a correctly-authored failing RED (mandated by §11.4.115/§11.4.224) makes the blocking gate FAIL — the constitution's own test-first discipline is gated against itself
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-221/closure_evidence_20260922.md
+**Severity:** critical
+
+WHAT: scripts/pre_build_verification.sh invariant 30 (CM-BASH-UNIT-TESTS-EXECUTED) enumerates suites by FILESYSTEM GLOB (:1196) and calls fail() on any non-zero exit. It therefore RUNS untracked suites, and it has NO concept of a test that is SUPPOSED to fail.
+
+MEASURED: tests/pre_build/test_bob205_danger_roots_scope.sh exits 1 — correctly, because it is a RED test for BOB-205, an unfixed defect. Invariant 30 counts that as a gate failure. The predicted T042 verdict is FAIL, and this is one of its three blocking causes.
+
+THE STRUCTURAL PROBLEM: §11.4.115 and §11.4.224 REQUIRE a RED authored FIRST and OBSERVED TO FAIL before the fix exists. §11.4.135 requires the RED to persist as the permanent regression guard. So the discipline mandates that failing tests exist in the tree between authoring and fixing — and the blocking gate treats their existence as a defect. Following the constitution correctly makes the gate refuse the commit. That is a §11.4.120 wrong-seam problem: the gate asserts "no suite fails" when the invariant it should assert is "no suite fails UNEXPECTEDLY".
+
+WHY IT SURFACED NOW: this session authored FOUR REDs across parallel streams (BOB-204, BOB-205, BOB-207, BOB-212) — the first time the discipline was applied at this volume. Previously REDs were flipped GREEN within the same round, so the window never spanned a gate run. The defect is not new; the exposure is.
+
+THE FORBIDDEN RESPONSES (§11.4.120): do NOT delete the RED to make the gate green; do NOT weaken invariant 30 to ignore failures; do NOT mark the RED skipped without a tracked reason. Each converts a real signal into silence.
+
+FIX DIRECTION — this is §11.4.248's quarantine mechanism, which the constitution already specifies and this project has not wired: a RED declares its expected-failing status and its tracked item (a header marker, a naming convention, or a manifest), invariant 30 reads that declaration, and a declared-RED failure is reported as EXPECTED (not a fail) while an UNDECLARED failure still blocks. Crucially the declaration must EXPIRE or be tracked — §11.4.248 pairs quarantine with a stabilisation deadline precisely so "expected to fail" cannot become permanent cover. A RED whose item closes must flip GREEN or the gate should FAIL on the stale declaration.
+
+ACCEPTANCE: (1) a declared RED does not block; (2) an UNDECLARED failing suite still blocks (the §11.4.201(1) guard — a fix that ignores all failures is strictly worse than the defect); (3) a declared RED whose tracked item is CLOSED blocks, so declarations cannot rot; (4) a paired §1.1 mutation removing the declaration-check makes the gate accept an undeclared failure -> gate FAILs.
+
+DISCOVERY CHANNEL (§11.4.238): found by the T042 readiness preflight, before the endgame rather than during it. Not by the automated QA regime — the regime IS the thing that would have blocked.
+
+=== CORRECTED 2026-08-26 — MY FIX DIRECTION IN THIS ITEM WAS WRONG, AND THE BLOCKER IS WIDER (§11.4.6) ===
+
+CORRECTION 1 — §11.4.248 IS NOT THE MECHANISM. I wrote "this is §11.4.248's quarantine mechanism, which the constitution already specifies and this project has not wired." That is half right and the wrong half matters. §11.4.248(A) QUARANTINE targets FLAKY tests — its trigger is literally "two-consecutive-run-different-verdict OR rerun-after-red", and its remedy is to MOVE the suite to tests/quarantine/ and run the blocking suite WITHOUT it "so green means green". §11.4.248(B) PROTECTED-SPEC is a tag plus a required-reviewer gate on MODIFYING a regression test; it never says a test may fail.
+A RED is DETERMINISTIC and MUST STILL BE RUN — §11.4.115(F) and §11.4.226 require the RED verdict to be PRODUCED as the evidence. Excluding it destroys the very artifact the discipline mandates. Merging the two would also let a genuinely flaky suite hide behind a RED declaration and vice versa. What §11.4.248 legitimately supplies, and what should be INHERITED rather than re-invented (§11.4.227), is the SHAPE: a by-name list + a tracked item + a deadline + a must-only-shrink ratchet.
+
+CORRECTION 2 — THIS IS A LANGUAGE-PARITY GAP, NOT A DESIGN VACUUM. Conductor-verified: the project ALREADY runs this mechanism on the PYTHON side. pytest.mark.xfail(strict=True) is used deliberately for OPEN defects at tests/scaling/test_scaling_envelope.py:907 (BOB-167, documented in tests/scaling/README.md:64) and tests/stress/test_plugin_parsers_stress_chaos.py:90 — whose own comments carry the ratchet discipline verbatim ("it stays visible as xfailed in every report", "then remove this xfail"). So "declared expected-failure, strict so an unexpected pass fails" is ALREADY accepted policy in one language. The BASH side has no equivalent. That is the real gap.
+
+CORRECTION 3 — BOB-221 IS NOT SUFFICIENT TO UNBLOCK T042. A full replication of invariant 30 measured RAN=38 FAILED=4 SKIPPED=2:
+  rc=124 300s test_compute_badges_carrier_match.sh  <- a HANG, not a RED. Blocks independently. Filed separately.
+  rc=1     3s test_ownership_gid_agreement.sh       <- BOB-207's RED (a SECOND in-glob RED; this item assumed one)
+  rc=1     1s test_bob205_danger_roots_scope.sh     <- BOB-205's RED
+  rc=127   9s test_check_cm_lan_routes_authenticated.sh <- CONTAMINATED: a sibling stream was writing lan_route_auth_analyzer.py during and after the run (§11.4.119 — the surveying stream did not own that resource and correctly declined to adjudicate). rc=127 is the §11.4.1 script-internal FAIL-bluff signature, not a product verdict either way. Returned to its owning stream.
+ALSO: BOB-204's and BOB-212's REDs share tests/security/test_gitignore_swallow_is_loud.sh, which is OUTSIDE invariant 30's glob and executed by NOTHING (BOB-222) — they do not block today, and widening the glob would immediately add another blocker.
+
+THE DESIGN, RECOMMENDED: two-place declaration + SSoT expiry + strict semantics. THREE independent facts must agree before a failure is excused — (1) the suite is listed in scripts/lib/expected_red.sh, a file the PRODUCING streams do not own; (2) the suite file itself carries `# EXPECTED-RED: <ID>` with the SAME id; (3) <ID> is OPEN in docs/workable_items.db, FAIL-CLOSED on unreadable store or unknown id (§11.4.252). Plus STRICT-XFAIL PARITY: a declared suite that PASSES blocks, which mechanically forces the ratchet to shrink in the same commit as the fix.
+
+EXIT-CODE CONVENTION REJECTED ON MEASURED EVIDENCE — and I had flagged it as promising. The non-{0,1} exit space is ALREADY CLAIMED IN THIS REPO FOR THE OPPOSITE MEANING: test_gitignore_swallow_is_loud.sh uses exit 2 = "INSTRUMENT BROKEN or SECRET LEAK — verdict void", and test_bob205_danger_roots_scope.sh uses exit 3 = ABORT (instrument blind). Both were chosen precisely so a blind harness can never be read as a verdict. Overloading either for "expected red" would make a genuinely BLIND INSTRUMENT INDISTINGUISHABLE FROM A DECLARED RED — the gate would swallow exactly the failure class those codes exist to make loud. It also fails acceptance (4) (an integer carries no item id) and (3) (nothing to rot-check), and it puts the declaration inside the PRODUCER, collapsing producer!=gate (§11.4.240/§11.4.249).
+
+HONEST BOUNDARY ON THE DESIGN (§11.4.240): it achieves separation by LOCATION and MULTI-PLACE AGREEMENT, not by true CAPABILITY, which §11.4.240 prefers. There is no PR/CODEOWNERS seam here to enforce capability — CLAUDE.md Hard Stop #1 removed all CI/PR gates, so the CODEOWNERS half of §11.4.248(B) is STRUCTURALLY UNENFORCEABLE in this project. What the design buys is that silencing a failure requires a coherent three-place story visible in a diff, instead of one comment line.
+
+THE RED: tests/pre_build/test_bob221_expected_red_declaration.sh. It extracts invariant 30's loop and its blocking predicate VERBATIM FROM THE LIVE GATE BY CONTENT MARKER (never line number) and RUNS them against a hermetic scratch PROJECT_ROOT — so the logic under test is the gate's own text, not a paraphrase (§11.4.226 anti-echo). Measured RED: 3 of 5 properties unmet, exit 1. P3 is asserted on the blocking REASON, not merely on "it blocked" — today everything blocks, so a bare did-it-block check would pass FOR THE WRONG REASON and keep passing if the anti-rot half were never built. Polarity flip proven with the BYTE-IDENTICAL test file against a sandbox carrying the patch: exit 0, all five properties met. Four paired §1.1 mutations each kill exactly ONE property, one-to-one, no cross-talk.
+
+THE PATCH: 72 lines, 4 hunks + one new file scripts/lib/expected_red.sh, `git apply --check` clean, NOT APPLIED. Operational note the landing commit must not miss: the table names test_bob205_danger_roots_scope.sh and test_ownership_gid_agreement.sh, but NEITHER carries an `# EXPECTED-RED:` marker today (verified 0 in both) — without those two one-line additions the gate blocks them with "declared but the file carries no matching marker", which is the fail-closed design working as intended, not a bug.
+
+SEQUENCING RECOMMENDATION: (iii), a bounded variant of (i) — land the mechanism declaring exactly BOB-205, BOB-207 and this item's own suite, add the two missing markers, triage the rc=124 hang as its own item, return the rc=127 to its owner, THEN run T042.
+THE HONEST COST, STATED NOT HIDDEN: this modifies the blocking gate BEFORE that gate has ever run clean, so the mechanism's first full-gate exercise IS the T042 run. The circularity is unavoidable and IS this item (§11.4.120 — a gate whose precondition is produced by the work it gates): a clean T042 run is impossible while any RED exists, so "validate the gate before changing it" cannot be satisfied. Risk reduced as far as possible without running the gate (proven-applicable patch, proven polarity flip, four biting mutations, P2 undeclared-failures-still-block asserted and mutation-proven) but NOT eliminated.
+Against (ii) fix-the-four-defects-first: all four are Queued and genuinely deferred; BOB-212's fix direction is an explicitly unresolved §11.4.66 OPERATOR decision whose own test was deliberately written fix-direction-agnostic so as not to prejudge it — choosing (ii) means making that decision on the operator's behalf, plus four implementations and four reviews, and it STILL leaves the hang and the rc=127 blocking.
+
+RECURSION NOTE: this item's own RED is in-glob and failing, so it is itself a 5th blocker until the mechanism lands — at which point its already-present marker and table row clear it. The mechanism is its own first customer.
+
+## BOB-215 — boba-ctl authMethod() default branch silently resolves a typo'd or empty auth: key to SSH-key authentication instead of refusing
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-215/closure_evidence_20260922.md
+**Severity:** major
+
+WHAT: cmd/boba-ctl/main.go:498-509, authMethod(). Its default branch (:507) returns remote.AuthSSHKey. A deploy-registry entry whose auth: key is misspelled, empty, or set to an unrecognised value therefore resolves SILENTLY to SSH-key authentication rather than refusing to act.
+
+WHY IT IS A §11.4.252 VIOLATION: this is a credential-selection decision on a path that also performs remote mutation and external side effects. §11.4.252 requires a path combining >=2 dangerous capabilities to FAIL CLOSED — verify every precondition, refuse when any is unverifiable, and name the unresolved precondition. Silently substituting a default credential MECHANISM for an unreadable declaration is the textbook fail-open shape: the operator's intent was not determined, and the code proceeded anyway using a method they may not have chosen.
+
+WHY NO GATE CAUGHT IT: three independent reasons, each sufficient on its own — (a) cmd/boba-ctl is in no DANGER_ROOT (BOB-205); (b) even in scope, .go files are structurally unanalysable by the current gate (BOB-191); (c) this shape is a semantic default-branch decision, not one of the two text patterns the non-Python arms match. It was found by a human-equivalent read, which is precisely the §11.4.238 escape class.
+
+HONEST QUALIFICATION (§11.4.6): cmd/boba-ctl/main.go has NO `_ = err`, NO empty `if err != nil {}`, and NO silent `return nil` today — grep-verified with a control needle against qBitTorrent-go/internal/config/config.go. This finding is the exception, not one of many; the scope hole around boba-ctl is otherwise LATENT (it hides nothing else live, it guarantees a future one lands unseen).
+
+ACCEPTANCE: (1) an unrecognised/empty auth: value REFUSES with an error naming the offending key and its declared value, never silently defaults; (2) a RED driving a typo'd auth: and asserting today's silent SSH-key resolution, flipping to refusal post-fix; (3) golden-FALSE proving every LEGITIMATE auth: value still resolves correctly — a false refusal here would break real deploys (§11.4.201(1)).
+
+DISCOVERY CHANNEL (§11.4.238): found by the BOB-205 verification stream while confirming boba-ctl qualifies as a §11.4.252 surface.
+
+## BOB-207 — probe_location() is GID-BLIND: precondition verifies uid only while the repair fixes uid AND gid — false ok demonstrated live on this host, no privileges, no exotic filesystem
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-207/closure_evidence_20260922.md
+**Severity:** critical
+
+WHAT: scripts/lib/ownership.sh:299-320 probe_location() reads stat -c '%u' and compares against ownership_operator_uid (id -u). It NEVER reads '%g'. Meanwhile ownership_operator_gid is defined at scripts/lib/ownership.sh:50 and consumed ONLY by scripts/ownership_repair.sh:360 — so the REPAIR establishes uid AND gid, while the PRECONDITION that verifies the repair worked checks uid ONLY. The precondition can therefore report ok while exactly half the property the repair exists to establish is wrong.
+
+MEASURED, LIVE ON THIS HOST, UNPRIVILEGED (a setgid directory is all it takes — no loopback, no mount, no sudo):
+  dir: uid=1000 gid=10 mode=2755   (chgrp wheel + chmod g+s, both unprivileged)
+  real file created there: uid=1000 gid=10
+  probe_location verdict = ok  rc=0     <-- operator gid is 1000, file gid is 10
+
+SEVERITY RATIONALE: this is the SAME CLASS that BOB-206 alleged (a probe reporting ok while ownership is only partly held) but on an axis that is LIVE rather than hypothetical, needs no unusual filesystem, and reproduces with two unprivileged commands. BOB-206 was dismissed; this is the real defect that investigation surfaced underneath it.
+
+ACCEPTANCE: (1) probe_location reads and compares gid as well as uid, OR the asymmetry is deliberately justified in-source with the reason (if only uid matters to the user-visible goal, say so and explain why the repair sets gid at all); (2) a RED fixture builds the setgid directory above, observes ok pre-fix, flips to a refusal post-fix (§11.4.115); (3) a golden-FALSE fixture proves a correct uid+gid location is still ok (§11.4.201(1)); (4) whichever way it is resolved, precondition and repair agree on WHICH property they are talking about — that disagreement is the primitive defect (§11.4.250).
+
+DISCOVERY CHANNEL (§11.4.238): found by the BOB-206 verification stream, not by the automated QA regime. No existing test exercises a gid mismatch.
+
+=== CONFIRMED 2026-08-26, RED AUTHORED — AND THE FIX DIRECTION IS THE OPPOSITE OF WHAT THIS ITEM ASSUMED ===
+
+CONFIRMATION (re-derived against the dirty tree; line numbers happen to match): probe_location() at scripts/lib/ownership.sh:299-320 reads stat '%u' twice (:308 file branch, :314 dir branch), compares against want at :301, and NEVER reads '%g'. ownership_operator_gid is defined at :50 and has EXACTLY ONE consumer — ownership_repair.sh:360 — verified across tracked AND untracked files, needle-proven (needle ownership_operator_uid -> 13 files, negative control -> 0; untracked sweep needle -> 8 files, ownership_operator_gid -> 0); every other hit is a docs/DB carrier or comment.
+THE REPAIR SETS GID AT TWO SITES, not one: :719 chown -h "${OP_UID}:${OP_GID}" WRITES both, and :963 find_args selects on ( ! -uid OR ! -gid ).
+FALSE ok REPRODUCED unprivileged (chgrp to a group from id -G + chmod g+s): dir uid=1000 gid=10 mode=2755, a REAL file created inside lands uid=1000 gid=10, probe_location verdict = ok rc=0. Needle arm: an absent path returns 'absent' rc=1 — the probe CAN refuse, so the ok is real.
+
+DESIGN QUESTION ANSWERED: **NARROW THE REPAIR. gid is NOT load-bearing.** This item was filed assuming the PROBE was deficient. Measured, that is backwards.
+ - With correct uid and gid=10: edit, read, rename, move, chmod, utime, delete are ALL PERMITTED — including recovery from chmod 000 with NO elevation. Owner-class bits are selected by uid match and chmod is owner-only, so the operator can always restore access.
+ - Every FR-001 / FR-002 / FR-003 / FR-010b is phrased as "owned by the account". NO requirement mentions gid.
+ - DECISIVE, conductor-verified in spec.md: the Constraints section blesses "Group-based workarounds (shared groups, permissive modes, access-control lists) are acceptable implementation routes", and Dependencies makes "shared group plus inherited permissions" NECESSARY if the container platform cannot map the in-container account to the operator's identity.
+ => WIDENING THE PROBE would make FR-010 REFUSE TO START on a configuration the spec explicitly sanctions — a §11.4.201(1) false-positive refusal, the exact failure class this project keeps finding in its own gates.
+ => AND THE REPAIR IS ALREADY DOING HARM: measured, after repair a new file inherits gid 1000 instead of 10 with the setgid bit still set and NO diagnostic. The repair silently dismantles a spec-sanctioned shared-group setup.
+
+THE RED: tests/unit/test_ownership_gid_agreement.sh (NEW file, 253 lines, bash -n clean). It deliberately does NOT assert "the probe must call stat %g" — that is an implementation assertion that survives a cosmetic fix AND hard-wires one fix direction. It asserts the user-observable invariant: probe_location(L) == ok IFF ownership_repair.sh --dry-run selects ZERO items under L. Measured: 4 passed / 1 failed / EXIT=1, the failure being "the PRECONDITION certifies it (ok) while the REPAIR reports it broken (selects:2)".
+VALIDATED AGAINST BOTH CANDIDATE FIXES from patched COPIES (production untouched): baseline FAIL(1) · narrow-the-repair PASS(0) · widen-the-probe PASS(0). Golden-FALSE passes in all three, so neither direction can go green by refusing everything. That is what makes this RED fix-direction-agnostic rather than a vote.
+
+THE FIX, NOT APPLIED — scripts/ownership_repair.sh:963:
+  -    find_args+=(\( ! -uid "${OP_UID}" -o ! -gid "${OP_GID}" \) -printf '%U\t%G\t%m\t%p\0')
+  +    find_args+=(! -uid "${OP_UID}" -printf '%U\t%G\t%m\t%p\0')
+KEEP chown OP_UID:OP_GID at :719 — one syscall, it gives a resolvable gid for the real 100999:100999 defect, and gid 1000 is a user-private group (milosvasic:x:1000:, no other members) so writing it NARROWS rather than widens, consistent with FR-015. Add a bounded justification in BOTH files stating the agreed property is uid.
+
+HONEST COST (§11.4.120 reconciliation owed, NOT fake-passing): the entire existing repair suite uses gid mismatch as its proxy fixture (test_ownership_repair.sh:19-54, asserts at :445 and :1392) precisely because a foreign UID is not constructible unprivileged. Narrowing BREAKS those cases. They must be RE-BASED onto "the chown writes uid:gid", never fake-passed. Test-suite rework is not a reason to ship a runtime false refusal.
+
+BOB-208 and BOB-209 both CONFIRMED by the same stream — see their items.
+
+## BOB-208 — probe_location() does not check the want side: a failing id(1) yields a FALSE REFUSAL whose message names the correct uid as wrong (§11.4.201(1))
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-208/closure_evidence_20260922.md
+**Severity:** major
+
+WHAT: scripts/lib/ownership.sh:301 sets want="$(ownership_operator_uid)" with NO exit-code check and NO emptiness guard. The file runs under set -uo pipefail but NOT set -e, so a failing id(1) leaves want empty and execution continues.
+
+MEASURED (id shimmed to fail): verdict = wrong-owner:1000 on a perfectly healthy location. The refusal message NAMES THE CORRECT UID AS WRONG, which is worse than a bare failure — it sends the reader to fix a value that is already right.
+
+WHY IT MATTERS: §11.4.201(1) — a false-positive refusal is a FAIL-bluff of exactly equal severity to a false-negative pass. It halts real work and teaches operators to bypass the guard. And §11.4.201(4): on an unresolvable signal the guard must take the conservative-safe default AND SAY SO HONESTLY. 'Could not resolve the operator uid' is honest; 'wrong-owner:1000' when 1000 is correct is not.
+
+LIKELIHOOD: low (id(1) rarely fails) — but unguarded, and it fails toward a misleading refusal rather than toward an honest unknown.
+
+ACCEPTANCE: (1) the want side is checked for both rc and emptiness; (2) an unresolvable want yields a distinct honest verdict naming the unresolved precondition, never a wrong-owner claim; (3) a RED fixture shims id to fail and observes wrong-owner:1000 pre-fix, the honest verdict post-fix; (4) golden-FALSE: a healthy location with a working id is still ok.
+
+DISCOVERY CHANNEL (§11.4.238): found by the BOB-206 verification stream reading the probe, not by the automated QA regime.
+
+=== CONFIRMED 2026-08-26 ===
+ownership.sh:301 has no rc guard and no emptiness guard, and the file runs without set -e. With id(1) shimmed to fail, on a location GENUINELY OWNED by uid 1000: verdict="wrong-owner:1000" rc=1 — the refusal NAMES THE CORRECT UID AS WRONG. Reproduced directly; not inferred from reading.
+
+## BOB-209 — probe_location() stat guards are asymmetric halves, a stat failure is mislabelled unwritable, and the probe temp file has no EXIT trap (§11.4.14)
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-209/closure_evidence_20260922.md
+**Severity:** major
+
+THREE DEFECTS IN ONE FUNCTION, scripts/lib/ownership.sh:299-320.
+
+(1) ASYMMETRIC GUARDS. The file branch (:308) checks stat's EXIT CODE but not output emptiness. The directory branch (:314-316) checks EMPTINESS but not the exit code. Neither checks both. Each branch is blind to exactly the failure mode the other guards against.
+
+(2) MISLABELLED VERDICT. A stat failure on an EXISTING file is reported as 'unwritable'. That is semantically wrong — stat failing is not a writability fact, and it sends the reader to check permissions on a path whose permissions may be fine. §11.4.6: state the real condition or state that it could not be resolved; do not substitute a different condition.
+
+(3) UNTRAPPED CLEANUP (§11.4.14). rm -f "${probe}" at :315 is a plain statement, not a trap. An interrupt between mktemp and rm strands a .ownership-probe.XXXXXX file INSIDE A DECLARED LOCATION — and the declared set includes the git-tracked download-proxy/ tree, so the stranded file lands in version control's path. §11.4.14 requires cleanup on EVERY exit path via trap.
+
+ACCEPTANCE: (1) both branches check rc AND emptiness; (2) a stat failure yields a verdict naming stat-failed, not unwritable; (3) cleanup moves into a trap covering interrupt paths; (4) a RED per defect — including one that interrupts between mktemp and rm and asserts no residue survives; (5) golden-FALSE proving the healthy path still returns ok.
+
+DISCOVERY CHANNEL (§11.4.238): found by the BOB-206 verification stream. The verifying agent confirmed it left zero residue itself, needle-proven that its find could see.
+
+=== CONFIRMED 2026-08-26 — ALL THREE ===
+(1) ASYMMETRIC GUARDS: :308 checks rc ONLY (|| { echo unwritable; }); :314 + :316 check emptiness ONLY. Each branch is blind to exactly the failure mode the other guards.
+(2) MISLABEL REPRODUCED: stat shimmed to fail on an EXISTING, demonstrably WRITABLE file -> verdict "unwritable", from BOTH branches.
+(3) UNTRAPPED CLEANUP REPRODUCED: no trap anywhere in :299-320 (needle-proven — `trap` appears once ELSEWHERE in the same file, so the zero is real, not a blind instrument). An interrupt via timeout between mktemp and rm STRANDED a real file: .ownership-probe.c2noxU. And the exposure is confirmed material: download-proxy IS a declared location (config/owned_paths.yaml:142-146) containing 32 GIT-TRACKED files, so a stranded probe file lands inside the version-controlled tree.
+
+## BOB-220 — ownership_repair setuid/setgid strip is a NO-OP on directories: GNU chmod 755 preserves setgid, so the in-source comment claims a strip that does not happen
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-220/closure_evidence_20260922.md
+**Severity:** minor
+
+WHAT: scripts/ownership_repair.sh:891-895 runs chmod 755 intending to strip setuid/setgid bits. Traced live: the chmod RUNS and SUCCEEDS, yet the mode stays 2755. Root cause measured — GNU chmod with a 3-DIGIT symbolic-equivalent octal PRESERVES the setgid bit on DIRECTORIES; only a 4-digit form (00755) or an explicit g-s clears it. The comment at :868-884 describes a strip that does not occur for directories.
+
+EFFECT: benign today — the surviving setgid bit is not itself harmful, and no defect is known to follow from it. This is filed as a §11.4.6 accuracy defect: an in-source comment asserting behaviour the code does not perform. That matters because the next reader will trust it, and because a future security-relevant strip written against the same pattern would silently fail the same way.
+
+RELATION TO BOB-207: the same stream measured that after repair a new file inherits gid 1000 with THE SETGID BIT STILL SET — the two facts compound. If BOB-207 is resolved by narrowing the repair (the recommended direction), the setgid survival becomes moot for that path but the misleading comment remains.
+
+ACCEPTANCE: (1) either the strip is made real (00755 or g-s) or the comment is corrected to state that directories retain setgid — code and comment must agree; (2) if made real, a RED asserting mode 2755 -> 0755 on a directory, since the current form silently no-ops; (3) golden-FALSE proving a directory that SHOULD keep its mode is not gratuitously changed.
+
+DISCOVERY CHANNEL (§11.4.238): found by the BOB-207 stream while tracing an unrelated behaviour. Not by the automated QA regime.
+
+## BOB-210 — detect_rootless() header promises an unverified reading can never manufacture a refusal, but :413 emits a CONFIDENT rootful that reaches the R3 refusal — and the shim oracle shares the code's unvalidated premise (§11.4.245)
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-210/closure_evidence_20260922.md
+**Severity:** major
+
+WHAT: scripts/ownership_precondition.sh:342-348 documents the docker branch of detect_rootless() as documented-not-measured (accurate — verified verbatim). The header then claims the branch is built so that 'an unverified reading can never manufacture a refusal'. IT CAN. Line :413 emits a CONFIDENT rootful verdict whenever docker info succeeds with non-empty output containing no name=rootless field. Only the FAILURE modes fall through to unknown (:387-394).
+
+THE PATH TO HARM: PUID=0 is declared in docker-compose.yml:32 (and again for jackett — deliberate per project policy). With a confident rootful verdict, that reaches the R3 refusal at :517. So a genuinely ROOTLESS Docker host whose docker info output SHAPE differs from the documented one gets a FALSE REFUSAL produced by a branch the source itself admits was never measured — precisely the outcome the header promises is impossible.
+
+THE ORACLE PROBLEM (§11.4.245 independence): the shim tests DO cover this path (tests/unit/test_ownership_rootless_detection.sh:283) — but the shim's output shape was authored from the SAME documentation as the code. Oracle and code share the unvalidated premise, so the test cannot discover that the premise is wrong. It confirms the code matches the doc; nobody has confirmed the doc matches Docker.
+
+ACCEPTANCE: (1) either the header claim is corrected to match :413's real behaviour, or :413 is changed to yield unknown when the reading is unverified — the two must agree (§11.4.6); (2) the docker branch's premise is validated against REAL docker info output from a real rootless daemon, or the branch is honestly marked unmeasured at the point of USE, not only in the header; (3) if validation is operator-gated (needs a rootless Docker host), record it as such per §11.4.21 rather than leaving the header's promise standing.
+
+ALSO VERIFIED GOOD, recorded so it is not re-investigated: the unknown branch is handled IDENTICALLY at both consumers (R3 :519-531, R4 :832-836 — both a named SKIP, both return 0, neither refuses), ROOTLESS_VERDICT is cached at :487 so both read ONE measurement, and the carrier-trap golden-FALSE fixture EXISTS (test_ownership_rootless_detection.sh:279-308 drives name=rootless-lookalike inside a profile path and must NOT read rootless; structural guard at :396-411 uses exact field equality, not substring).
+
+DISCOVERY CHANNEL (§11.4.238): found by the BOB-206 verification stream.
+
+## BOB-202 — ownership_repair tab-delimited scope read collapses an empty field - an omitted 'kind' silently shifts every later field and turns optional:true into non-optional
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-202/closure_evidence_20260922.md
+**Severity:** Medium
+
+WHAT: scripts/ownership_repair.sh:493 reads parsed scope rows with 'while IFS=$'\t' read -r e_path e_kind e_opt e_pres e_rec'. A scope entry that OMITS 'kind' emits the row '<path>\t\t1\t0\t1'. TAB is an IFS-WHITESPACE character in bash even when IFS is set to it explicitly, so a RUN of consecutive tabs collapses into ONE delimiter instead of delimiting an empty field. Every field after the omission shifts left by one.
+
+MEASURED 2026-08-26 on GNU bash 5.2.37, control-needled (the with-field case was run FIRST and produced output, proving the instrument sees; an earlier probe of mine returned nothing for BOTH cases because printf lacked a trailing newline - an 11.4.201(7)(b) false-null I discarded rather than reported):
+
+  kind PRESENT: path=[P] kind=[dir] opt=[1] pres=[0] rec=[1]
+  kind EMPTY:   path=[P] kind=[1]   opt=[0] pres=[1] rec=[]
+
+CONSEQUENCE: 'optional' is read out of 'preserve_mode's slot. An entry declared 'optional: true' is therefore treated as NON-optional, so an absent path that should skip honestly instead becomes a hard failure - and 'preserve_mode'/'recursive' are likewise read from the wrong slots, with 'recursive' arriving EMPTY. The shift is silent: no parse error, no diagnostic, no refusal.
+
+REACHABILITY: NOT reachable from the shipped config/owned_paths.yaml - all six declared entries carry 'kind' (verified). This is a latent defect in the reader, not a live misbehaviour of the product today.
+
+PROVENANCE: surfaced out-of-band by the T028 round-5 remediation agent while isolating an unrelated instrument slip, and deliberately left unfixed and unfiled by it because (a) ownership_repair.sh had to stay at hash ae025b74602414ca for that round's do-not-regress set, (b) it was outside that round's two-NIT remit, and (c) it had not root-caused whether the repair belongs in the parser, the consumer, or the schema. That judgement was correct; this item is the filing it deferred. Independently re-measured by the conductor before filing - not accepted on report.
+
+11.4.238 COVERAGE-ESCAPE NOTE: no automated check found this. It was found by a human-directed agent isolating a different problem. Per 11.4.238 the coverage gap is itself a defect of equal standing to the bug, and closing only the bug is the violation.
+
+ACCEPTANCE: (1) root-cause the correct layer - parser (never emit a row with an empty field), consumer (read with a delimiter that is not IFS-whitespace, or read positionally), or schema (make 'kind' mandatory and REFUSE an entry lacking it, consistent with the whole-run refusal already landed for empty expansions); the choice is operator-owned per 11.4.66 because it changes the scope-file contract; (2) a fixture with an omitted 'kind' and 'optional: true' asserting the entry is treated as OPTIONAL (or the row refused), RED-first against current code; (3) a golden-FALSE proving a fully-specified row still parses identically - 11.4.201(1), the reader must not start refusing valid scopes; (4) paired 1.1 mutation restoring the collapsing read so the fixture FAILs; (5) an automated check that would have caught it, per 11.4.238.
+
+PRECEDENT FOUND 2026-08-26 (surfaced by the T028 round-5 reviewer, independently verified before recording): the SIBLING script scripts/ownership_precondition.sh ALREADY documents this exact collapse class at lines 565-578 and already ships the repair as split_tsv() at line 579 (used at 437, 699, 775). Its in-source note carries a real forensic measurement dated 2026-08-21: the FIRST version of that script used the collapsing read and reported "no compose service mounts this location" for config/ and for the download root WHILE FIVE SERVICES MOUNT THEM - a false statement about what was checked, produced by the instrument rather than the system, which its own comment classifies as the 11.4.201(7)(c) 'the path is part of the instrument' failure. It also records why the unit suite could not see it: the fixture scope has no compose service at all, so only running the real invocation against the real scope surfaced it.
+
+WHAT THAT CHANGES FOR THIS ITEM: (a) acceptance-criterion (1) 'root-cause the correct layer' now has a PRECEDENT rather than an open design question - the consumer layer, via a split_tsv-style reader that does not use tab-as-IFS; adopting the sibling's existing function is preferable to inventing a second dialect (11.4.251 - two answers to one question across two files that read the SAME scope rows is exactly the divergence that produced the round-1 'two readers of one scope file disagree' finding); (b) this is a RECURRENCE of a class already diagnosed and closed once in this codebase, not a novel discovery - the fix landed in one reader on 2026-08-21 and the sibling reader kept the collapsing form, which is the 11.4.238 escape shape at the code layer: the lesson was captured in a comment instead of in a check; (c) the 11.4.238 coverage-escape note above is SHARPENED - the sibling's own comment already states that a fixture-scope suite cannot see this class, so the required automated check must exercise a row with a genuinely empty middle field, not merely a well-formed one.
+
+## BOB-198 — qbittorrent-proxy-go registers CORS, Logger and rate-limit middleware but no auth at all — 22 LAN-bound routes open including download and hook deletion
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-198/closure_evidence_20260922.md
+**Created-By:** Claude
+**Assigned-To:** milos85vasic
+
+**OPERATOR DECISION (2026-08-26, §11.4.66): REFUSE TO START LAN-BOUND**
+
+The Go profile gets a boot-time guard: bind loopback only, or refuse to start. It does NOT get auth middleware in this cycle. Rationale carried with the decision: the profile is opt-in via --profile go, was not running when measured, and is used for development — so closing the exposure costs a guard rather than a parity implementation. Options not chosen: write auth middleware to parity with the Python route set (real work, and it would partially un-defer BOB-101); document dev-only with no guard (rejected — nothing would enforce it, and the next --profile go run on this network silently re-opens 22 routes). ACCEPTANCE: a boot-time check that resolves the listener's bind address and refuses to start when it is not loopback, with a paired §1.1 mutation proving the check FAILs on a 0.0.0.0 bind, and a golden-FALSE proving a loopback bind is NOT refused (§11.4.201(1)). Scope reminder recorded so it is not lost: this is NOT covered by BOB-101's parity deferral, which was about ports; folding it in would be a §11.4.112(5) verdict leak.
+
+Recorded as consumer DATA per §11.4.35 — the operator's stated choice, not an agent inference. Options not chosen are named so a future reader does not re-litigate a settled call.
+
+--- prior item text follows ---
+
+MEASURED, conductor-verified independently of the reporting subagent. qBitTorrent-go/cmd/qbittorrent-proxy/main.go registers exactly three middlewares, at lines 62, 63 and 68: middleware.CORS, middleware.Logger, middleware.GinRateLimit. There is NO authentication middleware and no per-route auth dependency. main.go:119-121 binds addr=":<port>" which is ALL interfaces, so every route is LAN-reachable when the profile runs.
+
+SCOPE: 22 routes, of which the mutating ones matter most - POST /api/v1/download, POST /api/v1/magnet, DELETE /api/v1/hooks/:id, POST and DELETE /api/v1/schedules. A LAN peer can queue downloads and delete webhook configuration with no credential.
+
+PARITY GAP, stated as fact: PUT /api/v1/theme is auth-gated in the Python service and open in Go. The same asymmetry holds for the download, hooks and schedules mutations. Two implementations of one advertised surface disagree about whether it needs a credential.
+
+RELATIONSHIP TO BOB-101 (Go parity deferred past v1.0.0, operator decision 2026-08-26): that deferral covered PORT parity - the Go container binding :7186 and :7188 as well as :7187. It did NOT cover an authentication hole, and the operator was not asked about one, because the hole had not been measured when the question was posed. Treating this as covered by the deferral would be a 11.4.112(5) verdict leak: citing a bounded decision outside the scope its evidence supports. This item stands separately and its severity is NOT settled by BOB-101.
+
+MITIGATING FACT, so severity is not overstated: the Go profile is opt-in via --profile go and was NOT running at measurement time (the container list showed qbittorrent-proxy, the Python service, with no Go sibling). The exposure is latent, not live.
+
+ACCEPTANCE: either auth middleware landed in the Go service with parity to the Python route set, or an explicit operator decision recording the Go profile as dev-only that must refuse to start LAN-bound - with a guard enforcing whichever is chosen.
+
+## BOB-171 — TRUST_FORWARDED_FOR keys rate-limit buckets on the LEFTMOST X-Forwarded-For element, which is client-forgeable, so header rotation mints unlimited budgets and defeats the LRU cap on both :7186 and :7187
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-171/closure_evidence_20260922.md
+**Severity:** Low
+**Created-By:** Claude
+**Assigned-To:** Claude
+
+WHAT. Both rate limiters key their per-client bucket on the LEFTMOST element of X-Forwarded-For when TRUST_FORWARDED_FOR is enabled: download-proxy/src/api/rate_limit.py:117-123 (:7187) and the new stdlib limiter in plugins/download_proxy.py (:7186), which was deliberately built to exact policy parity with it.
+
+That element is CLIENT-SUPPLIED. An honest reverse proxy APPENDS the peer address to the RIGHT of whatever arrived, so the leftmost entry is whatever the client sent — attacker-controlled by construction, not by misconfiguration. Consequences with the flag on: (1) rotating a forged leftmost value mints an unlimited sequence of fresh buckets, which is total bypass of the limit the flag is supposed to make MORE accurate; (2) it also defeats the LRU/idle-reap cap, since each forged identity is a distinct key — the bucket map is a memory-growth surface bounded only by the cap, and the cap's eviction then discards the budgets of REAL clients to make room for forged ones.
+
+NOT EXPLOITABLE AS DEPLOYED TODAY, and that is why this is Low, not High. TRUST_FORWARDED_FOR defaults OFF at both sites, and the deployed stack runs network_mode host with no reverse proxy in front (verified across all five compose services), so peer addresses are real client IPs and no NAT collapse occurs. The defect is latent: it arms the moment someone puts a proxy in front and turns the flag on to recover real client IPs — which is exactly the situation the flag exists for. The failure mode is therefore 'correct-looking configuration change silently disables the limiter', not 'currently broken'.
+
+PROVENANCE. Raised as MINOR-3 by the independent reviewer of the BOB-111 rate-limiter work and independently confirmed by the implementing agent, which noted it at BOTH source sites as a tracked follow-up rather than fixing it in that change. Filed here because neither agent has write access to the tracker.
+
+WHY IT COVERS BOTH PORTS. :7186's limiter was built to deliberate policy parity with :7187's, including this parsing. Fixing one and not the other would leave the two surfaces disagreeing on client identity — worse than the shared defect, because it becomes surface-dependent and untestable as a single invariant.
+
+ACCEPTANCE. (a) Replace leftmost-element parsing with a trust-aware resolution at BOTH sites: either rightmost-minus-N-trusted-hops, or a trusted-proxy CIDR allowlist where only a peer inside the allowlist may assert XFF at all — the choice is a deployment-topology decision and should be recorded, not assumed. (b) A test that forges a rotating leftmost element and asserts the bucket key does NOT rotate, per site. (c) Paired §1.1 mutation: restore leftmost parsing and the test must FAIL. (d) Negative control (§11.4.201(1)): with TRUST_FORWARDED_FOR OFF, the header must be ignored entirely and keying must fall back to the peer address — a guard that starts honouring XFF when the flag is off would be a worse defect than the one being fixed. (e) Honest boundary: this closes header-forgery bypass; it does not make per-IP limiting fair behind NAT, where many real users legitimately share one address.
+
+NOT CLAIMED. No change made. Both sites still parse leftmost; the flag still defaults off.
 

@@ -61,6 +61,7 @@ MUST purge `api*` from `sys.modules` instead of reloading, then call
 
 from __future__ import annotations
 
+import ipaddress
 import logging
 import os
 from collections.abc import Callable
@@ -116,27 +117,105 @@ def _env_limit(class_name: str) -> str:
 # ---------------------------------------------------------------------------
 
 #
-# TRACKED FOLLOW-UP (BOB-111 review, M3) — X-Forwarded-For is FORGEABLE by
-# design when TRUST_FORWARDED_FOR=1. The leftmost entry is client-controlled,
-# so behind a proxy that APPENDS rather than REPLACES it, a caller can prepend
-# a fabricated address and mint a fresh per-IP budget on demand. The correct
-# closure is to trust the RIGHTMOST entry contributed by a known-trusted proxy
-# hop, or to bind to a configured trusted-proxy CIDR set.
+# BOB-171 FIX (closes the BOB-111 review M3 follow-up). X-Forwarded-For's
+# LEFTMOST entry is CLIENT-SUPPLIED and therefore forgeable by design: behind
+# a proxy that APPENDS (rather than REPLACES) the header, an attacker who
+# rotates a fabricated leftmost value mints an unlimited sequence of fresh
+# per-IP buckets, both bypassing the rate limit AND defeating the bucket
+# map's LRU/idle-reap eviction cap (forged identities crowd out real ones).
+# This behaviour was EXACT PARITY with `plugins/download_proxy.py`'s
+# `_rate_limit_client` (the :7186 proxy) — see that module's matching BOB-171
+# block comment; both sites are fixed identically here so the two surfaces
+# never disagree on client identity (§11.4.251).
 #
-# NOT FIXED HERE, deliberately: this behaviour is EXACT PARITY with :7187's
-# `_client_key` (download-proxy/src/api/rate_limit.py), the opt-in is OFF by
-# default, and this stack runs `network_mode: host` with no reverse proxy, so
-# the forgeable path is unreachable as deployed. Fixing one port and not the
-# other would leave two divergent keying policies behind one contract
-# (§11.4.251). It is one follow-up covering BOTH :7186 and :7187.
+# THE FIX — a trusted-proxy CIDR allowlist (`TRUSTED_PROXY_CIDRS`, a
+# comma-separated list of CIDR blocks). X-Forwarded-For is honoured ONLY when
+# BOTH (1) TRUST_FORWARDED_FOR is on AND (2) the REAL, socket-level peer
+# address is inside an allowlisted CIDR — i.e. only a request arriving
+# directly from a proxy the operator has explicitly vouched for may assert an
+# XFF value at all. When it is trusted, the RIGHTMOST entry is used (the
+# address that trusted proxy itself appended for whoever connected to IT,
+# which an attacker sitting in front of that proxy cannot set — the leftmost
+# entry always can). An unset/empty TRUSTED_PROXY_CIDRS, or a peer outside
+# every allowlisted CIDR, means "trust nothing" and falls back to the raw
+# peer address — IDENTICAL to TRUST_FORWARDED_FOR being off, which is the
+# safe default an operator gets by doing nothing further.
+#
+# WHY THIS MECHANISM, NOT THE ALTERNATIVE. BOB-171 names two closure options:
+# (i) rightmost-minus-N-trusted-hops, or (ii) a trusted-proxy CIDR allowlist
+# (this one), framing the choice between them as "a deployment-topology
+# decision [that] should be recorded, not assumed" — no operator decision on
+# THIS specific choice exists yet. The CIDR allowlist was CHOSEN BY THE
+# IMPLEMENTING AGENT fixing BOB-171 as the more conservative default for a
+# project with no recorded reverse-proxy deployment topology: it degrades
+# safely to today's behaviour with zero configuration, whereas a bare hop
+# count has no such safe zero-config default. This is an implementation
+# choice, not an operator-made one — if the real deployment topology later
+# needs multiple CHAINED trusted proxies (option i's shape), an operator can
+# swap this function for hop-count parsing instead.
+#
+# Honest scope note: this closes the header-forgery bypass. It does not make
+# per-IP limiting fair behind NAT, where many real users legitimately share
+# one address — that is a distinct, out-of-scope problem.
+
+
+def _trusted_proxy_networks() -> list[ipaddress.IPv4Network | ipaddress.IPv6Network]:
+    """Parse `TRUSTED_PROXY_CIDRS` (comma-separated) into ip_network objects.
+
+    Unset/empty -> `[]` -> `_peer_is_trusted_proxy` always returns False ->
+    the same "ignore X-Forwarded-For entirely" behaviour as
+    TRUST_FORWARDED_FOR being off (the safe default). An unparsable entry is
+    skipped with a loud log line rather than raising (§11.4.201: a malformed
+    knob degrades only the feature it configures, never the whole process —
+    the same loud-fallback shape `_env_limit` already uses for limit
+    strings).
+    """
+    raw = os.getenv("TRUSTED_PROXY_CIDRS", "").strip()
+    if not raw:
+        return []
+    networks: list[ipaddress.IPv4Network | ipaddress.IPv6Network] = []
+    for entry in raw.split(","):
+        entry = entry.strip()
+        if not entry:
+            continue
+        try:
+            networks.append(ipaddress.ip_network(entry, strict=False))
+        except ValueError:
+            logger.warning("TRUSTED_PROXY_CIDRS: ignoring unparsable entry %r", entry)
+    return networks
+
+
+def _peer_is_trusted_proxy(peer: str) -> bool:
+    """True iff `peer` (the RAW socket peer address) is inside an allowlisted CIDR."""
+    networks = _trusted_proxy_networks()
+    if not networks:
+        return False
+    try:
+        addr = ipaddress.ip_address(peer)
+    except ValueError:
+        return False
+    return any(addr in net for net in networks)
+
 
 def _client_key(request: Request) -> str:
-    if os.getenv("TRUST_FORWARDED_FOR", "").strip().lower() in ("1", "true", "yes"):
-        fwd = request.headers.get("x-forwarded-for", "").strip()
-        if fwd:
-            # Leftmost = the original client, per RFC 7239 / de-facto convention.
-            return fwd.split(",")[0].strip()
-    return get_remote_address(request)
+    peer = get_remote_address(request)
+    if os.getenv("TRUST_FORWARDED_FOR", "").strip().lower() not in ("1", "true", "yes"):
+        return peer
+
+    if not _peer_is_trusted_proxy(peer):
+        # TRUST_FORWARDED_FOR is on, but this connection did not arrive
+        # directly from an allowlisted proxy — never honour XFF from an
+        # untrusted peer. Same behaviour as the flag being off.
+        return peer
+
+    fwd = request.headers.get("x-forwarded-for", "").strip()
+    if not fwd:
+        return peer
+
+    # RIGHTMOST entry only — see the block comment above. The leftmost entry
+    # (the pre-fix behaviour) is always attacker-controlled.
+    parts = [p.strip() for p in fwd.split(",") if p.strip()]
+    return parts[-1] if parts else peer
 
 
 # ---------------------------------------------------------------------------

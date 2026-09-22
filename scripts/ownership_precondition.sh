@@ -339,22 +339,53 @@ resolve_runtime() {
 #   never guessed:
 #     podman -> `.Host.Security.Rootless`, a bool; measured `true` here.
 #     docker -> `.SecurityOptions`, a []string carrying the standalone token
-#               `name=rootless` in rootless mode. HONEST GAP (§11.4.6): docker
-#               is NOT INSTALLED on the host where this was authored, so the
-#               docker branch is written from Docker's documented rootless
-#               indicator and is UNMEASURED here. It is deliberately built to
-#               fail toward `unknown` (a named skip) rather than toward a
-#               confident `rootful`, so an unverified reading can never
-#               manufacture a refusal.
+#               `name=rootless` in rootless mode.
 #
-# WHY EVERY AMBIGUITY BECOMES `unknown`, NEVER `rootful` (§11.4.201(1)/(6)):
+# HONEST GAP, STATED PRECISELY (BOB-210, §11.4.6/§11.4.21) — docker is NOT
+# INSTALLED on any host that has authored or maintained this script (checked
+# again 2026-09-22: still absent), so the docker branch is written from
+# Docker's DOCUMENTED rootless indicator and has NEVER been run against a
+# real rootless docker daemon. An EARLIER version of this comment claimed that
+# gap was harmless because the branch "is deliberately built to fail toward
+# `unknown` ... so an unverified reading can never manufacture a refusal." That
+# claim is FALSE for the branch as shipped and was corrected here rather than
+# left standing: `detect_rootless()`'s docker case falls to `unknown` ONLY on
+# a COMMAND-LEVEL failure — `docker info` exiting non-zero, or a successful
+# call whose `SecurityOptions` list is EMPTY (§11.4.201(6), a blind read and a
+# healthy-but-silent engine return the same quiet nothing). A SUCCESSFUL,
+# NON-EMPTY read that simply does not contain the exact `name=rootless` field
+# is read as a CONFIDENT `rootful` — not `unknown` — because the documented
+# Docker convention is that such a list, when non-empty, enumerates every
+# active security option and a rootless engine's list includes that marker.
+# That confident reading DOES reach the R3 refusal below when a service
+# declares PUID=0.
+#
+#   THE ACTUAL RISK THIS LEAVES OPEN: the "non-empty list, no marker means
+#   NOT rootless" convention is Docker's documented behaviour, not something
+#   MEASURED against this project's own docker installation (there is none).
+#   If a real rootless docker daemon ever reports `SecurityOptions` in a SHAPE
+#   this code does not anticipate — a differently-spelled marker, a nested
+#   structure, a version-specific omission — a genuinely rootless host could
+#   be misread as rootful and refused. This is a real, open, OPERATOR-GATED
+#   gap (§11.4.21): closing it needs a rootless docker daemon to measure
+#   against, which this host does not have and this script does not install
+#   (installing a container runtime is a host mutation outside this script's
+#   authority). Until then this is a tracked, honestly-stated limitation of
+#   the docker branch specifically — the podman branch reads a bool field
+#   measured live on THIS host and carries no equivalent gap.
+#
+# WHY EVERY *AMBIGUOUS OR FAILED* READING BECOMES `unknown`, NEVER `rootful`
+# (§11.4.201(1)/(6)) — this holds for BOTH runtimes, and is the part of the
+# design that IS delivered as documented:
 #   A refusal is only earned by a POSITIVE reading that the runtime is rootful.
 #   A failed command, an unparseable value, an empty option list or an
 #   unrecognised runtime are all the instrument failing to see — and a blind
 #   instrument and a genuinely-rootful engine return the same quiet nothing.
 #   Reading that silence as "rootful" would refuse healthy hosts; reading it as
 #   "rootless" would wave through the very case this exists to catch. It is
-#   therefore reported as neither.
+#   therefore reported as neither. This property does NOT extend to a
+#   successful, non-empty, marker-absent docker read — see the honest gap
+#   above; that reading is deliberate and documented-sourced, not ambiguous.
 # ---------------------------------------------------------------------------
 detect_rootless() {
     local runtime="$1"

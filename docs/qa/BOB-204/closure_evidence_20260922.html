@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260922</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260922</h1>
+</header>
+<h1 id="bob-204-closure-evidence-2026-09-22">BOB-204 closure evidence —
+2026-09-22</h1>
+<h2 id="finding">Finding</h2>
+<p>BOB-204 (“Credential DELETE reports 204 success while the .env
+plaintext delete error is discarded — credential survives on disk”) was
+already fixed at <code>main</code> HEAD <code>a66188d</code>
+(“feat(release): harden magnet-hash validation, credential-delete
+safety, LAN auth, systemd reboot-survival”), landed in a prior session
+before <code>docs/Issues.md</code> was updated to reflect it — a tracker
+staleness gap, not an open defect.</p>
+<p>Independently re-verified this session by a dedicated subagent via
+reproduce-then-restore (no working-tree changes were made or left
+behind; <code>git diff --stat</code> on <code>qBitTorrent-go/</code>
+returned empty before and after).</p>
+<h2 id="fix-location-current-head">Fix location (current HEAD)</h2>
+<p><code>qBitTorrent-go/internal/jackettapi/credentials.go</code>:</p>
+<ul>
+<li><strong>DELETE handler</strong>
+(<code>HandleDeleteCredential</code>, lines 261-328): Jackett cascade
+error checked (288-297, returns
+<code>502 jackett_cascade_failed</code>), <code>envfile.Delete</code>
+error checked AND read-back-verified (299-319, returns
+<code>500 env_delete_failed</code> /
+<code>500 env_delete_unverified</code>), DB delete error checked
+(322-325); <code>204</code> emitted only at line 327 after all three
+succeed.</li>
+<li><strong>Rollback claim honesty</strong>
+(<code>HandleUpsertCredential</code> lines 192-204;
+<code>rollbackCredential</code> lines 406-447): the rollback’s own error
+is checked (<code>rbErr</code>); response code is
+<code>env_write_failed_db_rollback_failed</code> when the rollback
+itself couldn’t be verified,
+vs. <code>env_write_failed_db_rolled_back</code> only when
+<code>rollbackCredential</code> re-reads the row and confirms every
+field (kind/username/password/cookies) genuinely matches the pre-call
+snapshot (lines 429-446).</li>
+</ul>
+<h2
+id="red-evidence-pre-fix-behaviour-reproduced-by-temporarily-restoring-the">RED
+evidence (pre-fix behaviour, reproduced by temporarily restoring
+the</h2>
+<p>commit immediately before the fix, <code>git show 4b54e99:...</code>,
+then restoring current HEAD byte-for-byte afterward — verified via empty
+<code>git diff --stat</code>)</p>
+<p>Command:
+<code>cd qBitTorrent-go &amp;&amp; GOMAXPROCS=2 go test ./internal/jackettapi/... -run 'BOB204' -v</code></p>
+<pre><code>=== RUN   TestRED_BOB204_DeleteFailOpenLeavesCredentialOnDisk
+    bob204_failclosed_test.go:137: FAIL-OPEN (§11.4.252): DELETE returned 204 No Content while RUTRACKER_USERNAME and RUTRACKER_PASSWORD are STILL PRESENT in .env (db row removed=true). The operator is told the credential is deleted while the plaintext remains on disk.
+--- FAIL: TestRED_BOB204_DeleteFailOpenLeavesCredentialOnDisk (0.01s)
+=== RUN   TestRED_BOB204_DeleteFailOpenOnJackettCascade
+    bob204_failclosed_test.go:196: FAIL-OPEN (§11.4.252): DELETE returned 204 while the Jackett cascade delete failed (HTTP 500) — indexer rutracker-idx is left configured at Jackett against a credential reported deleted
+--- FAIL: TestRED_BOB204_DeleteFailOpenOnJackettCascade (0.01s)
+=== RUN   TestRED_BOB204_RollbackClaimIsFalse
+    bob204_failclosed_test.go:255: FALSE ROLLBACK CLAIM (§11.4/§11.4.6): response asserts `env_write_failed_db_rolled_back`, but the DB row still carries the username the failed request introduced (has_username=true, prior was false). The compensating Upsert no-ops on nil fields (COALESCE keeps the new value) so it returns no error to check.
+--- FAIL: TestRED_BOB204_RollbackClaimIsFalse (0.00s)
+--- PASS: TestGOLDENFALSE_BOB204_HealthyPathsUnaffected (0.00s)
+--- PASS: TestPOSITIVE_BOB204_HealthyJackettCascadeStillDeletes (0.01s)
+--- PASS: TestPOSITIVE_BOB204_RollbackRestoresOverwrittenValue (0.00s)
+FAIL
+FAIL    github.com/milos85vasic/qBitTorrent-go/internal/jackettapi  0.038s</code></pre>
+<h2 id="green-evidence-current-head-restored-byte-identical">GREEN
+evidence (current HEAD, restored byte-identical)</h2>
+<pre><code>=== RUN   TestRED_BOB204_DeleteFailOpenLeavesCredentialOnDisk
+--- PASS: TestRED_BOB204_DeleteFailOpenLeavesCredentialOnDisk (0.01s)
+=== RUN   TestRED_BOB204_DeleteFailOpenOnJackettCascade
+--- PASS: TestRED_BOB204_DeleteFailOpenOnJackettCascade (0.01s)
+=== RUN   TestRED_BOB204_RollbackClaimIsFalse
+--- PASS: TestRED_BOB204_RollbackClaimIsFalse (0.01s)
+=== RUN   TestGOLDENFALSE_BOB204_HealthyPathsUnaffected
+--- PASS: TestGOLDENFALSE_BOB204_HealthyPathsUnaffected (0.02s)
+=== RUN   TestPOSITIVE_BOB204_HealthyJackettCascadeStillDeletes
+--- PASS: TestPOSITIVE_BOB204_HealthyJackettCascadeStillDeletes (0.02s)
+=== RUN   TestPOSITIVE_BOB204_RollbackRestoresOverwrittenValue
+--- PASS: TestPOSITIVE_BOB204_RollbackRestoresOverwrittenValue (0.01s)
+PASS
+ok      github.com/milos85vasic/qBitTorrent-go/internal/jackettapi  0.079s</code></pre>
+<h2 id="negative-control-golden-false">Negative control
+(golden-FALSE)</h2>
+<p><code>TestGOLDENFALSE_BOB204_HealthyPathsUnaffected</code> passes
+both before and after — proves the fix does not fail-closed on the
+healthy path.
+<code>TestPOSITIVE_BOB204_HealthyJackettCascadeStillDeletes</code> and
+<code>TestPOSITIVE_BOB204_RollbackRestoresOverwrittenValue</code>
+additionally prove the working-cascade and true-rollback-restore
+branches, both PASS.</p>
+<h2 id="full-scoped-package-suite">Full scoped package suite</h2>
+<p><code>go test ./internal/jackettapi/... -v</code> — all tests in the
+package (60+, including unrelated ones) PASS.</p>
+<h2 id="working-tree-state">Working-tree state</h2>
+<p><code>git status --porcelain</code> and <code>git diff --stat</code>
+both empty for <code>qBitTorrent-go/</code> before and after this
+verification — no code changes were needed or made this session.</p>
+<h2
+id="test-files-pre-existing-tracked-reachable-via-git-log-back-to-5c9b9e0">Test
+files (pre-existing, tracked, reachable via <code>git log</code> back to
+<code>5c9b9e0</code>)</h2>
+<ul>
+<li><code>qBitTorrent-go/internal/jackettapi/bob204_failclosed_test.go</code>
+— 3 RED tests</li>
+<li><code>qBitTorrent-go/internal/jackettapi/bob204_positive_test.go</code>
+— 2 positive-path proofs</li>
+</ul>
+</body>
+</html>

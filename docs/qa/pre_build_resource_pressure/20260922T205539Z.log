@@ -1,0 +1,32 @@
+=== SIG-1: runaway process >5 GB RSS ===
+OVER THRESHOLD:
+1809094 milosva+ 5247848 java
+UNCLASSIFIED (not in legitimate-large exclusion set):
+1809094 milosva+ 5247848 java
+
+=== SIG-2: thread count >70% of soft ulimit -u ===
+  threads=4479  soft_limit=123708  utilization=3%
+OK: thread utilization 3% within safe zone
+
+=== SIG-3: EAGAIN cascade in last 15 minutes ===
+  total EAGAIN-class hits last 15min: 0
+  correlation: SIG-2-not-currently-elevated (current SIG-2 utilization=3%)
+OK: EAGAIN hits within safe zone
+
+=== SIG-4: user.slice memory PSI full avg60 > 50 ===
+  full avg60=0.00 threshold=50
+OK: PSI within safe zone
+
+=== SIG-5: pathological regex pattern (ugrep -o variable-length alternation) ===
+OK: no pathological-regex processes detected
+
+=== summary ===
+FAIL: 1 signature(s) tripped
+  - SIG-1: unclassified process(es) over 5 GB RSS
+
+Take corrective action per docs/incidents/2026-08-18-perceived-forced-logout-2nd.md:
+  - SIG-1: identify + kill runaway process
+  - SIG-2: reduce parallel subagent fan-out
+  - SIG-3: examine container that emits EAGAIN, throttle its outbound
+  - SIG-4: reduce memory-consuming workload
+  - SIG-5: kill the pathological regex process immediately

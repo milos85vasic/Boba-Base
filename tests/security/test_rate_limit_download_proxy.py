@@ -298,8 +298,15 @@ def test_expensive_path_does_not_drain_the_webui_budget(limited_stack):
 
 
 def test_per_ip_isolation_under_explicit_forwarded_for_optin(limited_stack):
-    """Caller A being throttled must not throttle caller B."""
-    stack = limited_stack(TRUST_FORWARDED_FOR="1")
+    """Caller A being throttled must not throttle caller B.
+
+    BOB-171: `TRUST_FORWARDED_FOR=1` alone is no longer sufficient to honour
+    XFF — the REAL connecting peer must also be inside `TRUSTED_PROXY_CIDRS`
+    (the fix for the leftmost-XFF forgery bug). This harness's requests
+    always arrive from 127.0.0.1 (`urlopen` against the local proxy port),
+    so that address is the "trusted proxy" for this test's purposes.
+    """
+    stack = limited_stack(TRUST_FORWARDED_FOR="1", TRUSTED_PROXY_CIDRS="127.0.0.1/32")
     a = {"X-Forwarded-For": "203.0.113.7"}
     b = {"X-Forwarded-For": "198.51.100.9"}
     codes_a = [stack.get("/", a)[0] for _ in range(PROXY_LIMIT + 3)]

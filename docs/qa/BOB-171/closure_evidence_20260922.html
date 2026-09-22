@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260922</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260922</h1>
+</header>
+<h1 id="bob-171-closure-evidence-2026-09-22">BOB-171 closure evidence —
+2026-09-22</h1>
+<h2
+id="fix-both-sites-identical-policy-a-trusted-proxy-cidr-allowlist">Fix
+(both sites, identical policy — a trusted-proxy CIDR allowlist)</h2>
+<p><strong><code>download-proxy/src/api/rate_limit.py</code></strong>
+(:7187): <code>_trusted_proxy_networks()</code> (line ~162),
+<code>_peer_is_trusted_proxy()</code> (line ~188),
+<code>_client_key()</code> (line ~200, the fix): reads the raw peer
+first; if <code>TRUST_FORWARDED_FOR</code> is off → raw peer
+(unchanged); if on but the peer is not in
+<code>TRUSTED_PROXY_CIDRS</code> → raw peer; if on and the peer IS
+trusted → <strong>rightmost</strong> XFF element (was leftmost).</p>
+<p><strong><code>plugins/download_proxy.py</code></strong> (:7186, built
+to exact policy parity): <code>_rl_trusted_proxy_networks()</code>
+(~422), <code>_rl_peer_is_trusted_proxy()</code> (~447),
+<code>_rate_limit_client()</code> (~658) — identical logic,
+mirrored.</p>
+<p>Design decision recorded honestly: the item names two options
+(rightmost- minus-N-trusted-hops vs. a trusted-proxy CIDR allowlist) as
+an open deployment-topology choice with no operator decision on record.
+The implementing agent chose the CIDR allowlist as the safer zero-config
+default (degrades to <code>TRUST_FORWARDED_FOR</code>-off behavior when
+<code>TRUSTED_PROXY_CIDRS</code> is unset) — both source files carry a
+block comment stating this explicitly as an AGENT-CHOSEN implementation
+decision, not an operator-made one, and note an operator can swap in
+hop-counting if their real topology needs chained trusted proxies.</p>
+<h2
+id="red-evidence-pre-fix-leftmost-parsing-reproduced-from-the-exact-pre-fix-source">RED
+evidence (pre-fix leftmost parsing, reproduced from the exact pre-fix
+source)</h2>
+<pre><code>RED (pre-fix _client_key) keys across rotating forged XFF: [&#39;1.1.1.1&#39;, &#39;2.2.2.2&#39;, &#39;9.9.9.9&#39;, &#39;6.6.6.6&#39;]
+EXPECTED FAILURE (RED confirmed): resolved bucket key rotated: [&#39;1.1.1.1&#39;, &#39;2.2.2.2&#39;, &#39;9.9.9.9&#39;, &#39;6.6.6.6&#39;] -- this is the BOB-171 bypass</code></pre>
+<h2
+id="green-paired-mutation-negative-control-independently-re-verified-this-session">GREEN
++ paired-mutation + negative-control (independently re-verified this
+session)</h2>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/test_rate_limit_client_identity_bob171.py \
+    tests/security/test_rate_limit_download_proxy_trusted_proxy_bob171.py \
+    tests/security/test_rate_limit_download_proxy.py -v --no-cov
+...
+29 passed in 18.11s</code></pre>
+<p>Includes, per site:
+<code>test_green_rotating_leftmost_xff_does_not_rotate_the_bucket_key</code>,
+<code>test_green_key_is_not_any_forged_leftmost_value</code> (GREEN);
+<code>test_mutation_restoring_leftmost_parsing_fails</code> (paired
+mutation — the byte-for-byte pre-fix logic run against the same scenario
+is asserted to genuinely fail, proving the GREEN test isn’t trivially
+satisfied);
+<code>test_negative_control_flag_off_ignores_xff_entirely</code>,
+<code>test_negative_control_default_env_state_ignores_xff</code>,
+<code>test_flag_on_but_empty_allowlist_still_ignores_xff</code>,
+<code>test_flag_on_but_peer_outside_allowlist_ignores_xff</code> (all
+four negative controls — XFF ignored entirely, keying falls back to raw
+peer, no false-positive honoring introduced).</p>
+<p>Also re-ran the full pre-existing
+<code>tests/security/test_rate_limit_download_proxy.py</code> suite (13
+tests) alongside — all pass, no regression, including
+<code>test_per_ip_isolation_under_explicit_forwarded_for_optin</code>
+which needed one line added
+(<code>TRUSTED_PROXY_CIDRS="127.0.0.1/32"</code>, its real connecting
+peer) since it previously set <code>TRUST_FORWARDED_FOR=1</code> alone
+with no allowlist — exactly the vulnerable contract this fix closes —
+and now needs an explicitly-trusted proxy to keep exercising per-IP
+isolation.</p>
+<h2 id="honest-scope-boundary-stated-in-source-not-silenced">Honest
+scope boundary (stated in-source, not silenced)</h2>
+<p>Closes the header-forgery bypass. Does not make per-IP limiting fair
+behind NAT, where many real users legitimately share one address — out
+of scope.</p>
+<h2 id="git-diff-stat">git diff –stat</h2>
+<pre><code>download-proxy/src/api/rate_limit.py             | 115 ++++++++++++++++++----
+plugins/download_proxy.py                        | 119 ++++++++++++++++++----
+tests/security/test_rate_limit_download_proxy.py |  11 ++-
+3 files changed, 205 insertions(+), 40 deletions(-)</code></pre>
+<p>Plus 2 new untracked test files (14 new tests total across both
+sites).</p>
+</body>
+</html>

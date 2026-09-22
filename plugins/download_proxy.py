@@ -23,6 +23,7 @@ from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 import subprocess
 import logging
 import re
+import ipaddress
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -210,19 +211,42 @@ def merge_tag_values(existing, derived):
 # least-recently-used entry, so a source-IP fan-out cannot grow the map without
 # limit inside a 768m container.
 #
-# TRACKED FOLLOW-UP (BOB-111 review, M3) — X-Forwarded-For is FORGEABLE by
-# design when TRUST_FORWARDED_FOR=1. The leftmost entry is client-controlled,
-# so behind a proxy that APPENDS rather than REPLACES it, a caller can prepend
-# a fabricated address and mint a fresh per-IP budget on demand. The correct
-# closure is to trust the RIGHTMOST entry contributed by a known-trusted proxy
-# hop, or to bind to a configured trusted-proxy CIDR set.
+# BOB-171 FIX (closes the BOB-111 review M3 follow-up) — X-Forwarded-For's
+# LEFTMOST entry was CLIENT-SUPPLIED and therefore forgeable by design:
+# behind a proxy that APPENDS (rather than REPLACES) the header, an attacker
+# who rotates a fabricated leftmost value could mint an unlimited sequence of
+# fresh per-IP buckets, both bypassing the rate limit AND defeating the
+# bucket map's LRU/idle-reap eviction cap (forged identities crowd out real
+# ones). This was EXACT PARITY with :7187's `_client_key`
+# (download-proxy/src/api/rate_limit.py); both sites are fixed IDENTICALLY —
+# see that module's matching BOB-171 block comment for the full rationale —
+# so the two surfaces never disagree on client identity (§11.4.251).
 #
-# NOT FIXED HERE, deliberately: this behaviour is EXACT PARITY with :7187's
-# `_client_key` (download-proxy/src/api/rate_limit.py), the opt-in is OFF by
-# default, and this stack runs `network_mode: host` with no reverse proxy, so
-# the forgeable path is unreachable as deployed. Fixing one port and not the
-# other would leave two divergent keying policies behind one contract
-# (§11.4.251). It is one follow-up covering BOTH :7186 and :7187.
+# THE FIX — a trusted-proxy CIDR allowlist (`TRUSTED_PROXY_CIDRS`, a
+# comma-separated list of CIDR blocks). X-Forwarded-For is honoured ONLY when
+# BOTH (1) TRUST_FORWARDED_FOR is on AND (2) the REAL, socket-level peer
+# address is inside an allowlisted CIDR. When trusted, the RIGHTMOST entry is
+# used (what that directly-connected trusted proxy itself appended — an
+# attacker in front of it cannot set that value, unlike the leftmost entry).
+# An unset/empty TRUSTED_PROXY_CIDRS, or a peer outside every allowlisted
+# CIDR, means "trust nothing" and falls back to the raw peer address —
+# IDENTICAL to TRUST_FORWARDED_FOR being off, the safe zero-config default.
+#
+# WHY THIS MECHANISM, NOT HOP-COUNTING. BOB-171 names two closure options —
+# (i) rightmost-minus-N-trusted-hops, or (ii) a trusted-proxy CIDR allowlist
+# (this one) — framing the choice as "a deployment-topology decision [that]
+# should be recorded, not assumed"; no such operator decision exists yet. The
+# CIDR allowlist was CHOSEN BY THE IMPLEMENTING AGENT fixing BOB-171 as the
+# more conservative default for a project with no recorded reverse-proxy
+# topology: it degrades safely to today's behaviour with zero configuration,
+# where a bare hop count has no such safe zero-config default. This is an
+# implementation choice, not an operator-made one — an operator whose real
+# topology needs chained trusted proxies (option i's shape) can swap this
+# for hop-count parsing instead.
+#
+# Honest scope note: this closes the header-forgery bypass. It does not make
+# per-IP limiting fair behind NAT, where many real users legitimately share
+# one address — that is a distinct, out-of-scope problem.
 # ---------------------------------------------------------------------------
 
 import threading as _rl_threading
@@ -395,8 +419,45 @@ class FixedWindowRateLimiter:
             del self._buckets[oldest]
 
 
+def _rl_trusted_proxy_networks():
+    """Parse `TRUSTED_PROXY_CIDRS` (comma-separated) into ip_network objects.
+
+    Unset/empty -> `[]` -> `_rl_peer_is_trusted_proxy` always returns False ->
+    the same "ignore X-Forwarded-For entirely" behaviour as
+    TRUST_FORWARDED_FOR being off (the safe default). An unparsable entry is
+    skipped with a loud log line rather than raising (§11.4.201: a malformed
+    knob degrades only the feature it configures, never the whole process —
+    the same loud-fallback shape `_rl_parse_limit` already uses).
+    """
+    raw = os.environ.get("TRUSTED_PROXY_CIDRS", "").strip()
+    if not raw:
+        return []
+    networks = []
+    for entry in raw.split(","):
+        entry = entry.strip()
+        if not entry:
+            continue
+        try:
+            networks.append(ipaddress.ip_network(entry, strict=False))
+        except ValueError:
+            logger.warning("TRUSTED_PROXY_CIDRS: ignoring unparsable entry %r", entry)
+    return networks
+
+
+def _rl_peer_is_trusted_proxy(peer):
+    """True iff `peer` (the RAW socket peer address) is inside an allowlisted CIDR."""
+    if not TRUSTED_PROXY_NETWORKS:
+        return False
+    try:
+        addr = ipaddress.ip_address(peer)
+    except ValueError:
+        return False
+    return any(addr in net for net in TRUSTED_PROXY_NETWORKS)
+
+
 RATE_LIMIT_DISABLED = _rl_env_true("RATE_LIMIT_DISABLED")
 TRUST_FORWARDED_FOR = _rl_env_true("TRUST_FORWARDED_FOR")
+TRUSTED_PROXY_NETWORKS = _rl_trusted_proxy_networks()
 RATE_LIMIT_IDLE_REAP_SECONDS = _rl_env_int("RATE_LIMIT_IDLE_REAP_SECONDS", 900)
 
 _RATE_LIMITER = (
@@ -587,18 +648,36 @@ class DownloadHandler(BaseHTTPRequestHandler):
     # only guards the expensive branch
     # leaves the cheap ones as a free amplifier for the same socket.
 
-    def _rate_limit_client(self):
-        """Per-IP key. X-Forwarded-For is honoured ONLY under an explicit
-        TRUST_FORWARDED_FOR=1 opt-in — trusting it by default lets any caller
-        forge a source IP and mint an unlimited budget."""
-        if TRUST_FORWARDED_FOR:
-            fwd = (self.headers.get("X-Forwarded-For") or "").strip()
-            if fwd:
-                return fwd.split(",")[0].strip()
+    def _rate_limit_peer(self):
+        """The RAW socket peer address — never trusts any header."""
         try:
             return self.client_address[0]
         except (AttributeError, IndexError, TypeError):
             return "unknown"
+
+    def _rate_limit_client(self):
+        """Per-IP key. X-Forwarded-For is honoured ONLY when BOTH (1) an
+        explicit TRUST_FORWARDED_FOR=1 opt-in is set AND (2) the REAL peer
+        address is inside an allowlisted `TRUSTED_PROXY_CIDRS` CIDR — trusting
+        it from an arbitrary, untrusted peer by default lets any caller forge
+        a source IP and mint an unlimited budget (BOB-171). See the BOB-171
+        block comment above `TRUST_FORWARDED_FOR` for the full rationale.
+
+        When trusted, the RIGHTMOST X-Forwarded-For entry is used — the
+        address the directly-connected trusted proxy itself appended, which
+        an attacker in front of it cannot set (unlike the leftmost entry,
+        the pre-fix behaviour and the exact BOB-171 bug).
+        """
+        peer = self._rate_limit_peer()
+        if not TRUST_FORWARDED_FOR:
+            return peer
+        if not _rl_peer_is_trusted_proxy(peer):
+            return peer
+        fwd = (self.headers.get("X-Forwarded-For") or "").strip()
+        if not fwd:
+            return peer
+        parts = [p.strip() for p in fwd.split(",") if p.strip()]
+        return parts[-1] if parts else peer
 
     def _send_rate_limited(self, limit, remaining, reset_after):
         """Minimal 429 — an opaque token only (§11.4.10). No client IP, no

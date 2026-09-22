@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/milos85vasic/qBitTorrent-go/internal/api"
@@ -22,6 +24,21 @@ func main() {
 
 	zerolog.SetGlobalLevel(parseLogLevel(cfg.LogLevel))
 	log.Info().Str("port", fmt.Sprintf("%d", cfg.ServerPort)).Msg("starting merge search service")
+
+	// BOB-198 boot-time guard (operator decision 2026-08-26, §11.4.66:
+	// "REFUSE TO START LAN-BOUND"). This binary registers CORS, Logger and
+	// rate-limit middleware but NO authentication — 22 routes including
+	// download and hook deletion would be reachable from anything on the LAN
+	// if this process ever bound a non-loopback address. Checked as early as
+	// possible (before the qBittorrent connection attempt, the proxy config,
+	// or any store is opened) so a misconfiguration fails fast and loud
+	// rather than silently exposing the surface for however long it takes an
+	// operator to notice. log.Fatal() exits the process non-zero; the server
+	// never reaches r.Run(addr) below.
+	if err := checkLoopbackBind(cfg.ServerBindHost); err != nil {
+		log.Fatal().Err(err).Str("configured_bind_host", cfg.ServerBindHost).
+			Msg("BOB-198: refusing to start — non-loopback bind address and this binary ships no auth middleware")
+	}
 
 	// Install the configurable outbound proxy for tracker-bound egress before
 	// any tracker-bound client is constructed. Fail-fast on a malformed value
@@ -116,7 +133,14 @@ func main() {
 		schedules.DELETE("/:id", api.DeleteScheduleHandler(scheduleStore))
 	}
 
-	addr := fmt.Sprintf(":%d", cfg.ServerPort)
+	// cfg.ServerBindHost defaults to "127.0.0.1" (loopback-only). This is the
+	// real fix, not merely the guard above: the listener itself now binds
+	// loopback by default instead of the prior bare ":port" (all-interfaces)
+	// form. checkLoopbackBind is defense-in-depth against a future
+	// regression that reintroduces a non-loopback default or an operator
+	// override — it has already run by this point, so addr below is
+	// guaranteed loopback whenever this line is reached.
+	addr := fmt.Sprintf("%s:%d", cfg.ServerBindHost, cfg.ServerPort)
 	log.Info().Str("addr", addr).Msg("server listening")
 	if err := r.Run(addr); err != nil {
 		log.Fatal().Err(err).Msg("server failed")
@@ -134,6 +158,72 @@ func main() {
 // middleware, and boba-jackett all parse the variable identically (§11.4.251).
 func parseAllowedOrigins(raw string) []string {
 	return corsorigins.Split(raw)
+}
+
+// checkLoopbackBind reports whether bindHost is a loopback address —
+// "127.0.0.1", "localhost" (case-insensitive), "::1", or any other
+// 127.0.0.0/8 literal — returning nil when it is, and a descriptive,
+// actionable error when it is not.
+//
+// BOB-198: this binary (qbittorrent-proxy-go, the --profile go alternative
+// to the Python merge service) registers CORS, Logger and rate-limit
+// middleware but ships NO authentication middleware this cycle — that was an
+// explicitly REJECTED alternative (operator decision 2026-08-26, §11.4.66).
+// Its 22 routes, several mutating (POST /api/v1/download, POST
+// /api/v1/magnet, DELETE /api/v1/hooks/:id, POST and DELETE
+// /api/v1/schedules), are therefore reachable by anything that can reach the
+// bind address with zero authentication. The decision was "REFUSE TO START
+// LAN-BOUND": bind loopback only, or refuse to start — never silently serve
+// a LAN-reachable, unauthenticated surface.
+//
+// The check is deliberately syntax-only (no DNS resolution): a hostname
+// other than the literal "localhost" is refused even if it *might* resolve
+// to a loopback address at runtime, because trusting an unresolved name here
+// would make the guard's own correctness depend on network state that is
+// unavailable, slow, or attacker-influenced at exactly the moment the guard
+// needs to be trustworthy. Fail closed on an unresolvable signal — the
+// conservative-safe default (§11.4.201) — rather than fail open.
+//
+//   - "" (Go's bare ":port" listen-all-interfaces shorthand) is explicitly
+//     refused: it is the exact class of bind this bug report names.
+func checkLoopbackBind(bindHost string) error {
+	host := strings.TrimSpace(bindHost)
+
+	if host == "" {
+		return fmt.Errorf(
+			"bind host is empty, which binds ALL interfaces (the \":port\" " +
+				"listen-all-interfaces shorthand, equivalent to 0.0.0.0); " +
+				"this binary ships no authentication middleware — set " +
+				"SERVER_BIND_HOST to a loopback address (127.0.0.1, ::1, or " +
+				"localhost) to start it",
+		)
+	}
+
+	if strings.EqualFold(host, "localhost") {
+		return nil
+	}
+
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return fmt.Errorf(
+			"configured bind host %q is not a loopback address (and is not "+
+				"resolved via DNS by this check — see checkLoopbackBind); "+
+				"this binary ships no authentication middleware and MUST NOT "+
+				"be exposed to the LAN — set SERVER_BIND_HOST to 127.0.0.1, "+
+				"::1, or localhost",
+			host,
+		)
+	}
+	if !ip.IsLoopback() {
+		return fmt.Errorf(
+			"configured bind address %q is not loopback; this binary ships "+
+				"no authentication middleware and MUST NOT be exposed to the "+
+				"LAN — set SERVER_BIND_HOST to 127.0.0.1, ::1, or localhost",
+			host,
+		)
+	}
+
+	return nil
 }
 
 func parseLogLevel(level string) zerolog.Level {

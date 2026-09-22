@@ -9,11 +9,20 @@ import (
 )
 
 type Config struct {
-	QBittorrentHost       string
-	QBittorrentPort       int
-	QBittorrentUsername   string
-	QBittorrentPassword   string
-	ServerPort            int
+	QBittorrentHost     string
+	QBittorrentPort     int
+	QBittorrentUsername string
+	QBittorrentPassword string
+	ServerPort          int
+	// ServerBindHost is the interface this binary's HTTP listener binds.
+	// Defaults to loopback-only (127.0.0.1) — BOB-198 (operator decision
+	// 2026-08-26, §11.4.66: "REFUSE TO START LAN-BOUND"): this binary ships
+	// no authentication middleware, so it MUST NOT bind a LAN-reachable
+	// address; main.go's checkLoopbackBind refuses to start when this
+	// resolves to anything other than loopback. Override via
+	// SERVER_BIND_HOST only for a genuine loopback alias — never to expose
+	// the service to the LAN, which the boot-time guard will refuse.
+	ServerBindHost        string
 	BridgePort            int
 	ProxyPort             int
 	LogLevel              string
@@ -56,6 +65,7 @@ func Load() *Config {
 		QBittorrentUsername:   getEnv("QBITTORRENT_USER", getEnv("QBITTORRENT_USERNAME", "admin")),
 		QBittorrentPassword:   getEnv("QBITTORRENT_PASS", getEnv("QBITTORRENT_PASSWORD", "admin")),
 		ServerPort:            getEnvAsInt("MERGE_SERVICE_PORT", getEnvAsInt("SERVER_PORT", 7187)),
+		ServerBindHost:        getEnv("SERVER_BIND_HOST", "127.0.0.1"),
 		BridgePort:            getEnvAsInt("BRIDGE_PORT", 7188),
 		ProxyPort:             getEnvAsInt("PROXY_PORT", 7186),
 		LogLevel:              getEnv("LOG_LEVEL", "info"),

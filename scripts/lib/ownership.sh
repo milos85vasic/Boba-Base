@@ -289,12 +289,63 @@ PYEOF
 # ---------------------------------------------------------------------------
 # probe_location <dir> — create a real file, read its owner back, remove it.
 #
-# Echoes one of: ok | wrong-owner:<uid> | unwritable | absent   (data-model E4)
+# Echoes one of: ok | wrong-owner:<uid> | unwritable | stat-failed |
+#                unresolved-operator-uid | absent   (data-model E4)
 # Return: 0 for ok, 1 for every other verdict.
 #
 # The probe file is created inside the probed directory ON PURPOSE — ownership
 # is a property of the filesystem and mount the file lands on, so probing
 # anywhere else would answer a different question.
+#
+# ---- THE want SIDE IS CHECKED TOO (BOB-208, §11.4.201(1)) ------------------
+# `ownership_operator_uid()` is `id -u` — a command that CAN fail. This file
+# runs under `set -uo pipefail`, not `set -e`, so an unguarded
+# `want="$(ownership_operator_uid)"` leaves `want` EMPTY on failure and
+# execution continues: every subsequent `[[ "${got}" == "${want}" ]]`
+# comparison then fails for the wrong reason, and the function reports
+# `wrong-owner:<got>` — naming the file's ACTUAL (correct) uid as the fault.
+# MEASURED (id shimmed to fail): a perfectly healthy location verdicts
+# `wrong-owner:1000`, which sends the reader to fix a value that was already
+# right. §11.4.201(1): a false-positive refusal is exactly as forbidden as a
+# false pass, and §11.4.201(4) requires the conservative-safe default on an
+# unresolvable signal be stated HONESTLY rather than disguised as a different
+# finding. `unresolved-operator-uid` names the real, unresolved precondition
+# instead of a fabricated ownership mismatch; every consumer of this verdict
+# already refuses on any string it does not recognise (ownership_precondition.sh
+# `case "${verdict}" in ... *) FAILURES+=(...)`), so this still fails closed.
+#
+# ---- STAT GUARDS ARE SYMMETRIC, AND A stat(1) FAILURE IS NAMED HONESTLY
+# (BOB-209, §11.4.6/§11.4.201(1)) --------------------------------------------
+# The pre-fix code checked the FILE branch's `stat` for its exit code but not
+# for empty output, and the directory/probe branch's `stat` for empty output
+# but not for its exit code — each half blind to exactly the failure mode the
+# other guarded against. A `stat` that FAILS while still printing something on
+# stdout (measured constructible via a shim; not a real GNU/uutils `stat`
+# behaviour, but nothing here may assume that) fell through the directory
+# branch's emptiness-only guard and was reported as `wrong-owner:<garbage>` —
+# treating whatever leaked to stdout as a real uid. A `stat` that SUCCEEDS
+# with empty output fell through the file branch's rc-only guard the same way,
+# yielding a malformed `wrong-owner:` (no uid at all). Both branches now check
+# rc AND emptiness together, and a stat failure of EITHER kind is reported as
+# `stat-failed` — never `unwritable` (stat failing is not a writability fact:
+# `unwritable` stays reserved for the case `mktemp` itself could not create the
+# probe, which really is a writability finding).
+#
+# ---- CLEANUP IS A TRAP, NOT A PLAIN STATEMENT (BOB-209, §11.4.14) ----------
+# The probe file used to be removed by a bare `rm -f "${probe}"` in the normal
+# control-flow path. An interrupt landing between `mktemp` returning and that
+# `rm` running strands a `.ownership-probe.XXXXXX` file INSIDE a declared
+# location — and the declared set includes the git-tracked `download-proxy/`
+# tree, so a stranded probe lands on a path version control can see. Cleanup
+# now runs from traps: a RETURN trap covers every `return` in the directory
+# branch uniformly (normal and every early-return verdict alike, so no future
+# early return can reintroduce an untrapped path), and INT/TERM/HUP are each
+# SAVED via `trap -p` and RESTORED rather than overwritten outright — this
+# function removes the probe FIRST, restores whatever handler the caller
+# already had for that signal (ownership_repair.sh installs its own INT/TERM
+# handlers at its top level), and re-raises the signal so the caller's own
+# handling still runs exactly as before. A caller with no prior handler for a
+# signal restores cleanly to the shell default (`trap - SIG`).
 #
 # ---- THE AGREED PROPERTY IS uid, NOT uid+gid (BOB-207, §11.4.250) ----------
 # This reads `%u` and compares against ownership_operator_uid(), and does NOT
@@ -320,23 +371,44 @@ PYEOF
 # system.
 # ---------------------------------------------------------------------------
 probe_location() {
-    local dir="$1" want probe got
-    want="$(ownership_operator_uid)"
+    local dir="$1" want probe="" got rc
+
+    if ! want="$(ownership_operator_uid)" || [[ -z "${want}" ]]; then
+        echo "unresolved-operator-uid"
+        return 1
+    fi
 
     [[ -e "${dir}" ]] || { echo "absent"; return 1; }
     if [[ -f "${dir}" ]]; then
         # A declared FILE (e.g. the credential store): read its owner directly.
         # There is nothing to create, so this is the one case where reading the
         # target itself IS the real condition rather than a proxy for it.
-        got="$(stat -c '%u' "${dir}" 2>/dev/null)" || { echo "unwritable"; return 1; }
+        got="$(stat -c '%u' "${dir}" 2>/dev/null)"; rc=$?
+        if [[ "${rc}" -ne 0 || -z "${got}" ]]; then
+            echo "stat-failed"
+            return 1
+        fi
         [[ "${got}" == "${want}" ]] && { echo "ok"; return 0; }
         echo "wrong-owner:${got}"; return 1
     fi
 
+    # §11.4.14 — see the header block above for why this is traps and not a
+    # plain `rm -f` statement.
+    local _pl_int _pl_term _pl_hup
+    _pl_int="$(trap -p INT)"
+    _pl_term="$(trap -p TERM)"
+    _pl_hup="$(trap -p HUP)"
+    trap 'rm -f "${probe}"; eval "${_pl_int:-trap - INT}"; eval "${_pl_term:-trap - TERM}"; eval "${_pl_hup:-trap - HUP}"' RETURN
+    trap 'rm -f "${probe}"; eval "${_pl_int:-trap - INT}";   kill -s INT  "$$"' INT
+    trap 'rm -f "${probe}"; eval "${_pl_term:-trap - TERM}"; kill -s TERM "$$"' TERM
+    trap 'rm -f "${probe}"; eval "${_pl_hup:-trap - HUP}";   kill -s HUP  "$$"' HUP
+
     probe="$(mktemp "${dir}/.ownership-probe.XXXXXX" 2>/dev/null)" || { echo "unwritable"; return 1; }
-    got="$(stat -c '%u' "${probe}" 2>/dev/null)"
-    rm -f "${probe}"
-    [[ -n "${got}" ]] || { echo "unwritable"; return 1; }
+    got="$(stat -c '%u' "${probe}" 2>/dev/null)"; rc=$?
+    if [[ "${rc}" -ne 0 || -z "${got}" ]]; then
+        echo "stat-failed"
+        return 1
+    fi
     [[ "${got}" == "${want}" ]] && { echo "ok"; return 0; }
     echo "wrong-owner:${got}"
     return 1
@@ -524,6 +596,40 @@ for name, svc in (doc.get("services") or {}).items():
 
     print("\t".join([name, image, userns, puid, ",".join(sources), user]))
 PYEOF
+}
+
+# ---------------------------------------------------------------------------
+# ownership_split_tsv <line> — fill the array OWNERSHIP_TSV_FIELDS with the
+# line's TAB-separated fields, EMPTY FIELDS PRESERVED.
+#
+# WHY NOT `IFS=$'\t' read -r a b c d e` (BOB-202, §11.4.251) — TAB is an IFS
+# *whitespace* character, so bash collapses a RUN of tabs into ONE delimiter
+# even with IFS explicitly set to a single tab. A scope row whose `kind` field
+# is empty is emitted as `<path>\t\t1\t0\t1` (two tabs in a row); reading that
+# with `read` shifts every field after the omission one slot to the left, so
+# `optional`'s value lands in `kind`'s slot and `recursive` arrives empty.
+# MEASURED 2026-08-26 on GNU bash 5.2.37, control-needled (§11.4.201(7)(b) —
+# the with-field row was read FIRST and produced correct output, proving this
+# instrument can see, before the empty-field row was trusted):
+#   kind PRESENT: path=[P] kind=[dir] opt=[1] pres=[0] rec=[1]
+#   kind EMPTY:   path=[P] kind=[1]   opt=[0] pres=[1] rec=[]
+# Consequence: an entry declared `optional: true` is silently read as
+# NON-optional (the boolean lands in `kind`'s slot instead), so an absent
+# path that should skip honestly instead becomes a hard failure.
+#
+# `readarray -d $'\t'` splits on the LITERAL byte, not on IFS-whitespace
+# collapsing rules, so an empty field between two tabs stays a real (empty)
+# array element.
+#
+# THIS IS THE SAME FUNCTION AS scripts/ownership_precondition.sh's OWN
+# `split_tsv()` (§11.4.251 — one dialect for one question: both scripts read
+# rows from the SAME `ownership_scope_entries()` shape). It lives here, in the
+# shared library, so a future third reader of that row shape inherits the
+# fix instead of a chance to reinvent the collapsing bug.
+# ---------------------------------------------------------------------------
+ownership_split_tsv() {
+    OWNERSHIP_TSV_FIELDS=()
+    readarray -d $'\t' -t OWNERSHIP_TSV_FIELDS < <(printf '%s' "$1")
 }
 
 # ---------------------------------------------------------------------------

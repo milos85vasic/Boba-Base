@@ -499,7 +499,19 @@ absolutise() {
 # a marker that claims the whole one.
 declare -a E_PATH=() E_KIND=() E_OPTIONAL=() E_PRESERVE=() E_RECURSIVE=()
 FENCE_REFUSALS=0
-while IFS=$'\t' read -r e_path e_kind e_opt e_pres e_rec; do
+# BOB-202 — read with ownership_split_tsv(), never `IFS=$'\t' read`: TAB is an
+# IFS-whitespace character, so a row whose `kind` is empty (two tabs back to
+# back) would otherwise collapse and shift every later field left by one,
+# reading `optional`'s value out of `kind`'s slot. See the helper's own
+# header in scripts/lib/ownership.sh for the measured consequence.
+while IFS= read -r e_row; do
+    [[ -n "${e_row}" ]] || continue
+    ownership_split_tsv "${e_row}"
+    e_path="${OWNERSHIP_TSV_FIELDS[0]:-}"
+    e_kind="${OWNERSHIP_TSV_FIELDS[1]:-}"
+    e_opt="${OWNERSHIP_TSV_FIELDS[2]:-}"
+    e_pres="${OWNERSHIP_TSV_FIELDS[3]:-}"
+    e_rec="${OWNERSHIP_TSV_FIELDS[4]:-}"
     [[ -n "${e_path}" ]] || continue
 
     # Captured BEFORE absolutise(), because "was this written as a repo-relative
@@ -967,7 +979,24 @@ flush_batch() {
             if [[ "${BATCH_RESTORE_MODE}" -ne 1 && ${#_mode} -gt 3 ]]; then
                 # keep sticky (1000), drop setuid+setgid (6000)
                 _mode="$(( 8#${_mode} & 8#1777 ))"
-                _mode="$(printf '%o' "${_mode}")"
+                #
+                # BOB-220 — the printed mode is ZERO-PADDED TO FIVE CHARACTERS
+                # (`%05o`), not the bare `%o` this used to be. `printf '%o'`
+                # on a masked mode that no longer needs the setuid/setgid bits
+                # renders as a bare 3-DIGIT string (e.g. "755") or a 4-digit
+                # one with sticky set (e.g. "1755") — and on THIS project's
+                # `chmod` (uutils-coreutils, /usr/bin/chmod -> a Rust
+                # reimplementation, MEASURED 2026-08-27 — NOT the assumption
+                # "any GNU-shaped chmod" the earlier comment made), a
+                # DIRECTORY's setgid bit survives BOTH `chmod 755 dir` AND
+                # `chmod 0755 dir` (4 digits, still preserved) — only the
+                # fully-padded 5-character `chmod 00755 dir` form, or an
+                # explicit `chmod g-s dir`, actually clears it. Regular FILES
+                # are unaffected either way (the kernel already cleared
+                # setuid/setgid on chown(2) before this chmod ever runs), so
+                # padding is a no-op there and a real fix here — MEASURED
+                # both directions on this host before landing (BOB-220).
+                _mode="$(printf '%05o' "${_mode}")"
             fi
             # A FAILED MODE RESTORE IS NOT SWALLOWED.
             #
