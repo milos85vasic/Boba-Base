@@ -25,7 +25,7 @@
 </p>
 
 <p align="center">
-  <img alt="tests"          src="https://img.shields.io/badge/python%20tests-6024%20collected-blue">
+  <img alt="tests"          src="https://img.shields.io/badge/python%20tests-6023%20collected-blue">
   <img alt="vitest"         src="https://img.shields.io/badge/frontend%20tests-2743%20collected-blue">
   <img alt="plugins"        src="https://img.shields.io/badge/plugins-43-blue">
   <img alt="merge"          src="https://img.shields.io/badge/merge_service-FastAPI%20%3A7187-orange">
@@ -413,7 +413,7 @@ Each artefact ships with `SHA256SUMS` + `BUILD_INFO.json`.
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) and the TDD protocol in [`CLAUDE.md`](CLAUDE.md). PRs must keep the following green:
 
-- Python unit + e2e + contract (`pytest` — 4930 tests collected, see docs/TESTING.md)
+- Python unit + e2e + contract (`pytest` — 4929 tests collected, see docs/TESTING.md)
 - Frontend Vitest (`ng test` — 2743 tests collected, see docs/TESTING.md)
 - Ruff + bandit + shellcheck (via `scripts/scan.sh`)
 
