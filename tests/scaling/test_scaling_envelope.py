@@ -1057,7 +1057,7 @@ class TestLimiterFreeConcurrencyScaleOut:
     @pytest.mark.timeout(300)
     def test_healthz_scale_out_curve(self):
         if not _port_open(7189):
-            pytest.skip("SKIP-OK BOB-109: boba-jackett :7189 not reachable")
+            pytest.skip("SKIP-OK BOB-109: boba-jackett :7189 not reachable")  # allow-skip: no boba-jackett fixture exists in tests/fixtures/services.py
         reading = _require_host_headroom()
 
         curve: dict[str, dict] = {}

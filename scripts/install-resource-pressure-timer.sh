@@ -19,8 +19,10 @@
 # ─── DESIGN ─────────────────────────────────────────────────────────────
 # Source-of-truth unit files live under scripts/systemd/user/ in this repo
 # (same convention as boba.target / boba-stack.service / boba-webui-
-# bridge.service — see scripts/boba-svc.sh). This script symlinks (default)
-# or copies (--copy) them into ~/.config/systemd/user/, reloads the user
+# bridge.service — see scripts/boba-svc.sh). Those sources are TEMPLATES
+# carrying the token @@BOBA_REPO_ROOT@@; this script RENDERS them (token →
+# this repo's absolute root) and hard-copies the result into
+# ~/.config/systemd/user/, reloads the user
 # systemd manager, enables + starts ONLY the .timer (never PartOf=boba.target
 # — resource-pressure monitoring must run whether the torrent stack is up
 # or down), then MECHANICALLY VERIFIES the install per §11.4.6 (no-guessing):
@@ -35,10 +37,15 @@
 # ─── USAGE ──────────────────────────────────────────────────────────────
 #   bash scripts/install-resource-pressure-timer.sh [--copy] [--uninstall]
 #
-#   --copy       Hard-copy unit files into ~/.config/systemd/user/ instead
-#                of symlinking (default: symlink, so a future `git pull`
-#                that updates the unit files is picked up automatically
-#                after the next `systemctl --user daemon-reload`).
+#   --copy       Accepted and a no-op: hard-copy is now the ONLY behaviour.
+#                Symlinking was removed (BOB-205, 2026-09-22) because it
+#                hands systemd the RAW template — systemd then rejects the
+#                unit with "WorkingDirectory= path is not absolute:
+#                @@BOBA_REPO_ROOT@@" and LoadState=bad-setting. Rendering
+#                requires a real file, so symlink mode is structurally
+#                incompatible with templating. COST: installed units no
+#                longer track repo edits live — re-run this script (or
+#                `bash scripts/boba-svc.sh install`) after editing a unit.
 #   --uninstall  Stop + disable the timer, remove the installed unit
 #                files, daemon-reload. Does not touch the in-repo sources.
 #
@@ -49,7 +56,7 @@
 #
 # ─── OUTPUTS ────────────────────────────────────────────────────────────
 # - ~/.config/systemd/user/boba-resource-pressure-check.{service,timer}
-#   (symlink or copy, per flag).
+#   (rendered hard copies — @@BOBA_REPO_ROOT@@ substituted, never symlinks).
 # - Evidence captured to docs/qa/task-77/ (install_output.txt,
 #   list_timers.txt, first_fire_status.txt) — task-77 evidence per the
 #   task brief. Deliberately `.txt`, NOT `.log`: the repo's `.gitignore`
@@ -102,6 +109,12 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 UNIT_SRC="${SCRIPT_DIR}/systemd/user"
 UNIT_DST="${HOME}/.config/systemd/user"
+
+# The install-time substitution token. Unit files under scripts/systemd/user/
+# write this wherever they need the repo root; stage 1 replaces it with
+# REPO_ROOT. Must stay byte-identical to the token in scripts/boba-svc.sh —
+# both scripts render the SAME two templates.
+BOBA_REPO_ROOT_TOKEN='@@BOBA_REPO_ROOT@@'
 EVIDENCE_DIR="${REPO_ROOT}/docs/qa/task-77"
 
 SERVICE_NAME="boba-resource-pressure-check.service"
@@ -154,7 +167,15 @@ _cmd_uninstall() {
     exit 0
 }
 
-MODE="symlink"
+# BOB-205 (2026-09-22): default flipped symlink -> copy. The unit files under
+# scripts/systemd/user/ are TEMPLATES carrying @@BOBA_REPO_ROOT@@; a symlink
+# hands systemd the RAW template, which it rejects with
+# "WorkingDirectory= path is not absolute: @@BOBA_REPO_ROOT@@" (LoadState=
+# bad-setting). Substitution requires a real file, so symlink mode is
+# structurally incompatible with templating and is gone. --copy is still
+# accepted so existing docs and muscle memory keep working, exactly as
+# scripts/boba-svc.sh already decided for the same reason.
+MODE="copy"
 DO_UNINSTALL=0
 for arg in "$@"; do
     case "${arg}" in
@@ -205,14 +226,46 @@ for u in "${SERVICE_NAME}" "${TIMER_NAME}"; do
         _error "unit source missing: ${src}"
         exit 1
     fi
-    rm -f "${dst}"
-    if [[ "${MODE}" == "copy" ]]; then
-        cp -f "${src}" "${dst}"
-        _info "installed ${u} (copy)"
-    else
-        ln -s "${src}" "${dst}"
-        _info "installed ${u} (symlink -> ${src})"
+    # Render the template into a temp file first, so a failed substitution can
+    # never leave a half-written unit where systemd would read it (§11.4.252
+    # fail closed, atomic replace). Substitution is done with an awk
+    # index/substr walk rather than sed because REPO_ROOT is a filesystem path
+    # that may legally contain characters special to sed's replacement (& and
+    # \) — the same reasoning, and the same code, as scripts/boba-svc.sh.
+    tmp="$(mktemp "${dst}.XXXXXX.tmp")"
+    if ! awk -v token="${BOBA_REPO_ROOT_TOKEN}" -v repl="${REPO_ROOT}" '
+        {
+            out = ""
+            line = $0
+            while ((i = index(line, token)) > 0) {
+                out = out substr(line, 1, i - 1) repl
+                line = substr(line, i + length(token))
+            }
+            print out line
+        }
+    ' "${src}" > "${tmp}"; then
+        rm -f "${tmp}"
+        _error "failed rendering ${u} from ${src}"
+        exit 1
     fi
+
+    # FAIL CLOSED: an unsubstituted token means systemd would read a path it
+    # cannot expand and reject the unit at load time (LoadState=bad-setting).
+    # Refuse rather than ship it (§11.4.201 assert the real condition;
+    # §11.4.252 refuse rather than proceed).
+    if grep -q "${BOBA_REPO_ROOT_TOKEN}" "${tmp}"; then
+        rm -f "${tmp}"
+        _error "${u} still contains ${BOBA_REPO_ROOT_TOKEN} after substitution — refusing to install"
+        _error "  systemd cannot expand that token; installing it would fail at activation."
+        exit 1
+    fi
+
+    # A pre-existing SYMLINK is removed explicitly: mv over a symlink would
+    # follow it and write the rendered unit back into the repo template.
+    [[ -L "${dst}" ]] && rm -f "${dst}"
+    mv -f "${tmp}" "${dst}"
+    chmod 0644 "${dst}"
+    _info "installed ${u} (copy, ${BOBA_REPO_ROOT_TOKEN} → ${REPO_ROOT})"
 done
 
 # ─── stage 2: daemon-reload ─────────────────────────────────────────

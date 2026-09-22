@@ -47,7 +47,7 @@ def jackett_ready():
     try:
         r = requests.get(f"{JACKETT_URL}/UI/Login", timeout=3)
         if r.status_code >= 500:
-            pytest.skip(f"Jackett unhealthy ({r.status_code})")
+            pytest.skip(f"Jackett unhealthy ({r.status_code})")  # allow-skip: no jackett_live fixture exists — same gate as the RequestException branch below
     except requests.RequestException:
         pytest.skip("Jackett unreachable")  # allow-skip: integration data-dependent — Jackett may not be up
     key = _read_jackett_api_key()

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>2026-09-22-iptorrents-cookie-transcript-exposure</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">2026-09-22-iptorrents-cookie-transcript-exposure</h1>
+</header>
+<h1
+id="incident-2026-09-22-iptorrents-session-cookie-exposed-in-agent-session-transcript">Incident
+2026-09-22 — IPTorrents session cookie exposed in agent-session
+transcript</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-09-22T08:28:00Z <strong>Reporter:</strong> conductor
+(BOBA_API_TOKEN LAN-exposure remediation task) <strong>Class:</strong>
+credential-handling violation (§11.4.10 / §11.4.10.A — never
+print/log/echo a credential) <strong>Severity:</strong> MEDIUM — a
+private-tracker session cookie, not a system/infra credential; blast
+radius is limited to the IPTorrents account <strong>Terminal
+state:</strong> DISCLOSED to operator; ROTATION is an operator action
+(requires a fresh browser login/export), NOT performed by any agent</p>
+<h2 id="what-happened">1. What happened</h2>
+<p>While verifying the <code>BOBA_API_TOKEN</code> write to
+<code>.env</code> (this session’s LAN-exposure remediation task — see
+the sibling <code>BOBA_API_TOKEN</code> work in this session), the
+verifying subagent ran:</p>
+<pre><code>tail -8 .env | sed &#39;s/BOBA_API_TOKEN=.*/[REDACTED]/&#39;</code></pre>
+<p>intending to view only the newly-appended
+<code>BOBA_API_TOKEN=</code> block. <code>.env</code>’s append point was
+near the end of the file, so the fixed 8-line tail window also captured
+one line <em>before</em> the intended append point:</p>
+<pre><code>IPTORRENTS_COOKIES=&#39;uid=...; pass=...&#39;</code></pre>
+<p>That real credential value was printed into this session’s tool-call
+output (and is therefore present in this session’s
+transcript/session-log). The mistake was caught in the same verification
+pass; every subsequent check used an exact line-range
+(<code>sed -n 'N,Mp'</code>) or a masked view, and no other secret was
+printed at any point before or after.</p>
+<h2 id="provenance-this-was-a-freshly-loaded-currently-active-cookie">2.
+Provenance — this was a freshly-loaded, currently-active cookie</h2>
+<p><code>IPTORRENTS_COOKIES</code> was one of five
+<code>&lt;TRACKER&gt;_COOKIES</code> values loaded into
+<code>.env</code> earlier in this same session via
+<code>scripts/load-tracker-cookies.sh</code>, sourced from
+<code>~/Downloads/cookies_iptorrents.txt</code> (itself retrieved from
+<code>nezha.local</code>’s copy of this project, per the operator’s own
+explicit instruction to pull genuinely-missing credential material from
+that host). The exposed value is therefore a <strong>live,
+currently-valid session cookie</strong>, not a stale/already-rotated one
+— the exposure has real (if narrow) blast radius until the operator
+rotates it.</p>
+<h2 id="blast-radius">3. Blast radius</h2>
+<ul>
+<li>Scope: IPTorrents tracker session only. No system credential, no
+other tracker’s credential, no <code>.env</code> var besides this one
+line was printed.</li>
+<li><code>.env</code> itself was never made more exposed by this
+incident — the leak is into this session’s own transcript/tool-output
+history, not into any tracked file, not into git, not into a log a third
+party could read without access to this Claude Code session.</li>
+<li>The four other freshly-loaded <code>&lt;TRACKER&gt;_COOKIES</code>
+values (rutracker, nnmclub, rutor, kinozal) were <strong>not</strong>
+printed — confirmed by the fixed 8-line tail window’s actual content
+(only the one line immediately preceding <code>BOBA_API_TOKEN</code>’s
+append point was captured).</li>
+</ul>
+<h2 id="why-nothing-caught-it-automatically">4. Why nothing caught it
+automatically</h2>
+<p><code>sed</code>/<code>tail</code> are ordinary shell commands with
+no <code>.env</code>-awareness — nothing in this project’s tooling scans
+an agent’s own <em>verification</em> command output for
+credential-shaped content before it becomes visible in a session
+transcript (§11.4.10.A’s pre-store leak audit governs values being
+<strong>written to</strong> tracked files / git history — it has no
+mandate over an agent’s own read-side
+<code>cat</code>/<code>tail</code>/<code>grep</code> commands used to
+eyeball a file mid-task). This is a real gap: the discipline that
+protects <em>storage</em> does not protect <em>display</em>.</p>
+<h2 id="remediation">5. Remediation</h2>
+<ul>
+<li><strong>Disclosed to the operator immediately</strong> (this
+session, before any other work continued) rather than deferred to a
+summary.</li>
+<li><strong>Rotation is the operator’s action</strong> — an agent cannot
+generate a valid fresh IPTorrents session cookie; the operator must
+re-log-in (or trigger a session refresh) in a real browser, re-export a
+fresh Netscape <code>cookies_iptorrents.txt</code> to
+<code>~/Downloads/</code>, and re-run
+<code>scripts/load-tracker-cookies.sh --only iptorrents</code> to load
+the fresh value. Until that happens, the exposed value remains the live
+credential in use.</li>
+<li>No attempt was made to auto-rotate, auto-regenerate, or otherwise
+guess a replacement value — that would itself be a §11.4.6 violation
+(fabricating a credential) and is explicitly out of scope for any
+agent.</li>
+</ul>
+<h2 id="what-was-deliberately-not-done">6. What was deliberately NOT
+done</h2>
+<ul>
+<li>The agent did <strong>not</strong> attempt to edit
+<code>IPTORRENTS_COOKIES</code> out of <code>.env</code> or blank it —
+doing so would break the currently-configured (still-valid, merely
+session-exposed) tracker integration without the operator’s explicit
+instruction, which is itself a §11.4.122-class silent-removal risk this
+project forbids.</li>
+<li>This project’s own tooling was <strong>not</strong> modified as part
+of this incident (a follow-up to add a credential-shaped-content scrub
+to ad-hoc verification commands is a reasonable hardening idea but is
+explicitly NOT claimed done here — recorded as an open follow-up, not
+shipped work, per §11.4.6/§11.4.197).</li>
+</ul>
+<h2 id="open-follow-up-tracked-not-yet-actioned">7. Open follow-up
+(tracked, not yet actioned)</h2>
+<p>A general-purpose “never let a bare
+<code>tail</code>/<code>cat</code>/<code>head</code> of
+<code>.env</code> (or any credential-bearing file) reach tool output
+uncontrolled” discipline — e.g. a small wrapper helper that always masks
+<code>.env</code> line content by variable name rather than printing raw
+values, available to any agent that needs to eyeball <code>.env</code>
+structure — is a legitimate hardening item for this project’s tooling.
+Not implemented as part of this incident; recorded here so it is not
+silently lost (§11.4.197).</p>
+</body>
+</html>

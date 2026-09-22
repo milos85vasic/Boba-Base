@@ -741,6 +741,70 @@ class TestDownloadEndpoint:
         assert len(data["results"]) == 1
         assert data["results"][0]["status"] == "added"
 
+    def test_download_malformed_magnet_is_refused(self, client):
+        """REGRESSION GUARD for review #9's BLOCKING-1 finding (2026-09-22).
+
+        The scheme-only version of ``_is_plausible_torrent_source`` (F4,
+        review #3) passed every one of these — each is live-proven to
+        reproduce the SAME 409-as-duplicate-success bluff F4 closed for empty
+        strings: qBittorrent answers 409 Conflict with nothing added,
+        `_is_plausible_torrent_source`'s scheme check let it through anyway,
+        and the API reported "added". This is the §1.1 pair for that fix: a
+        mutation reverting the predicate to scheme-only (or to `return True`)
+        MUST make this test fail — a prior version of this fix carried NO
+        test that could catch its own negation.
+
+        Live-measured 2026-09-22, qBittorrent v5.2.3 / WebAPI 2.15.1: all
+        four inputs below answered 409 Conflict with `torrents/info` count
+        unchanged before/after. A single test-method loop (not
+        @pytest.mark.parametrize) — this file's schemathesis plugin
+        interaction chokes on parametrize here; the loop still asserts each
+        case independently and names the failing one.
+        """
+        bad_magnets = {
+            "bare": "magnet:",
+            "no-info-hash": "magnet:?dn=probe",
+            "malformed-hash": "magnet:?xt=urn:btih:zz",
+            "uppercase-bare": "  MAGNET:",
+        }
+        for case_id, bad_magnet in bad_magnets.items():
+            resp = client.post(
+                "/api/v1/download",
+                json={"result_id": f"blocking1-repro-{case_id}", "download_urls": [bad_magnet]},
+            )
+            assert resp.status_code == 422, (
+                f"[{case_id}] {bad_magnet!r} must be refused at the request "
+                f"boundary — a magnet with no valid info-hash is not a "
+                f"torrent source, got {resp.status_code}"
+            )
+
+    @patch("api.routes._get_orchestrator")
+    @patch("api.routes.aiohttp.ClientSession")
+    def test_download_wellformed_magnet_still_accepted(self, mock_session_cls, mock_get_orch, client):
+        """Negative control for the BLOCKING-1 fix (§11.4.201 dual assertion).
+
+        A magnet carrying a genuinely well-formed info-hash must NOT be
+        caught by the same guard that refuses the malformed ones above — a
+        fix that over-rejects is exactly as forbidden as one that
+        under-rejects.
+        """
+        good_magnets = {
+            "lowercase-hex-40": "magnet:?xt=urn:btih:0000000000000000000000000000000000000000",
+            "uppercase-base32-32": "MAGNET:?xt=urn:btih:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "hash-not-first-param": "magnet:?dn=probe&xt=urn:btih:0000000000000000000000000000000000000000",
+        }
+        for case_id, good_magnet in good_magnets.items():
+            self._session_answering_add_with(mock_session_cls, 200, '{"success_count":1}')
+            mock_get_orch.return_value = MagicMock()
+            resp = client.post(
+                "/api/v1/download",
+                json={"result_id": f"blocking1-negctl-{case_id}", "download_urls": [good_magnet]},
+            )
+            assert resp.status_code == 200, (
+                f"[{case_id}] {good_magnet!r} must be accepted, got "
+                f"{resp.status_code}: {resp.text}"
+            )
+
     @patch("api.routes._get_orchestrator")
     @patch("api.routes.aiohttp.ClientSession")
     def test_download_duplicate_409_is_reported_to_the_user_as_added(self, mock_session_cls, mock_get_orch, client):

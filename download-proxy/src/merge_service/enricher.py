@@ -15,6 +15,8 @@ import os
 import re
 from dataclasses import dataclass
 
+from .quality import SIGNAL_TO_DISPLAY_LABEL, detect_quality_signal
+
 logger = logging.getLogger(__name__)
 
 # External metadata providers return year strings in inconsistent shapes:
@@ -332,41 +334,15 @@ class MetadataEnricher:
         Parses common quality indicators:
         - Resolution: 720p, 1080p, 2160p, 4K, 8K, UHD, FHD, FullHD
         - Source: BluRay, WEB-DL, WEBRip, HDTV, DVD, HDRip, CamRip
-        - Codec: x264, x265, HEVC
+
+        The ladder itself lives in :mod:`merge_service.quality` and is SHARED
+        with ``merge_service.search``; this method only maps its result into
+        the DISPLAY vocabulary this class has always emitted. See that module
+        for why the two copies were collapsed (§11.4.251) — the short version
+        is that the ``\\bsd\\b`` fix was applied here and missed the other
+        copy, leaving the defect live in search results for a review round.
         """
-        import re
-
-        name_lower = name.lower() if name else ""
-
-        if re.search(r"2160p|4k|uhd", name_lower):
-            return "4K"
-        if re.search(r"1080p|fullhd|fhd", name_lower):
-            return "1080p"
-        if re.search(r"720p|hdrip", name_lower):
-            return "720p"
-        # F6 (review #3): the M-c fix below OVERCORRECTED. `\bsd\b` removed the
-        # false positives but ALSO killed the legitimate `sdrip` / `sdtv`
-        # tokens the old bare substring matched — fixing a false positive by
-        # breaking a true positive, which is the both-factors trap
-        # (§11.4.194(1)): only one side of the change was verified. A
-        # pre-existing RED-capable test (test_enricher_resolve.py) caught it
-        # exactly as designed; it simply had not been run.
-        #
-        # M-c (review 2026-09-01): `sd` was matched as a BARE SUBSTRING, so any
-        # name or URL containing those two letters anywhere — `?sdid=`,
-        # `/sdcard/`, `xsd` — was tagged "SD". That is an invented value
-        # (§11.4.6), and it became reachable the moment tagging began falling
-        # back to the download URL when no title is supplied. Word-bounded now.
-        if re.search(r"480p|\bsd(?:rip|tv)?\b|camrip", name_lower):
-            return "SD"
-
-        if "bluray" in name_lower or "blu-ray" in name_lower or "bdrip" in name_lower or "bd-remux" in name_lower:
-            return "BluRay"
-        if "web-dl" in name_lower or "webrip" in name_lower or "web.dl" in name_lower or "webdl" in name_lower:
-            return "WEB-DL"
-        if "hdtv" in name_lower:
-            return "HDTV"
-        if "dvd" in name_lower:
-            return "DVD"
-
-        return None
+        signal = detect_quality_signal(name)
+        if signal is None:
+            return None
+        return SIGNAL_TO_DISPLAY_LABEL[signal]

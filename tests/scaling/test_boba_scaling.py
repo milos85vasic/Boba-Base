@@ -145,11 +145,11 @@ def _services_up(merge_service_live_or_skip):
     would move the same way if one is added.
     """
     if not _service_reachable("localhost", 7189):
-        pytest.skip("boba-jackett :7189 not reachable (SKIP-OK BOB-109)")
+        pytest.skip("boba-jackett :7189 not reachable (SKIP-OK BOB-109)")  # allow-skip: no boba-jackett fixture exists (see this fixture's docstring)
     if not _service_reachable("localhost", 9117):
-        pytest.skip("jackett :9117 not reachable (SKIP-OK BOB-109)")
+        pytest.skip("jackett :9117 not reachable (SKIP-OK BOB-109)")  # allow-skip: no jackett fixture exists (see this fixture's docstring)
     if not _healthy(JACKETT_BOBA_URL):
-        pytest.skip("boba-jackett /healthz not ok (SKIP-OK BOB-109)")
+        pytest.skip("boba-jackett /healthz not ok (SKIP-OK BOB-109)")  # allow-skip: no boba-jackett fixture exists (see this fixture's docstring)
 
 
 # ---------------------------------------------------------------------------

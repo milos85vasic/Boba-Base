@@ -25,7 +25,7 @@ echo "╚═══════════════════════�
 echo ""
 
 # Step 1: Check prerequisites
-print_info "Step 1/5: Checking prerequisites..."
+print_info "Step 1/6: Checking prerequisites..."
 
 if ! command -v docker &> /dev/null && ! command -v podman &> /dev/null; then
     print_error "Neither Docker nor Podman found. Please install one of them."
@@ -41,7 +41,7 @@ else
 fi
 
 # Step 2: Create environment file
-print_info "Step 2/5: Setting up environment..."
+print_info "Step 2/6: Setting up environment..."
 
 if [[ ! -f ".env" ]]; then
     print_info "Creating .env file..."
@@ -78,7 +78,7 @@ else
 fi
 
 # Step 3: Create directories
-print_info "Step 3/5: Creating directories..."
+print_info "Step 3/6: Creating directories..."
 
 mkdir -p config/qBittorrent/nova3/engines
 mkdir -p config/qBittorrent/config
@@ -89,7 +89,7 @@ mkdir -p downloads/Torrents/Completed
 print_success "Directories created"
 
 # Step 4: Install plugins
-print_info "Step 4/5: Installing search plugins..."
+print_info "Step 4/6: Installing search plugins..."
 
 # List of all plugins
 PLUGINS=(
@@ -143,7 +143,7 @@ chmod 644 config/qBittorrent/nova3/engines/*.py 2>/dev/null || true
 print_success "All plugins installed"
 
 # Step 5: Start container
-print_info "Step 5/5: Starting qBittorrent container..."
+print_info "Step 5/6: Starting qBittorrent container..."
 
 if [[ "$CONTAINER_RUNTIME" == "podman" ]]; then
     if command -v podman-compose &> /dev/null; then
@@ -175,6 +175,46 @@ if $CONTAINER_RUNTIME ps --format '{{.Names}}' | grep -qx 'qbittorrent'; then
 else
     print_error "Container failed to start"
     exit 1
+fi
+
+# ─── Step 6: reboot survival via systemd --user ──────────────────────────────
+# BOB-205 (2026-09-22): without this step `./setup.sh` produced a RUNNING stack
+# with ZERO systemd units, so nothing came back after a reboot. The complete
+# path existed only in scripts/install.sh, which README.md/CLAUDE.md never
+# mention — so the documented route silently skipped reboot survival.
+#
+# This DELEGATES to scripts/boba-svc.sh (§11.4.74 extend-don't-reimplement) —
+# it renders scripts/systemd/user/*.{target,service,timer} with
+# @@BOBA_REPO_ROOT@@ substituted, installs them as hard copies, daemon-reloads
+# and enables boba.target. boba-svc install is idempotent, so re-running
+# ./setup.sh converges rather than duplicating.
+#
+# NEVER fails the whole setup (§11.4.234 always-unblocked): a host without a
+# user systemd manager warns and continues — the stack is already up by now.
+print_info "Step 6/6: Installing systemd --user units (reboot survival)..."
+if ! command -v systemctl >/dev/null 2>&1; then
+    print_warning "systemctl not on PATH — SKIPPING systemd install; stack will NOT survive reboot"
+elif [ ! -x scripts/boba-svc.sh ] && [ ! -f scripts/boba-svc.sh ]; then
+    print_warning "scripts/boba-svc.sh missing — SKIPPING systemd install; stack will NOT survive reboot"
+else
+    if bash scripts/boba-svc.sh install 2>&1 | sed 's/^/    /'; then
+        bash scripts/boba-svc.sh enable 2>&1 | sed 's/^/    /' \
+            || print_warning "boba-svc enable returned non-zero (continuing)"
+        print_success "systemd units installed + boba.target enabled"
+    else
+        print_warning "boba-svc install failed — stack will NOT survive reboot"
+    fi
+
+    # Linger decides LOGIN-only vs HOST-BOOT autostart. Reported, never
+    # silently assumed: enabling it needs root ONCE and this script never
+    # escalates (CONST-033 / project no-sudo rule).
+    _linger="$(loginctl show-user "$(id -un)" -p Linger --value 2>/dev/null || echo unknown)"
+    if [ "$_linger" = "yes" ]; then
+        print_success "linger=yes → boba.target auto-starts at HOST BOOT (no login needed)"
+    else
+        print_warning "linger=$_linger → services auto-start only on user LOGIN"
+        print_warning "  for full host-boot autostart, run ONCE: sudo loginctl enable-linger $(id -un)"
+    fi
 fi
 
 echo ""

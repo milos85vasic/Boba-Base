@@ -14,6 +14,7 @@ from typing import Any
 
 from cachetools import TTLCache
 
+from .quality import SIGNAL_TO_INTERNAL_CODE, detect_quality_signal
 from .retry import retry_policy
 from .trackers import PRIVATE_TRACKER_BASE_URLS
 
@@ -211,39 +212,20 @@ def _detect_result_metadata(name: str, size: str) -> tuple[str | None, str | Non
         content_type = "music"
 
     # --- quality ---
+    # The NAME ladder is shared with ``merge_service.enricher`` — one
+    # implementation, two output vocabularies (§11.4.251). Previously this was
+    # a verbatim second copy of the enricher's ladder, and the ``\\bsd\\b``
+    # word-boundary fix landed on the enricher copy ONLY: this copy kept a bare
+    # ``sd`` substring and mislabelled "Sdorica.Anime.2019" and "Wasdd.Movie"
+    # as standard-definition in live search results for a full review round.
+    #
+    # The SIZE fallback below stays here deliberately: it is this consumer's
+    # own behaviour, not part of the shared ladder. The enricher has never had
+    # one and must keep returning ``None`` for an untokenised name.
     quality = None
-    if _re.search(r"2160p|4k|uhd", n):
-        quality = "uhd_4k"
-    elif _re.search(r"1080p|fullhd|fhd", n):
-        quality = "full_hd"
-    elif _re.search(r"720p|hdrip", n):
-        quality = "hd"
-    elif _re.search(r"480p|\bsd(?:rip|tv)?\b|camrip", n):
-        # `sd` is WORD-BOUNDED. As a bare substring it matched any name merely
-        # containing those two letters — measured false positives: "Sdorica",
-        # "Wasdd", a "?sdid=" query parameter, a "/sdcard/" path. Every one was
-        # labelled standard-definition in the search results the user sees.
-        #
-        # `sdrip` / `sdtv` are kept explicitly: they ARE standard-definition and
-        # the bare-substring version caught them by accident. Word-bounding
-        # without them would fix the false positive by breaking a true one —
-        # the both-factors trap (§11.4.194(1)) that this exact pattern already
-        # fell into once in enricher.py.
-        #
-        # §11.4.251 DEBT, stated rather than hidden: this is the SECOND quality
-        # detector in the codebase. merge_service/enricher.py:360 carries the
-        # same pattern and was fixed first; this copy was missed, so the defect
-        # stayed live in search results for one round. They are not a pure fork
-        # — this one emits internal codes (uhd_4k/full_hd/hd/sd), the enricher
-        # emits display labels (4K/1080p/720p/SD) — so collapsing them needs a
-        # mapping layer and its own tests. Tracked as owed, NOT done here.
-        quality = "sd"
-    elif "bluray" in n or "blu-ray" in n or "bdrip" in n or "bd-remux" in n:
-        quality = "full_hd"
-    elif "web-dl" in n or "webrip" in n or "web.dl" in n or "webdl" in n or "hdtv" in n:
-        quality = "hd"
-    elif "dvd" in n:
-        quality = "sd"
+    signal = detect_quality_signal(n)
+    if signal is not None:
+        quality = SIGNAL_TO_INTERNAL_CODE[signal]
     else:
         # Size-based fallback
         try:

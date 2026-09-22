@@ -26,8 +26,8 @@
   },
   {
     "name": "bitsearch",
-    "status": "success",
-    "results_count": 20
+    "status": "empty",
+    "results_count": 0
   },
   {
     "name": "bt4g",
@@ -51,12 +51,12 @@
   },
   {
     "name": "gamestorrents",
-    "status": "empty",
-    "results_count": 0
+    "status": "success",
+    "results_count": 21
   },
   {
     "name": "glotorrents",
-    "status": "empty",
+    "status": "error",
     "results_count": 0
   },
   {
@@ -86,13 +86,13 @@
   },
   {
     "name": "linuxtracker",
-    "status": "success",
-    "results_count": 15
+    "status": "empty",
+    "results_count": 0
   },
   {
     "name": "megapeer",
-    "status": "error",
-    "results_count": 0
+    "status": "success",
+    "results_count": 1
   },
   {
     "name": "nnmclub",
@@ -116,8 +116,8 @@
   },
   {
     "name": "piratebay",
-    "status": "success",
-    "results_count": 100
+    "status": "empty",
+    "results_count": 0
   },
   {
     "name": "pirateiro",
@@ -141,8 +141,8 @@
   },
   {
     "name": "snowfl",
-    "status": "error",
-    "results_count": 0
+    "status": "success",
+    "results_count": 36
   },
   {
     "name": "solidtorrents",
@@ -186,8 +186,8 @@
   },
   {
     "name": "torrentproject",
-    "status": "success",
-    "results_count": 100
+    "status": "error",
+    "results_count": 0
   },
   {
     "name": "torrentscsv",

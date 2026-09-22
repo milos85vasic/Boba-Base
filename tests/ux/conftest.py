@@ -78,7 +78,7 @@ def browser():
         pw = sync_playwright().start()
         br = pw.chromium.launch(headless=True)
     except Exception as exc:  # pragma: no cover - environment guard
-        pytest.skip(
+        pytest.skip(  # allow-skip: local browser binary absent — tooling, not one of the gated services
             f"Playwright/Chromium unavailable ({type(exc).__name__}: {exc}) — "
             "honest §11.4.3 SKIP (BOB-110). Run `cd frontend && "
             "npx playwright install chromium` (or the repo-root equivalent) "

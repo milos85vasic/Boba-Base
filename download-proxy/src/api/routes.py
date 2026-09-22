@@ -366,6 +366,16 @@ def _build_tag_field(request: object | None, fallback_name: str) -> str:
         return ""
 
 
+#: A BTIH info-hash is 40 hex chars (v1, SHA-1) or 32 base32 chars (BEP 9 v1
+#: alt encoding). A BTMH (BEP 52, v2) carries a multihash-prefixed digest —
+#: accepted with a permissive non-empty length floor rather than a strict
+#: multicodec parse, since no reproduction case requires more precision and
+#: over-specifying it risks a §11.4.201(1) false-positive refusal on a
+#: legitimate v2 magnet this session has not seen in the wild.
+_BTIH_RE = re.compile(r"^[0-9a-fA-F]{40}$|^[2-7A-Za-z]{32}$")
+_BTMH_MIN_LEN = 20
+
+
 def _is_plausible_torrent_source(url: str) -> bool:
     """True when ``url`` is a shape qBittorrent can resolve as a torrent source.
 
@@ -375,14 +385,41 @@ def _is_plausible_torrent_source(url: str) -> bool:
     (legitimate on a LAN). Reusing it here would refuse valid input; this is a
     separate predicate by necessity, not a fork of it (§11.4.251).
 
-    Deliberately narrow: scheme only. Whether a well-formed URL actually
-    resolves is qBittorrent's to determine and report — guessing at that here
-    would be the heuristic tower §11.4.250 warns about.
+    SCHEME + STRUCTURE, never resolution (§11.4.250 boundary, re-drawn
+    2026-09-22 after review #9 proved the scheme-only version insufficient).
+    For http(s): scheme only — whether a well-formed URL actually resolves is
+    qBittorrent's to determine and report; validating that here WOULD be the
+    heuristic tower §11.4.250 warns against, so it stays untouched.
+    For magnet: a missing or malformed info-hash is not "a URL that might not
+    resolve" — it is a magnet URI with no magnet in it (BEP 9 defines the
+    link BY its ``xt=urn:btih:`` / ``urn:btmh:`` parameter; without one there
+    is nothing for qBittorrent to add). Checking for it is the SAME structural
+    class of check as the scheme check above, not a new heuristic layer.
+
+    Live-proven insufficiency of the scheme-only version (review #9,
+    2026-09-22): ``magnet:`` alone, ``magnet:?dn=probe`` (no ``xt``), and
+    ``magnet:?xt=urn:btih:zz`` (malformed hash) all passed the scheme check
+    and reproduced the SAME 409-read-as-duplicate-success bluff F4 closed for
+    empty strings — qBittorrent answers each with 409 Conflict and adds
+    nothing; the API reported "added". All three are refused below.
     """
     if not url:
         return False
-    lowered = url.strip().lower()
-    return lowered.startswith(("magnet:", "http://", "https://"))
+    stripped = url.strip()
+    lowered = stripped.lower()
+    if lowered.startswith(("http://", "https://")):
+        return True
+    if not lowered.startswith("magnet:"):
+        return False
+    query = urllib.parse.urlsplit(stripped).query
+    for _, value in urllib.parse.parse_qsl(query, keep_blank_values=True):
+        v = value.strip()
+        low = v.lower()
+        if low.startswith("urn:btih:") and _BTIH_RE.match(v[len("urn:btih:"):]):
+            return True
+        if low.startswith("urn:btmh:") and len(v) - len("urn:btmh:") >= _BTMH_MIN_LEN:
+            return True
+    return False
 
 
 class DownloadRequest(BaseModel):
@@ -447,8 +484,18 @@ class DownloadRequest(BaseModel):
         #
         # It is a CONTRACT check, not a heuristic layer (§11.4.250): it does not
         # try to guess whether a well-formed URL will resolve — that stays
-        # qBittorrent's job, and an http(s) URL that 404s is reported honestly by
-        # the body. It only refuses input that could never have been a source.
+        # qBittorrent's job. It only refuses input that could never have been
+        # a source (missing scheme, or a magnet with no parseable info-hash).
+        #
+        # HONEST LIMIT (review #9 finding, corrected 2026-09-22): an http(s)
+        # `.torrent` URL that cannot be fetched is NOT always reported
+        # honestly by the response body. qBittorrent answers such an add with
+        # 202 {"pending_count":1} (metadata resolution is async) — the API
+        # therefore reports "added" for a URL that later fails, and the
+        # failure surfaces only in qBittorrent's own log, never back through
+        # this response. That is qBittorrent's async contract, not resolvable
+        # synchronously here, and is stated as an owed limitation rather than
+        # the false "reported honestly" claim this comment carried before.
         bad = [u for u in cleaned if not _is_plausible_torrent_source(u)]
         if bad:
             raise ValueError(

@@ -1,6 +1,6 @@
 event: search_start
-data: {"search_id": "5057ab2d-79ca-40ee-811d-5bb8914a5d9a", "status": "started"}
-id: 5057ab2d-79ca-40ee-811d-5bb8914a5d9a
+data: {"search_id": "e8123a07-d905-43fc-b157-96227ba519b0", "status": "started"}
+id: e8123a07-d905-43fc-b157-96227ba519b0
 
-event: tracker_started
-data: {"name": "rutracker", "tracker_url": "https://rutracker.org", "status": "running", "results_count": 0, "started_at": "2026-09-01T16:35:05.134982+00:00", "completed_at": null, "duration_ms": null, "error": null, "error_type": null, "authenticated": true, "attempt": 1, "http_status": null, "category": "all", "query": "debian", "notes": {}}
+event: tracker_completed
+data: {"name": "rutracker", "tracker_url": "https://rutracker.org", "status": "error", "results_count": 0, "started_at": "2026-09-22T07:56:31.102813+00:00", "completed_at": "2026-09-22T07:56:31.178955+00:00", "duration_ms": 76, "error": "rutracker login.php returned no session cookie \u2014 this is the rutracker anti-abuse CAPTCHA wall (gates login.php when logins spike), not a credential failure. Set RUTRACKER_COOKIES from a logged-in browser session to bypass the login round-trip.", "error_type": "upstream_captcha", "authenticated": true, "credentials_configured": true, "attempt": 1, "http_status": null, "category": "all", "query": "debian", "notes": {}}

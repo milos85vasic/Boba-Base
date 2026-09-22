@@ -13,8 +13,27 @@
 //   - a producer-flood burst is bounded by the per-client 10-msg buffer +
 //     dropped with the documented warn signal.
 //
-// Evidence (§11.4.5 / §11.4.69 captured-evidence, feature_class=sse_broker):
-//     docs/qa/BOB-095/evidence/{latency,goroutine_count,chaos_recovery,...}.
+// Evidence (§11.4.5 / §11.4.69 captured-evidence, feature_class=sse_broker) is
+// split by ROLE — the two must never share a directory (§11.4.11):
+//
+//   - FRESH RUN OUTPUT (this test's writes) → the UNTRACKED, regeneratable run
+//     corpus `qa-results/BOB-095/` (gitignored, .gitignore:273; override with
+//     $BOBA_SSE_EVIDENCE_OUT).  Rewritten on every run by construction: it
+//     carries wall-clock timings + a recorded-at timestamp, so it is run
+//     output, not a fixed artifact.
+//   - IMMUTABLE CLOSURE ARTIFACT (written once, reviewed, committed) → the
+//     TRACKED `docs/qa/BOB-095/evidence/` (§11.4.83).  This test MUST NOT
+//     write there: re-running a test is not a re-closure, and overwriting the
+//     reference evidence destroys the captured proof the closure stands on
+//     (§11.4.226 evidence-class-at-closure).
+//
+// Forensic anchor (BOB-095, measured 2026-09-22): this helper previously wrote
+// straight into the TRACKED directory, so every `go test` run moved the mtime
+// of 6 committed files and rewrote 2 of them.  That (a) FAILed the
+// `CM-BASH-UNIT-TESTS-EXECUTED` pre-build gate, which correctly reported the
+// mtime-moved tracked files, and (b) let six successive commits — several of
+// them unreviewed auto-commits — silently replace the original closure
+// evidence with later re-run values.
 //
 // HOST SAFETY (§12/§12.6/§12.12): run only via
 //   `GOMAXPROCS=2 nice -n 19 go test -race ./internal/service/... -run StressChaos`.
@@ -46,14 +65,27 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// evidenceDir resolves docs/qa/BOB-095/evidence/ relative to the test binary
-// (running under qBitTorrent-go/internal/service, the repo root is ../../..).
-// Missing tree → SKIP-with-reason (§11.4.3), never a fake-pass.
+// evidenceRunDirEnv names the override for this test's FRESH-run evidence
+// directory, mirroring the repo's existing run-output convention
+// (`BOBA_CENSUS_OUT` in scripts/diagnostics/bob137_thread_census.sh,
+// `BOBA_SOAK_OUT` in scripts/diagnostics/bob137_soak.sh): an env var with a
+// sane default under the gitignored run corpus.
+const evidenceRunDirEnv = "BOBA_SSE_EVIDENCE_OUT"
+
+// evidenceDir resolves the UNTRACKED per-run evidence directory this test
+// writes into — $BOBA_SSE_EVIDENCE_OUT when set, else `qa-results/BOB-095/`
+// relative to the repo root (from qBitTorrent-go/internal/service that is
+// ../../..).  It deliberately does NOT resolve docs/qa/BOB-095/evidence/: see
+// the role split in the file header.  Un-creatable dir → SKIP-with-reason
+// (§11.4.3), never a fake-pass.
 func evidenceDir(t *testing.T) string {
 	t.Helper()
-	cwd, err := os.Getwd()
-	require.NoError(t, err)
-	dir := filepath.Join(cwd, "..", "..", "..", "docs", "qa", "BOB-095", "evidence")
+	dir := os.Getenv(evidenceRunDirEnv)
+	if dir == "" {
+		cwd, err := os.Getwd()
+		require.NoError(t, err)
+		dir = filepath.Join(cwd, "..", "..", "..", "qa-results", "BOB-095")
+	}
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Skipf("SKIP-with-reason: cannot create evidence dir %q: %v (§11.4.3)", dir, err)
 	}

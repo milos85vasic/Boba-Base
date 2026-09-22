@@ -183,7 +183,7 @@ class TestSearchEndpoint:
         assert resp.status_code == 200
         data = resp.json()
         if not data["results"]:
-            pytest.skip(
+            pytest.skip(  # allow-skip: data-dependent — the service answered 200; only the RESULT SET is empty
                 "real search for 'ubuntu' returned 0 results — no tracker reachable/authenticated "
                 f"in this environment (errors={data.get('errors')!r}, "
                 f"tracker_stats={data.get('tracker_stats')!r})"

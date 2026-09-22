@@ -5,9 +5,9 @@
     "results_count": 1
   },
   {
-    "name": "bitsearch",
+    "name": "gamestorrents",
     "status": "success",
-    "results_count": 80
+    "results_count": 2
   },
   {
     "name": "iptorrents",
@@ -22,22 +22,12 @@
   {
     "name": "limetorrents",
     "status": "success",
-    "results_count": 52
-  },
-  {
-    "name": "linuxtracker",
-    "status": "success",
-    "results_count": 15
+    "results_count": 33
   },
   {
     "name": "nyaa",
     "status": "success",
     "results_count": 1
-  },
-  {
-    "name": "piratebay",
-    "status": "success",
-    "results_count": 100
   },
   {
     "name": "pirateiro",
@@ -73,11 +63,6 @@
     "name": "torrentkitty",
     "status": "success",
     "results_count": 20
-  },
-  {
-    "name": "torrentproject",
-    "status": "success",
-    "results_count": 100
   },
   {
     "name": "torrentscsv",

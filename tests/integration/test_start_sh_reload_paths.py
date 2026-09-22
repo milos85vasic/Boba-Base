@@ -124,7 +124,7 @@ def runtime() -> str:
 @pytest.fixture(scope="module")
 def require_container(runtime: str) -> str:
     if not _container_running(runtime, CONTAINER):
-        pytest.skip(
+        pytest.skip(  # allow-skip: container-presence topology gate, not a service probe — no fixture covers it
             f"[SKIP-with-reason topology_unsupported] {CONTAINER} not running — "
             f"run './start.sh -p' first"
         )

@@ -266,8 +266,8 @@ containerised, private-tracker-aware.</strong>
 <a href="#contributing">Contributing</a>
 </p>
 <p align="center">
-<img alt="tests"          src="https://img.shields.io/badge/python%20tests-5857%20collected-blue">
-<img alt="vitest"         src="https://img.shields.io/badge/frontend%20tests-2742%20collected-blue">
+<img alt="tests"          src="https://img.shields.io/badge/python%20tests-6024%20collected-blue">
+<img alt="vitest"         src="https://img.shields.io/badge/frontend%20tests-2743%20collected-blue">
 <img alt="plugins"        src="https://img.shields.io/badge/plugins-43-blue">
 <img alt="merge"          src="https://img.shields.io/badge/merge_service-FastAPI%20%3A7187-orange">
 <img alt="ci"             src="https://img.shields.io/badge/ci-manual%20%28.%2Fci.sh%2C%20no%20auto--trigger%29-success">
@@ -323,8 +323,11 @@ results, streams via SSE.</li>
 <li><strong>Real-time results</strong> — <code>result_found</code>
 events arrive as each tracker completes, no blocking.</li>
 <li><strong>Private-tracker bridge</strong> — Authenticated downloads
-via <code>webui-bridge.py</code> for RuTracker, Kinozal, NNM-Club,
-IPTorrents.</li>
+via <code>boba-webui-bridge.service</code> (the Go
+<code>webui-bridge</code> binary, <code>:7188</code>) for RuTracker,
+Kinozal, NNM-Club, IPTorrents. The original <code>webui-bridge.py</code>
+implementation is kept in the tree but is not part of the managed
+<code>boba.target</code> topology.</li>
 <li><strong>Freeleech-only IPTorrents</strong> — Automation never costs
 ratio (see <a href=".specify/memory/constitution.md">constitution
 VIII</a>).</li>
@@ -1072,7 +1075,7 @@ orgs)</li>
                        │  └── /api/v1/auth/...           │
                        └───────────────────────────────┘
                                      ▲
-  http://:7188 ── webui-bridge.py (host process) — private-tracker bridge
+  http://:7188 ── boba-webui-bridge.service (Go, host process) — private-tracker bridge
 
 Opt-in (docker-compose.quality.yml):
    http://:9000   SonarQube              profile: quality
@@ -1131,9 +1134,9 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="
 the TDD protocol in <a href="CLAUDE.md"><code>CLAUDE.md</code></a>. PRs
 must keep the following green:</p>
 <ul>
-<li>Python unit + e2e + contract (<code>pytest</code> — 4768 tests
+<li>Python unit + e2e + contract (<code>pytest</code> — 4930 tests
 collected, see docs/TESTING.md)</li>
-<li>Frontend Vitest (<code>ng test</code> — 2742 tests collected, see
+<li>Frontend Vitest (<code>ng test</code> — 2743 tests collected, see
 docs/TESTING.md)</li>
 <li>Ruff + bandit + shellcheck (via <code>scripts/scan.sh</code>)</li>
 </ul>

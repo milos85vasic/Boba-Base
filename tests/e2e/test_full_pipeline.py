@@ -121,23 +121,19 @@ def _save_evidence(name: str, payload: object) -> Path:
     return path
 
 
-def _service_reachable() -> bool:
-    try:
-        r = requests.get(f"{MERGE_SERVICE_URL}/health", timeout=5)
-        return r.status_code == 200
-    except Exception:
-        return False
-
-
 @pytest.fixture(scope="module")
-def live_url() -> str:
-    if not _service_reachable():
-        pytest.skip(  # SKIP-OK: live service unreachable, §11.4.3
-            f"merge service not reachable at {MERGE_SERVICE_URL}/health — "
-            "start the real stack with `./start.sh -p` to run this real "
-            "end-to-end pipeline test (no fake-pass, no orchestrator mocking)."
-        )
-    return MERGE_SERVICE_URL
+def live_url(request: pytest.FixtureRequest) -> str:
+    """Real merge-search service base URL, via the sanctioned shared fixture.
+
+    Delegates to ``tests/fixtures/services.py``'s ``merge_service_live`` —
+    converting its RuntimeError (service unreachable / cannot be brought
+    up) into an honest SKIP here, matching this file's established
+    feature-level-e2e convention (no fake-pass, no orchestrator mocking).
+    """
+    try:
+        return request.getfixturevalue("merge_service_live")
+    except Exception as exc:  # pragma: no cover - environment-dependent
+        pytest.skip(f"merge service not reachable in this environment: {exc}")  # allow-skip: wraps the sanctioned merge_service_live fixture (§11.4.3 topology-dispatch), NOT a raw availability probe
 
 
 @pytest.fixture(scope="module")

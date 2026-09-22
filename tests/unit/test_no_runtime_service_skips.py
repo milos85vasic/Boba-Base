@@ -35,12 +35,40 @@ GREEN *through* them, so its silence was not evidence):
     "not up".  Replaced by word-boundary regex patterns (see
     ``FORBIDDEN_PATTERNS``), so e.g. ``\\bdown\\b`` cannot fire on
     "download".
-2.  MULTI-LINE CALLS — the old ``pytest\\.skip\\s*\\(\\s*([^)]*)\\)``
-    regex could not match a ``pytest.skip(`` whose argument list spans
-    more than one line (very common with an f-string message), and also
-    truncated at the first ``)`` of a nested call such as
-    ``pytest.skip(f"Jackett unhealthy ({r.status_code})")``.  Replaced
-    by a quote-aware paren-balancing scan (``_iter_skip_calls``).
+2.  ARGUMENT TRUNCATION AT THE FIRST ``)`` — the old
+    ``pytest\\.skip\\s*\\(\\s*([^)]*)\\)`` regex stopped capturing at the
+    first ``)`` inside the argument, so any reason wording that FOLLOWS a
+    nested ``)`` was never scanned.
+
+    CORRECTED DIAGNOSIS (2026-09-22, measured — the earlier note in this
+    docstring claimed the hole was MULTI-LINE-ness, which is false and was
+    asserted by a self-test that could never pass).  ``[^)]`` is a negated
+    character class, and it therefore INCLUDES ``\\n``; the old regex
+    matched multi-line calls perfectly well.  Probe, run against the exact
+    multi-line sample the old self-test claimed was invisible::
+
+        old arg captured: '# SKIP-OK: live service unreachable\\n
+                           f"merge service not reachable at {URL}/health"\\n'
+        -> MATCH=True
+
+    The real defect is truncation.  For
+    ``pytest.skip(f"probe({url}) says the merge service is unreachable")``
+    the old regex captures only ``f"probe({url}`` — zero forbidden hits, a
+    silent MISS — while the paren-balancing scan captures the whole
+    argument and flags it.  Truncation is also why
+    ``pytest.skip(f"Jackett unhealthy ({r.status_code})")`` was captured
+    only up to ``{r.status_code}``; that particular call still tripped the
+    vocabulary because its forbidden word happens to precede the ``)``.
+
+    HONEST BOUNDARY (§11.4.6): re-scanning the current tree with the old
+    argument capture and the new vocabulary yields the SAME offender set as
+    the new scanner — no real site in this tree presently hides its reason
+    behind a nested ``)``.  The hole is real and demonstrable but currently
+    LATENT; ``test_truncation_hole_is_actually_closed`` pins it with the
+    synthetic sample above rather than claiming a tree-wide rescue that was
+    not measured.
+
+    Replaced by a quote-aware paren-balancing scan (``_iter_skip_calls``).
 """
 
 from __future__ import annotations
@@ -60,6 +88,18 @@ ALLOW_LISTED_FILES = {
 # multi-line calls and nested parentheses are both handled.
 SKIP_CALL_START = re.compile(r"pytest\s*\.\s*skip\s*\(")
 
+# A health-endpoint PATH on its own is not an availability claim — it is
+# just a URL.  It becomes one only when a failure predicate sits beside it.
+# Load-bearing: tests/ddos/test_slow_request.py skips on HOST LOAD with the
+# reason "baseline /health latency 0.310s already exceeds the ... bar", and
+# a bare ``/health`` pattern refused that correct code — a §11.4.201(1)
+# false-positive refusal, as forbidden as a false pass.
+_HEALTH_ENDPOINT = r"/health\w*"
+_FAILURE_PREDICATE = (
+    r"(?:not\s+ok|not\s+reachable|un(?:reachable|available|healthy)|"
+    r"failed|refused|returned\s+[45]\d{2}|non-?200)"
+)
+
 # Forbidden reason patterns: an availability / reachability / health
 # condition dressed up as a skip.  Word boundaries are load-bearing —
 # a bare "down" substring would fire on "download" (a §11.4.201(1)
@@ -71,8 +111,15 @@ FORBIDDEN_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
         r"\b(?:un)?available\b",
         r"\b(?:un)?reachable\b",
         r"\b(?:un)?healthy\b",
+        # ``healthz`` stays a bare token deliberately: unlike ``/health`` it
+        # has no measured non-availability use anywhere in the tree, and it
+        # is a probe-endpoint name rather than English prose.
         r"\bhealthz\b",
-        r"/health\b",
+        # Endpoint + failure predicate, either order, same line, bounded
+        # window — replaces the bare ``/health\b`` that produced the
+        # false-positive refusal documented above.
+        rf"{_HEALTH_ENDPOINT}\b[^\n]{{0,40}}?\b{_FAILURE_PREDICATE}\b",
+        rf"\b{_FAILURE_PREDICATE}\b[^\n]{{0,40}}?{_HEALTH_ENDPOINT}\b",
         r"\bnot\s+(?:yet\s+)?(?:up|ok|healthy|ready|running|started|live|listening|responding)\b",
         r"\boffline\b",
         r"\bdown\b",
@@ -220,6 +267,18 @@ POSITIVE_SAMPLES: tuple[tuple[str, str], ...] = (
     ("phrase 'down'", 'pytest.skip("qBittorrent is down")'),
     ("phrase 'connection refused'", 'pytest.skip("connection refused on :7187")'),
     ("phrase 'not responding'", 'pytest.skip("bridge not responding")'),
+    (
+        "health endpoint WITH a failure predicate (narrowed pattern still fires)",
+        'pytest.skip(f"{URL}/healthz returned 503")',
+    ),
+    (
+        "failure predicate BEFORE the health endpoint",
+        'pytest.skip("connection refused polling /health")',
+    ),
+    (
+        "reason hidden AFTER a nested ')' — the real HOLE-2 shape",
+        'pytest.skip(f"probe({url}) says the merge service is unreachable")',
+    ),
 )
 
 # golden-FALSE: none of these may be detected.
@@ -252,6 +311,20 @@ NEGATIVE_SAMPLES: tuple[tuple[str, str], ...] = (
         "fixture-gated test body, no runtime skip at all",
         'def test_search(merge_service_live):\n    assert merge_service_live is not None',
     ),
+    (
+        # Verbatim-in-shape from tests/ddos/test_slow_request.py:122 — the
+        # measured false-positive refusal that forced the /health narrowing.
+        "host-load skip that merely NAMES the /health path (not availability)",
+        'pytest.skip(\n'
+        '    f"host_too_loaded_to_measure: baseline /health latency {b:.3f}s "\n'
+        '    f"already exceeds the {c:.3f}s bar, so an under-load measurement "\n'
+        '    "could not distinguish blocking from host noise"\n'
+        ")",
+    ),
+    (
+        "unrelated prose naming the health path, no skip call",
+        '# poll /health until the container answers, then hand back the URL',
+    ),
 )
 
 
@@ -271,20 +344,73 @@ def test_detector_does_not_fire_on_correct_code() -> None:
     assert not fired, "detector false-positives on: " + "; ".join(fired)
 
 
-def test_multiline_hole_is_actually_closed() -> None:
-    """Control needle: the multi-line sample the OLD regex provably could not see.
+OLD_SKIP_REGEX = re.compile(r"pytest\.skip\s*\(\s*(?P<arg>[^)]*)\)", re.IGNORECASE)
 
-    Proves the fix is the paren-balancing scan and not an accident of the
-    widened vocabulary — the old pattern is re-run here and must miss.
+
+def test_old_regex_was_never_blind_to_multi_line_calls() -> None:
+    """Refutes the superseded 'HOLE 2 = multi-line' diagnosis, by measurement.
+
+    ``[^)]`` is a NEGATED character class, so it matches ``\\n``.  The old
+    regex therefore captured multi-line ``pytest.skip(`` calls in full.  An
+    earlier revision of this file asserted the opposite and could never go
+    green.  This test is the control needle that keeps the corrected
+    diagnosis honest: if someone "fixes" it back, this fails.
     """
-    sample = (
+    multi_line = (
         'pytest.skip(  # SKIP-OK: live service unreachable\n'
         '    f"merge service not reachable at {URL}/health"\n'
         ")"
     )
-    old_regex = re.compile(r"pytest\.skip\s*\(\s*(?P<arg>[^)]*)\)", re.IGNORECASE)
-    assert old_regex.search(sample) is None, "old regex unexpectedly matched"
-    assert _scan_text(sample), "new scanner failed to match the multi-line call"
+    m = OLD_SKIP_REGEX.search(multi_line)
+    assert m is not None, "premise refuted: old regex did NOT match a multi-line call"
+    assert "not reachable" in m.group("arg"), (
+        "old regex matched but truncated before the reason — that would make "
+        "multi-line-ness the hole after all; captured: " + repr(m.group("arg"))
+    )
+
+
+def test_truncation_hole_is_actually_closed() -> None:
+    """The REAL hole: a reason that follows a nested ``)`` inside the argument.
+
+    ``[^)]*`` stops at the first ``)``, so everything after it was never
+    scanned.  Here the forbidden wording sits *past* that ``)``: the old
+    capture yields zero hits (a silent MISS) while the paren-balancing scan
+    sees the whole argument.  Both polarities are asserted, so this proves
+    the paren-balancing scan — not the widened vocabulary — is the fix.
+    """
+    sample = 'pytest.skip(f"probe({url}) says the merge service is unreachable")'
+
+    m = OLD_SKIP_REGEX.search(sample)
+    assert m is not None and m.group("arg") == 'f"probe({url}', (
+        "expected the old regex to truncate at the nested ')'; captured: "
+        + repr(m.group("arg") if m else None)
+    )
+    assert not _forbidden_hits(m.group("arg")), (
+        "old capture unexpectedly retained a forbidden phrase — the truncation "
+        "MISS this test pins would not be demonstrated"
+    )
+
+    assert _scan_text(sample), "new scanner failed to see past the nested ')'"
+
+
+def test_health_path_narrowing_keeps_both_polarities() -> None:
+    """A bare ``/health`` mention is a path; with a failure predicate it is a verdict.
+
+    Pins the §11.4.201(1) narrowing: the host-load skip in
+    ``tests/ddos/test_slow_request.py`` names ``/health`` while skipping on
+    latency, and must NOT be refused; a health endpoint reported as failing
+    must still be caught.
+    """
+    load_measurement = (
+        'pytest.skip("host_too_loaded_to_measure: baseline /health latency '
+        '0.310s already exceeds the 0.150s bar")'
+    )
+    assert not _scan_text(load_measurement), (
+        "false-positive refusal on a host-load skip that merely names /health"
+    )
+    assert _scan_text('pytest.skip(f"{URL}/health returned 503")'), (
+        "narrowing went too far — a failing health endpoint must still be caught"
+    )
 
 
 def test_nested_paren_call_is_captured_whole() -> None:

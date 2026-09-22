@@ -25,8 +25,8 @@
 </p>
 
 <p align="center">
-  <img alt="tests"          src="https://img.shields.io/badge/python%20tests-5857%20collected-blue">
-  <img alt="vitest"         src="https://img.shields.io/badge/frontend%20tests-2742%20collected-blue">
+  <img alt="tests"          src="https://img.shields.io/badge/python%20tests-6024%20collected-blue">
+  <img alt="vitest"         src="https://img.shields.io/badge/frontend%20tests-2743%20collected-blue">
   <img alt="plugins"        src="https://img.shields.io/badge/plugins-43-blue">
   <img alt="merge"          src="https://img.shields.io/badge/merge_service-FastAPI%20%3A7187-orange">
   <img alt="ci"             src="https://img.shields.io/badge/ci-manual%20%28.%2Fci.sh%2C%20no%20auto--trigger%29-success">
@@ -81,7 +81,7 @@
 
 - **Merge Search Service** — FastAPI service (`:7187`) that fans out across 40+ trackers, deduplicates results, streams via SSE.
 - **Real-time results** — `result_found` events arrive as each tracker completes, no blocking.
-- **Private-tracker bridge** — Authenticated downloads via `webui-bridge.py` for RuTracker, Kinozal, NNM-Club, IPTorrents.
+- **Private-tracker bridge** — Authenticated downloads via `boba-webui-bridge.service` (the Go `webui-bridge` binary, `:7188`) for RuTracker, Kinozal, NNM-Club, IPTorrents. The original `webui-bridge.py` implementation is kept in the tree but is not part of the managed `boba.target` topology.
 - **Freeleech-only IPTorrents** — Automation never costs ratio (see [constitution VIII](.specify/memory/constitution.md)).
 - **Opt-in quality stack** — SonarQube + Snyk + Semgrep + Trivy + Gitleaks + bandit + pip-audit behind `docker-compose.quality.yml`.
 - **Opt-in observability** — Prometheus + Grafana dashboards behind the same profile system.
@@ -346,7 +346,7 @@ Status/video-confirmation format.
                        │  └── /api/v1/auth/...           │
                        └───────────────────────────────┘
                                      ▲
-  http://:7188 ── webui-bridge.py (host process) — private-tracker bridge
+  http://:7188 ── boba-webui-bridge.service (Go, host process) — private-tracker bridge
 
 Opt-in (docker-compose.quality.yml):
    http://:9000   SonarQube              profile: quality
@@ -413,8 +413,8 @@ Each artefact ships with `SHA256SUMS` + `BUILD_INFO.json`.
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) and the TDD protocol in [`CLAUDE.md`](CLAUDE.md). PRs must keep the following green:
 
-- Python unit + e2e + contract (`pytest` — 4768 tests collected, see docs/TESTING.md)
-- Frontend Vitest (`ng test` — 2742 tests collected, see docs/TESTING.md)
+- Python unit + e2e + contract (`pytest` — 4930 tests collected, see docs/TESTING.md)
+- Frontend Vitest (`ng test` — 2743 tests collected, see docs/TESTING.md)
 - Ruff + bandit + shellcheck (via `scripts/scan.sh`)
 
 ---

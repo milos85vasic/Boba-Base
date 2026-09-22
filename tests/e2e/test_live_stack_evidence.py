@@ -57,14 +57,6 @@ def _save_evidence(name: str, payload: object) -> Path:
     return path
 
 
-def _service_reachable() -> bool:
-    try:
-        r = requests.get(f"{MERGE_SERVICE_URL}/health", timeout=5)
-        return r.status_code == 200
-    except Exception:
-        return False
-
-
 def _wait_for_idle(max_wait: float = 180.0) -> None:
     """Block until the orchestrator reports zero active searches so this
     test's evidence isn't contaminated by a concurrent fan-out."""
@@ -124,13 +116,21 @@ def _auth_failure_is_definitive(stat: dict) -> bool:
 
 
 @pytest.fixture(scope="module")
-def live_url() -> str:
-    if not _service_reachable():
-        pytest.skip(  # SKIP-OK: live service unreachable, §11.4.3
-            f"merge service not reachable at {MERGE_SERVICE_URL}/health — "
-            "start the stack to run live E2E tests (no fake-pass)."
-        )
-    return MERGE_SERVICE_URL
+def live_url(request: pytest.FixtureRequest) -> str:
+    """Real merge-search service base URL, via the sanctioned shared fixture.
+
+    Delegates to ``tests/fixtures/services.py``'s ``merge_service_live`` —
+    converting its RuntimeError (service unreachable / cannot be brought
+    up) into an honest SKIP here (no fake-pass). The
+    ``test_guard_legitimate_topology_skip_is_preserved`` self-test below
+    pins that this fixture SKIPs on unreachability, not on an HTTP status
+    code — both hold: the try/except below skips only when the sanctioned
+    fixture itself could not resolve, never on a received response.
+    """
+    try:
+        return request.getfixturevalue("merge_service_live")
+    except Exception as exc:  # pragma: no cover - environment-dependent
+        pytest.skip(f"merge service not reachable in this environment: {exc}")  # allow-skip: wraps the sanctioned merge_service_live fixture (§11.4.3 topology-dispatch), NOT a raw availability probe
 
 
 @pytest.fixture(scope="module")

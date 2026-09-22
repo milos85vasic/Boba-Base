@@ -482,14 +482,23 @@ class TestInitiateDownload:
 
 class TestDownloadFile:
     def test_magnet_returns_text(self, client_factory):
+        # BOB-review-#9 BLOCKING-1 (2026-09-22): the magnet under test MUST carry
+        # a structurally-valid BTIH info-hash (40 hex chars, or 32 base32 chars)
+        # — routes.py's _is_plausible_torrent_source() now refuses a magnet whose
+        # xt=urn:btih: value doesn't match that shape, so a 3-char placeholder
+        # like "abc" is correctly rejected with 422 before ever reaching this
+        # endpoint's own logic. This fixture exists to prove the endpoint's OWN
+        # magnet-echo behavior (returns the magnet verbatim as text/plain with a
+        # .magnet content-disposition), which requires getting PAST that gate.
+        magnet = "magnet:?xt=urn:btih:0000000000000000000000000000000000000000"
         orch = _make_orch()
         c = client_factory(orch)
         resp = c.post(
             "/api/v1/download/file",
-            json={"result_id": "r1", "download_urls": ["magnet:?xt=urn:btih:abc"]},
+            json={"result_id": "r1", "download_urls": [magnet]},
         )
         assert resp.status_code == 200
-        assert resp.text == "magnet:?xt=urn:btih:abc"
+        assert resp.text == magnet
         assert ".magnet" in resp.headers["content-disposition"]
 
     def test_tracker_torrent_stream(self, client_factory):

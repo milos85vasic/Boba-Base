@@ -28,6 +28,11 @@
 #
 # Closed bare/templated pattern set (extend by adding to BARE_PATTERNS):
 #   ^Auto-commit$        — the exact pattern RD2-00 found, 21 instances
+#   ^Auto-commit [0-9]+$ — the epoch-ms-suffixed variant (review #9,
+#                           2026-09-22): the same producer script emits
+#                           "Auto-commit <session-epoch-ms>", which the
+#                           bare pattern above does not match; found on
+#                           d768373 which reached 3 remotes unreviewed
 #   ^sync:[[:space:]]     — a second templated-auto-sync shape named in
 #                           the tracked item's acceptance text
 #
@@ -81,6 +86,7 @@ fi
 
 BARE_PATTERNS=(
     '^Auto-commit$'
+    '^Auto-commit [0-9]+$'
     '^sync:[[:space:]]'
 )
 TICKET_RE='[A-Z][A-Z0-9]*-[0-9]+'

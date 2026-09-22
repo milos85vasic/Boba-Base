@@ -32,7 +32,12 @@ that makes everything succeed fails this file rather than passing it.
 qBittorrent 5.2.3 success shape (measured 2026-09-01, not assumed):
     login OK    -> HTTP 204, EMPTY body, ``Set-Cookie: QBT_SID_7185=...``
     login BAD   -> HTTP 401, body ``Unauthorized``, NO session cookie
-    add (authed)-> HTTP 200, body ``Ok.``
+    add (authed)-> HTTP 200, body ``{"added_torrent_ids":["<hash>"],
+                   "failure_count":0,"pending_count":0,"success_count":1}``
+                   (see the measured add-contract test further below for
+                   the full response-shape matrix; qBittorrent v5.2.3 /
+                   WebAPI 2.15.1 does NOT return a bare ``Ok.`` body — that
+                   shape belongs to qBittorrent <5.x)
     add (anon)  -> HTTP 403
 Never detect login success by ``body == "Ok."`` — that is the legacy shape
 and it does not appear on this build.
@@ -208,12 +213,27 @@ def _purge_tag(base, cookie, tag):
 # fixtures
 # --------------------------------------------------------------------------
 @pytest.fixture(scope="module")
-def live_qbittorrent():
-    """The real qBittorrent WebUI, or an honest SKIP (§11.4.3)."""
-    if not _port_open(QBIT_HOST, QBIT_PORT):
-        pytest.skip(
-            f"SKIP-REASON hardware_not_present: qBittorrent WebUI unreachable at {QBIT_BASE}"
-        )
+def live_qbittorrent(request: pytest.FixtureRequest) -> str:
+    """The real qBittorrent WebUI (direct :{QBIT_PORT}), or an honest SKIP (§11.4.3).
+
+    Gates on the sanctioned ``qbittorrent_live`` fixture
+    (``tests/fixtures/services.py``) rather than a local reachability
+    probe. ``qbittorrent_live`` requests ``compose_up``, which brings up
+    (or verifies) ALL THREE stack ports — including the direct
+    qBittorrent WebUI port this file targets — before returning, even
+    though ``qbittorrent_live``'s OWN return value is the :7186 proxy
+    URL. This file deliberately bypasses that proxy: every test below
+    drives qBittorrent's real WebUI directly via the module-level
+    ``QBIT_BASE`` constant to exercise its native auth contract (the
+    exact thing the removed ``WebUI\\LocalHostAuth`` bypass used to
+    silently ride on — see the module docstring), so the fixture's
+    return value here is still ``QBIT_BASE``, unchanged from before this
+    conversion.
+    """
+    try:
+        request.getfixturevalue("qbittorrent_live")
+    except Exception as exc:  # pragma: no cover - environment-dependent
+        pytest.skip(f"qBittorrent WebUI unreachable at {QBIT_BASE}: {exc}")  # allow-skip: wraps the sanctioned qbittorrent_live fixture (§11.4.3 topology-dispatch) via its compose_up side effect, NOT a raw availability probe
     return QBIT_BASE
 
 

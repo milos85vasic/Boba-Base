@@ -86,26 +86,21 @@ REQUIRED_FIELDS = {
 VALID_STATUSES = {"pending", "running", "success", "empty", "error", "timeout", "cancelled"}
 
 
-def _service_reachable() -> bool:
-    try:
-        resp = requests.get(f"{MERGE_SERVICE_URL}/health", timeout=5)
-        return resp.status_code == 200
-    except Exception:
-        return False
-
-
 @pytest.fixture(scope="module")
-def live_url() -> str:
-    if not _service_reachable():
-        pytest.skip(  # SKIP-OK: live merge search service unreachable, §11.4.3
-            f"merge search service unreachable at {MERGE_SERVICE_URL}/health — "
-            "run ./start.sh -p to bring up qbittorrent-proxy (or set "
-            "MERGE_SERVICE_URL) before running the real tracker_stats "
-            "contract test. No fake-pass: this test does not mock "
-            "SearchOrchestrator, so it has no way to validate the real "
-            "response shape without a real running service."
-        )
-    return MERGE_SERVICE_URL
+def live_url(request: pytest.FixtureRequest) -> str:
+    """Real merge-search service base URL, via the sanctioned shared fixture.
+
+    Delegates to ``tests/fixtures/services.py``'s ``merge_service_live`` —
+    converting its RuntimeError (service unreachable / cannot be brought
+    up) into an honest SKIP here, since this is a lightweight contract
+    test, not the infra-bring-up test. No fake-pass: this test does not
+    mock SearchOrchestrator, so it has no way to validate the real
+    response shape without a real running service.
+    """
+    try:
+        return request.getfixturevalue("merge_service_live")
+    except Exception as exc:  # pragma: no cover - environment-dependent
+        pytest.skip(f"merge search service unreachable in this environment: {exc}")  # allow-skip: wraps the sanctioned merge_service_live fixture (§11.4.3 topology-dispatch), NOT a raw availability probe
 
 
 @pytest.fixture(scope="module")

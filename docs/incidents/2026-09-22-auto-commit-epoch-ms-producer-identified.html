@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>2026-09-22-auto-commit-epoch-ms-producer-identified</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">2026-09-22-auto-commit-epoch-ms-producer-identified</h1>
+</header>
+<h1
+id="incident-2026-09-22-auto-commit-epoch-ms-producer-identified-bob-068-follow-up">Incident
+2026-09-22 — Auto-commit epoch-ms producer identified (BOB-068
+follow-up)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-09-22T09:52:00Z <strong>Reporter:</strong> conductor
+(qBittorrent-login-repair verification wave, review #9)
+<strong>Session-under-investigation:</strong> this session,
+2026-09-19T17:57:24Z (commit <code>d768373</code>)
+<strong>Investigator:</strong> independent Fable review subagent, task 9
+(“Review the unreviewed auto-commit”) <strong>Class:</strong>
+unreviewed-commit bypass (§11.4.142 universal-code-review gap) +
+gate-detection gap (§11.4.201(6) false-null in
+<code>unattributed-commit-guard.sh</code>) <strong>Terminal
+state:</strong> PRODUCER IDENTIFIED, GATE FIXED, EXTERNAL TOOL NOT
+MODIFIED (out of this repo’s scope) <strong>Related:</strong>
+<code>docs/incidents/2026-08-18-auto-committer-BOB-068-investigation.md</code>
+(established there was no daemon; this incident identifies the actual
+human-invoked producer BOB-068’s investigation left open)</p>
+<h2 id="what-happened">1. What happened</h2>
+<p>Commit <code>d768373</code> (“Auto-commit 1789833444209”, parent
+<code>deed8bf</code>) landed on <code>main</code> and was pushed to
+three remotes (<code>github</code>, <code>upstream</code>,
+<code>origin</code>) without passing through this project’s own
+review/commit discipline (§11.4.142, §11.4.234). It mixed six genuine,
+already-validated fixes from this session with one half-finished,
+unverified edit
+(<code>tests/unit/test_no_runtime_service_skips.py</code>, later found
+RED on <code>main</code>) and silently overwrote committed BOB-095
+closure evidence for the fifth time. Full findings are in the review
+transcript; this record is scoped to <strong>how the commit reached
+three remotes with nothing able to refuse it</strong>, per the review’s
+IMPORTANT-5 finding.</p>
+<h2 id="the-producer-identified">2. The producer, identified</h2>
+<p><code>~/Projects/project_toolkit/Software-Toolkit/Utils/Git/commit.sh:17-27</code>:</p>
+<pre><code>SESSION=$(($(date +%s%N)/1000000))
+MESSAGE=&quot;Auto-commit $SESSION&quot;
+git add .
+git commit -m &quot;$MESSAGE&quot;</code></pre>
+<p>followed by a push. This script is reachable on <code>PATH</code> as
+the bare commands <code>commit</code> and <code>cmt</code> (via
+<code>project_toolkit/Upstreamable/commit</code> and
+<code>helix_code/cmt</code>). It is a <strong>generic,
+cross-project</strong> convenience wrapper — it has no knowledge of this
+repo’s <code>scripts/commit-push-all.sh</code> mandate (§11.4.234), runs
+<code>git add .</code> unconditionally, and stages/commits/pushes
+whatever the current working tree happens to hold.</p>
+<h2 id="provenance-not-a-daemon-an-interactive-invocation">3. Provenance
+— not a daemon, an interactive invocation</h2>
+<ul>
+<li>Local HEAD reflog: <code>commit: Auto-commit 1789833444209</code> at
+<code>2026-09-19T17:57:24+02:00</code>, created in <strong>this</strong>
+checkout.</li>
+<li><code>github/main</code> “update by push” at <code>17:57:27</code>;
+<code>upstream/main</code> at <code>17:57:29</code>;
+<code>origin/main</code> fast-forward fetch at <code>17:59:10</code> —
+all three remotes updated within ~2 minutes of the local commit,
+consistent with the same push reaching each configured remote in
+sequence, not a separate daemon per remote.</li>
+<li><code>journalctl</code>: an interactive SSH session for
+<code>milosvasic</code> from a LAN host
+(<code>fe80::8817:71ff:fe60:49c9%enp5s0</code>) opened
+<code>15:19:52</code>, disconnected <code>17:58:18</code> — <strong>54
+seconds after the push landed</strong>. This is consistent with an
+operator-driven shell session, not a background timer or daemon
+(BOB-068’s original investigation already ruled out a daemon; this
+confirms it for this specific instance).</li>
+<li>The same script produced a sibling commit in a different checkout
+(<code>~/Projects/vasic</code>, commit <code>7ee369d</code>,
+“Auto-commit 1789823284278”) at <code>15:08:05</code>, inside the same
+SSH session window — i.e. the operator (or an agent acting in an
+interactive shell on the operator’s behalf) ran the generic
+<code>commit</code>/<code>cmt</code> shorthand across multiple project
+checkouts in one sitting, and this repo was one of them.</li>
+</ul>
+<p><strong>Verdict:</strong> this is the identified producer BOB-068’s
+Phase-1 investigation left open as “not a daemon, race condition or
+operator-shell toolkit sweep” — resolved here to the latter: an
+operator-shell invocation of a cross-project generic tool, not a race
+condition and not a background process.</p>
+<h2 id="why-nothing-refused-it">4. Why nothing refused it</h2>
+<ul>
+<li><code>core.hooksPath</code> is unset in this checkout;
+<code>.git/hooks/</code> is empty. No git hook could have intercepted
+the commit or the push (§11.4.234’s mandate — hooks never gate routine
+commit/push — was already satisfied here, just not in the direction that
+would have caught this).</li>
+<li><code>scripts/hooks/unattributed-commit-guard.sh</code> exists and
+is designed to catch exactly this shape (<code>^Auto-commit$</code> plus
+similar templated patterns), but its pattern set did not include the
+epoch-millisecond-suffixed variant this script actually emits. Confirmed
+by direct RED/GREEN reproduction (§5).</li>
+<li>This guard is not itself wired into any automatic commit-time hook
+(consistent with §11.4.234 — it is meant to run as an explicit stage of
+the sanctioned <code>scripts/commit-push-all.sh</code> wrapper), so even
+a correct pattern would only have caught this
+<strong>retroactively</strong>, on a subsequent sweep — not prevented
+the push.</li>
+</ul>
+<h2 id="fix-applied-this-repo-only">5. Fix applied (this repo only)</h2>
+<p><code>scripts/hooks/unattributed-commit-guard.sh</code>: added
+<code>'^Auto-commit [0-9]+$'</code> to <code>BARE_PATTERNS</code>,
+alongside the pre-existing <code>'^Auto-commit$'</code>.</p>
+<p>RED (before): <code>--range deed8bf..d768373</code> →
+<code>OK — no unattributed bare/templated commit</code> (rc=0) —
+confirmed miss. Control needle: <code>--range 0e61779~1..0e61779</code>
+(the original bare-shape commit) → fires, rc=1 — proved the instrument
+was not blind, only under-matched.</p>
+<p>GREEN (after): <code>--range deed8bf..d768373</code> → fires, names
+<code>d768373</code> by hash and subject, rc=1. Both control needles
+re-run and hold: the original bare shape still fires; a genuinely
+attributed commit (<code>deed8bf</code> itself) still does not fire. The
+script’s own <code>--self-test</code>
+(golden-good/golden-bad/false-positive oracle) still passes after the
+change.</p>
+<h2 id="what-was-deliberately-not-done">6. What was deliberately NOT
+done</h2>
+<p><code>~/Projects/project_toolkit</code> is a <strong>separate
+repository</strong>, outside this checkout and outside this task’s
+authorization. §11.4.28 (submodule/dependency decoupling) and plain
+scope discipline both argue against unilaterally editing another
+project’s tooling because of an incident observed here. Two possible
+directions exist and are recorded as an <strong>owed operator
+decision</strong>, not silently picked:</p>
+<ol type="1">
+<li>Make <code>commit.sh</code> repo-aware (detect a
+<code>scripts/commit-push-all.sh</code> in the target checkout and
+delegate to it, or refuse with a pointer) — a change to
+<code>project_toolkit</code> itself, needing that project’s own review
+discipline.</li>
+<li>Leave <code>commit</code>/<code>cmt</code> as an intentionally
+generic, project-agnostic convenience for repos with no stricter
+mandate, and rely on <strong>this repo’s own</strong> guard (now fixed)
+to catch and report an unreviewed sweep after the fact, per the
+detection-not- prevention model §11.4.234 already establishes for hooks
+in this project.</li>
+</ol>
+<p>Recommendation, not a decision made on the operator’s behalf: (1) is
+the more durable fix if <code>commit</code>/<code>cmt</code> is
+routinely invoked across multiple Helix-governed checkouts; (2) requires
+no cross-repo change and is what this incident’s §5 fix already
+delivers.</p>
+<h2 id="cross-reference">7. Cross-reference</h2>
+<p>BOB-068’s original investigation
+(<code>docs/incidents/2026-08-18-auto-committer-BOB-068-investigation.md</code>)
+should be updated to reference this record as the resolution of its open
+“operator- shell toolkit sweep” hypothesis for at least this
+instance.</p>
+</body>
+</html>
