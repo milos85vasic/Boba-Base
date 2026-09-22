@@ -7,6 +7,13 @@ cd "$SCRIPT_DIR"
 
 CONTAINER_RUNTIME=""
 COMPOSE_CMD=""
+# The genuine podman-compose/docker-compose invocation, captured before
+# BOBA_CTL_MODE may overwrite COMPOSE_CMD with the boba-ctl wrapper. boba-ctl
+# (cmd/boba-ctl) implements only up/down/status/health/list/deploy — no
+# `build` verb — so any scoped image rebuild (reload_go_service) MUST talk to
+# the real compose tool directly, exactly like reload_python()/reload_plugins()
+# already bypass boba-ctl for exec/restart (it has no exec/restart verb either).
+REAL_COMPOSE_CMD=""
 BOBA_CTL_MODE=true
 
 RED='\033[0;31m'
@@ -398,6 +405,12 @@ detect_container_runtime() {
         fi
         CONTAINER_RUNTIME=""
     fi
+
+    # Capture the real compose invocation BEFORE the boba-ctl override below
+    # can overwrite COMPOSE_CMD — reload_go_service() needs the genuine tool
+    # for `build`, which boba-ctl does not implement, regardless of which
+    # orchestrator mode the operator is running under.
+    REAL_COMPOSE_CMD="$COMPOSE_CMD"
 
     if [[ "$BOBA_CTL_MODE" == true ]]; then
         COMPOSE_CMD="$SCRIPT_DIR/scripts/boba-ctl.sh"
@@ -1121,6 +1134,51 @@ reload_plugins() {
     print_success "qbittorrent-proxy restarted"
 }
 
+# Maintenance subcommand — the missing scoped restart level for the two
+# compiled-Go-binary services (boba-jackett, qbittorrent-proxy-go). Unlike
+# download-proxy/src/ (bind-mounted, live on disk), their source is COPIEd
+# into the image and compiled at `docker/podman build` time (see
+# qBitTorrent-go/Dockerfile / Dockerfile.jackett) — a source edit is NOT live
+# until the image is rebuilt. Before this existed, the ONLY path that picked
+# up such a change was --recreate, which takes the WHOLE stack down/up
+# (qbittorrent + jackett + qbittorrent-proxy + boba-jackett) — disproportionate
+# blast radius for a single-service Go rebuild (root cause identified via
+# systematic-debugging, 2026-09-22).
+#
+# `build` is NOT a boba-ctl verb (cmd/boba-ctl implements only
+# up/down/status/health/list/deploy), so this ALWAYS talks to
+# REAL_COMPOSE_CMD (podman-compose / docker compose) directly for the build
+# step, exactly like reload_python()/reload_plugins() bypass boba-ctl for
+# exec/restart. `up -d <service>` is scoped, NOT whole-stack: verified live
+# (2026-09-22) that podman-compose ALSO recreates the named service's
+# depends_on chain (boba-jackett -> jackett was recreated, fresh container,
+# unchanged image) but leaves every UNRELATED service running untouched
+# (qbittorrent / download-proxy / qbittorrent-proxy kept their pre-existing
+# uptimes) — still a small fraction of --recreate's whole-stack down+up.
+reload_go_service() {
+    local service="$1"
+
+    if [[ -z "$REAL_COMPOSE_CMD" ]]; then
+        print_error "No podman-compose/docker-compose detected on PATH — cannot rebuild $service."
+        print_error "Install podman-compose or Docker Compose, then retry."
+        exit 1
+    fi
+
+    print_info "Rebuilding $service image ($REAL_COMPOSE_CMD build $service)..."
+    if ! $REAL_COMPOSE_CMD build "$service"; then
+        print_error "Failed to rebuild $service image"
+        exit 1
+    fi
+    print_success "$service image rebuilt"
+
+    print_info "Recreating $service container from the new image ($REAL_COMPOSE_CMD up -d $service)..."
+    if ! $REAL_COMPOSE_CMD up -d "$service"; then
+        print_error "Failed to recreate $service container"
+        exit 1
+    fi
+    print_success "$service recreated — Go source changes are now live"
+}
+
 # Maintenance subcommand — restart level 3 (see CLAUDE.md "Pick the right
 # restart level"). Full recreate, required after docker-compose.yml,
 # start-proxy.sh, env var, or base image changes. Reuses $COMPOSE_CMD —
@@ -1350,6 +1408,8 @@ OPTIONS:
     --no-boba-ctl       Use raw podman-compose/docker compose instead of boba-ctl CLI
     --reload-python     Clear __pycache__ + restart qbittorrent-proxy (download-proxy/src/ edits)
     --reload-plugins    Restart qbittorrent-proxy to pick up plugins (run ./install-plugin.sh FIRST)
+    --reload-jackett    Rebuild + recreate ONLY boba-jackett (qBitTorrent-go/cmd/boba-jackett edits)
+    --reload-proxy-go   Rebuild + recreate ONLY qbittorrent-proxy-go (Go profile source edits)
     --recreate          Full recreate: compose down && compose up -d (compose/env/base-image changes)
 
 EXAMPLES:
@@ -1359,6 +1419,7 @@ EXAMPLES:
     $(basename "$0") --no-boba-ctl    Start using raw compose
     $(basename "$0") --reload-python  Reload edited download-proxy/src/ Python source
     $(basename "$0") --reload-plugins Reload after ./install-plugin.sh copied plugins/*.py
+    $(basename "$0") --reload-jackett Rebuild + recreate boba-jackett after a Go source edit
     $(basename "$0") --recreate       Full recreate after compose/env/base-image changes
 
 EOF
@@ -1373,6 +1434,8 @@ main() {
     local build_frontend_flag=true
     local reload_python_flag=false
     local reload_plugins_flag=false
+    local reload_jackett_flag=false
+    local reload_proxy_go_flag=false
     local recreate_flag=false
 
     while [[ $# -gt 0 ]]; do
@@ -1410,6 +1473,14 @@ main() {
                 ;;
             --reload-plugins)
                 reload_plugins_flag=true
+                shift
+                ;;
+            --reload-jackett)
+                reload_jackett_flag=true
+                shift
+                ;;
+            --reload-proxy-go)
+                reload_proxy_go_flag=true
                 shift
                 ;;
             --recreate)
@@ -1456,6 +1527,16 @@ main() {
 
     if [[ "$reload_plugins_flag" == true ]]; then
         reload_plugins
+        exit 0
+    fi
+
+    if [[ "$reload_jackett_flag" == true ]]; then
+        reload_go_service "boba-jackett"
+        exit 0
+    fi
+
+    if [[ "$reload_proxy_go_flag" == true ]]; then
+        reload_go_service "qbittorrent-proxy-go"
         exit 0
     fi
 

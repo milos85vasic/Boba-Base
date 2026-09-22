@@ -468,6 +468,14 @@ bind-mounted; restart again picks them up.</li>
 </ul>
 <p>Full rebuild (<code>podman build</code>) is only necessary when the
 base image (<code>python:3.12-alpine</code>) itself needs to change.</p>
+<p><code>boba-jackett</code> and <code>qbittorrent-proxy-go</code> are
+NOT bind-mounted — their Go source is compiled into the image at build
+time (<code>qBitTorrent-go/Dockerfile*</code>), so a source edit is
+never live on a plain restart. Use
+<code>./start.sh --reload-jackett</code> /
+<code>./start.sh --reload-proxy-go</code> (scoped build + recreate of
+that one service — see <code>CLAUDE.md</code> “Pick the right restart
+level”).</p>
 <h2 id="troubleshooting">Troubleshooting</h2>
 <p><strong>All public trackers return 0.</strong> The subprocess capture
 is broken. First thing to check: does the script in

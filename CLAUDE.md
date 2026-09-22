@@ -75,6 +75,25 @@ For deeper reference (technology stack, per-test-file mapping, full gotchas), se
     *(Under the hood: `--reload-plugins` only restarts the container —
     `podman|docker restart qbittorrent-proxy` — it does not copy files;
     `./install-plugin.sh` must run first.)*
+  - **Go source in `qBitTorrent-go/` for `boba-jackett`** (e.g.
+    `cmd/boba-jackett/main.go`) — COMPILED INTO the image at build time
+    (`Dockerfile.jackett`, multi-stage, no bind mount), so it is NEVER
+    live on a plain restart. Run `./start.sh --reload-jackett`.
+    *(Under the hood: `<compose> build boba-jackett` then `<compose> up
+    -d boba-jackett`, talking to the REAL podman-compose/docker-compose
+    directly — boba-ctl has no `build` verb. Scoped, not whole-stack:
+    verified live 2026-09-22 that podman-compose also recreates
+    boba-jackett's `depends_on: jackett` (fresh container, unchanged
+    image) but leaves qbittorrent / download-proxy / qbittorrent-proxy
+    running untouched — a small fraction of `--recreate`'s blast
+    radius. Added after this exact gap left a live container serving a
+    stale `version` string through an entire 1.3.0 release cycle —
+    added by systematic-debugging root-cause investigation, not fixed
+    around.)*
+  - **Go source in `qBitTorrent-go/` for `qbittorrent-proxy-go`**
+    (the opt-in `--profile go` service, same build-context, same
+    compiled-not-mounted class) — run `./start.sh --reload-proxy-go`.
+    Same mechanism as `--reload-jackett`, scoped to that one service.
   - **`docker-compose.yml`, `start-proxy.sh`, env vars, base image** —
     run `./start.sh --recreate` (full recreate). A rebuild of the
     `python:3.12-alpine`-based image is only needed when the base image

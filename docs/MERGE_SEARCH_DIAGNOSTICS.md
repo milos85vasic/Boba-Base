@@ -208,6 +208,12 @@ container at `/config/download-proxy`. That means:
 Full rebuild (`podman build`) is only necessary when the base image
 (`python:3.12-alpine`) itself needs to change.
 
+`boba-jackett` and `qbittorrent-proxy-go` are NOT bind-mounted — their Go
+source is compiled into the image at build time (`qBitTorrent-go/Dockerfile*`),
+so a source edit is never live on a plain restart. Use `./start.sh
+--reload-jackett` / `./start.sh --reload-proxy-go` (scoped build + recreate
+of that one service — see `CLAUDE.md` "Pick the right restart level").
+
 ## Troubleshooting
 
 **All public trackers return 0.** The subprocess capture is broken.

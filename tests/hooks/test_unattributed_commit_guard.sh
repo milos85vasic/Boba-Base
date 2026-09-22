@@ -104,19 +104,41 @@ fi
 #     RD2-00/BOB-068 unattributed commits in THIS repository's history are
 #     detected by the default (no-args) invocation. Skips honestly
 #     (§11.4.3) if this checkout has no reachable tag (fresh shallow clone).
+#
+# ROOT-CAUSE FIX (systematic-debugging, 2026-09-22): the guard's default
+# (no-args) mode scans EXACTLY `<latest-reachable-tag>..HEAD` (see
+# scripts/hooks/unattributed-commit-guard.sh: TAG=$(git describe --tags
+# --abbrev=0 HEAD); RANGE="${TAG}..HEAD") — a bounded, tag-scoped range, NOT
+# the whole repository history. This test's oracle previously counted
+# "known" bare Auto-commit commits with `--all` (unscoped, whole-history),
+# then asserted the guard's tag-bounded scan should agree with that
+# whole-history count — comparing two different scopes (§11.4.245 wrong-layer
+# oracle). The mismatch was LATENT until this session's own 1.3.0 release tag
+# landed exactly at HEAD: the default range then collapsed to `1.3.0..HEAD`
+# (empty — zero commits since the tag), the guard correctly reported 0
+# violations in that empty range, and the whole-history oracle (23 bare
+# commits, all pre-dating 1.3.0) wrongly expected exit 1. Fixed by scoping
+# the "known" count to the SAME ${TAG}..HEAD range the guard itself computes,
+# so the oracle and the mechanism under test are always apples-to-apples —
+# self-correcting as new commits/tags land, never re-hardcoded against a
+# history snapshot.
 # ---
-if git -C "${PROJECT_ROOT}" describe --tags --abbrev=0 HEAD >/dev/null 2>&1; then
+if TAG="$(git -C "${PROJECT_ROOT}" describe --tags --abbrev=0 HEAD 2>/dev/null)"; then
     REAL_EXIT=0
     REAL_OUT="$(cd "${PROJECT_ROOT}" && bash "${GUARD}" 2>&1)" || REAL_EXIT=$?
-    KNOWN_BARE_COUNT="$(git -C "${PROJECT_ROOT}" log --oneline --all --grep='^Auto-commit$' | wc -l)"
+    KNOWN_BARE_COUNT="$(git -C "${PROJECT_ROOT}" log --oneline "${TAG}..HEAD" --grep='^Auto-commit$' | wc -l)"
     if [[ "${KNOWN_BARE_COUNT}" -gt 0 ]]; then
         if [[ "${REAL_EXIT}" -eq 1 ]]; then
-            pass "default-range scan of THIS repo's real history exits 1 (genuine RD2-00 commits present)"
+            pass "default-range scan of THIS repo's real history exits 1 (genuine bare Auto-commit(s) present in ${TAG}..HEAD)"
         else
-            fail "default-range scan of THIS repo's real history exited ${REAL_EXIT} (expected 1 — ${KNOWN_BARE_COUNT} known bare 'Auto-commit' commits exist)"
+            fail "default-range scan of ${TAG}..HEAD exited ${REAL_EXIT} (expected 1 — ${KNOWN_BARE_COUNT} known bare 'Auto-commit' commit(s) in that exact range)"
         fi
     else
-        echo "  SKIP (§11.4.3): no bare 'Auto-commit' commits reachable in this checkout's history right now"
+        if [[ "${REAL_EXIT}" -eq 0 ]]; then
+            pass "default-range scan of ${TAG}..HEAD exits 0 (no bare 'Auto-commit' commits in that range — consistent with the 0 this test independently counted there)"
+        else
+            fail "default-range scan of ${TAG}..HEAD exited ${REAL_EXIT} (expected 0 — this test independently counted 0 bare 'Auto-commit' commits in that exact range)"
+        fi
     fi
 else
     echo "  SKIP (§11.4.3): no tag reachable from HEAD in this checkout — default-range mode needs one"
