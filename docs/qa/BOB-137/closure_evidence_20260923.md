@@ -134,3 +134,10 @@ SSE disconnect, all-trackers-errored SSE contract), plus
    Cause: UNKNOWN — candidate flake, should be tracked separately.
 4. **§11.4.214 linkage with BOB-145** remains the operator/tracker decision
    recorded on the row; this evidence does not resolve it.
+
+## Live soak addendum (conductor, 2026-09-23 ~18:57 CEST, stack recreated from HEAD 69b049a via ./start.sh --recreate; containers healthy)
+Command: python3 soak.py — POST /api/v1/search (query "ubuntu") on the live merge service :7187, poll to completion while probing GET /health every 100 ms.
+Result (pasted): `search finished: completed results 1444` / `probes=222 max=60ms p99=54ms >1s=0 errors=42` — every one of the 42 "errors" is `HTTPError 429 Too Many Requests` (the rate limiter answering the 10/s probe), returned within the same 60 ms bound; zero timeouts, zero probes over 1 s.
+Prior baseline recorded in the item: 2 of 141 probes dead in the 2026-08-21 soak. Now: 0 of 222 slow.
+## Honest boundaries
+Single search, single soak, no live RED/before run on the pre-fix container (the pre-fix behaviour is proven at unit level: 3 failed/3 passed on pre-fix source). Manual QA (§11.4.185) still owed. Other loop-thread work (e.g. _serialize_merged_rows in GET /search/{id}) not audited; whether BOB-145 is the same defect (§11.4.214) is left to the operator.

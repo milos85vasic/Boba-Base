@@ -96,3 +96,8 @@ rc=0
    tracked as BOB-184.
 4. **§11.4.185 manual QA**: no human has looked at the colours. This is still owed.
 5. `/jackett/*` routes were not rendered and scanned in this pass.
+
+## Live-surface addendum (conductor, 2026-09-23 ~18:56 CEST)
+Stack recreated from HEAD 69b049a (all four containers healthy). Command: `.venv/bin/python -m pytest tests/ux/test_live_dashboard_accessibility.py --import-mode=importlib -q` -> `3 passed in 3.08s` (rc=0, no skips), including test_live_dashboard_axe_scan against the running dashboard.
+The live surface therefore agrees with the artifact-level RED->GREEN above (pre-fix #9d001e failing at 1.43:1 / 1.62:1 in the scratch bundle copy; shipped bundle clean across 16 palette x mode combinations).
+Honest boundaries unchanged: a live RED was not produced (the pre-fix bundle is no longer served), icon glyphs unmeasured (BOB-184), status badges need backend data (BOB-185), /jackett/* routes not scanned, manual QA (§11.4.185) owed.

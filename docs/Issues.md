@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 104
-**Last modified:** 2026-09-23T16:19:50Z
+**Revision:** 105
+**Last modified:** 2026-09-23T16:57:54Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -298,91 +298,6 @@ Phase 1 design-only proposal: the BOB-116/task-77 resource-pressure preventive s
 
 Task #109 subagent found: tests/unit/test_merge_api_route_contracts.py::TestHooksEndpoint::test_list_hooks_after_create fails when run in bulk suite order with 'ERROR api.hooks:hooks.py:102 Failed to save hooks: [Errno 13] Permission denied: /config'. Passes in isolation (2.02s clean). Root cause: full-suite ordering pollution — some earlier test leaves state that makes hooks try to write to /config (which the test env doesn't own). Pre-existing, unrelated to BOB-126/BOB-129 chain. Fix strategy: identify the polluting test, add teardown or use a proper tempdir fixture for hooks storage in the offending test.
 
-## BOB-137 — Merge service on 7187 wedges while the same process still serves 7186 (GIL starvation by one spinning thread)
-
-**Status:** In progress
-**Type:** Bug
-**Severity:** High
-**Created-By:** Claude
-
-**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-20T14:46:52Z
-**Reported-By:** Claude
-
-**What (the report, verbatim):**
-The merge service on port 7187 wedges after hours of uptime: the port stays bound
-and the container keeps reporting "healthy", but every HTTP request hangs until the
-client times out. Measured 2026-08-20 16:41 UTC+2 on a container up 3h53m:
-
-  curl http://localhost:7186/  -> HTTP 200 in 0.096s   (proxy, same process)
-  curl http://localhost:7187/  -> HTTP 000 after 6.0s  (merge service, WEDGED)
-
-Both ports are served by the SAME process (pid 2330069, fd 3 = 7186, fd 7 = 7187),
-so this is not a crashed worker -- one loop inside a live process has stopped
-servicing requests while another in the same process is fine.
-
-Thread state at the time of the wedge (/proc/2330069/task, 16 threads):
-  - tid 2330529: state R, wchan 0            <- ONE thread spinning on CPU
-  - tid 2330528: state S, wchan do_sys_poll  <- the healthy 7186 poll loop
-  - the other 14: state S, wchan futex_wait_queue
-
-That is the GIL-starvation signature: a thread busy-looping in Python holds the
-GIL and every other thread queues on the GIL futex. 7186 survives because
-do_sys_poll releases the GIL; the 7187 async loop needs sustained GIL time to
-service a request and starves. Process CPU was 20.6% while idle.
-
-Corroborating evidence: seven sockets held by the process sit in CLOSE-WAIT with
-unread bytes still in the receive queue (Recv-Q 162, 162, 162, 79, 1, 1, 1) --
-clients sent a request and hung up, and the app never read it or closed the fd.
-The listener had also accumulated an unaccepted backlog (Recv-Q 6 on the 7187
-LISTEN socket) at first observation. The container log's last line is 2h before
-the observation, so the service processed nothing in that window.
-
-NOT fd exhaustion: only 48 of 16384 fds were open.
-
-ROOT CAUSE NOT ESTABLISHED. All four `while True` loops in the service
-(routes.py:166, search.py:1169, streaming.py:161, streaming.py:359) are correctly
-bounded and awaited, so the spin is not a naive unslept loop. py-spy could not
-attach to name the spinning frame -- the host has kernel.yama.ptrace_scope=1,
-which denies non-child attach. Per the §11.4.102 Iron Law no fix is proposed until
-the spinning frame is identified.
-
-Next diagnostic step: obtain a Python stack. Either run py-spy INSIDE the
-container (musl wheel), or set ptrace_scope=0 for the duration of one dump, or
-add a SIGQUIT/faulthandler.register() dump hook to main.py so the running service
-can be asked for its own stacks without ptrace.
-
-DISCOVERY CHANNEL (§11.4.238): found by an agent probing the host by hand while
-investigating an unrelated test-suite result -- NOT by automated QA. This is a
-coverage escape in its own right; see the sibling item on the health check that
-was structurally incapable of observing it.
-
-**Affected scope / file-scope manifest:**
-download-proxy/src/main.py, download-proxy/src/merge_service/, download-proxy/src/api/streaming.py, docker-compose.yml (qbittorrent-proxy)
-
-**Reproduction / context:**
-Leave the qbittorrent-proxy container running for several hours with search traffic (a full tests/security run is sufficient). Then: curl --max-time 6 http://localhost:7186/ returns 200; curl --max-time 6 http://localhost:7187/ returns 000. Confirm with: ss -ltnp | grep 7187 (unaccepted backlog) and awk '{print $3}' /proc/<pid>/task/*/stat (one R thread, rest futex_wait_queue).
-
-**Acceptance criteria:**
-The spinning frame is identified from a real Python stack dump (not inferred), the busy-loop is fixed at its root, and a regression guard proves 7187 still answers after a sustained-traffic soak. Evidence: before/after curl timings on both ports plus a thread-state census showing no permanently-R thread.
-
-[BOB-136 adoption audit 2026-08-21 -> In progress] 1dd7b0a ESTABLISHED the root cause with captured evidence (16 stack dumps showing Deduplicator.merge_results() called synchronously at search.py:914 on the event-loop thread; loop thread sustained 81-98% user-space CPU while all other threads showed d_utime=0). The remediation landed under BOB-145 (0572b71, now Fixed), whose own text is headed 'BOB-145 - the 7187 wedge' and which refuted the assumed O(N^2) cause by profiling. BOB-137 and BOB-145 therefore describe the SAME defect; per §11.4.214 that is a link/dedup decision, not a unilateral close, and no post-fix re-observation of the multi-hour wedge is recorded against BOB-137 itself. Left open pending that linkage decision.
-
-
-
-**Live verification 2026-08-21 — REDUCED BUT NOT ELIMINATED. Deliberately NOT closed.**
-
-The service was confirmed running POST-FIX bytes before any measurement, six independent ways: served sha256 == committed == worktree across 20 merge-service/api/main files; fix markers 10 inside the container vs 0 at the pre-fix commit; `.pyc` header decode showing embedded source mtime+size matching the actual file (so the import reused it and the loaded module was compiled from exactly this source); fix markers present in the LOADED bytecode; and the process starting 823s AFTER the fix hit disk. A first attempt at this comparison reported routes.py as stale — an INSTRUMENT ARTIFACT (marshal back-reference encoding differs between a fresh compile and a pyc load), caught before it became a false positive.
-
-Soak, same script and concurrency, precondition reached (11,340 results over 516 tracker responses / 12 searches ~ 945 per merge, larger than BOB-145's N=800 maximum):
-
-    PRE-FIX  (quoted from the recorded report): 22 of 26 probes dead on 7187 (84.6%)
-    POST-FIX (measured):                         2 of 141 dead (1.4%)
-
-The dead-count alone understates the residual: 25.5% of probes stalled >1s (<0.1s 65.2% / 0.1-1s 9.2% / 1-5s 18.4% / >=5s 5.7% / dead 1.4%). Both dead events show the exact BOB-137 asymmetry — 7186 answering in 0.077s while 7187 timed out at 10s — and both coincide with the loop thread sampled at state R with wchan=0, the GIL-starvation signature (tid independently confirmed as the loop thread by its idle wchan do_epoll_wait).
-
-WHY THIS ROW STAYS OPEN: the acceptance evidence this item names is '22/26 dead -> 0/N dead'. Achieved: 22/26 -> 2/141. The user-visible symptom — 7187 unresponsive while 7186 answers in the same process — STILL OCCURS, twice in 15 minutes. That is precisely BOB-145's own predicted residual: search.py:914 is still a plain synchronous call, and removing the symptom needs a change at that CALL SITE (offload or await), which BOB-145 explicitly scoped out.
-
-Two criteria that ARE satisfied: no permanently-R thread (48 of 80 census samples had zero R threads), and the in-process 20s watchdog logged 0 stalls — with a control needle, since that same watchdog produced 167,971 bytes of dumps pre-fix.
 ## BOB-143 — Orphaned .worktrees/ dirs (46M, unresolvable gitdir) pollute gate scan scope and manufacture false BOB-126-class findings
 
 **Status:** Queued
@@ -545,36 +460,6 @@ Both guards run correctly by hand and are covered by passing tests (9/9 and 15/1
 
 **Acceptance criteria:**
 Each guard is invoked by a named seam, OR carries a registered deferral pointing at this item. For unattributed-commit-guard.sh specifically, the operator has answered the adoption question below and the answer is recorded as consumer DATA -- never an invented ratchet.
-
-## BOB-164 — Live dashboard fails WCAG AA colour contrast on 21 nodes — brand heading measures 1.43:1 against a 3:1 floor
-
-**Status:** In progress
-**Type:** Bug
-**Severity:** Medium
-**Created-By:** BOB-110 UX-class coverage, discovered by the new axe-core suite on its first live run
-
-**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-21T19:56:53Z
-**Reported-By:** BOB-110 UX-class coverage, discovered by the new axe-core suite on its first live run
-
-**What (the report, verbatim):**
-This is a REAL user-facing defect, not a test-tuning artifact, and it was found by the automated regime rather than by a human squinting at the page -- which is exactly the 11.4.238 posture the project is aiming for.
-
-The static-grep oracle would NOT have found it. Measured: the served root ships an empty <app-root></app-root> pre-hydration, so any check reading the raw HTML audits a page nobody sees. The violation only exists in the hydrated DOM, which is why 11.4.170 requires a rendered oracle and forbids value-equality assertions as the proof a UI is correct.
-
-Severity reasoning, stated rather than assumed: this is user-visible and affects the primary dashboard heading, but it degrades legibility rather than breaking function, and the surface is operator-facing rather than public. Medium, not High.
-
-The failing test was left FAILING on purpose (11.4.238) instead of silenced or marked xfail. tests/ux/ currently reports 1 failed, 16 passed; that 1 is this defect. Anyone reading a red UX suite should read it as this item, not as flakiness -- and when this is fixed the suite goes fully green, which is the signal that it is closed.
-
-HONEST SCOPE LIMIT (11.4.6): only the dashboard landing view was scanned. The /jackett/* sub-routes and the ng-serve-hosted :4200 route set were NOT audited -- the commands to close both are recorded in docs/testing/ux_accessibility.md. So this item's 21 nodes are a floor, not a total.
-
-**Affected scope / file-scope manifest:**
-the Angular dashboard served at http://localhost:7187/ (same compiled SPA as frontend/); production component CSS, not test files
-
-**Reproduction / context:**
-Run tests/ux/test_live_dashboard_accessibility.py against the running merge service. axe-core v4.13.0, scanning a real Playwright-rendered JS-hydrated DOM, reports color-contrast violations on 21 nodes. Measured pairs: .brand / h1 text #9d001e on background #3c3f41 = 1.43-1.62:1 (WCAG AA large-text floor is 3:1); tagline #808080 on #3c3f41 = 2.68:1 (body-text floor is 4.5:1).
-
-**Acceptance criteria:**
-axe-core reports ZERO color-contrast violations against the live rendered dashboard, with the fix made in production component CSS rather than by relaxing the assertion or excluding the rule (11.4.120: reconcile to the correct mechanism, never weaken the check). The existing tests/ux/ suite is the guard and already fails today, so the RED is captured -- closure requires it flipping GREEN against the live surface, which is runtime-class evidence per 11.4.226.
 
 ## BOB-170 — Capture one quiescent GREEN run of the scaling growth gate, which has never executed under its own loadavg<=0.75/cpu precondition and has no scheduled window that would make it
 
@@ -823,4 +708,12 @@ WHAT: ownership_repair walks a declared root and repairs items whose uid is not 
 **Created-By:** AI
 
 BOB-227 measured 3 of 4 artifacts of the CM-LAN-ROUTES-AUTHENTICATED gate untracked in git; criterion 1 (commit them) was already resolved by an unrelated prior commit before this session, closed 2026-09-23. Criterion 2 was NOT addressed: 'a gate asserting that every executable a pre-build invariant invokes is itself tracked' -- a general mechanism preventing this whole CLASS of defect (a pre-build gate's own implementation files shipping untracked, invisible to a fresh clone, no committed baseline for round-over-round diffs) from recurring for ANY future gate, not merely this one. ACCEPTANCE: (1) enumerate every file path scripts/pre_build_verification.sh invokes (via bash/timeout/python3 calls to scripts under scripts/pre_build/, plus every tests/pre_build/*.sh and tests/hooks/*.sh it runs) -- likely via a static grep/parse of pre_build_verification.sh itself, or a runtime trace; (2) assert every one of those paths is git-tracked (git ls-files --error-unmatch); (3) wire this as a new pre-build invariant so a future untracked gate implementation is caught immediately, not discovered independently weeks later; (4) a RED test creating an untracked fake gate-invocation target and asserting the new check fails on it, GREEN once the mechanism exists and the fake target is either removed or tracked.
+
+## BOB-233 — start.sh --reload-jackett reports 'recreated — Go source changes are now live' while the running boba-jackett container still uses the OLD image
+
+**Status:** Queued
+**Type:** Bug
+**Created-By:** Claude
+
+Measured 2026-09-23: ./start.sh --reload-jackett rebuilt image 38ef117ec563 and printed [SUCCESS] boba-jackett recreated, but podman inspect boba-jackett still showed image 2a3173ce1941 started 17:09 (Up 2 hours). podman-compose 'up -d boba-jackett' did not recreate an unchanged-config container. Only ./start.sh --recreate moved the container onto the new image. Violates the §11.4.200 verify-after-write rule: the success message is not proof the intended target holds the intended artifact. Fix: after the recreate, read back the running container image id and compare with the freshly built image id, FAIL loudly on mismatch (or force-recreate the scoped service); apply the same to --reload-proxy-go. Needs RED-first test against a stub compose that does not recreate. Reproduction: build a change, run --reload-jackett, compare 'podman inspect boba-jackett --format {{.Image}}' with 'podman images' id.
 

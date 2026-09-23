@@ -190,7 +190,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>In progress</td>
-<td>6</td>
+<td>4</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -200,7 +200,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>6</td>
+<td>7</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -225,7 +225,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>52</strong></td>
+<td><strong>51</strong></td>
 </tr>
 </tbody>
 </table>
@@ -556,14 +556,6 @@ incident #3)</td>
 (Permission denied /config)</td>
 </tr>
 <tr>
-<td>BOB-137</td>
-<td>Bug</td>
-<td>In progress</td>
-<td>High</td>
-<td>Merge service on 7187 wedges while the same process still serves
-7186 (GIL starvation by one spinning thread)</td>
-</tr>
-<tr>
 <td>BOB-143</td>
 <td>Bug</td>
 <td>Queued</td>
@@ -710,53 +702,6 @@ seam, OR carries a registered deferral pointing at this item. For
 unattributed-commit-guard.sh specifically, the operator has answered the
 adoption question below and the answer is recorded as consumer DATA –
 never an invented ratchet.</td>
-</tr>
-<tr>
-<td>BOB-164</td>
-<td>Bug</td>
-<td>In progress</td>
-<td>Medium</td>
-<td><strong>Reported-Via:</strong> §11.4.202 reporting directive
-<code>bug</code> on 2026-08-21T19:56:53Z <strong>Reported-By:</strong>
-BOB-110 UX-class coverage, discovered by the new axe-core suite on its
-first live run <strong>What (the report, verbatim):</strong> This is a
-REAL user-facing defect, not a test-tuning artifact, and it was found by
-the automated regime rather than by a human squinting at the page –
-which is exactly the 11.4.238 posture the project is aiming for. The
-static-grep oracle would NOT have found it. Measured: the served root
-ships an empty <app-root></app-root> pre-hydration, so any check reading
-the raw HTML audits a page nobody sees. The violation only exists in the
-hydrated DOM, which is why 11.4.170 requires a rendered oracle and
-forbids value-equality assertions as the proof a UI is correct. Severity
-reasoning, stated rather than assumed: this is user-visible and affects
-the primary dashboard heading, but it degrades legibility rather than
-breaking function, and the surface is operator-facing rather than
-public. Medium, not High. The failing test was left FAILING on purpose
-(11.4.238) instead of silenced or marked xfail. tests/ux/ currently
-reports 1 failed, 16 passed; that 1 is this defect. Anyone reading a red
-UX suite should read it as this item, not as flakiness – and when this
-is fixed the suite goes fully green, which is the signal that it is
-closed. HONEST SCOPE LIMIT (11.4.6): only the dashboard landing view was
-scanned. The /jackett/* sub-routes and the ng-serve-hosted :4200 route
-set were NOT audited – the commands to close both are recorded in
-docs/testing/ux_accessibility.md. So this item’s 21 nodes are a floor,
-not a total. <strong>Affected scope / file-scope manifest:</strong> the
-Angular dashboard served at http://localhost:7187/ (same compiled SPA as
-frontend/); production component CSS, not test files
-<strong>Reproduction / context:</strong> Run
-tests/ux/test_live_dashboard_accessibility.py against the running merge
-service. axe-core v4.13.0, scanning a real Playwright-rendered
-JS-hydrated DOM, reports color-contrast violations on 21 nodes. Measured
-pairs: .brand / h1 text #9d001e on background #3c3f41 = 1.43-1.62:1
-(WCAG AA large-text floor is 3:1); tagline #808080 on #3c3f41 = 2.68:1
-(body-text floor is 4.5:1). <strong>Acceptance criteria:</strong>
-axe-core reports ZERO color-contrast violations against the live
-rendered dashboard, with the fix made in production component CSS rather
-than by relaxing the assertion or excluding the rule (11.4.120:
-reconcile to the correct mechanism, never weaken the check). The
-existing tests/ux/ suite is the guard and already fails today, so the
-RED is captured – closure requires it flipping GREEN against the live
-surface, which is runtime-class evidence per 11.4.226.</td>
 </tr>
 <tr>
 <td>BOB-170</td>
@@ -1437,6 +1382,26 @@ independently weeks later; (4) a RED test creating an untracked fake
 gate-invocation target and asserting the new check fails on it, GREEN
 once the mechanism exists and the fake target is either removed or
 tracked.</td>
+</tr>
+<tr>
+<td>BOB-233</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>—</td>
+<td>Measured 2026-09-23: ./start.sh –reload-jackett rebuilt image
+38ef117ec563 and printed [SUCCESS] boba-jackett recreated, but podman
+inspect boba-jackett still showed image 2a3173ce1941 started 17:09 (Up 2
+hours). podman-compose ‘up -d boba-jackett’ did not recreate an
+unchanged-config container. Only ./start.sh –recreate moved the
+container onto the new image. Violates the §11.4.200 verify-after-write
+rule: the success message is not proof the intended target holds the
+intended artifact. Fix: after the recreate, read back the running
+container image id and compare with the freshly built image id, FAIL
+loudly on mismatch (or force-recreate the scoped service); apply the
+same to –reload-proxy-go. Needs RED-first test against a stub compose
+that does not recreate. Reproduction: build a change, run
+–reload-jackett, compare ‘podman inspect boba-jackett –format
+{{.Image}}’ with ‘podman images’ id.</td>
 </tr>
 </tbody>
 </table>

@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 52
-**Last modified:** 2026-09-23T16:19:50Z
+**Revision:** 53
+**Last modified:** 2026-09-23T16:57:54Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -3248,4 +3248,45 @@ A scripts/pre_build/ gate named CM-NO-FAIL-OPEN-SKIP exists, is wired into scrip
 **Created-By:** AI
 
 AGENTS.md:55 states the Go backend (qbittorrent-proxy-go) serves 7186, 7187, AND 7188, and 'replaces Python proxy' — the exact false claim CLAUDE.md's Architecture section already corrected (2026-08-20, BOB-141): the container runs exactly ONE binary (CMD ["/app/qbittorrent-proxy"]), binding a single ServerPort resolved from MERGE_SERVICE_PORT (default 7187); 7188 is declared via EXPOSE but nothing binds it, and 7186 is never bound either. Surfaced while independently verifying BOB-141's closure (2026-09-23) — the coordinator confirmed CLAUDE.md is already fully corrected but AGENTS.md was out of that dispatch's authorized scope, so it was flagged rather than silently left stale (§11.4.238 discovery-channel completeness). Acceptance: AGENTS.md's port-map/service-description table for the Go backend is corrected to match CLAUDE.md's already-accurate BOB-141 text (same citations: qBitTorrent-go/Dockerfile:16, internal/config/config.go:58), reusing that correction's phrasing/citation style rather than inventing a new one.
+
+## BOB-137 — Merge service on 7187 wedges while the same process still serves 7186 (GIL starvation by one spinning thread)
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-137/closure_evidence_20260923.md
+**Severity:** High
+**Created-By:** Claude
+
+Merge service on 7187 wedges while the same process still serves 7186 (GIL starvation by one spinning thread)
+
+## BOB-164 — Live dashboard fails WCAG AA colour contrast on 21 nodes — brand heading measures 1.43:1 against a 3:1 floor
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-164/closure_evidence_20260923.md
+**Severity:** Medium
+**Created-By:** BOB-110 UX-class coverage, discovered by the new axe-core suite on its first live run
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-21T19:56:53Z
+**Reported-By:** BOB-110 UX-class coverage, discovered by the new axe-core suite on its first live run
+
+**What (the report, verbatim):**
+This is a REAL user-facing defect, not a test-tuning artifact, and it was found by the automated regime rather than by a human squinting at the page -- which is exactly the 11.4.238 posture the project is aiming for.
+
+The static-grep oracle would NOT have found it. Measured: the served root ships an empty <app-root></app-root> pre-hydration, so any check reading the raw HTML audits a page nobody sees. The violation only exists in the hydrated DOM, which is why 11.4.170 requires a rendered oracle and forbids value-equality assertions as the proof a UI is correct.
+
+Severity reasoning, stated rather than assumed: this is user-visible and affects the primary dashboard heading, but it degrades legibility rather than breaking function, and the surface is operator-facing rather than public. Medium, not High.
+
+The failing test was left FAILING on purpose (11.4.238) instead of silenced or marked xfail. tests/ux/ currently reports 1 failed, 16 passed; that 1 is this defect. Anyone reading a red UX suite should read it as this item, not as flakiness -- and when this is fixed the suite goes fully green, which is the signal that it is closed.
+
+HONEST SCOPE LIMIT (11.4.6): only the dashboard landing view was scanned. The /jackett/* sub-routes and the ng-serve-hosted :4200 route set were NOT audited -- the commands to close both are recorded in docs/testing/ux_accessibility.md. So this item's 21 nodes are a floor, not a total.
+
+**Affected scope / file-scope manifest:**
+the Angular dashboard served at http://localhost:7187/ (same compiled SPA as frontend/); production component CSS, not test files
+
+**Reproduction / context:**
+Run tests/ux/test_live_dashboard_accessibility.py against the running merge service. axe-core v4.13.0, scanning a real Playwright-rendered JS-hydrated DOM, reports color-contrast violations on 21 nodes. Measured pairs: .brand / h1 text #9d001e on background #3c3f41 = 1.43-1.62:1 (WCAG AA large-text floor is 3:1); tagline #808080 on #3c3f41 = 2.68:1 (body-text floor is 4.5:1).
+
+**Acceptance criteria:**
+axe-core reports ZERO color-contrast violations against the live rendered dashboard, with the fix made in production component CSS rather than by relaxing the assertion or excluding the rule (11.4.120: reconcile to the correct mechanism, never weaken the check). The existing tests/ux/ suite is the guard and already fails today, so the RED is captured -- closure requires it flipping GREEN against the live surface, which is runtime-class evidence per 11.4.226.
 
