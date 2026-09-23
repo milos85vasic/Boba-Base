@@ -1237,7 +1237,15 @@ class SearchOrchestrator:
         import os
 
         trackers = []
-        if os.getenv("RUTRACKER_USERNAME") and os.getenv("RUTRACKER_PASSWORD"):
+        # BOB-176: RUTRACKER_COOKIES is an INDEPENDENTLY sufficient credential
+        # here, mirroring _search_rutracker's own preference (cookies checked
+        # BEFORE username/password, see the comment above that branch) and the
+        # nnmclub sibling gate below (NNMCLUB_COOKIES OR username+password).
+        # Gating on username+password alone silently disabled rutracker for
+        # every operator following the documented cookies-only auto-load path
+        # (CLAUDE.md, 2026-08-15) -- the tracker never ran, with no error to
+        # explain it.
+        if os.getenv("RUTRACKER_COOKIES") or (os.getenv("RUTRACKER_USERNAME") and os.getenv("RUTRACKER_PASSWORD")):
             trackers.append(TrackerSource(name="rutracker", url="https://rutracker.org", enabled=True))
         if os.getenv("KINOZAL_USERNAME") and os.getenv("KINOZAL_PASSWORD"):
             trackers.append(TrackerSource(name="kinozal", url="https://kinozal.tv", enabled=True))
@@ -1782,7 +1790,34 @@ class SearchOrchestrator:
                     allow_redirects=False,
                 ) as login_resp:
                     if login_resp.status not in (200, 301, 302):
+                        # BOB-178: kinozal is the one private-tracker login
+                        # leg that explicitly inspects the login response's
+                        # HTTP status (rutracker/nnmclub instead check
+                        # whether a session cookie was obtained) and, unlike
+                        # every OTHER status-checked leg in this module, set
+                        # NO diagnostic on refusal — the exact BOB-172
+                        # false-null signature (status=empty, error=None)
+                        # reproduced on the login leg instead of the search
+                        # leg. Mirror the shared classifier
+                        # (`_classify_upstream_http_status`, the SAME
+                        # dialect `_check_search_response` already uses for
+                        # kinozal's own search leg below, §11.4.28) rather
+                        # than inventing a kinozal-only shape. The
+                        # classifier returns None for any 2xx status; an
+                        # atypical 2xx outside kinozal's own accepted
+                        # (200, 301, 302) set (e.g. 201) would otherwise
+                        # silently re-stash None here, so fall back to a
+                        # manually-built diagnostic when that happens.
                         logger.error(f"Kinozal login failed: HTTP {login_resp.status}")
+                        diag = _classify_upstream_http_status(login_resp.status, "") or {
+                            "error_type": f"upstream_http_{login_resp.status}",
+                            "error": f"Kinozal login failed: HTTP {login_resp.status}",
+                            "http_status": login_resp.status,
+                            "stderr_tail": "",
+                            "deadline_hit": False,
+                            "deadline_seconds": 0.0,
+                        }
+                        self._last_public_tracker_diag["kinozal"] = diag
                         return []
                     cookie_dict = {c.key: c.value for c in login_resp.cookies.values()}
 

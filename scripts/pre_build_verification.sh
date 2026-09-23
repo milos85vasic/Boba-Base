@@ -1763,13 +1763,31 @@ else
     # never pointed at it: an anti-pattern reported inside download-proxy/src was
     # INVISIBLE in cmd/boba-ctl. Added here; this invariant is ADVISORY, so
     # widening its scope reports more, it cannot newly block a build.
-    DANGER_ROOTS=(download-proxy/src plugins scripts qBitTorrent-go frontend/src cmd/boba-ctl)
+    #
+    # BOB-214: the boba repository ROOT itself was never scanned by any of the
+    # above — top-level shell scripts (start.sh, stop.sh, ci.sh, install-
+    # plugin.sh, init-qbit-password.sh, fix-qbit-password.sh) and top-level
+    # Python (webui-bridge.py, a live HTTP service on port 7188) were 100%
+    # invisible to this invariant. "." is added below, scanned with the gate's
+    # `--max-depth 1` (constitution/scripts/gates/
+    # cm_dangerous_combination_fail_closed.sh, added for this fix) so it covers
+    # ONLY files directly at the repo root — it does NOT redundantly re-walk
+    # download-proxy/, plugins/, scripts/, qBitTorrent-go/, frontend/, or
+    # cmd/ (already scanned above at full depth via their own DANGER_ROOTS
+    # entries) and it does NOT descend into constitution/, submodules/,
+    # node_modules/, .git/, or any other out-of-scope subtree (both the
+    # depth-1 bound AND the gate's existing default DANGEROUS_COMBO_EXCLUDE
+    # list keep it out — see CM-DANGEROUS-COMBINATION-FAIL-CLOSED's own
+    # mutation-test fixture L71 for the exclude-list confirmation).
+    DANGER_ROOTS=(. download-proxy/src plugins scripts qBitTorrent-go frontend/src cmd/boba-ctl)
     DANGER_HITS=0; DANGER_SCANNED=0; DANGER_DETAIL=()
     for _dr in "${DANGER_ROOTS[@]}"; do
         [[ -d "${PROJECT_ROOT}/${_dr}" ]] || continue
         DANGER_SCANNED=$((DANGER_SCANNED + 1))
         _dlog="$(mktemp)"; _drc=0
-        timeout "${CONST_GATE_TIMEOUT}" bash "${DANGER_GATE}" --root "${PROJECT_ROOT}/${_dr}" --quiet >"${_dlog}" 2>&1 || _drc=$?
+        _dr_extra_args=()
+        [[ "${_dr}" == "." ]] && _dr_extra_args=(--max-depth 1)
+        timeout "${CONST_GATE_TIMEOUT}" bash "${DANGER_GATE}" --root "${PROJECT_ROOT}/${_dr}" "${_dr_extra_args[@]}" --quiet >"${_dlog}" 2>&1 || _drc=$?
         if [[ "${_drc}" -ne 0 ]]; then
             # A COUNT IS A LEAD; THE LINES ARE THE FINDINGS (§11.4.194(6)(b)).
             # This previously counted every line starting with the failure

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260923</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260923</h1>
+</header>
+<h1 id="bob-214-closure-evidence-2026-09-23">BOB-214 closure evidence —
+2026-09-23</h1>
+<h2 id="defect">Defect</h2>
+<p><code>DANGER_ROOTS</code> in
+<code>scripts/pre_build_verification.sh</code> never included the boba
+repository root itself — top-level files (13 first-party shell scripts
+including <code>start.sh</code>, the project’s sole sanctioned
+container-control entry point, plus <code>webui-bridge.py</code>, a live
+HTTP service on port 7188) were invisible to the §11.4.252 fail-closed
+gate. The gate, unmodified, reports a REAL hit when pointed directly at
+<code>webui-bridge.py</code>: a
+<code>except Exception: return False</code> in
+<code>_is_root_liveness_probe()</code> silently swallows a malformed
+<code>self.path</code> parse failure.</p>
+<h2 id="fix">Fix</h2>
+<ol type="1">
+<li><code>constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh</code>
+gained a <code>--max-depth &lt;N&gt;</code> flag (+
+<code>DANGEROUS_COMBO_MAX_DEPTH</code> env override),
+non-negative-integer validated (§11.4.201 — real condition asserted, not
+silently coerced).</li>
+<li><code>scripts/pre_build_verification.sh</code>’s
+<code>DANGER_ROOTS</code> gained <code>.</code> (repo root), scanned at
+<code>--max-depth 1</code> so it covers ONLY files directly at root — no
+redundant re-walk of the already-listed subdirectories, and no descent
+into <code>constitution/</code>, <code>submodules/</code>,
+<code>node_modules/</code>, <code>.git/</code> (both the depth-1 bound
+and the gate’s existing default exclude list keep it out).</li>
+<li><code>webui-bridge.py</code>’s
+<code>_is_root_liveness_probe()</code> genuine finding fixed: the bare
+<code>except Exception: return False</code> now logs the diagnosable
+anomaly before returning, mirroring the file’s own existing
+<code>[WebUI-Bridge] Upload error: {e}</code> print-diagnostic
+convention.</li>
+</ol>
+<h2
+id="independent-verification-coordinator-from-clean-shell">Independent
+verification (coordinator, from clean shell)</h2>
+<h3 id="source-spot-check">Source spot-check</h3>
+<pre><code>$ grep -n &quot;max-depth\|MAX_DEPTH\|DANGEROUS_COMBO_MAX_DEPTH&quot; constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh
+[confirmed --max-depth flag + validation present]
+$ git diff scripts/pre_build_verification.sh
+[confirmed DANGER_ROOTS=(. download-proxy/src plugins scripts qBitTorrent-go frontend/src cmd/boba-ctl),
+ max-depth 1 applied ONLY to &quot;.&quot; entry via _dr_extra_args]</code></pre>
+<h3
+id="independently-reproduced-red-pre-fix-green-post-fix-from-a-fresh">Independently-reproduced
+RED (pre-fix) → GREEN (post-fix), from a fresh</h3>
+<p>copy of each historical revision (not trusting the subagent’s own
+report):</p>
+<pre><code>$ git show HEAD:webui-bridge.py &gt; pre/webui-bridge.py   # pre-fix, from git history
+$ cp webui-bridge.py post/webui-bridge.py               # post-fix, working tree
+
+$ bash constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh --root pre --max-depth 1 &gt; pre_out.txt 2&gt;&amp;1
+$ echo &quot;PRE EXIT=$?&quot;
+PRE EXIT=1
+# (line: &quot;FAIL — silent default return (exception handler returns a trivial
+#  literal with no re-raise/log) at .../pre/webui-bridge.py:550&quot;)
+
+$ bash constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh --root post --max-depth 1 &gt; post_out.txt 2&gt;&amp;1
+$ echo &quot;POST EXIT=$?&quot;
+POST EXIT=0</code></pre>
+<p>Note: an initial attempt piped both invocations through
+<code>| tail -15</code>, which silently reported <code>tail</code>’s
+exit code (always 0) instead of the gate’s — caught and corrected before
+trusting the result; re-run without the pipe gives the genuine PRE=1 /
+POST=0 split above.</p>
+<h3 id="live-root-scan-re-run-against-the-real-fixed-tree">Live
+root-scan re-run against the real (fixed) tree</h3>
+<pre><code>$ bash constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh --root . --max-depth 1 --quiet
+✅ CM-DANGEROUS-COMBINATION-FAIL-CLOSED: PASS — no swallowed-exception, silent-default-return or credential-default-to-literal anti-patterns found (§11.4.252)
+EXIT=0</code></pre>
+<p>Confirms no OTHER root-level first-party file introduces a new
+finding once in scope.</p>
+<h3
+id="advisory-only-confirmed-invariant-3956-does-not-newly-block-builds">Advisory-only
+confirmed (invariant 39/56 does not newly block builds)</h3>
+<pre><code>[39/56] CM-DANGEROUS-COMBINATION-FAIL-CLOSED: fail-open scan over first-party source (§11.4.252, ADVISORY)</code></pre>
+<p>Pre-existing framing (comment above the invariant, unmodified by this
+fix) confirms widening scope only reports more, never newly blocks.</p>
+<h3 id="mutation-suite-full-re-run-independently">Mutation suite (full
+re-run, independently)</h3>
+<pre><code>✅ META OK:   L71 NEGATIVE CONTROL — a violation inside .git/ stays excluded by the default exclude list (BOB-214) — gate correctly PASSed on clean fixture
+✅ META OK:   L72 NEGATIVE CONTROL — a nested-only violation is invisible at --max-depth 1 (BOB-214, intended narrowing) — gate correctly PASSed on clean fixture
+✅ META OK:   L73 a ROOT-LEVEL violation is still caught at --max-depth 1 (BOB-214) — gate correctly FAILed on the mutation (rc=1)
+✅ META OK:   L74 --max-depth with a non-numeric value exits 2 (argument error) (BOB-214)
+✅ META PASS ... META_EXIT=0</code></pre>
+<h2 id="status">Status</h2>
+<p>Fixed. Closed by coordinator after independent re-verification —
+including a from-scratch reproduction of the RED→GREEN cycle, distinct
+from the subagent’s own report.</p>
+</body>
+</html>

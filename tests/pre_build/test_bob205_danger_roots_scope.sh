@@ -73,6 +73,29 @@ DANGER_ROOTS=(${_dr_raw})
 [[ "${#DANGER_ROOTS[@]}" -ge 1 ]] || abort "parsed an empty DANGER_ROOTS"
 echo "DANGER_ROOTS (${#DANGER_ROOTS[@]}): ${DANGER_ROOTS[*]}"
 
+# CONTROL_ROOT (BOB-214 follow-up): the control needle's root must be a real
+# directory name that appears LITERALLY in the gate's reported finding path.
+# "." is a legitimate DANGER_ROOTS member (BOB-214) but the gate normalizes
+# its --root argument via `root="$(cd "$root" && pwd)"`, so a needle planted
+# under the "." root is reported WITHOUT a "/./" path segment -- hardcoding
+# DANGER_ROOTS[0] as the control breaks the moment "." occupies that slot
+# (exactly what BOB-214 did), aborting on a FALSE "instrument blind" verdict
+# even though the gate genuinely saw and reported the "." root's needle (it
+# is right there in the raw findings, just under a normalized path). The
+# fix picks the first NON-"." entry as the control root instead -- any such
+# entry's reported path DOES contain a literal "/<root>/" segment, so the
+# metamorphic relation this test proves (scanned root's needle is caught)
+# stays intact regardless of where -- or whether -- "." sits in the array.
+CONTROL_ROOT=""
+for _cr in "${DANGER_ROOTS[@]}"; do
+    if [[ "${_cr}" != "." ]]; then
+        CONTROL_ROOT="${_cr}"
+        break
+    fi
+done
+[[ -n "${CONTROL_ROOT}" ]] || abort "DANGER_ROOTS contains only \".\" -- no non-dot root available as a control"
+echo "CONTROL_ROOT (first non-\".\" entry): ${CONTROL_ROOT}"
+
 # --- 2. Hermetic fixture tree ----------------------------------------------
 FIX="$(mktemp -d)"; trap 'rm -rf "${FIX}"' EXIT
 
@@ -107,7 +130,7 @@ mkdir -p "${FIX}/${PROBE_ROOT}"
 write_needle "${FIX}/${PROBE_ROOT}/${NEEDLE_BASENAME}"   # PROBE needle
 # Byte-identity of control vs probe is load-bearing: it holds matcher, language
 # and gate version constant so SCOPE is the only free variable.
-_ctl_sum="$(sha256sum "${FIX}/${DANGER_ROOTS[0]}/${NEEDLE_BASENAME}" | awk '{print $1}')"
+_ctl_sum="$(sha256sum "${FIX}/${CONTROL_ROOT}/${NEEDLE_BASENAME}" | awk '{print $1}')"
 _prb_sum="$(sha256sum "${FIX}/${PROBE_ROOT}/${NEEDLE_BASENAME}"      | awk '{print $1}')"
 [[ "${_ctl_sum}" == "${_prb_sum}" ]] || abort "control and probe needles differ (${_ctl_sum} vs ${_prb_sum}) — the metamorphic relation is void"
 echo "needle sha256 (control == probe): ${_ctl_sum}"
@@ -125,15 +148,15 @@ for _r in "${DANGER_ROOTS[@]}"; do
 done
 echo "roots scanned by the driver's own list: ${SCANNED}"
 
-_ctl_hits="$(grep -cF "/${DANGER_ROOTS[0]}/${NEEDLE_BASENAME}" "${FINDINGS}" || true)"
+_ctl_hits="$(grep -cF "/${CONTROL_ROOT}/${NEEDLE_BASENAME}" "${FINDINGS}" || true)"
 _prb_hits="$(grep -cF "/${PROBE_ROOT}/${NEEDLE_BASENAME}"      "${FINDINGS}" || true)"
 
 # --- 4. Instrument viability BEFORE any verdict (§11.4.201(7)(b)) ----------
 if [[ "${_ctl_hits:-0}" -eq 0 ]]; then
     echo "---- raw findings ----"; cat "${FINDINGS}"; echo "----------------------"
-    abort "CONTROL NEEDLE NOT SEEN in ${DANGER_ROOTS[0]} — the gate or this harness is blind to this needle class; the probe's zero says NOTHING (§11.4.201(7)(b))"
+    abort "CONTROL NEEDLE NOT SEEN in ${CONTROL_ROOT} — the gate or this harness is blind to this needle class; the probe's zero says NOTHING (§11.4.201(7)(b))"
 fi
-echo "CONTROL needle (${DANGER_ROOTS[0]}/): ${_ctl_hits} hit(s) — instrument PROVEN seeing"
+echo "CONTROL needle (${CONTROL_ROOT}/): ${_ctl_hits} hit(s) — instrument PROVEN seeing"
 echo "PROBE   needle (${PROBE_ROOT}/): ${_prb_hits} hit(s)"
 
 # --- 5. Verdicts ------------------------------------------------------------
@@ -144,7 +167,7 @@ if [[ "${_prb_hits:-0}" -ge 1 ]]; then
     echo "PASS: the planted fail-open inside ${PROBE_ROOT}/ WAS seen by the §11.4.252 scanner as invariant 39 drives it."
 else
     PRIMARY=FAIL
-    echo "FAIL: a fail-open that IS reported when it sits in ${DANGER_ROOTS[0]}/ is INVISIBLE when it sits in ${PROBE_ROOT}/."
+    echo "FAIL: a fail-open that IS reported when it sits in ${CONTROL_ROOT}/ is INVISIBLE when it sits in ${PROBE_ROOT}/."
     echo "      Cause: ${PROBE_ROOT} is not a member of DANGER_ROOTS, so the scanner is never pointed at it."
     echo "      Driver: ${DRIVER}:$(grep -nE '^[[:space:]]*DANGER_ROOTS=\(' "${DRIVER}" | cut -d: -f1)"
 fi

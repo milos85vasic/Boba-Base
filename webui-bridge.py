@@ -547,7 +547,15 @@ class WebUIBridgeHandler(BaseHTTPRequestHandler):
         """
         try:
             parsed = urllib.parse.urlparse(self.path)
-        except Exception:
+        except Exception as e:
+            # §11.4.252 fail-closed-on-dangerous-combination (CM-DANGEROUS-
+            # COMBINATION-FAIL-CLOSED): a malformed self.path is unexpected
+            # (the request line reaching here already parsed as HTTP), so a
+            # silent `return False` here would swallow that anomaly and only
+            # ever surface indirectly as a routed-to-qBittorrent 5xx. Log it
+            # so an unparseable path is diagnosable, mirroring the existing
+            # `[WebUI-Bridge] Upload error: {e}` convention above.
+            print(f"[WebUI-Bridge] Could not parse request path {self.path!r}: {e}")
             return False
         if parsed.path != "/":
             return False
