@@ -148,8 +148,11 @@ def _services_up(merge_service_live_or_skip):
         pytest.skip("boba-jackett :7189 not reachable (SKIP-OK BOB-109)")  # allow-skip: no boba-jackett fixture exists (see this fixture's docstring)
     if not _service_reachable("localhost", 9117):
         pytest.skip("jackett :9117 not reachable (SKIP-OK BOB-109)")  # allow-skip: no jackett fixture exists (see this fixture's docstring)
+    # BOB-192: both ports ACCEPT connections (environment-derived gate above),
+    # so whatever boba-jackett answers on /healthz is classified, never
+    # skipped — an unhealthy answer is a real failure (§11.4.69).
     if not _healthy(JACKETT_BOBA_URL):
-        pytest.skip("boba-jackett /healthz not ok (SKIP-OK BOB-109)")  # allow-skip: no boba-jackett fixture exists (see this fixture's docstring)
+        pytest.fail(f"boba-jackett {JACKETT_BOBA_URL}/healthz answered but is not healthy (expected HTTP 200)")
 
 
 # ---------------------------------------------------------------------------

@@ -200,7 +200,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>7</td>
+<td>8</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -215,7 +215,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Task</td>
 <td>Queued</td>
-<td>25</td>
+<td>24</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -1098,35 +1098,6 @@ docs/qa/BOB-191/scanner_blindness_investigation_20260826.md (255 lines,
 investigation.</td>
 </tr>
 <tr>
-<td>BOB-192</td>
-<td>Task</td>
-<td>Queued</td>
-<td>—</td>
-<td>WHAT: the BOB-161 gate lands with 6 real fail-open skips RATCHETED
-rather than fixed. Ratcheting is the constitution’s named brownfield
-default (§11.4.135/§11.4.224(E)) and this repo’s own precedent, so the
-choice is correct - but the remediation it defers is real work that must
-be owned somewhere. WHY THIS ITEM EXISTS: the gate’s own header asserted
-the 6 were ‘TRACKED SEPARATELY (§11.4.197)’ while no tracker row
-existed. The §11.4.209 independent review verified the absence and
-raised it as IMPORTANT-5, noting that without a row those findings are
-precisely the parked-unverified debt class §11.4.226(4) names - the
-population an operator samples and finds broken. A prose claim of being
-tracked is not tracking. WHAT EACH NEEDS: a skip that fires on evidence
-the host ANSWERED must either classify the response and FAIL on it, or
-take a §11.4.69 reason that is honestly derivable from the environment
-rather than from the response - verified against the live stack, not
-asserted. Two of the six sit under ‘# allow-skip:’ markers at
-tests/unit/test_tracker_auth_live.py:105 and :108, which the reviewer
-confirmed genuinely are fail-open, so that marker must not be treated as
-absolution. ACCEPTANCE: all 6 remediated with RED-first evidence per
-§11.4.115, the gate’s BASELINE ratcheted to 0, and the ratchet’s
-monotone-decreasing property preserved throughout (§11.4.227(A)). NOTE
-the reviewer’s MINOR-1: a count-baseline absorbs a one-out-one-in swap,
-so remediation progress must be checked against the finding SET, not
-only the count.</td>
-</tr>
-<tr>
 <td>BOB-194</td>
 <td>Bug</td>
 <td>In progress</td>
@@ -1384,24 +1355,39 @@ once the mechanism exists and the fake target is either removed or
 tracked.</td>
 </tr>
 <tr>
-<td>BOB-233</td>
+<td>BOB-234</td>
 <td>Bug</td>
 <td>Queued</td>
 <td>—</td>
-<td>Measured 2026-09-23: ./start.sh –reload-jackett rebuilt image
-38ef117ec563 and printed [SUCCESS] boba-jackett recreated, but podman
-inspect boba-jackett still showed image 2a3173ce1941 started 17:09 (Up 2
-hours). podman-compose ‘up -d boba-jackett’ did not recreate an
-unchanged-config container. Only ./start.sh –recreate moved the
-container onto the new image. Violates the §11.4.200 verify-after-write
-rule: the success message is not proof the intended target holds the
-intended artifact. Fix: after the recreate, read back the running
-container image id and compare with the freshly built image id, FAIL
-loudly on mismatch (or force-recreate the scoped service); apply the
-same to –reload-proxy-go. Needs RED-first test against a stub compose
-that does not recreate. Reproduction: build a change, run
-–reload-jackett, compare ‘podman inspect boba-jackett –format
-{{.Image}}’ with ‘podman images’ id.</td>
+<td>Found 2026-09-23 while remediating BOB-192: after the fail-open
+skips were fixed, the live run of tests/integration/test_merge_api.py
+gave 10 x HTTP 401 (hooks x5, magnet x3, download x2). The running merge
+service has BOBA_API_TOKEN set (BOB-197 mandatory auth guard), so POST
+/api/v1/magnet etc. answer 401 ‘valid API token required’; the tests
+build requests without the Authorization header. Each failing assert
+precedes any line BOB-192 changed, so HEAD fails identically: these
+tests were previously masked or never run against an armed service. Fix:
+the integration fixtures must read BOBA_API_TOKEN (env or .env, never
+printed, §11.4.10) and send it; when no token is available and the
+service demands one, FAIL loudly rather than skip. RED-first: local
+http.server fixture answering 401 without the header.</td>
+</tr>
+<tr>
+<td>BOB-235</td>
+<td>Bug</td>
+<td>Queued</td>
+<td>—</td>
+<td>Found 2026-09-23 running tests/integration/test_tracker_auth_live.py
+against the live stack after BOB-192:
+test_private_tracker_credentials_authenticate[kinozal] fails with
+authenticated=False status=‘empty’ error=’’. UNKNOWN whether this is
+expired cookies/credentials, tracker-side bot protection, or a
+plugin/parse regression (compare BOB-176/BOB-178 which touched the
+kinozal path and BOB-172 for rutracker). Needs systematic-debugging:
+capture the raw login response classification, distinguish credential
+failure from empty parse, and only then decide fix vs operator action
+(credential refresh is an operator step, §11.4.10). Not to be
+re-skipped: the test verdict is genuine.</td>
 </tr>
 </tbody>
 </table>

@@ -29,7 +29,10 @@ needs zero credential values to do its job.
 
 HONEST SKIP (§11.4.3 — never a fake PASS)
 -----------------------------------------
-* Merge service unreachable  -> ``pytest.skip`` (1 s probe; never boots).
+* Merge service unreachable (TCP connect refused / timed out) -> ``pytest.skip``
+  (1 s probe; never boots). If it ANSWERS — HTTP >=400, a non-health body, a
+  non-``healthy`` status, or a search that never reaches a terminal state —
+  the test FAILS (BOB-192; answered evidence is never a skip).
 * A PRIVATE tracker reporting ``authenticated=False`` whose ``error``
   mentions captcha / timeout / temporarily / rate-limit / unreachable /
   deadline -> ``pytest.skip`` with that reason. RuTracker cookies expire
@@ -51,8 +54,10 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 import pytest
@@ -90,27 +95,41 @@ _TRANSIENT_ERROR_MARKERS = (
 
 
 def _merge_service_required() -> None:
-    """Probe the merge service health endpoint (1 s); skip if it is down.
+    """Gate on the merge service: SKIP only if it is genuinely unreachable.
 
-    Mirrors the project's probe-and-skip discipline (tests/fixtures/services.py)
-    but for the LIVE credential guard we SKIP — never error, never boot a
-    stack — when the service is absent, so this test can run on a developer
-    box without the stack up.
+    BOB-192 (§11.4.69 / §11.4.201(1)): reachability is decided from the
+    ENVIRONMENT — a plain TCP connect to the service port (refused / timeout
+    -> nothing is listening -> honest topology SKIP, never boots a stack).
+    Once something is listening, whatever it ANSWERS is classified: an HTTP
+    >=400, a body that is not the merge-service health JSON, or a health
+    status other than ``healthy`` is a real FAIL, never a skip. The previous
+    version caught ``URLError`` (whose subclass ``HTTPError`` carries every
+    answered 4xx/5xx) and skipped on status/body, so an answered 500 read green.
     """
     health_url = f"{MERGE_BASE}/health"
+    parsed = urllib.parse.urlsplit(MERGE_BASE)
+    host = parsed.hostname or "localhost"
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
     try:
-        req = urllib.request.Request(health_url, method="GET")
-        with urllib.request.urlopen(req, timeout=1) as resp:  # noqa: S310 (trusted localhost)
-            if resp.status >= 400:
-                pytest.skip(f"merge service health returned HTTP {resp.status} at {health_url}")  # allow-skip: live-service-down (skip-without-booting credential guard)
-            body = resp.read().decode("utf-8", errors="replace")
-        if '"status"' not in body:
-            pytest.skip(f"merge service at {health_url} did not return a health body")  # allow-skip: live-service-down (skip-without-booting credential guard)
-    except (urllib.error.URLError, OSError, TimeoutError) as exc:
-        pytest.skip(  # allow-skip: live-service-down (skip-without-booting credential guard)
-            f"merge service unreachable at {health_url}: {exc!r}. "
+        with socket.create_connection((host, port), timeout=1):
+            pass
+    except OSError as exc:
+        pytest.skip(  # allow-skip: environment-derived — TCP connect refused/timed out, nothing answered (§11.4.3)
+            f"merge service unreachable at {host}:{port} (TCP connect failed: {exc!r}). "
             "Start the stack with `./start.sh -p` to run this credential guard."
         )
+    req = urllib.request.Request(health_url, method="GET")
+    try:
+        with urllib.request.urlopen(req, timeout=5) as resp:  # noqa: S310 (trusted localhost)
+            body = resp.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as exc:
+        pytest.fail(f"merge service ANSWERED HTTP {exc.code} at {health_url} (expected 200 health JSON)")
+    try:
+        health = json.loads(body)
+    except json.JSONDecodeError:
+        pytest.fail(f"merge service at {health_url} answered a non-JSON body: {body[:200]!r}")
+    if not isinstance(health, dict) or health.get("status") != "healthy":
+        pytest.fail(f"merge service at {health_url} answered but is not healthy: {body[:200]!r}")
 
 
 def _http_json(url: str, *, method: str = "GET", payload: dict | None = None, timeout: int = 30) -> dict:
@@ -140,6 +159,9 @@ def _run_live_search() -> dict:
         time.sleep(_POLL_INTERVAL_S)
         try:
             payload = _http_json(f"{MERGE_BASE}/api/v1/search/{search_id}", timeout=15)
+        except urllib.error.HTTPError as exc:
+            # BOB-192: an ANSWERED 4xx/5xx on the poll is a verdict, not a torn read.
+            pytest.fail(f"merge service answered HTTP {exc.code} while polling search {search_id!r}")
         except (urllib.error.URLError, OSError, TimeoutError, json.JSONDecodeError):
             # A single torn/slow poll mid-stream is not a verdict; keep polling.
             continue
@@ -149,10 +171,12 @@ def _run_live_search() -> dict:
             break
 
     if final is None:
-        pytest.skip(  # allow-skip: live-service-down (skip-without-booting credential guard)
+        # BOB-192: the service was reachable (gated above) and kept ANSWERING
+        # a non-terminal status past the deadline — a hung search is a product
+        # failure, never a skip (§11.4.69).
+        pytest.fail(
             f"live search did not reach a terminal state within {_POLL_DEADLINE_S:.0f}s "
-            f"(last status={last_status!r}). Treated as an operator-blocked transient, "
-            "not a credential failure."
+            f"(last status={last_status!r}) although the merge service was answering."
         )
     return final
 

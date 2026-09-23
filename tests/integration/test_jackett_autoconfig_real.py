@@ -44,12 +44,18 @@ def _read_jackett_api_key() -> str:
 
 @pytest.fixture(scope="module")
 def jackett_ready():
+    # BOB-192: SKIP only on a genuinely unreachable Jackett (connection
+    # refused / timeout — environment topology, §11.4.3). A host that
+    # ANSWERED — any HTTP >=400, or an answered transport fault such as a
+    # redirect loop — is a real failure and must FAIL, never skip (§11.4.69).
     try:
         r = requests.get(f"{JACKETT_URL}/UI/Login", timeout=3)
-        if r.status_code >= 500:
-            pytest.skip(f"Jackett unhealthy ({r.status_code})")  # allow-skip: no jackett_live fixture exists — same gate as the RequestException branch below
-    except requests.RequestException:
-        pytest.skip("Jackett unreachable")  # allow-skip: integration data-dependent — Jackett may not be up
+    except (requests.ConnectionError, requests.Timeout) as exc:
+        pytest.skip(  # allow-skip: environment-derived — connection refused/timeout, nothing answered (§11.4.3)
+            f"Jackett unreachable at {JACKETT_URL} (connection refused/timeout): {exc!r}"
+        )
+    if r.status_code >= 400:
+        pytest.fail(f"Jackett answered HTTP {r.status_code} on {JACKETT_URL}/UI/Login (expected <400)")
     key = _read_jackett_api_key()
     if not key:
         pytest.skip("Jackett API key not yet generated")

@@ -97,8 +97,10 @@ def session() -> requests.Session:
 
 def _qbit_login(qbit_url: str, session: requests.Session) -> None:
     """Log in to the real qBittorrent WebUI (admin/admin — hardcoded per
-    CLAUDE.md). Skips (not fails) if the real qBittorrent container never
-    reaches an authenticatable state in this environment.
+    CLAUDE.md). FAILS if qBittorrent ANSWERED but refused the login
+    (BOB-192: the hardcoded admin/admin credentials are a project contract,
+    so an answered rejection is a real defect, never an environment skip).
+    Reachability is already gated by the ``qbit_url`` fixture.
 
     Mirrors the version-compatibility check the production code already
     performs (``api/routes.py::_qbit_login_succeeded``): legacy qBittorrent
@@ -123,7 +125,10 @@ def _qbit_login(qbit_url: str, session: requests.Session) -> None:
     has_session_cookie = any(name.startswith("QBT_SID") for name in session.cookies.keys())  # noqa: SIM118
     body_ok = resp.text.strip() == "Ok."
     if resp.status_code not in (200, 204) or not (has_session_cookie or body_ok):
-        pytest.skip(f"real qBittorrent login did not succeed in this environment: {resp.status_code} {resp.text!r}")
+        pytest.fail(
+            f"real qBittorrent ANSWERED but refused admin/admin login: HTTP {resp.status_code} {resp.text!r} "
+            f"(session cookie issued={has_session_cookie})"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -182,12 +187,13 @@ class TestSearchEndpoint:
         )
         assert resp.status_code == 200
         data = resp.json()
-        if not data["results"]:
-            pytest.skip(  # allow-skip: data-dependent — the service answered 200; only the RESULT SET is empty
-                "real search for 'ubuntu' returned 0 results — no tracker reachable/authenticated "
-                f"in this environment (errors={data.get('errors')!r}, "
-                f"tracker_stats={data.get('tracker_stats')!r})"
-            )
+        # BOB-192: an answered empty result set for a common public-domain
+        # query is a product failure (the fan-out found nothing), not an
+        # environment skip — same convention test_buttons_api.py hard-asserts.
+        assert data["results"], (
+            "real search for 'ubuntu' returned 0 results although the merge service answered 200 "
+            f"(errors={data.get('errors')!r}, tracker_stats={data.get('tracker_stats')!r})"
+        )
         first = data["results"][0]
         assert first["name"]
         assert isinstance(first["download_urls"], list) and first["download_urls"]
@@ -504,11 +510,9 @@ class TestDownloadEndpoint:
         assert resp.status_code == 200
         data = resp.json()
         try:
-            if data["status"] != "initiated":
-                pytest.skip(
-                    "real qBittorrent did not accept the magnet add in this environment: "
-                    f"{data!r}"
-                )
+            # BOB-192: the service ANSWERED; a non-"initiated" status means the
+            # real qBittorrent add failed — a product failure, never a skip.
+            assert data["status"] == "initiated", f"real qBittorrent did not accept the magnet add: {data!r}"
             assert data["added_count"] == 1
             assert len(data["results"]) == 1
             assert data["results"][0]["status"] == "added"

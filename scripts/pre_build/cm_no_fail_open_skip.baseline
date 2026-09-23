@@ -11,13 +11,6 @@
 # Remediation of every row below is tracked as BOB-192 (target: this file
 # holds zero keys). Seeded 2026-09-23 from `check_cm_no_fail_open_skip.sh
 # --list` against the real tree.
-tests/integration/test_jackett_autoconfig_real.py:jackett_ready:STATUS#1
-tests/integration/test_jackett_autoconfig_real.py:jackett_ready:UNREACH#1
-tests/integration/test_merge_api.py:TestDownloadEndpoint.test_download_magnet_added_to_real_qbittorrent:STATUS#1
-tests/integration/test_merge_api.py:TestSearchEndpoint.test_search_finds_real_results_for_common_query:EMPTY#1
-tests/integration/test_merge_api.py:_qbit_login:STATUS#1
-tests/integration/test_tracker_auth_live.py:_merge_service_required:EMPTY#1
-tests/integration/test_tracker_auth_live.py:_merge_service_required:STATUS#1
-tests/integration/test_tracker_auth_live.py:_merge_service_required:UNREACH#1
-tests/integration/test_tracker_auth_live.py:_run_live_search:EMPTY#1
-tests/scaling/test_boba_scaling.py:_services_up:EMPTY#1
+#
+# 2026-09-23 (BOB-192): all 10 seeded rows remediated RED-first
+# (tests/unit/test_bob192_fail_open_skip_remediation.py); the SET is empty.

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260923</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260923</h1>
+</header>
+<h1
+id="bob-233-closure-evidence-source-layer-reload-verify-after-write">BOB-233
+— closure evidence (source layer): reload verify-after-write</h1>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-09-23T17:25:00Z</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Item</td>
+<td>BOB-233 (Bug) — <code>start.sh --reload-jackett</code> /
+<code>--reload-proxy-go</code> printed success while the running
+container kept the OLD image</td>
+</tr>
+<tr>
+<td>Status of item</td>
+<td><strong>still open</strong>. This document records source-layer +
+hermetic-stub evidence only.</td>
+</tr>
+<tr>
+<td>Files changed</td>
+<td><code>start.sh</code> (reload_go_service + new
+<code>_go_service_image_matches</code>), NEW
+<code>tests/unit/test_start_reload_verifies_image.sh</code>,
+<code>tests/unit/test_start_reload_jackett.sh</code> (Rev 2, §11.4.120
+reconciliation)</td>
+</tr>
+<tr>
+<td>start.sh sha256 after fix</td>
+<td><code>64706f27f97a6a1b8b47296807bb5f6f609142aafa7a3859dc1c10f17ea9d59f</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="root-cause-11.4.102">Root cause (§11.4.102)</h2>
+<p><code>reload_go_service()</code> treated
+<code>podman-compose up -d &lt;svc&gt;</code> exiting 0 as proof that
+the container was recreated. podman-compose does not recreate a
+container whose compose config is unchanged, so after <code>build</code>
+retagged <code>localhost/boba_boba-jackett:latest</code> to the new
+image, the running container still pointed at the old image id. Nothing
+read the running image back, so the success line was printed
+unconditionally after compose exited 0.</p>
+<p>Read-only probe of the live host (no restart, stop or recreate),
+taken while working on this fix. The stack had already been moved onto
+the new image by an earlier <code>--recreate</code>, so this probe shows
+how the ids are shaped, not the defect itself:</p>
+<pre><code>$ podman inspect boba-jackett --format &#39;{{.Config.Image}}|{{.ImageName}}&#39;
+localhost/boba_boba-jackett:latest|localhost/boba_boba-jackett:latest
+$ podman image inspect localhost/boba_boba-jackett:latest --format &#39;{{.Id}}&#39;
+38ef117ec563fc347e91573e289107b513bfb321c5d9177f8708516ab3547486</code></pre>
+<p>The container’s <code>.Config.Image</code> gives the tag it was
+created from, and that tag now resolves to the fresh build. So
+<code>container .Image</code> compared with
+<code>image inspect &lt;ref&gt; .Id</code> is the right comparison for
+verify-after-write.</p>
+<h2 id="fix">Fix</h2>
+<p>After <code>up -d &lt;svc&gt;</code>,
+<code>_go_service_image_matches</code> reads back:</p>
+<ul>
+<li><code>$CONTAINER_RUNTIME container inspect --format '{{.Image}}' &lt;svc&gt;</code>,
+the image the container is running</li>
+<li><code>$CONTAINER_RUNTIME container inspect --format '{{.Config.Image}}' &lt;svc&gt;</code>,
+then <code>image inspect --format '{{.Id}}' &lt;ref&gt;</code>, the
+image the fresh build produced</li>
+</ul>
+<p>A leading <code>sha256:</code> is stripped from both ids (docker adds
+it, podman does not). The flow is then:</p>
+<ol type="1">
+<li><strong>Match:</strong> print success, now including the verified
+image id.</li>
+<li><strong>Mismatch:</strong> print a warning showing both ids, then
+run a scoped
+<code>$REAL_COMPOSE_CMD up -d --force-recreate --no-deps &lt;svc&gt;</code>
+(the same compose tool start.sh already uses; no new raw runtime
+lifecycle command) and re-verify.</li>
+<li><strong>Still mismatched:</strong> <code>[ERROR]</code> showing both
+ids, <code>exit 1</code>, and no success line.</li>
+<li><strong>Unreadable id</strong> (missing container or empty inspect
+output): <code>[ERROR]</code> and <code>exit 1</code>. This follows
+§11.4.201(4): refuse conservatively, never assume success.</li>
+</ol>
+<h2 id="red-the-pre-fix-artifact-head-start.sh">RED: the pre-fix
+artifact (HEAD <code>start.sh</code>)</h2>
+<pre><code>== BOB-233 start.sh reload verify-after-write (--green) ==
+  FAIL: STALE_UP_IS_FORCE_RECREATED — BOB-233 repro: stale `up -d` is detected and force-recreated onto the new image
+        rc=0 running=2a3173ce1941 (want 38ef117ec563); force-recreate issued=0
+  FAIL: STILL_STALE_FAILS_LOUD — still-stale after forced recreate -&gt; non-zero exit, both image ids printed, no success line
+        rc=0; output tail: [SUCCESS] boba-jackett image rebuilt [INFO] Recreating boba-jackett container from the new image (podman-compose up -d boba-jackett)... [SUCCESS] boba-jackett recreated — Go source changes are now live
+  PASS: HEALTHY_UP_NO_FORCE — golden-FALSE: correct recreate -&gt; success, no extra forced recreate
+  PASS: SHA_PREFIX_NORMALIZED — golden-FALSE: sha256: prefix difference is not a mismatch
+  FAIL: UNRESOLVABLE_FAILS_LOUD — unreadable running image id -&gt; refuse, never claim success
+        rc=0; output tail: [INFO] Recreating boba-jackett container from the new image (podman-compose up -d boba-jackett)... [SUCCESS] boba-jackett recreated — Go source changes are now live
+  FAIL: PROXY_GO_VERIFIED — --reload-proxy-go gets the same verify+force, scoped to its own service
+        rc=0 running=2a3173ce1941; log: boba-ctl.sh|config podman-compose|build|qbittorrent-proxy-go podman-compose|up|-d|qbittorrent-proxy-go
+RESULT: 2 passed, 4 failed
+exit=1</code></pre>
+<p>ANSI colour codes are stripped here for readability. The RED run
+reproduces the reported symptom: rc=0 and “now live” printed while the
+running container is still on <code>2a3173ce1941</code>. The two
+golden-FALSE controls pass on the pre-fix artifact, as they should.</p>
+<h2 id="green-the-fixed-artifact">GREEN: the fixed artifact</h2>
+<pre><code>== BOB-233 start.sh reload verify-after-write (--green) ==
+  PASS: STALE_UP_IS_FORCE_RECREATED — BOB-233 repro: stale `up -d` is detected and force-recreated onto the new image
+  PASS: STILL_STALE_FAILS_LOUD — still-stale after forced recreate -&gt; non-zero exit, both image ids printed, no success line
+  PASS: HEALTHY_UP_NO_FORCE — golden-FALSE: correct recreate -&gt; success, no extra forced recreate
+  PASS: SHA_PREFIX_NORMALIZED — golden-FALSE: sha256: prefix difference is not a mismatch
+  PASS: UNRESOLVABLE_FAILS_LOUD — unreadable running image id -&gt; refuse, never claim success
+  PASS: PROXY_GO_VERIFIED — --reload-proxy-go gets the same verify+force, scoped to its own service
+RESULT: 6 passed, 0 failed
+green exit=0</code></pre>
+<h2 id="paired-mutations---red-all-killed">§1.1 paired mutations
+(<code>--red</code>), all killed</h2>
+<pre><code>== BOB-233 start.sh reload verify-after-write (--red) ==
+  RED-OK: STALE_UP_IS_FORCE_RECREATED — killed by: s#up -d --force-recreate --no-deps &quot;\$service&quot;#up -d &quot;$service&quot;#
+  RED-OK: STILL_STALE_FAILS_LOUD — killed by: /after a forced recreate/{n;n;s/exit 1/return 0/}
+  RED-OK: HEALTHY_UP_NO_FORCE — killed by: s#if ! _go_service_image_matches &quot;\$service&quot;; then#if true; then#
+  RED-OK: SHA_PREFIX_NORMALIZED — killed by: s#_GO_BUILT_ID=&quot;\${_GO_BUILT_ID\#sha256:}&quot;#:#
+  RED-OK: UNRESOLVABLE_FAILS_LOUD — killed by: /Cannot read back the running image/{n;s/exit 1/return 0/}
+  RED-OK: PROXY_GO_VERIFIED — killed by: s/reload_go_service &quot;qbittorrent-proxy-go&quot;/reload_go_service &quot;boba-jackett&quot;/
+RESULT: 6 passed, 0 failed
+red exit=0</code></pre>
+<p>Mutations are applied only to the sandbox copy of
+<code>start.sh</code>, never to the repository file.</p>
+<h2 id="sibling-suites-after-the-fix-rev-2">Sibling suites after the fix
+(Rev 2)</h2>
+<p>The Rev 1 run found that
+<code>tests/unit/test_start_reload_jackett.sh</code> scored 9/10.
+<code>EXIT_ZERO_AND_LIVE_MSG</code> returned rc=1 because the suite’s
+stateless <code>podman</code> recorder returns empty output for
+<code>container inspect</code>, and the fixed code correctly refuses an
+image id it cannot read (§11.4.201(4)). In Rev 2 that suite was
+reconciled under §11.4.120. Only its <code>podman</code> shim changed:
+it is now a recorder that also answers the image read-back with
+consistent ids. So <code>EXIT_ZERO_AND_LIVE_MSG</code> now passes
+because the running and built ids really match, not because the check
+was relaxed. <code>podman-compose</code> is still the plain recorder,
+which keeps <code>BOBA_SHIM_FAIL</code> injection working. All 10
+original checks and their mutations are unchanged. One new check was
+added: <code>MISMATCH_FAILS_LOUD</code>. Here the shim reports a running
+id different from the built id, and a recorder compose that never
+recreates leaves the container stale. The run must end non-zero, print
+no success line, and make exactly one
+<code>--force-recreate --no-deps</code> attempt.</p>
+<p>The reload suites that stub podman for <code>start.sh</code> were
+found with
+<code>grep -rln podman tests --include='*.sh' | xargs grep -ln start.sh</code>,
+which listed
+test_start_reload_{jackett,verifies_image,recreate,python,plugins,harness}.sh
+and the ownership suites. Every <code>test_start_reload_*.sh</code>
+suite was run, with ANSI colour codes stripped:</p>
+<pre><code>### test_start_reload_jackett.sh
+== start.sh --reload-jackett / --reload-proxy-go (--green) ==
+  PASS: BUILD_ISSUED — rebuilds the boba-jackett image with the exact compose argv
+  PASS: UP_ISSUED — recreates the boba-jackett container with the exact compose argv
+  PASS: BUILD_BEFORE_UP — build is ordered BEFORE up (else up recreates from the stale image)
+  PASS: UP_EXACTLY_ONCE — recreates exactly once
+  PASS: NEVER_USES_BOBA_CTL_FOR_BUILD — bypasses boba-ctl for build (it has no build verb) — the root-cause fix
+  PASS: NO_STACK_TEARDOWN — never issues a bare compose down/up (that is --recreate)
+  PASS: EXIT_ZERO_AND_LIVE_MSG — exits 0 and reports the source is live
+  PASS: BUILD_FAILURE_IS_FATAL — aborts without recreating when the image rebuild fails
+  PASS: NO_RUNTIME_REFUSES — exits 1 with an honest error when no compose tool exists
+  PASS: PROXY_GO_TARGETS_DIFFERENT_SERVICE — --reload-proxy-go targets qbittorrent-proxy-go, not boba-jackett
+  PASS: MISMATCH_FAILS_LOUD — BOB-233: running image != fresh build and still stale after a forced recreate -&gt; non-zero exit, no success line
+RESULT: 11 passed, 0 failed
+exit=0
+### test_start_reload_jackett.sh --red
+== start.sh --reload-jackett / --reload-proxy-go (--red) ==
+  RED-OK: BUILD_ISSUED — killed by: s#\$REAL_COMPOSE_CMD build &quot;\$service&quot;#$REAL_COMPOSE_CMD build &quot;WRONGSERVICE&quot;#
+  RED-OK: UP_ISSUED — killed by: s#\$REAL_COMPOSE_CMD up -d &quot;\$service&quot;#$REAL_COMPOSE_CMD up -d &quot;WRONGSERVICE&quot;#
+  RED-OK: BUILD_BEFORE_UP — killed by: /print_info &quot;Rebuilding \$service image/i \    $REAL_COMPOSE_CMD up -d &quot;$service&quot;
+  RED-OK: UP_EXACTLY_ONCE — killed by: /are now live/a \    $REAL_COMPOSE_CMD up -d &quot;$service&quot;
+  RED-OK: NEVER_USES_BOBA_CTL_FOR_BUILD — killed by: s#\$REAL_COMPOSE_CMD build#$COMPOSE_CMD build#
+  RED-OK: NO_STACK_TEARDOWN — killed by: /print_info &quot;Rebuilding \$service image/i \    $REAL_COMPOSE_CMD up -d
+  RED-OK: EXIT_ZERO_AND_LIVE_MSG — killed by: s/are now live/are stale/
+  RED-OK: BUILD_FAILURE_IS_FATAL — killed by: /Failed to rebuild \$service image/{n;s/exit 1/:/}
+  RED-OK: NO_RUNTIME_REFUSES — killed by: s/if \[\[ -z &quot;\$REAL_COMPOSE_CMD&quot; \]\]; then/if false; then/
+  RED-OK: PROXY_GO_TARGETS_DIFFERENT_SERVICE — killed by: s/reload_go_service &quot;qbittorrent-proxy-go&quot;/reload_go_service &quot;boba-jackett&quot;/
+  RED-OK: MISMATCH_FAILS_LOUD — killed by: /after a forced recreate/{n;n;s/exit 1/return 0/}
+RESULT: 11 passed, 0 failed
+exit=0
+### test_start_reload_verifies_image.sh           RESULT: 6 passed, 0 failed  exit=0
+### test_start_reload_verifies_image.sh --red     RESULT: 6 passed, 0 failed  exit=0  (6/6 RED-OK)
+### test_start_reload_python.sh                   RESULT: 10 passed, 0 failed exit=0
+### test_start_reload_recreate.sh                 RESULT: 11 passed, 0 failed exit=0
+### test_start_reload_plugins.sh                  RESULT: 8 passed, 0 failed  exit=0
+### test_start_reload_harness.sh                  RESULT: 6 passed, 0 failed  exit=0  (control-needle self-test)
+bash -n start.sh: OK</code></pre>
+<p>The ownership suites
+(test_ownership_{rootless_detection,precondition,repair}.sh) also match
+the grep. They stub podman for the ownership gate, not for
+<code>reload_go_service</code>, and they do not exercise the changed
+code path, so they were not re-run in this pass.</p>
+<h2 id="honest-gaps-11.4.6">Honest gaps (§11.4.6)</h2>
+<ol type="1">
+<li><strong>RESOLVED in Rev 2.</strong> The
+<code>test_start_reload_jackett.sh</code> check
+<code>EXIT_ZERO_AND_LIVE_MSG</code>, which Rev 1 left red, is now 11/11
+after the §11.4.120 reconciliation described above. The full
+<code>scripts/pre_build_verification.sh</code> was NOT run in this pass,
+so invariant 30 being green is inferred from the per-suite runs, not
+observed.</li>
+<li><strong>No live-stack evidence.</strong> Per instruction, the
+running containers were not rebuilt or recreated. This change is proven
+only against a stateful stub that models podman-compose’s no-recreate
+behaviour. §11.4.108 layers 3 and 4 (a real
+<code>--reload-jackett</code> on the host, with the running image id
+read back against <code>podman images</code>) are still owed before
+BOB-233 can close.</li>
+<li><strong>Docker path not exercised.</strong> The stub imitates podman
+argv, and the <code>sha256:</code> normalization is tested only through
+the stub. That <code>docker compose up --force-recreate --no-deps</code>
+and <code>docker container inspect</code> behave the same way is
+documented upstream behaviour, but it was not tested on this host (no
+docker here).</li>
+<li><strong>Image-name drift.</strong> The comparison resolves the tag
+in the container’s own <code>.Config.Image</code>. If a future compose
+change renamed the built image, a stale container would still reference
+the old tag, which would still resolve to the old id. The check would
+then report a false match. Current naming is stable
+(<code>localhost/boba_&lt;svc&gt;:latest</code>); this edge case is
+untested.</li>
+<li><strong>shellcheck not run.</strong> <code>shellcheck</code> is not
+installed on this host. Only <code>bash -n start.sh</code> was run, and
+it passed.</li>
+<li><strong>Not independently reviewed yet</strong> (§11.4.142 /
+§11.4.209). The change is uncommitted, as instructed.</li>
+</ol>
+<h2 id="live-addendum-conductor-2026-09-23-1920-cest">Live addendum
+(conductor, 2026-09-23 ~19:20 CEST)</h2>
+<p>Independent re-verification in the conductor shell:
+test_start_reload_verifies_image.sh 6/0, test_start_reload_jackett.sh
+11/0, bash -n start.sh OK; RED on the pre-fix start.sh (git stash of
+start.sh only) = <code>RESULT: 2 passed, 4 failed</code>; fix restored,
+GREEN again 6/0. Real run on the live stack:
+<code>./start.sh --reload-jackett</code> -&gt;
+<code>[SUCCESS] boba-jackett recreated on image 38ef117ec563 (verified running) — Go source changes are now live</code>;
+<code>podman inspect boba-jackett</code> image
+38ef117ec563fc347e91573e289107b513bfb321 == freshly built
+boba_boba-jackett image 38ef117ec563; all four containers healthy
+afterwards. Honest boundary: the live run exercised the MATCH branch
+(ids were already equal from the prior recreate); the MISMATCH -&gt;
+scoped force-recreate -&gt; loud-fail branches are proven by the
+stateful-stub tests and mutations only, not on the live host. Docker
+path untested (no docker here); no shellcheck available.</p>
+</body>
+</html>

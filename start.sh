@@ -1176,7 +1176,54 @@ reload_go_service() {
         print_error "Failed to recreate $service container"
         exit 1
     fi
-    print_success "$service recreated — Go source changes are now live"
+
+    # BOB-233 / §11.4.200 verify-after-write: compose exiting 0 proves only
+    # that it ran. podman-compose `up -d <svc>` does NOT recreate a container
+    # whose compose config is unchanged, so the OLD image kept running while
+    # this function printed success (measured 2026-09-23). Read the running
+    # image id back FROM the intended container and compare it with the id the
+    # container's image reference now resolves to (the fresh build); on
+    # mismatch force a scoped recreate of this one service, then re-verify.
+    if ! _go_service_image_matches "$service"; then
+        print_warning "$service still runs image ${_GO_RUNNING_ID:0:12} but the fresh build is ${_GO_BUILT_ID:0:12} — forcing a scoped recreate ($REAL_COMPOSE_CMD up -d --force-recreate --no-deps $service)..."
+        if ! $REAL_COMPOSE_CMD up -d --force-recreate --no-deps "$service"; then
+            print_error "Failed to force-recreate $service container"
+            exit 1
+        fi
+        if ! _go_service_image_matches "$service"; then
+            print_error "$service still runs image ${_GO_RUNNING_ID:0:12} after a forced recreate; expected fresh build ${_GO_BUILT_ID:0:12}."
+            print_error "The new Go source is NOT live. Run ./start.sh --recreate and re-check with: $CONTAINER_RUNTIME container inspect --format '{{.Image}}' $service"
+            exit 1
+        fi
+    fi
+    print_success "$service recreated on image ${_GO_BUILT_ID:0:12} (verified running) — Go source changes are now live"
+}
+
+# Returns 0 iff the running $1 container's image id equals the id its image
+# reference currently resolves to. Sets _GO_RUNNING_ID / _GO_BUILT_ID
+# (normalized: docker prefixes image ids with "sha256:", podman does not).
+# An unreadable id is NEVER treated as a match (§11.4.201(4) conservative
+# refusal): the caller exits 1 with the resolved evidence.
+_GO_RUNNING_ID=""
+_GO_BUILT_ID=""
+_go_service_image_matches() {
+    local service="$1" ref=""
+    _GO_RUNNING_ID=""
+    _GO_BUILT_ID=""
+    if [[ -n "$CONTAINER_RUNTIME" ]]; then
+        ref="$($CONTAINER_RUNTIME container inspect --format '{{.Config.Image}}' "$service" 2>/dev/null || true)"
+        _GO_RUNNING_ID="$($CONTAINER_RUNTIME container inspect --format '{{.Image}}' "$service" 2>/dev/null || true)"
+        if [[ -n "$ref" ]]; then
+            _GO_BUILT_ID="$($CONTAINER_RUNTIME image inspect --format '{{.Id}}' "$ref" 2>/dev/null || true)"
+        fi
+    fi
+    _GO_RUNNING_ID="${_GO_RUNNING_ID#sha256:}"
+    _GO_BUILT_ID="${_GO_BUILT_ID#sha256:}"
+    if [[ -z "$_GO_RUNNING_ID" || -z "$_GO_BUILT_ID" ]]; then
+        print_error "Cannot read back the running image of $service (container runtime '${CONTAINER_RUNTIME:-none}', image ref '${ref:-unknown}') — refusing to report success."
+        exit 1
+    fi
+    [[ "$_GO_RUNNING_ID" == "$_GO_BUILT_ID" ]]
 }
 
 # Maintenance subcommand — restart level 3 (see CLAUDE.md "Pick the right

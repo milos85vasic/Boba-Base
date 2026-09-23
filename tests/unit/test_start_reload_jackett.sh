@@ -32,10 +32,43 @@ BUILD_LINE='podman-compose|build|boba-jackett'
 UP_LINE='podman-compose|up|-d|boba-jackett'
 BOBA_CTL_LOG_SUFFIX='repo/scripts/boba-ctl.sh'
 
-mk() { # $1=mutation  $2..=shim names
+RUNNING_ID='38ef117ec563fc347e91573e289107b513bfb321c5d9177f8708516ab3547486'
+STALE_ID='2a3173ce19410000000000000000000000000000000000000000000000000000'
+
+# BOB-233 (§11.4.200): reload_go_service now reads the running image back via
+# `podman container inspect` / `podman image inspect` and REFUSES when the ids
+# are unreadable. A stateless recorder answers those with empty output, which
+# is (correctly) an unresolvable signal -- so the `podman` shim here is a
+# recorder that ALSO answers the read-back. $2 = image id the fresh build
+# resolves to; the running container always reports RUNNING_ID. Equal ids
+# model "compose really recreated"; different ids model the BOB-233 stale
+# container (podman-compose `up -d` left it on the old image). Every call is
+# still recorded in the harness argv.log format.
+write_podman_readback_shim() {
+    local path="$1" built_id="$2"
+    cat > "$path" <<SHIM
+#!/usr/bin/env bash
+_line="\$(basename "\$0")"; for _a in "\$@"; do _line="\$_line|\$_a"; done
+printf '%s\n' "\$_line" >> "\${BOBA_SHIM_LOG:?BOBA_SHIM_LOG unset}"
+if [[ "\${1:-}" == container && "\${2:-}" == inspect ]]; then
+    case "\${4:-}" in
+        '{{.Image}}')        echo '$RUNNING_ID' ;;
+        '{{.Config.Image}}') echo "localhost/boba_\${!#}:latest" ;;
+        *) exit 2 ;;
+    esac
+    exit 0
+fi
+if [[ "\${1:-}" == image && "\${2:-}" == inspect ]]; then echo '$built_id'; exit 0; fi
+exit 0
+SHIM
+    chmod +x "$path"
+}
+
+mk() { # $1=mutation  $2..=shim names  (podman => id-consistent read-back shim)
     local mut="$1"; shift
     local sb; sb="$(harness_new_sandbox)"
     local s; for s in "$@"; do harness_add_shim "$sb" "$s"; done
+    [[ -f "$sb/bin/podman" ]] && write_podman_readback_shim "$sb/bin/podman" "$RUNNING_ID"
     [[ -n "$mut" ]] && harness_mutate "$sb" "$mut"
     printf '%s\n' "$sb"
 }
@@ -108,6 +141,21 @@ check_EXIT_ZERO_AND_LIVE_MSG() {
     harness_cleanup "$sb"; return $ok
 }
 
+check_MISMATCH_FAILS_LOUD() {
+    # BOB-233: the running container reports a DIFFERENT image than the fresh
+    # build, and this recorder compose never recreates anything -- so even the
+    # forced recreate leaves it stale. Must exit non-zero with NO success line,
+    # after exactly one scoped --force-recreate --no-deps attempt.
+    local sb; sb="$(mk "$1" podman podman-compose)"
+    write_podman_readback_shim "$sb/bin/podman" "$STALE_ID"
+    harness_run "$sb" --reload-jackett
+    local ok=1
+    if [[ "$HARNESS_RC" -ne 0 && "$HARNESS_OUT" != *"are now live"* ]] \
+       && [[ "$(harness_log_count "$sb" 'podman-compose|up|-d|--force-recreate|--no-deps|boba-jackett')" -eq 1 ]]; then ok=0; fi
+    CHECK_DIAG="rc=$HARNESS_RC; force-recreates=$(harness_log_count "$sb" 'podman-compose|up|-d|--force-recreate|--no-deps|boba-jackett')"
+    harness_cleanup "$sb"; return $ok
+}
+
 check_BUILD_FAILURE_IS_FATAL() {
     # If the image rebuild fails, up -d MUST NOT run: recreating from the
     # OLD image would serve stale code while reporting success.
@@ -150,6 +198,7 @@ CHECK_NAMES=(
     BUILD_ISSUED UP_ISSUED BUILD_BEFORE_UP UP_EXACTLY_ONCE
     NEVER_USES_BOBA_CTL_FOR_BUILD NO_STACK_TEARDOWN EXIT_ZERO_AND_LIVE_MSG
     BUILD_FAILURE_IS_FATAL NO_RUNTIME_REFUSES PROXY_GO_TARGETS_DIFFERENT_SERVICE
+    MISMATCH_FAILS_LOUD
 )
 declare -A CHECK_DESC=(
     [BUILD_ISSUED]='rebuilds the boba-jackett image with the exact compose argv'
@@ -162,6 +211,7 @@ declare -A CHECK_DESC=(
     [BUILD_FAILURE_IS_FATAL]='aborts without recreating when the image rebuild fails'
     [NO_RUNTIME_REFUSES]='exits 1 with an honest error when no compose tool exists'
     [PROXY_GO_TARGETS_DIFFERENT_SERVICE]='--reload-proxy-go targets qbittorrent-proxy-go, not boba-jackett'
+    [MISMATCH_FAILS_LOUD]='BOB-233: running image != fresh build and still stale after a forced recreate -> non-zero exit, no success line'
 )
 declare -A CHECK_MUTATION=(
     [BUILD_ISSUED]='s#\$REAL_COMPOSE_CMD build "\$service"#$REAL_COMPOSE_CMD build "WRONGSERVICE"#'
@@ -174,6 +224,7 @@ declare -A CHECK_MUTATION=(
     [BUILD_FAILURE_IS_FATAL]='/Failed to rebuild \$service image/{n;s/exit 1/:/}'
     [NO_RUNTIME_REFUSES]='s/if \[\[ -z "\$REAL_COMPOSE_CMD" \]\]; then/if false; then/'
     [PROXY_GO_TARGETS_DIFFERENT_SERVICE]='s/reload_go_service "qbittorrent-proxy-go"/reload_go_service "boba-jackett"/'
+    [MISMATCH_FAILS_LOUD]='/after a forced recreate/{n;n;s/exit 1/return 0/}'
 )
 
 echo "== start.sh --reload-jackett / --reload-proxy-go (${1:---green}) =="

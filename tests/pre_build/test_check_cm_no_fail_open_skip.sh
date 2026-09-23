@@ -269,8 +269,9 @@ else fail "case 8: expected rc=0 with 'control-needle: seen'; got rc=$RC out=[$O
 # ======================================= CASE 9: the real tree
 echo "-- case 9: real tree against the committed baseline --"
 OUT="$(bash "$GATE" 2>&1)"; RC=$?
-if [[ $RC -eq 0 ]] && grep -qF 'tests/integration/test_tracker_auth_live.py:_merge_service_required:' "$GATE_DIR/cm_no_fail_open_skip.baseline"; then
-  pass "case 9: real tree matches the committed finding SET (rc=0) and the known BOB-192 rows are recorded"
+BASELINE_DATA_ROWS="$(grep -cvE '^[[:space:]]*(#|$)' "$GATE_DIR/cm_no_fail_open_skip.baseline" || true)"
+if [[ $RC -eq 0 ]] && [[ "$BASELINE_DATA_ROWS" -eq 0 ]] && grep -qF '0 finding(s)' <<<"$OUT" && grep -qF 'control-needle: seen' <<<"$OUT"; then
+  pass "case 9: real tree matches the committed finding SET (rc=0), the BOB-192 end-state holds (baseline has 0 data rows, 0 findings) and the zero is control-needled, not blind"
 else fail "case 9: expected rc=0 on the real tree; got rc=$RC out=[$(tail -n 20 <<<"$OUT")]"; fi
 
 # ============================== CASE 10: paired §1.1 mutations

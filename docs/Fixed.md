@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 53
-**Last modified:** 2026-09-23T16:57:54Z
+**Revision:** 54
+**Last modified:** 2026-09-23T17:21:36Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -3289,4 +3289,21 @@ Run tests/ux/test_live_dashboard_accessibility.py against the running merge serv
 
 **Acceptance criteria:**
 axe-core reports ZERO color-contrast violations against the live rendered dashboard, with the fix made in production component CSS rather than by relaxing the assertion or excluding the rule (11.4.120: reconcile to the correct mechanism, never weaken the check). The existing tests/ux/ suite is the guard and already fails today, so the RED is captured -- closure requires it flipping GREEN against the live surface, which is runtime-class evidence per 11.4.226.
+
+## BOB-233 — start.sh --reload-jackett reports 'recreated — Go source changes are now live' while the running boba-jackett container still uses the OLD image
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-233/closure_evidence_20260923.md
+**Created-By:** Claude
+
+Measured 2026-09-23: ./start.sh --reload-jackett rebuilt image 38ef117ec563 and printed [SUCCESS] boba-jackett recreated, but podman inspect boba-jackett still showed image 2a3173ce1941 started 17:09 (Up 2 hours). podman-compose 'up -d boba-jackett' did not recreate an unchanged-config container. Only ./start.sh --recreate moved the container onto the new image. Violates the §11.4.200 verify-after-write rule: the success message is not proof the intended target holds the intended artifact. Fix: after the recreate, read back the running container image id and compare with the freshly built image id, FAIL loudly on mismatch (or force-recreate the scoped service); apply the same to --reload-proxy-go. Needs RED-first test against a stub compose that does not recreate. Reproduction: build a change, run --reload-jackett, compare 'podman inspect boba-jackett --format {{.Image}}' with 'podman images' id.
+
+## BOB-192 — Remediate the 6 ratcheted CM-NO-FAIL-OPEN-SKIP findings — each needs a live-stack-verified classify-or-fail rewrite
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-192/closure_evidence_20260923.md
+
+WHAT: the BOB-161 gate lands with 6 real fail-open skips RATCHETED rather than fixed. Ratcheting is the constitution's named brownfield default (§11.4.135/§11.4.224(E)) and this repo's own precedent, so the choice is correct - but the remediation it defers is real work that must be owned somewhere. WHY THIS ITEM EXISTS: the gate's own header asserted the 6 were 'TRACKED SEPARATELY (§11.4.197)' while no tracker row existed. The §11.4.209 independent review verified the absence and raised it as IMPORTANT-5, noting that without a row those findings are precisely the parked-unverified debt class §11.4.226(4) names - the population an operator samples and finds broken. A prose claim of being tracked is not tracking. WHAT EACH NEEDS: a skip that fires on evidence the host ANSWERED must either classify the response and FAIL on it, or take a §11.4.69 reason that is honestly derivable from the environment rather than from the response - verified against the live stack, not asserted. Two of the six sit under '# allow-skip:' markers at tests/unit/test_tracker_auth_live.py:105 and :108, which the reviewer confirmed genuinely are fail-open, so that marker must not be treated as absolution. ACCEPTANCE: all 6 remediated with RED-first evidence per §11.4.115, the gate's BASELINE ratcheted to 0, and the ratchet's monotone-decreasing property preserved throughout (§11.4.227(A)). NOTE the reviewer's MINOR-1: a count-baseline absorbs a one-out-one-in swap, so remediation progress must be checked against the finding SET, not only the count.
 

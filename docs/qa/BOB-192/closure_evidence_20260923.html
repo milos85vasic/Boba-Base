@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260923</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260923</h1>
+</header>
+<h1
+id="bob-192-remediation-evidence-for-the-10-ratcheted-cm-no-fail-open-skip-findings">BOB-192
+— remediation evidence for the 10 ratcheted CM-NO-FAIL-OPEN-SKIP
+findings</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-09-23T17:19:25Z</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Item</td>
+<td>BOB-192 (NOT closed by this document — tracker status is the
+caller’s decision)</td>
+</tr>
+<tr>
+<td>Base HEAD</td>
+<td>3528ef2 (working-tree change, not committed)</td>
+</tr>
+<tr>
+<td>Gate</td>
+<td><code>bash scripts/pre_build/check_cm_no_fail_open_skip.sh</code></td>
+</tr>
+<tr>
+<td>RED/GREEN test</td>
+<td><code>tests/unit/test_bob192_fail_open_skip_remediation.py</code>
+(20 cases, local <code>http.server</code> fixtures on ephemeral ports —
+never the live stack)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="what-was-wrong">1. What was wrong</h2>
+<p>Each of the 10 baseline rows was a live-stack test helper that turned
+evidence the host ANSWERED into a SKIP (HTTP &gt;=400, a non-health
+body, an empty result set, a non-terminal search status, or an answered
+error swallowed by a <code>URLError</code>/<code>RequestException</code>
+handler). A skip reads green, so the product failure was invisible
+(§11.4.69).</p>
+<h2 id="fix-shape-per-file">2. Fix shape (per file)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>File / helper</th>
+<th>Before</th>
+<th>After</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>test_jackett_autoconfig_real.py <code>jackett_ready</code></td>
+<td>skip on <code>&gt;=500</code>; skip on any
+<code>RequestException</code> (incl. answered TooManyRedirects)</td>
+<td>skip ONLY on
+<code>requests.ConnectionError</code>/<code>Timeout</code>; FAIL on any
+answered <code>&gt;=400</code>; other answered transport errors
+propagate</td>
+</tr>
+<tr>
+<td>test_merge_api.py <code>_qbit_login</code></td>
+<td>skip when qBittorrent answered but refused admin/admin</td>
+<td>FAIL (admin/admin is a project contract); reachability stays gated
+by the <code>qbit_url</code> fixture</td>
+</tr>
+<tr>
+<td>test_merge_api.py
+<code>test_download_magnet_added_to_real_qbittorrent</code></td>
+<td>skip when <code>status != "initiated"</code></td>
+<td>assert</td>
+</tr>
+<tr>
+<td>test_merge_api.py
+<code>test_search_finds_real_results_for_common_query</code></td>
+<td>skip on answered empty result set</td>
+<td>assert (same convention as test_buttons_api.py)</td>
+</tr>
+<tr>
+<td>test_tracker_auth_live.py <code>_merge_service_required</code></td>
+<td>skip on status&gt;=400, on body lacking <code>"status"</code>, and
+inside <code>except URLError</code> (HTTPError is a subclass)</td>
+<td>environment-derived TCP connect probe: refused/timeout -&gt; SKIP;
+then HTTPError / non-JSON / status != healthy -&gt; FAIL</td>
+</tr>
+<tr>
+<td>test_tracker_auth_live.py <code>_run_live_search</code></td>
+<td>skip when search never terminated; answered poll 5xx swallowed as
+“torn read”</td>
+<td>FAIL on deadline; poll <code>HTTPError</code> -&gt; FAIL
+immediately; only non-HTTP transport blips keep polling</td>
+</tr>
+<tr>
+<td>tests/scaling/test_boba_scaling.py <code>_services_up</code></td>
+<td>skip when boba-jackett /healthz not 200</td>
+<td>TCP-port gates unchanged (env-derived skips); answered unhealthy
+/healthz -&gt; FAIL</td>
+</tr>
+</tbody>
+</table>
+<p>Golden-FALSE guard (§11.4.201(1)): the unit file also proves a
+genuinely unreachable endpoint (closed port -&gt; connection refused)
+still SKIPs for jackett_ready, _merge_service_required and _services_up,
+and healthy answers pass through.</p>
+<h2 id="red-against-the-pre-fix-helpers-13-failed-7-passed">3. RED —
+against the pre-fix helpers (13 failed / 7 passed)</h2>
+<pre><code>nice -n 19 .venv/bin/python -m pytest tests/unit/test_bob192_fail_open_skip_remediation.py -v --import-mode=importlib -p no:cacheprovider
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_jackett_ready_fails_on_answered_500 FAILED [  5%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_jackett_ready_fails_on_answered_404 FAILED [ 10%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_jackett_ready_fails_on_answered_redirect_loop FAILED [ 15%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_jackett_ready_still_skips_when_unreachable PASSED [ 20%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_qbit_login_fails_on_answered_rejection FAILED [ 25%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_qbit_login_fails_on_answered_403 FAILED [ 30%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_qbit_login_accepts_modern_204_with_cookie PASSED [ 35%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_download_magnet_fails_when_qbit_refuses_add FAILED [ 40%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_search_common_query_fails_on_empty_result_set FAILED [ 45%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_merge_required_fails_on_answered_500 FAILED [ 50%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_merge_required_fails_on_non_health_body FAILED [ 55%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_merge_required_fails_on_unhealthy_status_field FAILED [ 60%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_merge_required_accepts_healthy PASSED [ 65%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_merge_required_still_skips_when_unreachable PASSED [ 70%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_live_search_fails_when_search_never_terminates FAILED [ 75%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_live_search_fails_when_poll_answers_500 FAILED [ 80%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_live_search_returns_terminal_payload PASSED [ 85%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_scaling_gate_fails_on_answered_unhealthy_healthz FAILED [ 90%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_scaling_gate_accepts_healthy PASSED [ 95%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_scaling_gate_still_skips_when_port_closed PASSED [100%]
+
+E           Failed: FAIL-OPEN: answered failure was converted into a SKIP: Jackett unhealthy (500)
+E       Failed: helper returned normally on an answered failure (fail-open PASS)
+E           Failed: FAIL-OPEN: answered failure was converted into a SKIP: Jackett unreachable
+E           Failed: FAIL-OPEN: answered failure was converted into a SKIP: real qBittorrent login did not succeed in this environment: 200 &#39;Fails.&#39;
+E           Failed: FAIL-OPEN: answered failure was converted into a SKIP: real qBittorrent login did not succeed in this environment: 403 &#39;Forbidden&#39;
+E           Failed: FAIL-OPEN: answered failure was converted into a SKIP: real qBittorrent did not accept the magnet add in this environment: {&#39;status&#39;: &#39;failed&#39;, &#39;added_count&#39;: 0, &#39;results&#39;: []}
+E           Failed: FAIL-OPEN: answered failure was converted into a SKIP: real search for &#39;ubuntu&#39; returned 0 results — no tracker reachable/authenticated in this environment (errors=[], tracker_stats=[])
+E           Failed: FAIL-OPEN: answered failure was converted into a SKIP: merge service unreachable at http://127.0.0.1:&lt;port&gt;/health: &lt;HTTPError 500: &#39;Internal Server Error&#39;&gt;. Start the stack with `./start.sh -p` to run this credential guard.
+E           Failed: FAIL-OPEN: answered failure was converted into a SKIP: merge service at http://127.0.0.1:&lt;port&gt;/health did not return a health body
+E       Failed: helper returned normally on an answered failure (fail-open PASS)
+E           Failed: FAIL-OPEN: answered failure was converted into a SKIP: live search did not reach a terminal state within 1s (last status=&#39;running&#39;). Treated as an operator-blocked transient, not a credential failure.
+E           Failed: FAIL-OPEN: answered failure was converted into a SKIP: live search did not reach a terminal state within 1s (last status=&#39;running&#39;). Treated as an operator-blocked transient, not a credential failure.
+E           Failed: FAIL-OPEN: answered failure was converted into a SKIP: boba-jackett /healthz not ok (SKIP-OK BOB-109)
+======================== 13 failed, 7 passed in 11.40s =========================</code></pre>
+<p>The 7 RED-phase passes are the golden-FALSE / healthy-path cases
+(they must pass both before and after).</p>
+<h2 id="green-after-the-fix-20-passed">4. GREEN — after the fix (20
+passed)</h2>
+<pre><code>tests/unit/test_bob192_fail_open_skip_remediation.py::test_download_magnet_fails_when_qbit_refuses_add PASSED [ 70%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_jackett_ready_fails_on_answered_404 PASSED [  5%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_jackett_ready_fails_on_answered_500 PASSED [ 10%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_jackett_ready_fails_on_answered_redirect_loop PASSED [ 55%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_jackett_ready_still_skips_when_unreachable PASSED [ 35%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_live_search_fails_when_poll_answers_500 PASSED [ 90%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_live_search_fails_when_search_never_terminates PASSED [ 65%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_live_search_returns_terminal_payload PASSED [100%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_merge_required_accepts_healthy PASSED [ 15%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_merge_required_fails_on_answered_500 PASSED [ 50%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_merge_required_fails_on_non_health_body PASSED [ 25%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_merge_required_fails_on_unhealthy_status_field PASSED [ 75%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_merge_required_still_skips_when_unreachable PASSED [ 60%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_qbit_login_accepts_modern_204_with_cookie PASSED [ 30%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_qbit_login_fails_on_answered_403 PASSED [ 85%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_qbit_login_fails_on_answered_rejection PASSED [ 45%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_scaling_gate_accepts_healthy PASSED [ 95%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_scaling_gate_fails_on_answered_unhealthy_healthz PASSED [ 20%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_scaling_gate_still_skips_when_port_closed PASSED [ 40%]
+tests/unit/test_bob192_fail_open_skip_remediation.py::test_search_common_query_fails_on_empty_result_set PASSED [ 80%]
+============================= 20 passed in 10.85s ==============================</code></pre>
+<h2 id="finding-set-before-after">5. Finding SET — before / after</h2>
+<p>Before (baseline rows, identical to <code>--list</code> before the
+change):</p>
+<pre><code>tests/integration/test_jackett_autoconfig_real.py:jackett_ready:STATUS#1
+tests/integration/test_jackett_autoconfig_real.py:jackett_ready:UNREACH#1
+tests/integration/test_merge_api.py:TestDownloadEndpoint.test_download_magnet_added_to_real_qbittorrent:STATUS#1
+tests/integration/test_merge_api.py:TestSearchEndpoint.test_search_finds_real_results_for_common_query:EMPTY#1
+tests/integration/test_merge_api.py:_qbit_login:STATUS#1
+tests/integration/test_tracker_auth_live.py:_merge_service_required:EMPTY#1
+tests/integration/test_tracker_auth_live.py:_merge_service_required:STATUS#1
+tests/integration/test_tracker_auth_live.py:_merge_service_required:UNREACH#1
+tests/integration/test_tracker_auth_live.py:_run_live_search:EMPTY#1
+tests/scaling/test_boba_scaling.py:_services_up:EMPTY#1</code></pre>
+<p>After (<code>check_cm_no_fail_open_skip.sh --list</code>):
+<strong>empty set</strong> (the command printed nothing, rc=0).</p>
+<p>Gate run with the fix applied but the OLD baseline still in place —
+all 10 rows reported STALE, proving each finding is gone by KEY (set
+comparison, not count):</p>
+<pre><code>STALE: tests/integration/test_jackett_autoconfig_real.py:jackett_ready:STATUS#1 — no live finding; remove the row (the ratchet must tighten, §11.4.227(A))
+STALE: tests/integration/test_jackett_autoconfig_real.py:jackett_ready:UNREACH#1 — no live finding; remove the row (the ratchet must tighten, §11.4.227(A))
+STALE: tests/integration/test_merge_api.py:TestDownloadEndpoint.test_download_magnet_added_to_real_qbittorrent:STATUS#1 — no live finding; remove the row (the ratchet must tighten, §11.4.227(A))
+STALE: tests/integration/test_merge_api.py:TestSearchEndpoint.test_search_finds_real_results_for_common_query:EMPTY#1 — no live finding; remove the row (the ratchet must tighten, §11.4.227(A))
+STALE: tests/integration/test_merge_api.py:_qbit_login:STATUS#1 — no live finding; remove the row (the ratchet must tighten, §11.4.227(A))
+STALE: tests/integration/test_tracker_auth_live.py:_merge_service_required:EMPTY#1 — no live finding; remove the row (the ratchet must tighten, §11.4.227(A))
+STALE: tests/integration/test_tracker_auth_live.py:_merge_service_required:STATUS#1 — no live finding; remove the row (the ratchet must tighten, §11.4.227(A))
+STALE: tests/integration/test_tracker_auth_live.py:_merge_service_required:UNREACH#1 — no live finding; remove the row (the ratchet must tighten, §11.4.227(A))
+STALE: tests/integration/test_tracker_auth_live.py:_run_live_search:EMPTY#1 — no live finding; remove the row (the ratchet must tighten, §11.4.227(A))
+STALE: tests/scaling/test_boba_scaling.py:_services_up:EMPTY#1 — no live finding; remove the row (the ratchet must tighten, §11.4.227(A))
+FAIL: CM-NO-FAIL-OPEN-SKIP: 0 finding(s) (0 baselined, 0 new, 10 stale) across 414 test files, 61 skip sites; control-needle: seen
+rc=1</code></pre>
+<p>Gate run after removing the 10 rows in the same change (baseline now
+holds zero keys):</p>
+<pre><code>PASS: CM-NO-FAIL-OPEN-SKIP: 0 finding(s) (0 baselined, 0 new, 0 stale) across 414 test files, 61 skip sites; control-needle: seen
+rc=0</code></pre>
+<p>The zero is not a blind zero: <code>control-needle: seen</code> and
+61 skip sites scanned across 414 test files (§11.4.201(6)).</p>
+<h2
+id="live-stack-run-of-the-affected-files-stack-untouched-running-on-7185-71899117">6.
+Live stack run of the affected files (stack untouched, running on
+7185-7189/9117)</h2>
+<pre><code>nice -n 19 timeout 580 .venv/bin/python -m pytest tests/integration/test_jackett_autoconfig_real.py \
+  tests/integration/test_merge_api.py tests/integration/test_tracker_auth_live.py -v --import-mode=importlib -p no:cacheprovider -rs
+tests/integration/test_tracker_auth_live.py::test_private_tracker_credentials_authenticate[iptorrents] PASSED [  3%]
+tests/integration/test_tracker_auth_live.py::test_private_tracker_credentials_authenticate[nnmclub] PASSED [  7%]
+tests/integration/test_tracker_auth_live.py::test_private_tracker_credentials_authenticate[kinozal] FAILED [ 11%]
+tests/integration/test_tracker_auth_live.py::test_private_tracker_credentials_authenticate[rutracker] FAILED [ 15%]
+tests/integration/test_tracker_auth_live.py::test_public_tracker_returns_results_without_auth[rutor] PASSED [ 19%]
+tests/integration/test_jackett_autoconfig_real.py::test_module_orchestrator_is_idempotent_on_second_invocation PASSED [ 23%]
+tests/integration/test_merge_api.py::TestHooksEndpoint::test_create_hook_missing_name_returns_422 FAILED [ 26%]
+tests/integration/test_merge_api.py::TestHooksEndpoint::test_create_hook_invalid_event_returns_400 FAILED [ 30%]
+tests/integration/test_merge_api.py::TestHooksEndpoint::test_hook_lifecycle_create_list_delete FAILED [ 34%]
+tests/integration/test_merge_api.py::TestHooksEndpoint::test_delete_nonexistent_hook_returns_404 FAILED [ 38%]
+tests/integration/test_merge_api.py::TestHooksEndpoint::test_create_hook_returns_hook_id FAILED [ 42%]
+tests/integration/test_merge_api.py::TestMagnetEndpoint::test_generate_magnet_without_hash FAILED [ 46%]
+tests/integration/test_merge_api.py::TestMagnetEndpoint::test_generate_magnet_with_hash FAILED [ 50%]
+tests/integration/test_merge_api.py::TestMagnetEndpoint::test_generate_magnet_invalid_request FAILED [ 53%]
+tests/integration/test_merge_api.py::TestActiveDownloadsEndpoint::test_active_downloads_returns_real_list PASSED [ 57%]
+tests/integration/test_merge_api.py::TestHealthEndpoint::test_health_returns_200 PASSED [ 61%]
+tests/integration/test_merge_api.py::TestSearchEndpoint::test_search_finds_real_results_for_common_query PASSED [ 65%]
+tests/integration/test_merge_api.py::TestSearchEndpoint::test_search_with_empty_query_returns_422 PASSED [ 69%]
+tests/integration/test_merge_api.py::TestSearchEndpoint::test_search_with_missing_body_returns_422 PASSED [ 73%]
+tests/integration/test_merge_api.py::TestSearchEndpoint::test_search_with_valid_query_real_orchestrator PASSED [ 76%]
+tests/integration/test_merge_api.py::TestAbortSearchEndpoint::test_abort_unknown_search PASSED [ 80%]
+tests/integration/test_merge_api.py::TestAbortSearchEndpoint::test_abort_existing_search PASSED [ 84%]
+tests/integration/test_merge_api.py::TestDownloadEndpoint::test_download_empty_urls_rejected_at_boundary FAILED [ 88%]
+tests/integration/test_merge_api.py::TestDownloadEndpoint::test_download_magnet_added_to_real_qbittorrent FAILED [ 92%]
+tests/integration/test_merge_api.py::TestSearchByIdEndpoint::test_get_unknown_search_returns_404 PASSED [ 96%]
+tests/integration/test_merge_api.py::TestSearchByIdEndpoint::test_get_existing_search_returns_200 PASSED [100%]
+================== 12 failed, 14 passed in 119.81s (0:01:59) ===================</code></pre>
+<p>Every remediated helper ran on the live stack and passed through
+(jackett_ready, _qbit_login, _merge_service_required, _run_live_search
+and the empty-result search assertion all reached their test bodies).
+None of the 12 failures is produced by a remediated helper; they were
+already failing (or would have) at HEAD and are reported, not
+re-skipped:</p>
+<ol type="1">
+<li><strong>10 x HTTP 401 in test_merge_api.py</strong>
+(TestHooksEndpoint x5, TestMagnetEndpoint x3, TestDownloadEndpoint x2):
+the live merge service has <code>BOBA_API_TOKEN</code> set
+(<code>routes.py</code> token dependency answers
+<code>401 "Unauthorized: valid API token required"</code>; confirmed
+with <code>curl -X POST /api/v1/magnet</code> -&gt; 401) and the
+integration file sends no token. Each failing assertion
+(<code>resp.status_code == 200/400/404/422</code>) precedes any line
+this change touched, so HEAD fails identically. UNTRACKED: needs its own
+item (the test must carry the token from the environment, or skip with
+an honest <code>BOBA_API_TOKEN</code>-derived reason).</li>
+<li><strong>test_private_tracker_credentials_authenticate[kinozal]</strong>:
+<code>authenticated=False, status='empty', error=''</code> — the test
+body’s genuine credential verdict (not a helper). A real finding,
+UNTRACKED in docs/Issues.md.</li>
+<li><strong>test_private_tracker_credentials_authenticate[rutracker]</strong>:
+<code>authenticated=True, status='error'</code>, upstream 403
+bot-protection challenge — the known BOB-172 defect.</li>
+</ol>
+<p>Scaling gate (<code>_services_up</code>) was exercised live directly
+(the scaling module itself was NOT run: it writes the committed
+docs/qa/BOB-109 corpus):</p>
+<pre><code>live _services_up gate returned None (no skip, no fail) against 7189/9117</code></pre>
+<p>Related meta-test still green
+(<code>tests/unit/test_no_runtime_service_skips.py</code>):
+<code>7 passed</code>. <code>ruff check</code> on the 5 files:
+clean.</p>
+<h2
+id="open-item-created-by-this-change-outside-the-allowed-file-scope">7.
+Open item created by this change (outside the allowed file scope)</h2>
+<p><code>tests/pre_build/test_check_cm_no_fail_open_skip.sh</code>
+<strong>case 9</strong> hard-codes that the BOB-192 rows are still
+present
+(<code>grep -qF 'tests/integration/test_tracker_auth_live.py:_merge_service_required:' baseline</code>).
+With the baseline now correctly empty it reports
+<code>FAIL: case 9: expected rc=0 on the real tree; got rc=0 ...</code>
+(the gate itself is rc=0; only the pinned-debt grep fails). That
+self-test must be updated to assert the empty SET in the same commit as
+this change; it was outside this task’s permitted files, so it is left
+for the caller.</p>
+</body>
+</html>
