@@ -175,8 +175,8 @@
 </head>
 <body>
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 95 <strong>Last modified:</strong>
-2026-09-23T06:27:31Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 96 <strong>Last modified:</strong>
+2026-09-23T07:42:46Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -1153,38 +1153,6 @@ versions, pinned so they cannot drift apart silently - or, if a
 divergence is deliberate, it is declared and a check asserts the
 declared pair rather than leaving it to chance.</p>
 <h2
-id="bob-156-bob-145-event-loop-regression-guard-is-load-sensitive-and-flaky-8786ms-under-host-load-vs-a-900-1500ms-ceiling-calibrated-on-a-quiet-host">BOB-156
-— BOB-145 event-loop regression guard is load-sensitive and flaky:
-8786ms under host load vs a 900-1500ms ceiling calibrated on a quiet
-host</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
-<strong>Severity:</strong> Medium <strong>Created-By:</strong> AI</p>
-<p><strong>Reported-Via:</strong> §11.4.202 reporting directive
-<code>bug</code> on 2026-08-21T17:01:20Z <strong>Reported-By:</strong>
-AI</p>
-<p><strong>What (the report, verbatim):</strong> The regression guard
-added with the BOB-145 fix asserts an event-loop block ceiling
-calibrated on a quiet host. Under real host contention the block window
-scales with BOTH N and load, so the same code that passes at 349ms
-median can measure 8786ms - worse than the pre-fix number the test
-exists to detect. That makes it FLAKY, and a flaky test is corrosive in
-a specific way this project has already recorded: every ignored red
-trains everyone to dismiss the next one, so a real regression eventually
-gets waved through as ‘that one again’. Two directions are wrong:
-raising the ceiling until it stops failing would blind it to the defect,
-and leaving it flaky poisons every future run. Found while verifying
-BOB-137 against the live service.</p>
-<p><strong>Affected scope / file-scope manifest:</strong>
-tests/unit/merge_service/test_dedup_event_loop_blocking.py</p>
-<p><strong>Reproduction / context:</strong> Under host load 18-24 on 8
-cores (concurrent agents), the same N=400 merge froze the event loop for
-8786ms - WORSE than the 3970ms pre-fix figure the ceiling was calibrated
-against. 2 fail / 2 pass across four runs.</p>
-<p><strong>Acceptance criteria:</strong> The guard gives the same
-verdict on a loaded host as on a quiet one - or it measures something
-contention-independent. A threshold that only holds when nothing else is
-running is not a regression guard, it is a weather report.</p>
-<h2
 id="bob-159-warm-.start.sh-over-an-already-running-stack-leaves-the-fr-004d-repair-window-open">BOB-159
 — Warm ./start.sh over an already-running stack leaves the FR-004d
 repair window open</h2>
@@ -1266,47 +1234,6 @@ Asserted behaviourally in tests/unit/test_start_reload_recreate.sh
 alongside the existing PRECONDITION_BEFORE_DOWN / REPAIR_AFTER_DOWN /
 REPAIR_BEFORE_UP checks, each with a paired 1.1 mutation that kills
 it.</p>
-<h2
-id="bob-160-testspre_build-and-testsownership-ran-by-nothing-closed-by-extending-invariant-30-wiring-ci.sh">BOB-160
-— tests/pre_build/ and tests/ownership/ ran by nothing — closed by
-extending invariant 30 + wiring ci.sh</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
-<strong>Severity:</strong> Medium <strong>Created-By:</strong> AI</p>
-<p><strong>Reported-Via:</strong> §11.4.202 reporting directive
-<code>task</code> on 2026-08-21T19:02:48Z <strong>Reported-By:</strong>
-AI</p>
-<p><strong>What (the report, verbatim):</strong> Independent §11.4.209
-review (IMPORTANT-3) found two of the feature’s strongest automated
-checks were never executed by any runner: (1)
-tests/ownership/test_container_writes_owned_files.py — the §11.4.115
-RED-turned-regression-guard for FR-011/FR-007, proven via a
-docker-compose.yml revert mutation — was moved out of tests/integration/
-(commit 58d340a, to escape an autouse fixture hang) but no runner
-(ci.sh, test.sh, run-all-tests.sh) was ever extended to cover
-tests/ownership/. (2) tests/pre_build/test_<em>.sh, the §1.1
-paired-mutation meta-tests for the scripts/pre_build/check_cm_</em>.sh
-gate family, was executed by NOTHING — self-reported honestly in commit
-04742d7’s own message (‘STILL OPEN (reported, not fixed):
-tests/pre_build/ is executed by NOTHING’) but never tracked as a
-workable item (a §11.4.197 loss-of-requirements gap) and never wired
-into scripts/pre_build_verification.sh invariant 30, which globbed only
-tests/unit/test_*.sh.</p>
-<p><strong>Affected scope / file-scope manifest:</strong> ci.sh;
-scripts/pre_build_verification.sh invariant 30
-(CM-BASH-UNIT-TESTS-EXECUTED)</p>
-<p><strong>Reproduction / context:</strong> grep -rn
-test_container_writes_owned_files ci.sh test.sh run-all-tests.sh
-scripts/ returned zero runner hits (only docs/specs mentioned the path);
-grep in scripts/pre_build_verification.sh showed invariant 30’s for-loop
-globbing only tests/unit/test_<em>.sh, never
-tests/pre_build/test_</em>.sh.</p>
-<p><strong>Acceptance criteria:</strong> ci.sh gains a runtime-gated
-pytest tests/ownership/ stage (skips honestly, rc=0, when no
-podman/docker present); scripts/pre_build_verification.sh invariant 30’s
-glob covers both tests/unit/test_<em>.sh and
-tests/pre_build/test_</em>.sh, verified by an extracted standalone run
-of the invariant’s exact block reporting a non-zero RAN count that
-includes files from both directories.</p>
 <h2
 id="bob-161-the-11.4.69-cm-no-fail-open-skip-gate-is-mandated-but-does-not-exist-in-this-project">BOB-161
 — The §11.4.69 CM-NO-FAIL-OPEN-SKIP gate is mandated but does not exist
@@ -2257,36 +2184,6 @@ checked them together (§11.4.118).</p>
 read from source by the BOB-172 agent and recorded on its report. The
 reading is specific and checkable, but whoever takes this should confirm
 by invocation before relying on it.</p>
-<h2
-id="bob-177-four-of-five-private-tracker-http-refusal-guards-are-invisible-to-the-test-suite">BOB-177
-— Four of five private-tracker HTTP-refusal guards are invisible to the
-test suite</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
-<strong>Severity:</strong> High <strong>Created-By:</strong> Claude
-<strong>Assigned-To:</strong> Claude</p>
-<p>WHAT: BOB-172 wired an identical 4-line HTTP-refusal guard at five
-private-tracker fetch sites in
-download-proxy/src/merge_service/search.py (rutracker cookie :1390,
-rutracker credential :1468, kinozal :1648, nnmclub :1761, iptorrents
-:1934). Only the rutracker COOKIE path is exercised by tests.</p>
-<p>EVIDENCE (reviewer-authored mutation R1, per 11.4.194(6)(d), during
-the BOB-172 independent review): deleting ONLY the kinozal guard wiring
-(search.py:1655-1658) while leaving the classifier intact left the full
-merge_service suite at 883 passed, ZERO failures. The suite cannot see
-four of the five sites.</p>
-<p>FAILING SCENARIO: a refactor drops or subtly breaks the wiring at
-kinozal, nnmclub, iptorrents, or rutracker-credential. A 403 at that
-site silently folds back to status=empty with error=None – the exact
-BOB-172 signature – and no test reddens.</p>
-<p>FIX DIRECTION (reviewer preferred): collapse the five duplicated
-wirings into one shared helper,
-e.g. _check_search_response(tracker_name, status, body) -&gt; bool, so
-there is ONE copy to test and a sixth site cannot be added unguarded
-(11.4.251 byte-identical-fork extraction). Alternative: parametrise the
-guard tests across all five sites with per-site stub sessions.</p>
-<p>ACCEPTANCE: mutating the wiring at ANY of the five sites reddens at
-least one test. Prove it by running the same R1 deletion at each site in
-turn.</p>
 <h2
 id="bob-178-kinozal-login-leg-http-failure-sets-no-diagnostic-reproducing-the-bob-172-false-null-one-leg-over">BOB-178
 — Kinozal login-leg HTTP failure sets no diagnostic, reproducing the

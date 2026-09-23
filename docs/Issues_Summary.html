@@ -200,7 +200,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>18</td>
+<td>16</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -215,7 +215,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Task</td>
 <td>Queued</td>
-<td>31</td>
+<td>30</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -225,7 +225,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>79</strong></td>
+<td><strong>76</strong></td>
 </tr>
 </tbody>
 </table>
@@ -612,15 +612,6 @@ gate’s 38,291 findings come from submodules/</td>
 (1.4.1 vs 1.6.0)</td>
 </tr>
 <tr>
-<td>BOB-156</td>
-<td>Bug</td>
-<td>Queued</td>
-<td>Medium</td>
-<td>BOB-145 event-loop regression guard is load-sensitive and flaky:
-8786ms under host load vs a 900-1500ms ceiling calibrated on a quiet
-host</td>
-</tr>
-<tr>
 <td>BOB-159</td>
 <td>Bug</td>
 <td>Queued</td>
@@ -695,43 +686,6 @@ Asserted behaviourally in tests/unit/test_start_reload_recreate.sh
 alongside the existing PRECONDITION_BEFORE_DOWN / REPAIR_AFTER_DOWN /
 REPAIR_BEFORE_UP checks, each with a paired 1.1 mutation that kills
 it.</td>
-</tr>
-<tr>
-<td>BOB-160</td>
-<td>Task</td>
-<td>Queued</td>
-<td>Medium</td>
-<td><strong>Reported-Via:</strong> §11.4.202 reporting directive
-<code>task</code> on 2026-08-21T19:02:48Z <strong>Reported-By:</strong>
-AI <strong>What (the report, verbatim):</strong> Independent §11.4.209
-review (IMPORTANT-3) found two of the feature’s strongest automated
-checks were never executed by any runner: (1)
-tests/ownership/test_container_writes_owned_files.py — the §11.4.115
-RED-turned-regression-guard for FR-011/FR-007, proven via a
-docker-compose.yml revert mutation — was moved out of tests/integration/
-(commit 58d340a, to escape an autouse fixture hang) but no runner
-(ci.sh, test.sh, run-all-tests.sh) was ever extended to cover
-tests/ownership/. (2) tests/pre_build/test_<em>.sh, the §1.1
-paired-mutation meta-tests for the scripts/pre_build/check_cm_</em>.sh
-gate family, was executed by NOTHING — self-reported honestly in commit
-04742d7’s own message (‘STILL OPEN (reported, not fixed):
-tests/pre_build/ is executed by NOTHING’) but never tracked as a
-workable item (a §11.4.197 loss-of-requirements gap) and never wired
-into scripts/pre_build_verification.sh invariant 30, which globbed only
-tests/unit/test_<em>.sh. <strong>Affected scope / file-scope
-manifest:</strong> ci.sh; scripts/pre_build_verification.sh invariant 30
-(CM-BASH-UNIT-TESTS-EXECUTED) <strong>Reproduction / context:</strong>
-grep -rn test_container_writes_owned_files ci.sh test.sh
-run-all-tests.sh scripts/ returned zero runner hits (only docs/specs
-mentioned the path); grep in scripts/pre_build_verification.sh showed
-invariant 30’s for-loop globbing only tests/unit/test_</em>.sh, never
-tests/pre_build/test_<em>.sh. <strong>Acceptance criteria:</strong>
-ci.sh gains a runtime-gated pytest tests/ownership/ stage (skips
-honestly, rc=0, when no podman/docker present);
-scripts/pre_build_verification.sh invariant 30’s glob covers both
-tests/unit/test_</em>.sh and tests/pre_build/test_*.sh, verified by an
-extracted standalone run of the invariant’s exact block reporting a
-non-zero RAN count that includes files from both directories.</td>
 </tr>
 <tr>
 <td>BOB-161</td>
@@ -1403,27 +1357,6 @@ one codebase suggests nobody has checked them together
 deployment; read from source by the BOB-172 agent and recorded on its
 report. The reading is specific and checkable, but whoever takes this
 should confirm by invocation before relying on it. |
-| BOB-177 | Bug | Queued | High | WHAT: BOB-172 wired an identical
-4-line HTTP-refusal guard at five private-tracker fetch sites in
-download-proxy/src/merge_service/search.py (rutracker cookie :1390,
-rutracker credential :1468, kinozal :1648, nnmclub :1761, iptorrents
-:1934). Only the rutracker COOKIE path is exercised by tests.  EVIDENCE
-(reviewer-authored mutation R1, per 11.4.194(6)(d), during the BOB-172
-independent review): deleting ONLY the kinozal guard wiring
-(search.py:1655-1658) while leaving the classifier intact left the full
-merge_service suite at 883 passed, ZERO failures. The suite cannot see
-four of the five sites.  FAILING SCENARIO: a refactor drops or subtly
-breaks the wiring at kinozal, nnmclub, iptorrents, or
-rutracker-credential. A 403 at that site silently folds back to
-status=empty with error=None -- the exact BOB-172 signature -- and no
-test reddens.  FIX DIRECTION (reviewer preferred): collapse the five
-duplicated wirings into one shared helper, e.g.
-_check_search_response(tracker_name, status, body) -&gt; bool, so there
-is ONE copy to test and a sixth site cannot be added unguarded (11.4.251
-byte-identical-fork extraction). Alternative: parametrise the guard
-tests across all five sites with per-site stub sessions.  ACCEPTANCE:
-mutating the wiring at ANY of the five sites reddens at least one test.
-Prove it by running the same R1 deletion at each site in turn. |
 | BOB-178 | Bug | Queued | Medium | WHAT:
 download-proxy/src/merge_service/search.py:1638-1640 handles a failed
 kinozal LOGIN response with if login_resp.status not in (200, 301, 302):

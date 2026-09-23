@@ -44,11 +44,79 @@ Post-fix, same host, N=400, 12 consecutive runs (ms):
     247 274 278 286 302 330 367 405 438 582 602 655
     min=247  median=349  max=655
 
-``MAX_LOOP_BLOCK_S`` is therefore set at 1.5 s: ~2.3x above the worst observed
-post-fix run (so it does not flake when the host is busy — this box runs other
-work concurrently and the spread above is real contention, not variance in the
-code under test) and ~2.6x below the pre-fix measurement (so it genuinely fails
-on the old code, which it was observed to do at 3970 ms).
+BOB-156 — WALL-CLOCK CEILINGS ARE NOT A LOAD-INDEPENDENT ORACLE (root-cause
+investigation, §11.4.102, before any number was changed)
+----------------------------------------------------------------------------
+The original ``MAX_LOOP_BLOCK_S`` ceiling (1.5 s, first 900 ms) bounded
+``worst_gap`` — the wall-clock gap between heartbeat ticks, which this test's
+own docstring above already documents as tracking ``merge_wall`` to within a
+few ms, because ``merge_results`` never yields (see "WHAT THIS TEST DOES NOT
+CLAIM"). BOB-156 reported 8786 ms against that ceiling under real host
+contention ("host load 18-24 on 8 cores") on UNCHANGED post-fix code.
+
+REPRODUCED on this development host (16 cores) by oversubscribing it with
+independent, unrelated CPU-bound Python processes (pure integer arithmetic
+busy-loops — no I/O, no shared state, no relation to this test) and re-running
+the *unmodified* pytest file:
+
+    ambient (load average ~9-19, no injected load): worst_gap ~105-160ms  -> PASS
+    +40  busy procs (2.5x/core oversubscription):    worst_gap  428-732ms -> PASS
+    +80  busy procs (5x/core oversubscription):       worst_gap 1077-2152ms -> intermittent FAIL
+    +100 busy procs (~6x/core, live pytest run):      worst_gap 2044.3ms  -> FAIL:
+        "event loop was frozen for 2044.3ms (ceiling 1500ms) ... only 1
+        heartbeat tick(s) ran during the merge." (captured pytest output,
+        unmodified test, unmodified deduplicator.py — same shape as BOB-156)
+
+Repeating the identical measurement with ``time.process_time()`` (CPU time
+consumed by THIS process — user+sys seconds actually spent executing, as
+opposed to wall-clock seconds elapsed while the OS scheduler may have
+descheduled this process in favour of the competing busy-loops) around the
+SAME merge call, at the SAME contention levels:
+
+    ambient:              merge_cpu ~105-160ms  (== wall, host was not saturated)
+    +40  busy procs:      merge_cpu  167-203ms
+    +80  busy procs:      merge_cpu  170-201ms
+    +120 busy procs (7.5x/core): merge_cpu 174-193ms
+
+``merge_cpu`` stays inside a <2x band across a >7x range of induced core
+oversubscription, while ``worst_gap``/``merge_wall`` inflates by up to ~20x
+over the SAME range and SAME code. The mechanism: ``merge_results`` is pure
+CPU-bound Python with no I/O, so the *work* it does — and therefore the CPU
+time the OS attributes to this process — does not change when unrelated
+processes compete for the same cores; only the WALL-CLOCK time to get that
+fixed amount of work scheduled does, because the kernel now time-slices this
+process's core(s) among more runnable competitors. A wall-clock ceiling
+therefore measures "how contended was the host", not "did this code regress" —
+exactly the "weather report" the tracked item (BOB-156) names.
+
+The SAME technique, applied to the PRE-FIX ``deduplicator.py`` (the parent of
+the BOB-145 fix commit, loaded standalone, ambient host conditions, no
+induced contention needed since the regression itself is the dominant cost):
+
+    merge_cpu ~3300-3470ms  (== merge_wall to within a few ms, as documented above)
+
+The regression is ~17-25x the worst *contended* post-fix ``merge_cpu``
+measured above and ~9-13x the fixed 1.5 s ceiling adopted below — CPU time
+distinguishes "the code got slower" from "the host got busier" by construc-
+tion, because contention delays scheduling without adding CPU-seconds to a
+process that was not itself doing more work.
+
+``MAX_MERGE_CPU_S`` is the PRIMARY regression gate, set at 1.5 s (the same
+number the wall-clock ceiling used, applied to a different, load-insensitive
+metric): comfortably above every post-fix ``merge_cpu`` measurement above
+(worst 203 ms, >7x margin) and comfortably below the pre-fix regression
+(~3300 ms, >2.2x margin) — the identical safety-margin shape the original
+provenance note used, now anchored to a quantity that does not move when the
+host is merely busy.
+
+``worst_gap`` and its heartbeat instrumentation are RETAINED as diagnostic
+evidence (they still directly demonstrate the loop-freeze phenomenon the
+BOB-137 wedge exhibited, and the "instrument is not blind" sanity check below
+is unaffected by any of this) plus a generous, load-tolerant
+``WALL_CLOCK_HANG_CEILING_S`` backstop (15 s) that only fires on a genuinely
+catastrophic freeze (the kind BOB-137 measured in *minutes*) — not on ordinary
+contention, and not as the mechanism that is supposed to catch a re-introduced
+BOB-145 regression (that is ``MAX_MERGE_CPU_S``'s job).
 
 WHAT THIS TEST DOES *NOT* CLAIM (§11.4.6)
 ------------------------------------------
@@ -58,6 +126,13 @@ ways to change that are to offload it to an executor or to make it a coroutine
 that awaits — both of which are changes at the CALL SITE in ``search.py``, not
 in the deduplicator. What this test asserts is that the blocked window is
 bounded and small, instead of being minutes long as BOB-137 measured.
+
+It does not claim ``time.process_time()`` is immune to ALL host effects (cache
+contention and extra context-switch overhead under oversubscription did add a
+modest ~1.3-1.9x over the ambient baseline in the measurements above) — only
+that it is far less sensitive to scheduling contention than wall-clock time
+for a single-threaded, non-blocking, CPU-bound call, which is the specific
+property BOB-156 needed.
 """
 
 from __future__ import annotations
@@ -135,9 +210,23 @@ _EDITIONS = ("Directors Cut", "Extended", "Remastered", "Theatrical", "Anniversa
 
 CORPUS_SIZE = 400
 
-#: Ceiling on how long the event loop may be frozen by one merge, in seconds.
-#: Pre-fix 3.806-3.970 s; post-fix worst-of-12 0.655 s (see module docstring).
-MAX_LOOP_BLOCK_S = 1.5
+#: PRIMARY regression gate (BOB-156): ceiling on CPU time (``time.process_time``)
+#: consumed by one merge, in seconds. Unlike wall-clock, this does not inflate
+#: when unrelated processes contend for the host's cores (see module docstring
+#: "BOB-156 — wall-clock ceilings are not a load-independent oracle" for the
+#: measured wall-vs-CPU comparison across induced contention levels).
+#: Post-fix worst observed (7.5x/core induced oversubscription) 0.203 s;
+#: pre-fix (BOB-145 regression) ~3.3-3.47 s.
+MAX_MERGE_CPU_S = 1.5
+
+#: DEFENSE-IN-DEPTH backstop only (BOB-156): a generous wall-clock ceiling that
+#: exists to catch a genuinely catastrophic freeze (the BOB-137 wedge measured
+#: *minutes*), not ordinary host contention. Deliberately far above anything
+#: observed under induced contention up to 7.5x/core oversubscription (worst
+#: 2.25 s) so it does not flake; deliberately far below "minutes" so it still
+#: means something. ``MAX_MERGE_CPU_S`` above, not this constant, is what is
+#: expected to catch a re-introduced BOB-145 regression.
+WALL_CLOCK_HANG_CEILING_S = 15.0
 
 #: Heartbeat tick period. Small enough that a freeze of interest spans many
 #: missed ticks, large enough that the heartbeat itself is not the load.
@@ -224,6 +313,14 @@ class TestMergeResultsDoesNotBlockTheEventLoop:
 
         This is the defect BOB-137 observed as "7187 answers nothing": the
         heartbeat below stands in for uvicorn's accept/read/write callbacks.
+
+        BOB-156: the PRIMARY assertion is on CPU time (``merge_cpu``), not on
+        the heartbeat's wall-clock gap (``worst_gap``) — see the module
+        docstring section "BOB-156 — wall-clock ceilings are not a
+        load-independent oracle" for why. ``worst_gap`` is still measured and
+        still asserted, but only against a generous, load-tolerant backstop
+        (``WALL_CLOCK_HANG_CEILING_S``); it is retained as diagnostic evidence
+        of the loop-freeze phenomenon, not as the regression detector.
         """
         dedup = Deduplicator()
         dedup.merge_results(build_corpus(20))  # warm-up: lazy imports, not measured
@@ -235,9 +332,11 @@ class TestMergeResultsDoesNotBlockTheEventLoop:
         await asyncio.sleep(0.05)  # let the heartbeat reach steady state
         settled_ticks = len(gaps)
 
-        started = time.perf_counter()
+        wall_started = time.perf_counter()
+        cpu_started = time.process_time()
         merged = dedup.merge_results(corpus)  # exactly as search.py:914 calls it
-        merge_wall = time.perf_counter() - started
+        merge_cpu = time.process_time() - cpu_started
+        merge_wall = time.perf_counter() - wall_started
 
         stop.set()
         await beat
@@ -247,13 +346,35 @@ class TestMergeResultsDoesNotBlockTheEventLoop:
 
         ticks_during_merge = len(gaps) - settled_ticks
         worst_gap = max(gaps)
-        assert worst_gap <= MAX_LOOP_BLOCK_S, (
-            f"event loop was frozen for {worst_gap * 1000:.1f}ms "
-            f"(ceiling {MAX_LOOP_BLOCK_S * 1000:.0f}ms). "
-            f"merge wall-clock {merge_wall * 1000:.1f}ms over {len(corpus)} results "
-            f"-> {len(merged)} groups; only {ticks_during_merge} heartbeat tick(s) "
-            f"ran during the merge. While the loop is frozen, port 7187 answers "
-            f"nothing (BOB-137)."
+        diagnostics = (
+            f"merge_cpu={merge_cpu * 1000:.1f}ms (ceiling {MAX_MERGE_CPU_S * 1000:.0f}ms) "
+            f"merge_wall={merge_wall * 1000:.1f}ms worst_gap={worst_gap * 1000:.1f}ms "
+            f"(hang backstop {WALL_CLOCK_HANG_CEILING_S * 1000:.0f}ms) "
+            f"over {len(corpus)} results -> {len(merged)} groups; "
+            f"only {ticks_during_merge} heartbeat tick(s) ran during the merge."
+        )
+
+        # PRIMARY regression gate (BOB-156): CPU time is what "the code got
+        # slower" actually looks like, and it does not inflate merely because
+        # the host is contended (see module docstring for the measured
+        # wall-vs-CPU comparison across induced contention levels).
+        assert merge_cpu <= MAX_MERGE_CPU_S, (
+            f"merge consumed {merge_cpu * 1000:.1f}ms of CPU time "
+            f"(ceiling {MAX_MERGE_CPU_S * 1000:.0f}ms) — this is a regression in "
+            f"the work merge_results does, not host contention (CPU time is not "
+            f"inflated by scheduling delays the way wall-clock is). {diagnostics} "
+            f"This is the BOB-145 signature: while a merge this expensive runs, "
+            f"port 7187 answers nothing (BOB-137)."
+        )
+
+        # DEFENSE-IN-DEPTH backstop only: catches a genuinely catastrophic
+        # freeze (BOB-137 measured *minutes*); deliberately not the mechanism
+        # relied on to catch a re-introduced BOB-145 regression.
+        assert worst_gap <= WALL_CLOCK_HANG_CEILING_S, (
+            f"event loop was frozen for {worst_gap * 1000:.1f}ms, past the "
+            f"{WALL_CLOCK_HANG_CEILING_S * 1000:.0f}ms catastrophic-hang backstop "
+            f"(this is far above ordinary host contention). {diagnostics} While "
+            f"the loop is frozen, port 7187 answers nothing (BOB-137)."
         )
 
     def test_merge_output_is_unchanged_against_the_prefix_golden(self) -> None:

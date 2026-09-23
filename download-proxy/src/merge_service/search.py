@@ -1464,6 +1464,33 @@ class SearchOrchestrator:
         self._last_public_tracker_diag[tracker_name] = diag
         return results
 
+    def _check_search_response(self, tracker_name: str, status: int, body: str) -> bool:
+        """Classify a private-tracker search response; stash any refusal.
+
+        BOB-177: this is the ONE copy of the guard BOB-172 originally wired
+        as an identical 4-line block at all FIVE private-tracker search
+        sites (rutracker's cookie path, rutracker's credential path,
+        kinozal, nnmclub, iptorrents). A reviewer-authored mutation during
+        BOB-172's review proved the duplication was invisible to the test
+        suite at four of the five sites -- deleting just one site's copy of
+        the block left the full suite green. Collapsing to a single shared
+        call means there is exactly one place to test, and a future sixth
+        private-tracker site literally cannot ship unguarded (the
+        §11.4.251 byte-identical-fork prohibition applied to this guard).
+
+        Returns ``True`` when `body` is a usable response the caller should
+        hand to its row parser. Returns ``False`` when `status` is a
+        refusal -- the diagnostic is already stashed on
+        ``self._last_public_tracker_diag[tracker_name]`` (see
+        `_classify_upstream_http_status`) and the caller MUST return its
+        (empty) ``results`` without parsing `body`.
+        """
+        diag = _classify_upstream_http_status(status, body)
+        if diag is not None:
+            self._last_public_tracker_diag[tracker_name] = diag
+            return False
+        return True
+
     async def _search_rutracker(self, query: str, category: str) -> list[SearchResult]:
         import logging
         import os
@@ -1509,12 +1536,11 @@ class SearchOrchestrator:
                 ):
                     _http_status = resp.status
                     html_content = await resp.text()
-                # BOB-172: read the status BEFORE parsing. A refusal body has
-                # no rows, so parsing it manufactures a zero that is
-                # indistinguishable from a genuinely empty search.
-                _http_diag = _classify_upstream_http_status(_http_status, html_content)
-                if _http_diag is not None:
-                    self._last_public_tracker_diag["rutracker"] = _http_diag
+                # BOB-172/BOB-177: read the status BEFORE parsing. A refusal
+                # body has no rows, so parsing it manufactures a zero that is
+                # indistinguishable from a genuinely empty search. See
+                # `_check_search_response`.
+                if not self._check_search_response("rutracker", _http_status, html_content):
                     return results
                 if len(html_content) < 1024 and "captcha" in html_content.lower():
                     self._last_public_tracker_diag["rutracker"] = {
@@ -1589,11 +1615,10 @@ class SearchOrchestrator:
                     _http_status = resp.status
                     html_content = await resp.text()
 
-                # BOB-172: same guard on the credential path -- the refusal is
-                # served to the search endpoint regardless of how we authed.
-                _http_diag = _classify_upstream_http_status(_http_status, html_content)
-                if _http_diag is not None:
-                    self._last_public_tracker_diag["rutracker"] = _http_diag
+                # BOB-172/BOB-177: same guard on the credential path -- the
+                # refusal is served to the search endpoint regardless of how
+                # we authed. See `_check_search_response`.
+                if not self._check_search_response("rutracker", _http_status, html_content):
                     return results
 
                 if len(html_content) < 1024 and "captcha" in html_content.lower():
@@ -1773,10 +1798,8 @@ class SearchOrchestrator:
                     html = raw.decode("cp1251")
                     for c in resp.cookies.values():
                         cookie_dict[c.key] = c.value
-                # BOB-172: see `_classify_upstream_http_status`.
-                _http_diag = _classify_upstream_http_status(_http_status, html)
-                if _http_diag is not None:
-                    self._last_public_tracker_diag["kinozal"] = _http_diag
+                # BOB-172/BOB-177: see `_check_search_response`.
+                if not self._check_search_response("kinozal", _http_status, html):
                     return results
 
                 self._tracker_sessions["kinozal"] = {
@@ -1882,12 +1905,11 @@ class SearchOrchestrator:
                     _http_status = resp.status
                     raw_bytes = await resp.read()
                     html = raw_bytes.decode("cp1251", "ignore")
-                # BOB-172: the identical false-null lived on every private
-                # tracker path, not just rutracker. Fixing one and leaving the
-                # siblings would leave the same silent contributor open here.
-                _http_diag = _classify_upstream_http_status(_http_status, html)
-                if _http_diag is not None:
-                    self._last_public_tracker_diag["nnmclub"] = _http_diag
+                # BOB-172/BOB-177: the identical false-null lived on every
+                # private tracker path, not just rutracker. Fixing one and
+                # leaving the siblings would leave the same silent
+                # contributor open here. See `_check_search_response`.
+                if not self._check_search_response("nnmclub", _http_status, html):
                     return results
                 self._tracker_sessions["nnmclub"] = {
                     "cookies": cookie_jar,
@@ -2055,10 +2077,8 @@ class SearchOrchestrator:
                     _http_status = resp.status
                     html_content = await resp.text()
 
-                # BOB-172: see `_classify_upstream_http_status`.
-                _http_diag = _classify_upstream_http_status(_http_status, html_content)
-                if _http_diag is not None:
-                    self._last_public_tracker_diag["iptorrents"] = _http_diag
+                # BOB-172/BOB-177: see `_check_search_response`.
+                if not self._check_search_response("iptorrents", _http_status, html_content):
                     return results
 
                 results = self._parse_iptorrents_html(html_content, base_url)

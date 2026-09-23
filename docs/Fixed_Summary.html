@@ -190,7 +190,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td>Bug</td>
 <td>Fixed (→ Fixed.md)</td>
-<td>83</td>
+<td>85</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -205,7 +205,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td>Task</td>
 <td>Completed (→ Fixed.md)</td>
-<td>29</td>
+<td>30</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -220,7 +220,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>151</strong></td>
+<td><strong>154</strong></td>
 </tr>
 </tbody>
 </table>
@@ -1098,6 +1098,16 @@ having opened zero Markdown files when –issues/–fixed are omitted</td>
 </tr>
 <tr>
 <td>119</td>
+<td>Medium</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-156 — BOB-145 event-loop regression guard is load-sensitive and
+flaky: 8786ms under host load vs a 900-1500ms ceiling calibrated on a
+quiet host</td>
+</tr>
+<tr>
+<td>120</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1107,7 +1117,7 @@ service: faulthandler dump_traceback(all_threads=True) hits an unpatched
 CPython 3.12 defect</td>
 </tr>
 <tr>
-<td>120</td>
+<td>121</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1117,7 +1127,45 @@ interpreter: binds asyncio.events._get_event_loop_policy, a 3.13+
 private API, while production is 3.12.13</td>
 </tr>
 <tr>
-<td>121</td>
+<td>122</td>
+<td>Medium</td>
+<td>Completed (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-160 — <strong>Reported-Via:</strong> §11.4.202 reporting
+directive <code>task</code> on 2026-08-21T19:02:48Z
+<strong>Reported-By:</strong> AI <strong>What (the report,
+verbatim):</strong> Independent §11.4.209 review (IMPORTANT-3) found two
+of the feature’s strongest automated checks were never executed by any
+runner: (1) tests/ownership/test_container_writes_owned_files.py — the
+§11.4.115 RED-turned-regression-guard for FR-011/FR-007, proven via a
+docker-compose.yml revert mutation — was moved out of tests/integration/
+(commit 58d340a, to escape an autouse fixture hang) but no runner
+(ci.sh, test.sh, run-all-tests.sh) was ever extended to cover
+tests/ownership/. (2) tests/pre_build/test_<em>.sh, the §1.1
+paired-mutation meta-tests for the scripts/pre_build/check_cm_</em>.sh
+gate family, was executed by NOTHING — self-reported honestly in commit
+04742d7’s own message (‘STILL OPEN (reported, not fixed):
+tests/pre_build/ is executed by NOTHING’) but never tracked as a
+workable item (a §11.4.197 loss-of-requirements gap) and never wired
+into scripts/pre_build_verification.sh invariant 30, which globbed only
+tests/unit/test_<em>.sh. <strong>Affected scope / file-scope
+manifest:</strong> ci.sh; scripts/pre_build_verification.sh invariant 30
+(CM-BASH-UNIT-TESTS-EXECUTED) <strong>Reproduction / context:</strong>
+grep -rn test_container_writes_owned_files ci.sh test.sh
+run-all-tests.sh scripts/ returned zero runner hits (only docs/specs
+mentioned the path); grep in scripts/pre_build_verification.sh showed
+invariant 30’s for-loop globbing only tests/unit/test_</em>.sh, never
+tests/pre_build/test_<em>.sh. <strong>Acceptance criteria:</strong>
+ci.sh gains a runtime-gated pytest tests/ownership/ stage (skips
+honestly, rc=0, when no podman/docker present);
+scripts/pre_build_verification.sh invariant 30’s glob covers both
+tests/unit/test_</em>.sh and tests/pre_build/test_*.sh, verified by an
+extracted standalone run of the invariant’s exact block reporting a
+non-zero RAN count that includes files from both directories.</td>
+</tr>
+<tr>
+<td>123</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1202,7 +1250,7 @@ documents that the interim recipe has a blast radius, so nobody reads a
 workaround artifact as a regression.</td>
 </tr>
 <tr>
-<td>122</td>
+<td>124</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1257,7 +1305,7 @@ evidence-backed. NOT CLAIMED. No fix is implemented by this filing. The
 its own evidence, not a bulk UPDATE.</td>
 </tr>
 <tr>
-<td>123</td>
+<td>125</td>
 <td>Low</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1310,7 +1358,36 @@ real users legitimately share one address. NOT CLAIMED. No change made.
 Both sites still parse leftmost; the flag still defaults off.</td>
 </tr>
 <tr>
-<td>124</td>
+<td>126</td>
+<td>High</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-177 — WHAT: BOB-172 wired an identical 4-line HTTP-refusal guard
+at five private-tracker fetch sites in
+download-proxy/src/merge_service/search.py (rutracker cookie :1390,
+rutracker credential :1468, kinozal :1648, nnmclub :1761, iptorrents
+:1934). Only the rutracker COOKIE path is exercised by tests. EVIDENCE
+(reviewer-authored mutation R1, per 11.4.194(6)(d), during the BOB-172
+independent review): deleting ONLY the kinozal guard wiring
+(search.py:1655-1658) while leaving the classifier intact left the full
+merge_service suite at 883 passed, ZERO failures. The suite cannot see
+four of the five sites. FAILING SCENARIO: a refactor drops or subtly
+breaks the wiring at kinozal, nnmclub, iptorrents, or
+rutracker-credential. A 403 at that site silently folds back to
+status=empty with error=None – the exact BOB-172 signature – and no test
+reddens. FIX DIRECTION (reviewer preferred): collapse the five
+duplicated wirings into one shared helper,
+e.g. _check_search_response(tracker_name, status, body) -&gt; bool, so
+there is ONE copy to test and a sixth site cannot be added unguarded
+(11.4.251 byte-identical-fork extraction). Alternative: parametrise the
+guard tests across all five sites with per-site stub sessions.
+ACCEPTANCE: mutating the wiring at ANY of the five sites reddens at
+least one test. Prove it by running the same R1 deletion at each site in
+turn.</td>
+</tr>
+<tr>
+<td>127</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1357,7 +1434,7 @@ grep was structurally incapable of seeing the files inside it
 absence). The instrument that DOES see it is 'find &lt;dir&gt; -newermt
 &lt;t&gt;'. Any future verification of 'which files did this run touch'
 must not use porcelain output as the corpus. |
-| 125 | High | Fixed (→ Fixed.md) | Bug | — | BOB-183 — The compiled
+| 128 | High | Fixed (→ Fixed.md) | Bug | — | BOB-183 — The compiled
 Angular bundle shipped at download-proxy/src/ui/dist/frontend/browser
 still carries the BOB-164 colour-contrast defect verbatim: scanned
 2026-08-23 it reports 21 violation nodes on darcula/dark and 1 on
@@ -1374,7 +1451,7 @@ FAILS on a bundle older than its sources, the bundle is rebuilt, and
 docs/qa/BOB-164/axe_contrast_scan.py run against
 download-proxy/src/ui/dist/frontend/browser exits 0 with zero violation
 nodes and zero blocking incomplete nodes. |
-| 126 | — | Fixed (→ Fixed.md) | Bug | — | BOB-186 — workable-items diff
+| 129 | — | Fixed (→ Fixed.md) | Bug | — | BOB-186 — workable-items diff
 returned exit 0 and the verdict "DB and Markdown are in sync" on a
 PARTIAL read: invoked with --issues but without --fixed it compared 77
 Markdown items against 184 DB items and called that in sync, printing
@@ -1456,7 +1533,7 @@ they were not rebuilt. Both were proven to carry the guard and behave
 identically on the real corpus, which is the behavioural evidence this
 closure rests on. No claim is made about classes `diff` does not compare
 (revision headers, *_Summary.md). |
-| 127 | — | Fixed (→ Fixed.md) | Bug | — | BOB-190 — WHAT:
+| 130 | — | Fixed (→ Fixed.md) | Bug | — | BOB-190 — WHAT:
 ~/.local/lib/python3/site-packages contains binaries built for the
 cpython-313 ABI while the interpreter is Python 3.14, so pydantic_core
 and rpds fail to import and every test importing FastAPI dies at import
@@ -1476,7 +1553,7 @@ explicitly, not left to whoever hits it next. Discovered out-of-band by
 the fail-open triage agent, so per §11.4.238 this also owes a
 coverage-escape note: no automated check asserts the documented test
 invocation actually runs. |
-| 128 | — | Fixed (→ Fixed.md) | Bug | — | BOB-193 — WHAT: in
+| 131 | — | Fixed (→ Fixed.md) | Bug | — | BOB-193 — WHAT: in
 download-proxy/src/api/streaming.py the dedup set is written BEFORE the
 yield — seen_hashes.add() / seen_hashes_local.add() execute at :317 and
 :356 ahead of emitting. If format_event raises, the result is never sent
@@ -1504,7 +1581,7 @@ semantics — with a RED observed first per §11.4.115. Raised as MINOR-1
 by the independent review of the fail-open batch; filed rather than
 absorbed so the residual defect is not retired along with the logging
 that revealed it. |
-| 129 | — | Fixed (→ Fixed.md) | Bug | — | BOB-198 — **OPERATOR DECISION
+| 132 | — | Fixed (→ Fixed.md) | Bug | — | BOB-198 — **OPERATOR DECISION
 (2026-08-26, §11.4.66): REFUSE TO START LAN-BOUND**  The Go profile gets
 a boot-time guard: bind loopback only, or refuse to start. It does NOT
 get auth middleware in this cycle. Rationale carried with the decision:
@@ -1553,7 +1630,7 @@ live.  ACCEPTANCE: either auth middleware landed in the Go service with
 parity to the Python route set, or an explicit operator decision
 recording the Go profile as dev-only that must refuse to start LAN-bound
 - with a guard enforcing whichever is chosen. |
-| 130 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-201 — WHAT:
+| 133 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-201 — WHAT:
 scripts/ownership_repair.sh fences declared scope entries LEXICALLY
 (string normalisation + prefix/traversal refusal). A lexical fence
 cannot see a symlink sitting at an INTERMEDIATE path component. A static
@@ -1591,7 +1668,7 @@ roots still walk (11.4.201(1) - a fence that over-refuses is a
 FAIL-bluff of equal severity); (3) the in-source note and the Case 24
 fixture cite THIS item, not BOB-159; (4) paired 1.1 mutation: restore
 the un-resolved behaviour and the fixture MUST fail. |
-| 131 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-202 — WHAT:
+| 134 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-202 — WHAT:
 scripts/ownership_repair.sh:493 reads parsed scope rows with 'while
 IFS=$</span>‘ read -r e_path e_kind e_opt e_pres e_rec’. A scope entry
 that OMITS ‘kind’ emits the row ‘<path>’. TAB is an IFS-WHITESPACE
@@ -1668,7 +1745,7 @@ check must exercise a row with a genuinely empty middle field, not
 merely a well-formed one.</td>
 </tr>
 <tr>
-<td>132</td>
+<td>135</td>
 <td>Critical</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1746,7 +1823,7 @@ the 7188 surface is not overlooked when this item’s scope is settled —
 and so nobody later”discovers” it as new.</td>
 </tr>
 <tr>
-<td>133</td>
+<td>136</td>
 <td>critical</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1856,7 +1933,7 @@ deliberate degradation in its GoDoc. Cosmetic under-report, not an
 integrity issue; recorded so it is not re-investigated.</td>
 </tr>
 <tr>
-<td>134</td>
+<td>137</td>
 <td>major</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1964,7 +2041,7 @@ the list. The tests/ question (324 files) is an operator §11.4.66
 decision; production-only is defensible but currently UNDECLARED.</td>
 </tr>
 <tr>
-<td>135</td>
+<td>138</td>
 <td>critical</td>
 <td>Obsolete (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2024,7 +2101,7 @@ corruption is recorded here rather than quietly overwritten, per
 §11.4.6.</td>
 </tr>
 <tr>
-<td>136</td>
+<td>139</td>
 <td>critical</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2108,10 +2185,10 @@ direction can go green by refusing everything. That is what makes this
 RED fix-direction-agnostic rather than a vote. THE FIX, NOT APPLIED —
 scripts/ownership_repair.sh:963: - find_args+=(( ! -uid “<span
 class="math inline">${OP_UID}" -o ! -gid "$</span>{OP_GID}” ) -printf
-’%U 137</td>
+’%U 140</td>
 </tr>
 <tr>
-<td>139</td>
+<td>142</td>
 <td>major</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2154,7 +2231,7 @@ substring). DISCOVERY CHANNEL (§11.4.238): found by the BOB-206
 verification stream.</td>
 </tr>
 <tr>
-<td>140</td>
+<td>143</td>
 <td>critical</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2315,7 +2392,7 @@ from two independent streams, is not a coincidence rate — it is the
 defect operating normally.</td>
 </tr>
 <tr>
-<td>141</td>
+<td>144</td>
 <td>major</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2355,7 +2432,7 @@ refusal here would break real deploys (§11.4.201(1)). DISCOVERY CHANNEL
 boba-ctl qualifies as a §11.4.252 surface.</td>
 </tr>
 <tr>
-<td>142</td>
+<td>145</td>
 <td>critical</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2410,7 +2487,7 @@ positives. Not by the automated QA regime — and the regime that WAS
 pointed here reported the wrong three lines.</td>
 </tr>
 <tr>
-<td>143</td>
+<td>146</td>
 <td>major</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2454,7 +2531,7 @@ found by the concealed-hits triage stream. Not by the automated QA
 regime.</td>
 </tr>
 <tr>
-<td>144</td>
+<td>147</td>
 <td>minor</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2485,7 +2562,7 @@ BOB-207 stream while tracing an unrelated behaviour. Not by the
 automated QA regime.</td>
 </tr>
 <tr>
-<td>145</td>
+<td>148</td>
 <td>critical</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2646,7 +2723,7 @@ which point its already-present marker and table row clear it. The
 mechanism is its own first customer.</td>
 </tr>
 <tr>
-<td>146</td>
+<td>149</td>
 <td>major</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2693,7 +2770,7 @@ QA regime — and notably not by the two previous fixes of this same
 class, neither of which asked why it happened.</td>
 </tr>
 <tr>
-<td>147</td>
+<td>150</td>
 <td>critical</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2738,7 +2815,7 @@ stream while surveying invariant 30 more widely than its brief required
 boundary honestly, which is what prompted the wider survey.</td>
 </tr>
 <tr>
-<td>148</td>
+<td>151</td>
 <td>major</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2805,7 +2882,7 @@ be added. Not by the automated QA regime — and the regime cannot see it,
 which is the point.</td>
 </tr>
 <tr>
-<td>149</td>
+<td>152</td>
 <td>critical</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2829,7 +2906,7 @@ invariant invokes is itself tracked. Surfaced by the BOB-102 round-13
 remediation and independently verified 2026-08-27.</td>
 </tr>
 <tr>
-<td>150</td>
+<td>153</td>
 <td>Critical</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2860,7 +2937,7 @@ discipline (every discovered defect lands as a tracked item) even though
 it is being closed in the same session it was found.</td>
 </tr>
 <tr>
-<td>151</td>
+<td>154</td>
 <td>Minor</td>
 <td>Completed (→ Fixed.md)</td>
 <td>Task</td>

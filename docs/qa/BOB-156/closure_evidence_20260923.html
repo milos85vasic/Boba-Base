@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260923</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260923</h1>
+</header>
+<h1 id="bob-156-closure-evidence-2026-09-23">BOB-156 closure evidence —
+2026-09-23</h1>
+<h2 id="root-cause-fix">Root cause + fix</h2>
+<p>The BOB-145 event-loop-blocking regression guard measured
+<code>worst_gap</code> (max wall-clock heartbeat gap) against a fixed
+absolute ceiling (900ms→1500ms). <code>merge_results</code> never
+yields, so <code>worst_gap ≈ merge_wall</code> — the ceiling was
+effectively an absolute wall-clock bound on <code>merge_results</code>’s
+duration. Empirically measured on this host: wall-clock time for this
+pure-CPU code inflates dramatically under contention from UNRELATED
+processes (up to ~20x observed at 7.5x/core oversubscription), while
+<code>time.process_time()</code> (actual CPU-seconds consumed) does not
+— the OS scheduler time-slices the process among more competitors,
+stretching wall-clock without changing the CPU work actually done. The
+guard was measuring host business, not code regression — the exact
+“weather report” symptom.</p>
+<p><strong>Fix</strong>: <code>time.process_time()</code>-measured CPU
+time is now the PRIMARY regression gate
+(<code>MAX_MERGE_CPU_S = 1.5</code>, same margin logic as the original
+design — &gt;7x above worst observed contended CPU, &gt;2x below the
+pre-fix regression’s CPU). The heartbeat/<code>worst_gap</code>
+mechanism is retained as diagnostic evidence plus a generous 15s
+wall-clock backstop that only fires on a genuinely catastrophic freeze
+(BOB-137 measured minutes), never on ordinary contention. No production
+code changed — this was a measurement-methodology defect in the test,
+not a code regression; <code>deduplicator.py</code> confirmed
+byte-identical (sha256 <code>89b20304...df3cf8</code>, matching the hash
+cited in the original BOB-145 fix commit) before and after.</p>
+<h2
+id="independently-re-verified-this-session-coordinator-including-a">Independently
+re-verified this session (coordinator, including a</h2>
+<p>genuine paired-mutation revert/restore against the real pre-fix
+commit)</p>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/merge_service/test_dedup_event_loop_blocking.py -v --import-mode=importlib
+... 7 passed in 1.01s
+
+$ sha256sum download-proxy/src/merge_service/deduplicator.py
+89b203043e29584a565b34ca71af2f16e399ab7e1f1e011bbdb6e41a94df3cf8  (unchanged)
+
+$ git show 0572b71^:download-proxy/src/merge_service/deduplicator.py &gt; deduplicator.py   # revert to pre-BOB-145
+$ .venv/bin/python -m pytest tests/unit/merge_service/test_dedup_event_loop_blocking.py::TestMergeResultsDoesNotBlockTheEventLoop::test_merge_does_not_starve_a_concurrent_coroutine -v --import-mode=importlib
+FAILED — AssertionError: merge consumed 5551.8ms of CPU time (ceiling 1500ms) —
+  this is a regression in the work merge_results does, not host contention
+  ... This is the BOB-145 signature: while a merge this expensive runs,
+  port 7187 answers nothing (BOB-137).
+
+$ (restored fixed deduplicator.py, sha256 confirmed byte-identical)
+$ .venv/bin/python -m pytest tests/unit/merge_service/test_dedup_event_loop_blocking.py -q --import-mode=importlib
+7 passed in 1.06s</code></pre>
+<p>Genuine paired-mutation confirmed independently: reverting the real
+code that BOB-145 fixed reproduces the exact CPU-time-based failure
+signature the new guard is designed to catch; restoring returns to
+green.</p>
+<h2
+id="honest-boundary-not-silenced-per-the-subagents-own-report">Honest
+boundary (not silenced, per the subagent’s own report)</h2>
+<p>CPU-time-as-oracle has a measured, stated limit (~1.3-1.9x overhead
+even under extreme contention, from cache/context-switch effects) — the
+chosen 1.5s ceiling has ample margin either side of this. Robustness
+across genuinely different/slower HARDWARE (vs. contention specifically
+on this one 16-core host) was argued by analogy, not independently
+measured on a second machine (none available in scope).</p>
+<h2 id="git-diff-stat">git diff –stat</h2>
+<pre><code>tests/unit/merge_service/test_dedup_event_loop_blocking.py | 155 ++++++++++++++++++---
+1 file changed, 138 insertions(+), 17 deletions(-)</code></pre>
+</body>
+</html>

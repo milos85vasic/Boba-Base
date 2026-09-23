@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260923</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260923</h1>
+</header>
+<h1 id="bob-160-closure-evidence-2026-09-23">BOB-160 closure evidence —
+2026-09-23</h1>
+<h2 id="both-acceptance-criteria-now-genuinely-met">Both acceptance
+criteria now genuinely met</h2>
+<p><strong>(1) <code>ci.sh</code> gains a runtime-gated pytest
+<code>tests/ownership/</code> stage</strong> — already present (line
+~324):
+<code>"$PYTHON" -m pytest "$SCRIPT_DIR/tests/ownership/" -v --import-mode=importlib --tb=short --timeout=180</code>,
+landed by an unrelated prior commit before this session.</p>
+<p><strong>(2) <code>scripts/pre_build_verification.sh</code> invariant
+30’s glob covers both <code>tests/unit/test_*.sh</code> and
+<code>tests/pre_build/test_*.sh</code></strong> — resolved THIS SESSION
+by BOB-222’s fix (tree-wide
+<code>find "${PROJECT_ROOT}/tests" -type f -name 'test_*.sh'</code>
+discovery, replacing the old three-directory hand-maintained glob).</p>
+<h2 id="independently-re-verified-this-session">Independently
+re-verified this session</h2>
+<pre><code>$ ls tests/ownership/
+__init__.py __pycache__ test_container_writes_owned_files.py
+
+$ grep -n &quot;tests/ownership&quot; ci.sh
+324: if &quot;$PYTHON&quot; -m pytest &quot;$SCRIPT_DIR/tests/ownership/&quot; -v ...
+
+$ (extracted standalone run of invariant 30&#39;s exact discovery block)
+unit=32 pre_build=22 total=59</code></pre>
+<p>The invariant’s own discovery genuinely returns a non-zero RAN count
+including files from BOTH <code>tests/unit/</code> (32) AND
+<code>tests/pre_build/</code> (22) — exactly the item’s own stated
+acceptance criterion for part (2), verified directly.</p>
+<h2 id="honest-boundary">Honest boundary</h2>
+<p>Part (1) was already resolved before this session by an unrelated
+commit (the tracker was never synced). Part (2) is a direct, intended
+consequence of this session’s own BOB-222 fix, not independently
+re-implemented here.</p>
+<h2 id="git-diff-stat">git diff –stat</h2>
+<pre><code>(none — read-only verification; both fixes already landed via other work)</code></pre>
+</body>
+</html>
