@@ -26,9 +26,18 @@ python3 tools/plugin_update_automation.py --update --dry-run
 ```
 
 The script validates each downloaded plugin with `python3 -m py_compile`
-before installing it (constitution Principle II). If validation fails
-the backup is restored. Reports are written to stdout in JSON so the
-tool can be chained into CI later.
+before installing it (constitution Principle II). If validation fails,
+nothing is written -- the update is refused before any file is touched.
+Once validation and the pinned-hash check both pass, the new content is
+written to a private temp file and renamed onto the target atomically,
+so the existing plugin is never truncated in place; a write failure
+after that point leaves the previous plugin file completely untouched
+(no separate restore step is needed). A timestamped `.bak` copy of the
+previous file is still created under `plugins/.backups/` before every
+update, purely for manual recovery/diffing. Reports are written as JSON
+to the `--output` file (`plugin_update_report.json` by default), not to
+stdout; stdout only gets a short human-readable summary and a
+confirmation line naming where the report was saved.
 
 ## Adding a new tool
 
@@ -48,8 +57,9 @@ tool can be chained into CI later.
   at the repo root: `start.sh`, `stop.sh`, `setup.sh`, `ci.sh`).
 - No network calls during import; network only happens inside `main()`
   so the script is safe to import for unit testing.
-- Logging uses the standard `logging` module; scripts write to stderr,
-  reports to stdout.
+- Console progress/status messages go to stdout; structured JSON
+  reports are written to a file (see each tool's own usage section
+  for the exact flag/default path), not printed to stdout.
 
 ## Tests
 

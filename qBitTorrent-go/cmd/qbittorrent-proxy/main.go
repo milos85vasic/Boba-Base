@@ -106,27 +106,52 @@ func main() {
 
 	v1 := r.Group("/api/v1")
 	{
+		// Left OPEN, deliberately, for parity with the Python merge
+		// service's own choices (config/lan_route_auth_policy.yaml):
+		// /search, /search/sync and /search/:id/abort are public-by-design
+		// (query operations / cancelling the caller's own in-memory search
+		// -- no persistent state); /auth/qbittorrent is a separately
+		// tracked known-gap on BOTH builds (it accepts qBittorrent WebUI
+		// credentials, a different credential entirely from BOBA_API_TOKEN,
+		// and gating it is out of this item's scope).
 		v1.POST("/search", api.SearchHandler(searchSvc))
 		v1.POST("/search/sync", api.SearchSyncHandler(searchSvc))
 		v1.GET("/search/stream/:id", api.SearchStreamHandler(searchSvc))
 		v1.GET("/search/:id", api.GetSearchHandler(searchSvc))
 		v1.POST("/search/:id/abort", api.AbortSearchHandler(searchSvc))
-
-		v1.POST("/download", api.DownloadHandler(searchSvc, cfg.QBittorrentURL(), cfg.QBittorrentUsername, cfg.QBittorrentPassword))
-		v1.POST("/download/file", api.DownloadFileHandler(searchSvc))
-		v1.POST("/magnet", api.MagnetHandler(searchSvc))
 		v1.GET("/downloads/active", api.ActiveDownloadsHandler(cfg.QBittorrentURL(), cfg.QBittorrentUsername, cfg.QBittorrentPassword))
 		v1.POST("/auth/qbittorrent", api.QBittorrentAuthHandler(cfg.QBittorrentURL()))
-
 		v1.GET("/theme", api.GetThemeHandler(themeStore))
-		v1.PUT("/theme", api.PutThemeHandler(themeStore))
-
 		v1.GET("/hooks", api.ListHooksHandler(hookStore))
-		v1.POST("/hooks", api.CreateHookHandler(hookStore))
-		v1.DELETE("/hooks/:id", api.DeleteHookHandler(hookStore))
 	}
 
+	// BOB-203: genuine auth-enforcing middleware, for parity with the
+	// Python merge service's Depends(require_api_token) wiring on the SAME
+	// routes (download, download/file, magnet, PUT theme, hooks create/
+	// delete, schedules create/delete). middleware.APIToken() passes
+	// GET/HEAD/OPTIONS through unconditionally, so sharing this group's
+	// "/api/v1" prefix with the open group above registers no conflicting
+	// route (each method+path pair is still declared exactly once).
+	// Fail-open-when-BOBA_API_TOKEN-unset is preserved -- see APIToken's
+	// doc comment.
+	v1Protected := r.Group("/api/v1")
+	v1Protected.Use(middleware.APIToken())
+	{
+		v1Protected.POST("/download", api.DownloadHandler(searchSvc, cfg.QBittorrentURL(), cfg.QBittorrentUsername, cfg.QBittorrentPassword))
+		v1Protected.POST("/download/file", api.DownloadFileHandler(searchSvc))
+		v1Protected.POST("/magnet", api.MagnetHandler(searchSvc))
+		v1Protected.PUT("/theme", api.PutThemeHandler(themeStore))
+		v1Protected.POST("/hooks", api.CreateHookHandler(hookStore))
+		v1Protected.DELETE("/hooks/:id", api.DeleteHookHandler(hookStore))
+	}
+
+	// The Python schedules routes are ALL Depends(require_api_token)-gated
+	// except the GET list, and middleware.APIToken() already passes GET
+	// through unconditionally, so the whole group may safely share one
+	// middleware-carrying group (unlike /api/v1 above, there is no
+	// deliberately-open POST/DELETE route in this group to keep separate).
 	schedules := r.Group("/api/v1/schedules")
+	schedules.Use(middleware.APIToken())
 	{
 		schedules.GET("", api.ListSchedulesHandler(scheduleStore))
 		schedules.POST("", api.CreateScheduleHandler(scheduleStore))

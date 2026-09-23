@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260923</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260923</h1>
+</header>
+<h1 id="bob-218-closure-evidence-2026-09-23">BOB-218 closure evidence —
+2026-09-23</h1>
+<h2 id="three-defects-all-fixed-via-tdd">Three defects, all fixed via
+TDD</h2>
+<p><strong>Defect 1</strong> (main — false rollback claim with real
+downstream harm): <code>tools/README.md</code> claimed “the backup is
+restored” on write failure; <code>shutil.copy2</code> only ever copied
+FORWARD (backup creation), never restored it; the plugin write opened in
+truncating mode, so a mid-write failure left a corrupt, non-importable
+plugin the operator believed was restored. Fixed by implementing genuine
+atomicity — new <code>_atomic_write()</code> writes to a private temp
+file in the target’s own directory, then <code>os.replace()</code>s it
+onto the target (a same-filesystem atomic rename on POSIX); the target
+is NEVER opened in truncating mode in the write path, so any failure
+leaves it byte-identical to its pre-attempt state. README corrected to
+describe this accurately.</p>
+<p><strong>Defect 2</strong> (doc-only): README claimed JSON output goes
+to stdout; the code already correctly wrote to a file
+(<code>open(args.output, "w")</code>) — only the doc claim was wrong
+(the code needed no fix here). README corrected in both places it made
+this claim.</p>
+<p><strong>Defect 3</strong> (signal handling):
+<code>_extract_version</code>’s bare <code>except:</code> silently
+swallowed <code>KeyboardInterrupt</code> during the 14-URL upstream
+sweep. Narrowed to <code>except (OSError, UnicodeDecodeError):</code>,
+letting <code>KeyboardInterrupt</code>/<code>SystemExit</code> propagate
+normally (they inherit from <code>BaseException</code>, not
+<code>Exception</code>, so this narrowing alone is sufficient).</p>
+<h2
+id="independently-re-verified-this-session-coordinator">Independently
+re-verified this session (coordinator)</h2>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/test_bob218_plugin_update_rollback.py -v --import-mode=importlib
+... 7 passed in 0.45s
+
+$ .venv/bin/python -m pytest tests/unit/test_bob217_plugin_update_pinned_hash_verification.py -v --import-mode=importlib
+... 7 passed in 0.50s
+(confirms the earlier BOB-217 supply-chain fix, landed earlier this
+session in the same file, is unaffected)
+
+$ .venv/bin/ruff check tools/plugin_update_automation.py
+All checks passed!
+
+$ grep -n &quot;_atomic_write\|os.replace&quot; tools/plugin_update_automation.py
+234:  ... _atomic_write never opens ...
+238:  self._atomic_write(local_path, upstream_content)
+250:  def _atomic_write(self, target_path: str, content: str) -&gt; None:
+275:  os.replace(tmp_path, target_path)</code></pre>
+<p>Implementation confirmed present exactly as reported.</p>
+<h2 id="honest-boundary-not-silenced">Honest boundary (not
+silenced)</h2>
+<p><code>_atomic_write</code>’s temp-file naming (pid + microsecond
+timestamp) is not <code>tempfile.mkstemp</code>-grade collision-proof —
+a deliberate, documented proportionality choice for a single-host,
+single-invocation developer tool with no pre-existing concurrent-writer
+requirement. <code>os.replace</code> itself (a single atomic POSIX
+syscall) is not separately failure-injected in the RED test, only the
+temp-file write step is — judged an acceptable, lower-priority gap given
+the specific acceptance criterion (“write to temp file and rename
+atomically rather than truncating in place,” which is satisfied).</p>
+<h2 id="git-diff-stat">git diff –stat</h2>
+<pre><code>tools/README.md                   | 20 +++++++++----
+tools/plugin_update_automation.py | 63 +++++++++++++++++++++++++++++++++++++--
+2 files changed, 75 insertions(+), 8 deletions(-)</code></pre>
+<p>Plus new
+<code>tests/unit/test_bob218_plugin_update_rollback.py</code> (7
+tests).</p>
+</body>
+</html>

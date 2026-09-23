@@ -24,6 +24,7 @@ import subprocess
 import logging
 import re
 import ipaddress
+import hmac
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -716,6 +717,73 @@ class DownloadHandler(BaseHTTPRequestHandler):
         self._send_rate_limited(limit, remaining, reset_after)
         return False
 
+    # -- BOB-203 real auth middleware ------------------------------------
+    # This handler is a blind reverse proxy: proxy_to_qbittorrent() forwards
+    # EVERY request byte-for-byte to qBittorrent's own API, including
+    # mutating torrent control (stop/pause/delete/add/...). Measured live
+    # 2026-09-xx: a caller holding a qBittorrent WebUI session (trivially
+    # obtainable -- the WebUI credentials are the hardcoded admin/admin,
+    # see CLAUDE.md "Critical Constraints") could call
+    # POST /api/v2/torrents/stop through THIS proxy and get a 200 with ZERO
+    # awareness of BOBA_API_TOKEN anywhere on this path -- the token exists
+    # and is armed in .env, but nothing on :7186 ever asked for it.
+    #
+    # _boba_token_ok()/_send_unauthorized() mirror
+    # download-proxy/src/api/routes.py::require_api_token EXACTLY (env-gated
+    # at request time, constant-time comparison via hmac.compare_digest,
+    # dual header support, fail-open when BOBA_API_TOKEN is unset --
+    # §11.4.122, unchanged by this fix) but are REIMPLEMENTED here rather
+    # than imported: this module is loaded by qBittorrent's nova3 engine
+    # loader as a search plugin and therefore imports NOTHING but the
+    # standard library (see the BOB-111 rate-limiting comment above) --
+    # importing from download-proxy/src/api would both couple the plugin
+    # surface to the FastAPI app's dependency tree and race the OTHER
+    # thread's sys.path mutation in download-proxy/src/main.py::main
+    # (proxy_thread and fastapi_thread start concurrently, each inserting
+    # its own root into sys.path from inside its own thread target).
+    #
+    # SCOPE: every POST reaching this handler goes to qBittorrent's mutating
+    # API surface EXCEPT the two session-lifecycle endpoints
+    # (auth/login, auth/logout) -- gating those would break the WebUI's own
+    # login flow (a browser POSTs username/password there with no way to
+    # also attach a BOBA_API_TOKEN header) without closing any additional
+    # exposure: even WITH a qBittorrent session obtained through the
+    # (deliberately, per CLAUDE.md) hardcoded admin/admin credentials, every
+    # actual mutation below now ALSO requires the separate BOBA_API_TOKEN
+    # secret. GET requests are excluded from this gate entirely -- qBittorrent's
+    # v2 API has no GET endpoint that mutates state, and this handler
+    # implements no do_PUT/do_PATCH/do_DELETE (those methods already get a
+    # stock 501 from BaseHTTPRequestHandler, unauthenticated or not).
+    _AUTH_EXEMPT_POST_PATHS = frozenset({"/api/v2/auth/login", "/api/v2/auth/logout"})
+
+    def _boba_token_ok(self):
+        """``True`` iff this request may proceed without a caller-supplied token."""
+        token = os.environ.get("BOBA_API_TOKEN", "").strip()
+        if not token:
+            return True  # OPEN -- default, no-auth contract preserved (§11.4.122).
+
+        supplied = ""
+        auth_header = self.headers.get("Authorization", "") or ""
+        if auth_header.lower().startswith("bearer "):
+            supplied = auth_header[7:].strip()
+        if not supplied:
+            supplied = (self.headers.get("X-Boba-Token", "") or "").strip()
+
+        return bool(supplied) and hmac.compare_digest(supplied, token)
+
+    def _send_unauthorized(self):
+        """401 -- same body shape as api/routes.py::require_api_token's 401,
+        so a caller of :7186 and :7187 sees one consistent contract."""
+        payload = b'{"detail":"Unauthorized: valid API token required"}'
+        try:
+            self.send_response(401)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
     def do_GET(self):
         if not self._rate_limit_ok(None):
             return
@@ -725,6 +793,10 @@ class DownloadHandler(BaseHTTPRequestHandler):
         content_length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_length) if content_length > 0 else None
         if not self._rate_limit_ok(body):
+            return
+        path = urllib.parse.urlparse(self.path).path
+        if path not in self._AUTH_EXEMPT_POST_PATHS and not self._boba_token_ok():
+            self._send_unauthorized()
             return
         self.handle_request(body)
 
@@ -805,12 +877,25 @@ class DownloadHandler(BaseHTTPRequestHandler):
 
             for header, value in self.headers.items():
                 header_lower = header.lower()
-                if header_lower not in ["host", "content-length"]:
-                    if header_lower == "referer":
-                        value = f"http://localhost:{QBITTORRENT_PORT}"
-                    elif header_lower == "origin":
-                        value = f"http://localhost:{QBITTORRENT_PORT}"
-                    req.add_header(header, value)
+                # BOB-203: "authorization" / "x-boba-token" are consumed by
+                # THIS proxy's own gate (_boba_token_ok) and mean nothing to
+                # qBittorrent, which has no bearer-token concept. Forwarding
+                # them anyway is not a no-op: qBittorrent's embedded web
+                # server was measured (2026-09-xx, directly against :7185,
+                # session cookie present, no proxy involved) to answer ANY
+                # request carrying an Authorization header with a 403 --
+                # independent of this fix, and independent of whether the
+                # header value means anything to it. Leaving them on the
+                # forwarded request would make the exact header a caller
+                # uses to satisfy OUR gate the thing that then gets THEIR
+                # own otherwise-valid request rejected downstream.
+                if header_lower in ("host", "content-length", "authorization", "x-boba-token"):
+                    continue
+                if header_lower == "referer":
+                    value = f"http://localhost:{QBITTORRENT_PORT}"
+                elif header_lower == "origin":
+                    value = f"http://localhost:{QBITTORRENT_PORT}"
+                req.add_header(header, value)
 
             with urllib.request.urlopen(req, timeout=30) as response:
                 # BYTE-FOR-BYTE PASS-THROUGH. The proxy MUST NOT rewrite

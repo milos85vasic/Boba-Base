@@ -191,6 +191,17 @@ command -v timeout >/dev/null 2>&1 || abort "timeout absent — the extracted lo
 # Extract the REAL suite-execution loop AND the post-loop declaration-table
 # sweep, by content marker (never by line number).
 #
+# BEGIN-ANCHOR UPDATED (BOB-222): the loop used to open with a literal
+# `for _bt in .../tests/unit/test_*.sh ...` glob header, which doubled as
+# this test's begin-marker. BOB-222 replaced the hand-glob with a tree-
+# derived `find` discovery (`BASH_TEST_DISCOVERED=()` populated via
+# `mapfile` immediately above the loop) so tests/security/ — and any future
+# tests/<newdir>/ — needs no hand edit to be covered. The old pattern no
+# longer matches ANY line in the gate (control-needle-proven: it ABORTED
+# here with "ends at the END marker but contains no table sweep" the moment
+# BOB-222 landed, exit 3). `BASH_TEST_DISCOVERED=()` is the new stable
+# content marker — still a marker, never a line number.
+#
 # The three-way split is deliberate. Deleting the SWEEP is a regression the
 # harness must report as P7 RED (not as blindness), so the `else` branch is a
 # guard, not dead compatibility code. But deleting only the END MARKER while
@@ -200,13 +211,13 @@ command -v timeout >/dev/null 2>&1 || abort "timeout absent — the extracted lo
 SWEEP_WIRED=0
 if grep -q '^# END-INVARIANT-30-SUITE-LOOP$' "${GATE}"; then
     SWEEP_WIRED=1
-    LOOP_SRC="$(sed -n '/^for _bt in .*tests\/unit\/test_\*\.sh/,/^# END-INVARIANT-30-SUITE-LOOP$/p' "${GATE}")"
+    LOOP_SRC="$(sed -n '/^BASH_TEST_DISCOVERED=()$/,/^# END-INVARIANT-30-SUITE-LOOP$/p' "${GATE}")"
     grep -q 'expected_red_unmatched_rows' <<<"${LOOP_SRC}" \
       || abort "control needle: the extracted region ends at the END marker but contains no table sweep — wrong region captured"
 elif grep -q 'expected_red_unmatched_rows' "${GATE}"; then
     abort "control needle: the gate still calls expected_red_unmatched_rows but its '# END-INVARIANT-30-SUITE-LOOP' extraction marker is GONE — restore the marker; falling back here would report a dead-row failure for a missing-marker fault"
 else
-    LOOP_SRC="$(sed -n '/^for _bt in .*tests\/unit\/test_\*\.sh/,/^done$/p' "${GATE}")"
+    LOOP_SRC="$(sed -n '/^BASH_TEST_DISCOVERED=()$/,/^done$/p' "${GATE}")"
 fi
 [[ -n "${LOOP_SRC}" ]] || abort "control needle: could not extract invariant 30's loop from ${GATE} — instrument blind"
 grep -q 'BASH_TEST_FAILURES+=' <<<"${LOOP_SRC}" \

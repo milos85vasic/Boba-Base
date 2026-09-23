@@ -46,6 +46,12 @@ docs/build-stats.ndjson
 # 2026-09-01 despite being in daily use by pre_build_verification.sh.
 !scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh
 !tests/pre_build/test_check_cm_qbittorrent_webui_credentials.sh
+# BOB-219: the tracked docs/guides/tracker-credentials.md's own §11.4.65
+# export twins — no secret material, generated HTML/PDF of a plain-text
+# guide — silently existed on disk uncommitted (a fresh clone would be
+# missing them while the authoring host looked complete).
+!docs/guides/tracker-credentials.html
+!docs/guides/tracker-credentials.pdf
 # Angular frontend credentials management UI (source, no secrets).
 !frontend/src/app/jackett/credentials/
 !frontend/src/app/jackett/credentials/credential-edit-dialog.component.ts
@@ -72,6 +78,22 @@ RUTRACKER_*
 # Task #82: whitelist docs/qa/**/*.log evidence files (independent stress+chaos + BOB-076→116 relabel subagents both discovered this dropping-evidence bug)
 !docs/qa/**/*.log
 logs/
+
+# BOB-219 (partial — see docs/qa/BOB-219/closure_evidence_20260923.md for
+# the full honest-boundary note): docs/qa/**/*.log above only rescues the
+# *.log deny above it — a QA-evidence file caught by a DIFFERENT deny
+# pattern elsewhere in this file (e.g. a captured `loginctl_user_state.txt`,
+# matched by *_user*) is STILL silently swallowed despite living under
+# docs/qa/. A blanket `!docs/qa/**` was TRIED and REJECTED in review
+# (§11.4.201(1)): measured on a scratch `docs/qa/FAKE/.env`, it rescues a
+# genuine secret file too — and a narrower re-deny of the word-substring
+# globs (*credentials*/*_password*/etc.) scoped to docs/qa/** would risk
+# reproducing the SAME false-null one directory down, on legitimate
+# auth-testing QA evidence whose SUBJECT is credentials (this project
+# authors exactly that kind of evidence routinely — e.g. BOB-198/BOB-203's
+# runtime-auth-verification captures). No safe blanket fix exists yet;
+# left as an explicit, tracked follow-up rather than shipped either
+# under-protective or over-eager.
 
 # Temporary files
 *.tmp

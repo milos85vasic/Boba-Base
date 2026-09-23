@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260923</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260923</h1>
+</header>
+<h1 id="bob-203-closure-evidence-2026-09-23">BOB-203 closure evidence —
+2026-09-23</h1>
+<h2 id="operator-decision-implemented">Operator decision
+implemented</h2>
+<p>“Real auth middleware on 7186/7187” — wire BOBA_API_TOKEN into
+qbittorrent-proxy-go’s actual service and add genuine auth-enforcing
+middleware to both 7186 and 7187.</p>
+<h2 id="root-cause-confirmed-independently">Root cause (confirmed
+independently)</h2>
+<p><strong>Port 7186</strong>
+(<code>plugins/download_proxy.py::DownloadHandler</code>, a raw stdlib
+HTTP handler that blindly reverse-proxies every request to qBittorrent)
+had ZERO awareness of <code>BOBA_API_TOKEN</code> anywhere — this was
+the real, live, exploitable defect the item measured. <strong>Port
+7187</strong> (FastAPI, <code>download-proxy/src/api/*.py</code>)
+already had every mutating route protected via
+<code>Depends(require_api_token)</code> or a documented exemption by the
+time this item was worked — a prior, unrelated commit had already closed
+that half; the subagent’s own investigation found no 7187 code change
+was needed and confirmed this live (all four originally-cited 7187
+routes independently re-measured returning 401 unauthenticated, not the
+originally-reported 422/404).</p>
+<h2 id="fix">Fix</h2>
+<p><code>plugins/download_proxy.py</code>: every mutating POST now
+requires <code>BOBA_API_TOKEN</code> (when armed) via
+<code>Authorization: Bearer</code> or <code>X-Boba-Token</code>,
+constant-time compared (<code>hmac.compare_digest</code>), matching the
+existing <code>require_api_token</code> design exactly (same
+fail-open-when-unset policy, §11.4.122, unchanged) — except the two
+session-lifecycle endpoints (<code>/api/v2/auth/login</code>,
+<code>/api/v2/auth/logout</code>), deliberately exempted since the
+WebUI’s own browser login POST cannot attach a custom header, and
+exempting them closes no additional exposure (every actual mutation past
+login still requires the separate token). Also fixed a downstream header
+collision discovered during implementation:
+<code>Authorization</code>/<code>X-Boba-Token</code> are now stripped
+before forwarding to qBittorrent (qBittorrent’s own server answers ANY
+request carrying an <code>Authorization</code> header with its own
+unrelated 403 regardless of session validity — without stripping, a
+caller correctly satisfying the new gate would then get rejected by
+qBittorrent itself).</p>
+<p><code>docker-compose.yml</code>: <code>BOBA_API_TOKEN</code> now also
+injected into <code>qbittorrent-proxy-go</code> (previously only
+<code>download-proxy</code> received it).</p>
+<p><code>qBitTorrent-go/internal/middleware/apitoken.go</code> (new): a
+Gin middleware mirroring <code>require_api_token</code>/the Python fix
+exactly, wired via a scoped route group covering only the routes with a
+Python-side <code>Depends(require_api_token)</code> counterpart — true
+route-level parity, not a blanket lockdown, matching the Python
+service’s own <code>public-by-design</code>/ <code>known-gap</code>
+route exemptions. This profile (<code>--profile go</code>) is opt-in and
+not running in this deployment, and is already loopback-bound by a prior
+unrelated operator decision (BOB-198) — this piece is defense-in-depth,
+not closing an active exposure; the subagent was explicit about this
+distinction and it is preserved here.</p>
+<h2 id="findings-on-the-two-secondary-investigation-points">Findings on
+the two secondary investigation points</h2>
+<p><strong>7185 (qBittorrent itself)</strong>: confirmed real, but an
+ALREADY-KNOWN, ALREADY-DOCUMENTED, ALREADY-ACCEPTED risk (the hardcoded
+<code>admin</code>/<code>admin</code> WebUI credentials, per
+<code>CLAUDE.md</code> — explicitly “do not change”). qBittorrent
+enforces its own auth independently and is not bypassed by the proxy. No
+new code defect; out of this item’s scope to alter.</p>
+<p><strong>7189 (<code>boba-jackett</code>)
+<code>/api/v1/jackett/credentials</code></strong>: investigated and
+REFUTED. <code>HandleListCredentials</code> serializes only metadata
+booleans
+(<code>has_username</code>/<code>has_password</code>/<code>has_cookies</code>)
+— the struct’s own comment states plaintext values are never serialized.
+No raw credential VALUES are returned by this or any other route. No new
+finding; nothing filed.</p>
+<h2
+id="independently-re-verified-this-session-coordinator">Independently
+re-verified this session (coordinator)</h2>
+<pre><code>$ .venv/bin/python -m pytest tests/security/test_download_proxy_boba_token_auth.py -v --import-mode=importlib
+... 19 passed in 12.04s
+
+$ cd qBitTorrent-go &amp;&amp; go build ./... &amp;&amp; go test ./internal/middleware/... -run &quot;TestRED_UnsetToken|TestGREEN_SetToken|TestGREEN_EmptyBearerIsRejected|TestGREEN_TokenReadPerRequest&quot; -v
+BUILD OK; 7/7 PASS
+
+$ .venv/bin/python -m pytest tests/security/test_hooks_schedules_auth.py tests/unit/api_layer/test_download_token_auth.py tests/security/test_rate_limit_download_proxy.py -q --import-mode=importlib
+61 passed</code></pre>
+<p><strong>Live, against the real running containers</strong> (both
+confirmed <code>Up ... (healthy)</code>; the deployed
+<code>download_proxy.py</code> inside the container confirmed to
+genuinely contain the new <code>_boba_token_ok</code> function — the fix
+is actually deployed, not merely present in source):</p>
+<pre><code>$ curl -s -o /dev/null -w &quot;%{http_code}&quot; -X POST http://localhost:7186/api/v2/torrents/stop --data-urlencode hashes=0...0
+401   &lt;- no auth at all: correctly refused before reaching qBittorrent
+
+$ curl -s -o /dev/null -w &quot;%{http_code}&quot; -X POST http://localhost:7186/api/v2/torrents/stop -H &quot;X-Boba-Token: &lt;redacted&gt;&quot; --data-urlencode hashes=0...0
+403   &lt;- correct token: passes the new gate, forwarded to qBittorrent,
+         which then correctly refuses for its OWN reason (no session) —
+         proving the fix lets a genuinely-authed request THROUGH, not
+         merely blocking everything</code></pre>
+<p>(Token value never printed in any command, output, or this evidence
+file — referenced only via an unprinted shell variable, per
+§11.4.10.)</p>
+<h2 id="honest-boundary-not-silenced">Honest boundary (not
+silenced)</h2>
+<p><code>config/lan_route_auth_policy.yaml</code>’s exemption entries
+for the Go service’s hooks/schedules/theme routes still show no auth
+marker for the new middleware — the subagent deliberately did not modify
+this checked-in security-gate data file without being certain of the
+analyzer’s exact resolution semantics for a
+<code>.Use()</code>-on-a-named-group idiom. Filed as its own small
+follow-up: <strong>BOB-230</strong> (see
+<code>docs/qa/BOB-230/progress_note_20260923.md</code>) — re-run
+<code>scripts/pre_build/check_cm_lan_routes_authenticated.sh</code> and
+update the policy file’s <code>qbittorrent-proxy-go.auth_markers</code>
+if needed.</p>
+<h2 id="git-diff-stat">git diff –stat</h2>
+<pre><code>docker-compose.yml                            | 11 ++++
+plugins/download_proxy.py                     | 97 ++++++++++++++++++++++++++--
+qBitTorrent-go/cmd/qbittorrent-proxy/main.go  | 43 +++++++++---
+3 files changed, 136 insertions(+), 15 deletions(-)</code></pre>
+<p>Plus new:
+<code>qBitTorrent-go/internal/middleware/apitoken.go</code>,
+<code>qBitTorrent-go/internal/middleware/apitoken_test.go</code>,
+<code>tests/security/test_download_proxy_boba_token_auth.py</code>.</p>
+<h2
+id="addendum-data-safety-gate-finding-fix-caught-by-commit-push-all.shs">Addendum
+— data-safety gate finding + fix (caught by commit-push-all.sh’s</h2>
+<p>own pre_build_verification.sh sweep, invariant 55)</p>
+<p><code>scripts/pre_build/check_cm_no_unscoped_live_destruction.sh</code>
+correctly flagged
+<code>tests/security/test_download_proxy_boba_token_auth.py</code>’s
+parametrized <code>/api/v2/torrents/delete</code> test case as a static
+pattern that reads a torrent list then deletes from it without
+diff-scoping — a legitimate concern in general, since an unscoped delete
+against a REAL live instance would destroy the operator’s actual
+library.</p>
+<p>Verified this specific case is safe: the test’s <code>stack()</code>
+fixture spins up its OWN throwaway <code>_StubQbtHandler</code> server
+bound to <code>127.0.0.1</code> on a dynamically-allocated free port,
+and explicitly sets <code>QBITTORRENT_HOST=127.0.0.1</code> so the proxy
+under test forwards to that stub — never any real, configured, or live
+qBittorrent instance. Added the project’s own established in-source
+exemption marker
+(<code># CM-NO-UNSCOPED-LIVE-DESTRUCTION: EXEMPT reason=stub_server_not_a_client</code>),
+matching the identical, already-accepted precedent in
+<code>tests/unit/test_stress_purge_scoping.py</code>.</p>
+<pre><code>$ bash scripts/pre_build/check_cm_no_unscoped_live_destruction.sh
+CM-NO-UNSCOPED-LIVE-DESTRUCTION: 3 exempted file(s):
+    tests/pre_build/test_check_cm_no_unscoped_live_destruction.sh [gate_fixture]
+    tests/security/test_download_proxy_boba_token_auth.py [stub_server_not_a_client]
+    tests/unit/test_stress_purge_scoping.py [stub_server_not_a_client]
+CM-NO-UNSCOPED-LIVE-DESTRUCTION: PASS — 8 file(s) issue destructive calls, all scoped
+
+$ .venv/bin/python -m pytest tests/security/test_download_proxy_boba_token_auth.py -q --import-mode=importlib
+19 passed in 12.05s</code></pre>
+</body>
+</html>

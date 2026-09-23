@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 93
-**Last modified:** 2026-09-22T23:35:20Z
+**Revision:** 94
+**Last modified:** 2026-09-23T00:58:03Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -1362,41 +1362,6 @@ REPRODUCTION: make find(1) fail during the gate run (unreadable scan root, or a 
 
 ACCEPTANCE: (1) the gate distinguishes 'find succeeded and found zero files' from 'find failed' -- check find's exit status, not only its output; (2) a failed enumeration is a FINDING (non-zero exit) naming the unresolved precondition, never a SKIP; (3) a genuinely empty scan root still SKIPs honestly at exit 0 -- the 11.4.201(1) golden-FALSE guard, so the fix does not become a false-positive refusal; (4) paired 1.1 mutation: restore the swallow-find-failure behaviour and the new fixture MUST fail.
 
-## BOB-203 — LIVE: unauthenticated mutating LAN routes accepted on ports 7186 and 7187, and the armed BOBA_API_TOKEN is inert
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** Critical
-
-MEASURED LIVE 2026-08-26 against the running stack from LAN 192.168.1.90 (NOT loopback - qBittorrent's localhost bypass would have exercised a different code path). Evidence: docs/qa/BOB-198/runtime_auth_verification_20260826.md.
-
-VERDICT: unauthenticated mutating LAN requests ARE currently accepted. Two live services, four named routes:
-  1. POST   /api/v2/torrents/stop      port 7186  -> HTTP 200 with NO credentials (real torrent control)
-  2. POST   /api/v1/hooks              port 7187  -> 422 field-validation (request REACHED FastAPI body validation, which runs AFTER middleware)
-  3. POST   /api/v1/schedules          port 7187  -> 422 (same)
-  4. DELETE /api/v1/hooks/<id>         port 7187  -> 404 'Hook not found' (the handler EXECUTED A LOOKUP)
-
-The 422/404 responses are the decisive evidence, not the 200: a 401 never appears anywhere, and reaching body validation or a handler lookup proves no auth middleware intervened.
-
-THE ARMED TOKEN IS INERT. BOBA_API_TOKEN was armed in .env earlier this session on an operator decision. Port 7187 returns BYTE-IDENTICAL responses with and without it across three header shapes. Port 7189 does not open for it in five header shapes. Root cause identified: docker-compose.yml injects BOBA_API_TOKEN into EXACTLY ONE service - download-proxy (line 237) - and into neither qbittorrent-proxy-go nor boba-jackett. And even on 7186, where it IS injected, POST /api/v2/torrents/stop returned 200 unauthenticated, so injection alone is not enforcement.
-
-PER-SERVICE POSTURE (measured):
-  7185 qbittorrent-nox   LIVE, binds *      - same mutating surface visible from LAN as via the proxy
-  7186 download-proxy    LIVE, binds 0.0.0.0 - mutating control accepted unauthenticated
-  7187 merge service     LIVE, binds 0.0.0.0 - 34 routes via openapi.json, NO auth layer at all
-  7188 bridge            NOT BOUND          - honest SKIP
-  7189 boba-jackett Go   LIVE, binds *      - writes 401-gated, reads OPEN incl. /api/v1/jackett/credentials
-  9117 jackett           LIVE, binds *
-EVERY live service binds all interfaces. None is loopback-only.
-
-RELATIONSHIP TO BOB-198 (its named subject was NOT running): qbittorrent-proxy-go is profiles:-gated (opt-in --profile go) and absent from the container set, so its '22 unauthenticated routes' is neither confirmed nor refuted - honest 11.4.3 SKIP. The exposure recorded HERE is a DIFFERENT and ADDITIONAL surface on the Python service and the proxy. Do not treat this item as closing BOB-198.
-
-11.4.238 COVERAGE ESCAPE - first class, equal standing to the bug: the automated QA regime did NOT find this. The static gate check_cm_lan_routes_authenticated went through SIX independent review rounds proving routes are statically wired to auth middleware, and its own honest boundary (tracked BOB-197) states it asserts static wiring ONLY. Nobody had measured runtime until a directed agent did. This is precisely the 11.4 covenant's founding failure shape: a green gate over a broken-for-the-user reality. The owed remedy is an automated runtime check that would have caught it, with a RED capturing this exact exposure - not merely a fix to the routes.
-
-ANTI-BLUFF PROVENANCE: control needle - Jackett returned a real 401 through the SAME instrument, so the 200s are not instrument blindness; port 7188 returned exit-7, so absences are real. Negative control - a deliberately wrong token still got 401 on 7189. Decisive probes 3/3 deterministic. Mutating probes used non-existent ids against a provably EMPTY torrent list ([] before and after), so effect was nil and verified on both sides. Token referenced by name only, never printed (11.4.10); the report was leak-scanned with a needle proving the scanner fires on a known leak.
-
-ACCEPTANCE: (1) operator decision (11.4.66) on the intended posture per service - loopback-only bind, real auth middleware, or accepted-LAN-risk-with-rationale; (2) whichever is chosen, an automated runtime check per 11.4.238 that fails RED against today's exposure; (3) 11.4.108 layer-3/4 evidence on a clean deployment, not static analysis; (4) paired 1.1 mutation.
-
 ## BOB-211 — LATENT + OPERATOR-GATED: on a uid-flattening mount whose uid is not the operator, chown fails EPERM with no fstype-aware diagnosis, and fmask/dmask silently defeat the preserve_mode 600 contract
 
 **Status:** Queued
@@ -1490,28 +1455,6 @@ ACCEPTANCE: (1) the operator decision above is taken and recorded; (2) whichever
 
 DISCOVERY CHANNEL (§11.4.238): found by the BOB-195 round-7 remediation stream while closing a different finding, NOT by the automated QA regime and NOT by the independent reviewer that audited the same file in round 6.
 
-## BOB-218 — tools/README documents a rollback that does not exist: the plugin writer truncates on open and never restores the .bak, leaving a corrupt plugin while reporting the update FAILED
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** major
-
-WHAT: tools/README.md:30 states "the backup is restored" on validation failure. Conductor-verified: shutil.copy2 appears EXACTLY ONCE in tools/plugin_update_automation.py and copies FORWARD only — a reverse-direction restore has ZERO occurrences (grep control-needle-proven seeing: needle 2 hits, negative control 0). The plugin write opens in mode "w", which TRUNCATES IMMEDIATELY.
-
-USER-OBSERVABLE HARM (the reason this is not merely a doc defect): a failure part-way through the write leaves a TRUNCATED, NON-IMPORTABLE plugin on disk. The operator is told the update FAILED and reasonably concludes the previous file survived — because the README says it was restored. It was not. The next ./install-plugin.sh copies the corrupt file into config/qBittorrent/nova3/engines/ and that search engine SILENTLY STOPS WORKING. The .bak needed to recover DOES exist on disk; the tool never mentions it and never uses it.
-
-This is a §11.4 documentation-layer bluff with a real downstream consequence: the doc asserts a safety property the code does not implement, and the operator's recovery decision is made on that false assertion.
-
-SECOND, SMALLER DOC DIVERGENCE: the README claims JSON goes to stdout; :274 writes it to a FILE (open(args.output, "w")).
-
-THIRD, SEPARATE MINOR DEFECT in the same file (recorded here rather than as its own item because it shares the file and the fix window): _extract_version at ~:198 uses a BARE `except:`, so a Ctrl-C during the 14-URL sweep is SWALLOWED. That is a signal-handling defect, not a fail-open — the gate flagged this line, but for the wrong reason (it read the silent default return; the real issue is the bare except catching KeyboardInterrupt).
-
-ACCEPTANCE: (1) either the rollback is IMPLEMENTED (restore the .bak on failure) or the README claim is DELETED — the doc and the code must agree (§11.4.6); if implemented, write to a temp file and rename atomically rather than truncating in place; (2) the stdout-vs-file claim corrected; (3) the bare except narrowed so KeyboardInterrupt propagates; (4) a RED that fails the write mid-way and asserts the previous plugin is intact (post-fix) / truncated (pre-fix).
-
-REACHABILITY: same as the sibling item — hand-run only, not in any automated path, last functional commit 2026-04-12. Severity Major on the harm shape, bounded by that reachability.
-
-DISCOVERY CHANNEL (§11.4.238): found by the concealed-hits triage stream. Not by the automated QA regime.
-
 ## BOB-219 — LIVE §11.4.65 sync violation: docs/guides/tracker-credentials.{html,pdf} exist on disk but are untracked and ignored, while their .md source IS tracked
 
 **Status:** Queued
@@ -1529,28 +1472,6 @@ ANOTHER INSTANCE OF THE SAME MECHANISM, filed here rather than separately becaus
 ACCEPTANCE: (1) both twins become trackable and are committed alongside their .md; (2) the BOB-124 .txt evidence likewise; (3) whichever BOB-212 fix direction is chosen, it MUST cover these — a fix that closes the future-swallow while leaving these three artifacts permanently uncommittable has addressed the mechanism and not the damage; (4) a check that a tracked .md in §11.4.65 scope has COMMITTABLE twins, so this class cannot recur silently.
 
 DISCOVERY CHANNEL (§11.4.238): found by the BOB-212 blast-radius sweep — and only on its SECOND pass. The first pass filtered by a source-extension set that omitted .pdf, which hid this finding entirely; the agent re-ran with no extension filter over all 420 non-artifact paths and recorded the blind spot rather than shipping the first number. Worth keeping: an extension allowlist is itself a false-null generator, which is the same shape as the defect being investigated.
-
-## BOB-222 — tests/security/ is executed by no invariant — the third occurrence of the same orphan-directory class, and the driver's own comment records the previous two
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** major
-
-WHAT: scripts/pre_build_verification.sh:1196 enumerates bash suites with a glob covering EXACTLY three directories:
-  "${PROJECT_ROOT}"/tests/unit/test_*.sh · "${PROJECT_ROOT}"/tests/pre_build/test_*.sh · "${PROJECT_ROOT}"/tests/hooks/test_*.sh
-tests/security/ is NOT among them. Conductor-verified verbatim. So tests/security/test_gitignore_swallow_is_loud.sh — a RED authored this session with a golden-FALSE guard proving real secrets stay ignored — is executed by NOTHING. It is a guard that guards nothing, and its silence is indistinguishable from success.
-
-THIS IS THE THIRD OCCURRENCE OF ONE CLASS. The driver's OWN comment at :1030 records the history: the same defect class "existed for tests/pre_build/test_*.sh" and was fixed by adding that directory to the glob. It then recurred one directory over (tests/hooks), fixed the same way. Now tests/security. Each fix was a new glob entry; none addressed why a new test directory is invisible by default.
-
-§11.4.250 APPLIES DIRECTLY: three symptoms, one primitive. The primitive is a hand-maintained enumeration that must be edited in lockstep with the tree, whose failure mode is SILENT. It is the identical shape as BOB-205's DANGER_ROOTS and BOB-212's .gitignore allowlist — three separate hand-maintained lists in this repo, all three measured to have silently missed something. Adding tests/security to the glob would be the fourth instance of layer N+1.
-
-NOTE THE GATE ALREADY HAS THE RIGHT INSTINCT at :1220: it fails when the glob matches NOTHING ("the glob is blind"). That guard catches a TOTALLY blind glob but not a PARTIALLY blind one — the more common and more dangerous case, because a partially blind glob still reports a healthy count.
-
-FIX DIRECTION (§11.4.251 role-as-data-pack): derive the suite set from the tree — every tests/**/test_*.sh — minus a DECLARED §11.4.224(E) exclusion fence with a justification per entry. Then a new test directory cannot be invisible, and a deliberate exclusion is visible and reasoned. If a hand list is kept, the omission-guard is the same computation, so the derivation must be built either way.
-
-ACCEPTANCE: (1) tests/security suites execute; (2) a NEWLY CREATED tests/<newdir>/test_x.sh is picked up with no hand edit — that is the invariant that stops the recurrence, and without it this is just the fourth patch; (3) a RED creating such a directory and asserting it runs; (4) the :1220 blind-glob guard is extended to catch PARTIAL blindness, not only total.
-
-DISCOVERY CHANNEL (§11.4.238): found by the T042 readiness preflight. Not by the automated QA regime — and notably not by the two previous fixes of this same class, neither of which asked why it happened.
 
 ## BOB-223 — §11.4.18 script-documentation and §11.4.44 revision headers are ungated — and the perverse consequence is that WRITING the mandated companion doc is what breaks the build
 

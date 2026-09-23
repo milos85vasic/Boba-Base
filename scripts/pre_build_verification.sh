@@ -1086,16 +1086,43 @@ fi
 # (including this invariant's own gate-45 pair). Commit 04742d7's own
 # message SAID SO: "STILL OPEN (reported, not fixed): tests/pre_build/ is
 # executed by NOTHING" — recorded only in prose, with no tracked item and no
-# runner, until now. The glob below covers both directories; a suite in
-# EITHER one that is never executed is the identical false-null this
+# runner, until now. The glob at the time covered both directories; a suite
+# in EITHER one that is never executed is the identical false-null this
 # invariant already exists to catch (§11.4.226).
+#
+# WIDENED AGAIN, DIFFERENTLY THIS TIME (BOB-222, §11.4.250 "heuristic-tower
+# signals a primitive defect"): the SAME class recurred a THIRD time for
+# tests/security/test_gitignore_swallow_is_loud.sh — a real, tracked RED
+# test with a golden-FALSE guard, executed by NOTHING because
+# tests/security/ was never added to the hand-maintained three-directory
+# glob. Three symptoms (tests/pre_build/, tests/hooks/, tests/security/),
+# one primitive: a hand-list that must be edited in lockstep with the tree,
+# whose failure mode is silent. Patching in a fourth directory literal would
+# be the fourth instance of the SAME primitive defect, not a fix for it.
+# The primitive is replaced below: suites are DISCOVERED from the tree
+# (`find "${PROJECT_ROOT}/tests" -type f -name 'test_*.sh'`), not enumerated
+# by a maintained directory list — a newly created tests/<newdir>/test_*.sh
+# is picked up with NO hand edit to this driver, ever again.
+#
+# EXCLUSION FENCE (§11.4.224(E), investigated 2026-09-23, BOB-222): the full
+# tests/ tree — including tests/fixtures/, tests/.ci_data/, tests/__pycache__/
+# — was audited for stray files literally named `test_*.sh`; MEASURED zero
+# matches outside the suite directories. NO SUBTREE IS EXCLUDED from
+# discovery; none is justified by evidence, and inventing one would be the
+# exact "assume, don't investigate" move this project's own no-guessing
+# discipline (§11.4.6) forbids.
 #
 # QUARANTINE (§11.4.248 + §11.4.135 monotone-decrease ratchet, §11.4.224(E)
 # exclusion fence): the 3 known-failing suites are listed BY NAME so they are
 # visible and tracked rather than silently dead. This list MUST only shrink.
 # Removing a name without fixing its suite is a §11.4.227 metric-gaming move.
 # TODO(BASH-TEST-QUARANTINE): fix and de-quarantine these three.
-echo "[30/56] CM-BASH-UNIT-TESTS-EXECUTED: tests/unit/*.sh + tests/pre_build/*.sh + tests/hooks/*.sh actually run (§11.4.226)"
+echo "[30/56] CM-BASH-UNIT-TESTS-EXECUTED: every tests/**/test_*.sh suite discovered from the tree actually runs (§11.4.226/§11.4.250)"
+# === BOB-222-DISCOVERY-BEGIN === (comment-only test-extraction seam — see
+# tests/pre_build/test_bash_suite_discovery_covers_new_dirs.sh, which
+# extracts everything between this marker and BOB-222-DISCOVERY-END and
+# runs it in isolation against a scratch PROJECT_ROOT, never against this
+# live tree. Adding or moving this marker changes NO runtime behaviour.)
 # STRUCTURAL EXCLUSIONS — permanent by design, NOT debt. These suites invoke
 # scripts/pre_build_verification.sh itself to assert on another invariant's
 # output; running them from INSIDE this invariant recurses infinitely (proven
@@ -1104,9 +1131,21 @@ echo "[30/56] CM-BASH-UNIT-TESTS-EXECUTED: tests/unit/*.sh + tests/pre_build/*.s
 # Membership is evidence-based: a suite belongs here IFF it EXECUTES the gate
 # (`bash "$SCRIPT"`), not merely references it. Verified 2026-08-20 by grep +
 # timing; an earlier revision of this list had exactly the wrong two entries.
+#
+# tests/test_constitution_inheritance.sh ADDED (BOB-222, 2026-09-23): the
+# widened, tree-derived discovery below reaches this file for the first
+# time — it lives directly under tests/, one level above the three
+# directories the old glob named, so this defect was LATENT (never
+# discovered, never triggered) until now. It executes
+# `BOBA_PREBUILD_NESTED=1 scripts/pre_build_verification.sh` end-to-end
+# THREE separate times (verified by reading its source), the same
+# execute-the-gate-itself class the two entries below exist for — at ~56
+# invariants per run this is far more expensive than either of them, not
+# merely "also matches the pattern".
 BASH_TEST_SELF_RECURSIVE=(
     "test_export_sync_gate.sh"                    # bash "$GATE_SCRIPT" x3, ~299s
     "test_pre_build_workable_items_invariant.sh"  # bash "$SCRIPT", timed out at 300s
+    "test_constitution_inheritance.sh"             # runs pre_build_verification.sh x3, full sweep each time
 )
 # QUARANTINE — real debt, MUST only shrink. Removing a name without fixing its
 # suite is a §11.4.227 metric-gaming move.
@@ -1280,7 +1319,15 @@ else
 # (§11.4.226). MEASURED before the fix: this glob expanded to 27 suites, 0 of
 # them under tests/hooks/, while 3 suites existed there (two authored minutes
 # earlier for BOB-106/BOB-107, whose paired §1.1 mutations nothing would run).
-for _bt in "${PROJECT_ROOT}"/tests/unit/test_*.sh "${PROJECT_ROOT}"/tests/pre_build/test_*.sh "${PROJECT_ROOT}"/tests/hooks/test_*.sh; do
+# SUPERSEDED (BOB-222): the three-directory hand-glob that used to sit here
+# is REPLACED by a tree-derived discovery — DEREF the tree with `find`
+# instead of naming directories, so tests/security/ (and any future
+# tests/<newdir>/) needs no hand edit here to be covered. `sort -z` keeps
+# the discovery order deterministic (`find` order is filesystem-dependent
+# and unordered) so repeat runs enumerate suites identically.
+BASH_TEST_DISCOVERED=()
+mapfile -d '' -t BASH_TEST_DISCOVERED < <(find "${PROJECT_ROOT}/tests" -type f -name 'test_*.sh' -print0 | sort -z)
+for _bt in ${BASH_TEST_DISCOVERED[@]+"${BASH_TEST_DISCOVERED[@]}"}; do
     [[ -f "${_bt}" ]] || continue
     _btname="$(basename "${_bt}")"
     _skip=0
@@ -1353,11 +1400,48 @@ while IFS= read -r _xrow; do
 done < <(expected_red_unmatched_rows)
 # END-INVARIANT-30-SUITE-LOOP
 fi
+# === BOB-222-DISCOVERY-END === (comment-only — see BOB-222-DISCOVERY-BEGIN
+# above; the extraction test sources everything between the two markers)
+#
+# PARTIAL-BLINDNESS GUARD (BOB-222 acceptance criterion 4, §11.4.226/
+# §11.4.250/§11.4.201(6)): the TOTAL-blindness check below (BASH_TEST_RAN -eq
+# 0) never fires for a glob that discovers SOME suites while silently
+# missing others — the more common, more dangerous shape (tests/security/
+# was invisible for a real release cycle while this invariant kept
+# reporting a healthy nonzero RAN count from the other two directories).
+# Compare what was actually ACCOUNTED FOR (RAN + QUARANTINED — a quarantined
+# suite WAS discovered, it is just deliberately not executed, so it must
+# count on this side of the ledger too) against an INDEPENDENTLY-COMPUTED
+# on-disk total. The count is freshly re-derived here with its OWN `find`
+# invocation rather than reused from `${#BASH_TEST_DISCOVERED[@]}` — a bug
+# that truncated or filtered that array AFTER discovery but before the loop
+# would otherwise pass its own tautological reflection back to itself and
+# prove nothing (§11.4.273 — a census must be control-needled, not trusted
+# by construction).
+# === BOB-222-PARTIAL-BLINDNESS-BEGIN === (comment-only test-extraction
+# seam — see tests/pre_build/test_bash_suite_discovery_covers_new_dirs.sh,
+# which extracts from here through BOB-222-PARTIAL-BLINDNESS-END, appends
+# its own closing `fi` [this fragment is a truncated PREFIX of the larger
+# if/elif/.../else/fi decision chain below, mirroring how
+# test_bob221_expected_red_declaration.sh's BLOCK_SRC already extracts one
+# elif and self-closes it], and runs it against BASH_TEST_RAN/
+# BASH_TEST_QUARANTINED values it controls directly. Adding or moving this
+# marker changes NO runtime behaviour.)
+BASH_TEST_ONDISK_COUNT="$(find "${PROJECT_ROOT}/tests" -type f -name 'test_*.sh' 2>/dev/null | wc -l)"
+BASH_TEST_ACCOUNTED_FOR=$((BASH_TEST_RAN + BASH_TEST_QUARANTINED))
 if [[ -n "${BOBA_PREBUILD_NESTED:-}" ]]; then
     : # nested: neither pass nor fail counted, already reported as SKIP above
 elif [[ "${BASH_TEST_RAN}" -eq 0 ]]; then
-    # §11.4.201(6): a zero here is a FALSE-NULL (blind glob), never "all clean".
-    fail "CM-BASH-UNIT-TESTS-EXECUTED: no tests/unit/test_*.sh, tests/pre_build/test_*.sh or tests/hooks/test_*.sh were executed — the glob is blind"
+    # §11.4.201(6): a zero here is a FALSE-NULL (blind discovery), never "all
+    # clean" — TOTAL blindness (nothing under tests/**/test_*.sh was found).
+    fail "CM-BASH-UNIT-TESTS-EXECUTED: no tests/**/test_*.sh suite was executed — the discovery is blind"
+elif [[ "${BASH_TEST_ACCOUNTED_FOR}" -lt "${BASH_TEST_ONDISK_COUNT}" ]]; then
+    # PARTIAL blindness: some, but not all, on-disk suites were discovered.
+    # This is the class three prior recurrences shared and the total-
+    # blindness check above cannot see (RAN was always > 0 for all three).
+    fail "CM-BASH-UNIT-TESTS-EXECUTED: PARTIAL blindness — discovery accounted for only ${BASH_TEST_ACCOUNTED_FOR}/${BASH_TEST_ONDISK_COUNT} on-disk tests/**/test_*.sh suite(s); a known test directory's coverage silently dropped"
+# === BOB-222-PARTIAL-BLINDNESS-END === (comment-only — see
+# BOB-222-PARTIAL-BLINDNESS-BEGIN above)
 elif [[ "${BASH_TEST_FAILED}" -gt 0 ]]; then
     fail "CM-BASH-UNIT-TESTS-EXECUTED: ${BASH_TEST_FAILED}/${BASH_TEST_RAN} bash unit/pre_build test(s) FAILED${BASH_TEST_STALE_NOTE}"
     for _f in "${BASH_TEST_FAILURES[@]}"; do

@@ -19,6 +19,7 @@ import os
 import sys
 import json
 import argparse
+import contextlib
 import shutil
 import hashlib
 from datetime import datetime
@@ -220,8 +221,21 @@ class PluginUpdateManager:
                 backup_path = self._create_backup(local_path)
                 result["backup"] = backup_path
 
-            with open(local_path, "w", encoding="utf-8") as f:
-                f.write(upstream_content)
+            # BOB-218: write to a temp file in the same directory and
+            # rename it onto the target ATOMICALLY, instead of opening
+            # `local_path` directly in "w" mode. `open(path, "w")"
+            # truncates the target the instant it is opened -- so a
+            # failure raised anywhere between that open() and the
+            # write completing (a disk-full condition, an encoding
+            # error, any exception) previously left a zero-byte,
+            # non-importable plugin file on disk with no recovery
+            # (there was never any code that read a `.bak` back,
+            # despite this project's README previously claiming
+            # "the backup is restored"). `_atomic_write` never opens
+            # `local_path` for writing at all in the failure path --
+            # only a private temp file is, so `local_path` is left
+            # byte-identical to its pre-attempt state on any failure.
+            self._atomic_write(local_path, upstream_content)
 
             result["status"] = "success"
             print_success(f"{plugin_name}: Updated successfully")
@@ -232,6 +246,37 @@ class PluginUpdateManager:
             print_error(f"{plugin_name}: Update failed - {e}")
 
         return result
+
+    def _atomic_write(self, target_path: str, content: str) -> None:
+        """Write `content` to `target_path` atomically (BOB-218).
+
+        Writes to a private temp file in the SAME directory as
+        `target_path` (so the final `os.replace()` is a same-
+        filesystem rename, which POSIX guarantees is atomic), then
+        renames it onto the target. `target_path` itself is NEVER
+        opened in a truncating mode by this method -- if anything
+        fails between the temp-file open and the rename (a disk-full
+        condition, an encoding error, any raised exception), the temp
+        file is removed and `target_path` is left completely
+        untouched, byte-for-byte as it was before this call. This
+        deliberately avoids the truncate-in-place window a plain
+        `open(target_path, "w")` creates, where a failure anywhere
+        between opening (which truncates immediately) and the write
+        completing leaves a zero-byte, non-importable file on disk
+        with nothing to restore it.
+        """
+        directory = os.path.dirname(target_path) or "."
+        os.makedirs(directory, exist_ok=True)
+        tmp_name = f".{os.path.basename(target_path)}.{os.getpid()}.{datetime.now().strftime('%Y%m%d_%H%M%S%f')}.tmp"
+        tmp_path = os.path.join(directory, tmp_name)
+        try:
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            os.replace(tmp_path, target_path)
+        except BaseException:
+            with contextlib.suppress(OSError):
+                os.unlink(tmp_path)
+            raise
 
     def _get_file_hash(self, filepath: str) -> str:
         """Calculate MD5 hash of a file."""
@@ -253,7 +298,19 @@ class PluginUpdateManager:
             with open(filepath, encoding="utf-8") as f:
                 content = f.read()
             return self._extract_version_from_content(content)
-        except:
+        except (OSError, UnicodeDecodeError):
+            # BOB-218: narrowed from a bare `except:`, which also
+            # caught KeyboardInterrupt/SystemExit -- both inherit
+            # from BaseException, not Exception -- silently
+            # swallowing Ctrl-C during the 14-URL upstream sweep.
+            # The only failure modes this function genuinely guards
+            # against are: the local plugin file cannot be
+            # opened/read (OSError -- missing, permission denied, a
+            # TOCTOU race after the existence check in
+            # check_for_updates()) or its bytes are not valid UTF-8
+            # (UnicodeDecodeError). Everything else -- including
+            # KeyboardInterrupt/SystemExit -- now propagates
+            # normally, as it must.
             return "unknown"
 
     def _extract_version_from_content(self, content: str) -> str:

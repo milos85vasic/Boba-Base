@@ -161,6 +161,17 @@ services:
       - LOG_LEVEL=INFO
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:7187,http://127.0.0.1:7187,http://localhost:4200,http://127.0.0.1:4200}
       - JACKETT_API_KEY=${JACKETT_API_KEY:-}
+      # BOB-203: same shared-secret gate as download-proxy below
+      # (internal/middleware/apitoken.go, wired in cmd/qbittorrent-proxy/main.go
+      # onto this binary's mutating routes for parity with the Python
+      # require_api_token fix). Unset/empty -> those routes stay OPEN
+      # (§11.4.122 backward-compat default, unchanged). Set it here (or in
+      # .env) to require Authorization: Bearer <token> / X-Boba-Token: <token>.
+      # This binary additionally binds loopback-only by default
+      # (SERVER_BIND_HOST, config.go) and refuses to start on any other bind
+      # host (BOB-198, cmd/qbittorrent-proxy/main.go::checkLoopbackBind) --
+      # this token is defense-in-depth on top of that, not a replacement.
+      - BOBA_API_TOKEN=${BOBA_API_TOKEN:-}
       # Configurable outbound proxy for tracker-bound egress (internal/httpx).
       # Loopback + sidecar (qbittorrent, jackett) hosts are bypassed via NO_PROXY.
       - BOBA_UPSTREAM_PROXY=${BOBA_UPSTREAM_PROXY:-}
