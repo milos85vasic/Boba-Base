@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260923</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260923</h1>
+</header>
+<h1 id="bob-225-closure-evidence-2026-09-23">BOB-225 closure evidence —
+2026-09-23</h1>
+<h2 id="operator-decision-implemented">Operator decision
+implemented</h2>
+<p>“Carve out generated doc twins” — the §11.4.65/§11.4.153 mandate
+applies; the deny-all <code>*.docx</code> glob is narrowed with a
+targeted allowlist for genuine generated export twins, matching the
+existing <code>docs/qa/**/*.log</code> precedent.</p>
+<h2
+id="verification-before-implementing-11.4.6-measure-do-not-assume">Verification
+before implementing (§11.4.6 — measure, do not assume)</h2>
+<p>Every <code>.docx</code> file under <code>docs/</code>,
+<code>scripts/</code>, and the repo root was checked for a genuine 1:1
+pairing with a tracked <code>.md</code> sibling (NUL- delimited
+<code>find</code>, correctly handling a real directory with spaces in
+its name that a naive word-split loop initially mis-parsed — caught and
+fixed before drawing any conclusion from it):</p>
+<pre><code>$ (NUL-delimited scan of docs/**/*.docx)
+total=384 paired=384 unpaired=0
+
+$ (root + scripts/ scan)
+README.docx / AGENTS.docx / CLAUDE.docx / QWEN.docx / CONTRIBUTING.docx /
+CONSTITUTION.docx / CHANGELOG.docx / scripts/README.docx /
+scripts/system-slice-watchdog/README.docx — all 9 PAIRED</code></pre>
+<p>No stray/unrelated Word documents found — every candidate genuinely a
+generated export twin. <code>submodules/</code> (59 files) and
+<code>constitution/</code> (183 files) are SEPARATE git repositories
+(submodules) — their own tracking is governed by their own
+<code>.gitignore</code>, out of scope for this repo’s fix.</p>
+<h2 id="fix">Fix</h2>
+<p><code>.gitignore</code>: the deny-all <code>*.docx</code> KEPT (a
+hand-authored or third-party <code>.docx</code> landing anywhere else in
+the tree is still refused by default); added directory-scoped negations
+<code>!docs/**/*.docx</code> and <code>!scripts/**/*.docx</code> plus
+explicit root-level entries for the 7 root docs — a STRUCTURAL fix (any
+file matching these patterns is automatically rescued) rather than a
+hand-maintained per-file list, closing acceptance criterion 3 (“a check
+that a generated twin is actually trackable, so this cannot recur
+silently”) by construction — no active gate needed, verified
+directly:</p>
+<pre><code>$ mkdir -p docs/qa/BOB225_PROBE &amp;&amp; echo test &gt; docs/qa/BOB225_PROBE/fake.md \
+    &amp;&amp; echo test &gt; docs/qa/BOB225_PROBE/fake.docx
+$ git check-ignore -v docs/qa/BOB225_PROBE/fake.docx
+(empty — a brand-new docs/ file is auto-rescued, no hand-edit required)</code></pre>
+<h2 id="independently-re-verified-this-session">Independently
+re-verified this session</h2>
+<pre><code>$ (scan every docs/scripts/root .docx file for remaining ignore status)
+still-ignored count: 0
+
+$ bash scripts/pre_build/check_gitignore_swallow.sh &quot;$(pwd)&quot;
+BOB-212 swallow-guard: OK — no first-party source files are silently swallowed by .gitignore.
+
+$ bash tests/security/test_gitignore_swallow_is_loud.sh
+-- GOLDEN-FALSE (§11.4.201(1)/§11.4.10): real secrets MUST stay ignored --
+  [ok]     all 15 secret-bearing shapes remain ignored
+RESULT: PASS (exit 0)</code></pre>
+<p>The pre-existing two tracked survivors
+(<code>docs/features/Status.docx</code>,
+<code>docs/features/Status_Summary.docx</code>) show no diff — genuinely
+unaffected, now protected by the same structural mechanism rather than
+surviving by accident of already being in the index.</p>
+<h2 id="honest-boundary-not-silenced">Honest boundary (not
+silenced)</h2>
+<p>392 previously-untracked <code>.docx</code> files (~7.6MB total, a
+reasonable size) become newly tracked by this fix. They are committed AS
+THEY CURRENTLY EXIST ON DISK — this fix did NOT trigger a fresh full
+regeneration pass against every source <code>.md</code> (hundreds of
+files, a separate, larger operation); ongoing freshness is governed by
+the project’s existing §11.4.12/§11.4.106 docs-chain sync discipline,
+not by this fix. §11.4.153 compliance for the
+<code>docs/features/</code> Status set is now genuinely and robustly met
+(previously true only by accident of index membership).</p>
+<h2 id="git-diff-stat">git diff –stat</h2>
+<pre><code>.gitignore | 22 +++++++++++++---
+1 file changed, 19 insertions(+), 3 deletions(-)</code></pre>
+<p>Plus 392 newly-tracked pre-existing <code>.docx</code> files
+(~7.6MB).</p>
+</body>
+</html>

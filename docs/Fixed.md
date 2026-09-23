@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 42
-**Last modified:** 2026-09-23T00:58:03Z
+**Revision:** 43
+**Last modified:** 2026-09-23T06:27:31Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -2564,4 +2564,35 @@ FIX DIRECTION (§11.4.251 role-as-data-pack): derive the suite set from the tree
 ACCEPTANCE: (1) tests/security suites execute; (2) a NEWLY CREATED tests/<newdir>/test_x.sh is picked up with no hand edit — that is the invariant that stops the recurrence, and without it this is just the fourth patch; (3) a RED creating such a directory and asserting it runs; (4) the :1220 blind-glob guard is extended to catch PARTIAL blindness, not only total.
 
 DISCOVERY CHANNEL (§11.4.238): found by the T042 readiness preflight. Not by the automated QA regime — and notably not by the two previous fixes of this same class, neither of which asked why it happened.
+
+## BOB-227 — The LAN-route auth gate ships UNTRACKED: analyzer, wrapper and its 197-assertion harness exist only in one working tree
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-227/closure_evidence_20260923.md
+**Severity:** critical
+**Created-By:** Claude
+**Assigned-To:** Claude
+
+WHAT: three of the four artifacts of the CM-LAN-ROUTES-AUTHENTICATED pre-build gate are untracked in git. MEASURED 2026-08-27 with git ls-files --error-unmatch, control-needled against a known-tracked file: scripts/pre_build/lan_route_auth_analyzer.py UNTRACKED, scripts/pre_build/check_cm_lan_routes_authenticated.sh UNTRACKED, tests/pre_build/test_check_cm_lan_routes_authenticated.sh UNTRACKED; only docs/scripts/check_cm_lan_routes_authenticated.md is TRACKED. IMPACT: (1) losing this checkout loses an entire security gate plus 197 assertions; (2) no round-over-round diff claim across review rounds 8 through 14 was ever checkable, because no committed baseline exists - the same §11.4.226 evidence-custody failure the BOB-195 chain hit independently; (3) a fresh clone runs a pre-build gate whose implementation is absent. ACCEPTANCE: all four artifacts tracked and committed, and a gate asserting that every executable a pre-build invariant invokes is itself tracked. Surfaced by the BOB-102 round-13 remediation and independently verified 2026-08-27.
+
+## BOB-225 — *.docx is globally gitignored while the §11.4.65 exporters generate .docx twins — every DOCX artifact this project produces is untrackable by construction
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-225/closure_evidence_20260923.md
+**Severity:** major
+
+WHAT, conductor-verified: .gitignore:266 ignores *.docx globally. The §11.4.65 export pipeline GENERATES .docx twins — the workable-items export produces Issues.docx / Fixed.docx / Issues_Summary.docx / Fixed_Summary.docx, and the doc exporter produced docs/scripts/check_cm_lan_routes_authenticated.docx during round 9. Every one of them is untrackable by construction: they exist on disk, git will never see them, and no gate can notice because the absence is silent.
+
+WHY THIS IS THE BOB-212 CLASS, NOT A DUPLICATE OF IT: BOB-212 is a deny-all glob plus a hand-maintained per-file ALLOWLIST, where new files leak through the gaps in the list. This is a deny-all glob with NO allowlist at all for a file type the project MANDATES producing. The mechanism differs; the false-null is identical — git status stays silent, so the exporter appears to succeed and the artifact appears to exist. It is filed separately per §11.4.214 (distinct-but-similar), with BOB-212 and BOB-219 as siblings.
+
+THE TENSION TO RESOLVE HONESTLY: §11.4.153 mandates a FOUR-format export (HTML + PDF + DOCX) for its document class, and §11.4.65 governs the twins generally. So the constitution requires producing an artifact the repository is configured to refuse. One of the two is wrong and the resolution is an operator decision (§11.4.66): (a) the .docx mandate applies here and the glob must carve out generated doc twins; (b) .docx is deliberately untracked as a heavy binary derivative regenerable per §11.4.77 from its .md, in which case the EXPORTERS should stop producing it, or produce it into an explicitly untracked location, and the §11.4.153 four-format requirement should be recorded as consciously not-adopted rather than silently unmet.
+What is NOT acceptable is the present state: generate it, ignore it, and let both the mandate and the glob appear satisfied.
+
+MEASURED SCOPE (CORRECTED — my first write of this item said 'tracked .docx files = 0', which is FALSE; recorded here per §11.4.6 rather than silently amended): **2** .docx files ARE tracked and **1140** exist repo-wide, so **1138** are untracked-and-ignored. (A second correction, also recorded rather than amended: my first correction said 344, which counted only the docs/ subtree. Two numeric errors in a row on one item — the pattern is that each was measured with a narrower instrument than the claim it supported, which is the §11.4.201(7)(c) path-is-part-of-the-instrument failure applied to my own reporting.) AND THE TWO SURVIVORS ARE THE INTERESTING PART: they are docs/features/Status.docx and docs/features/Status_Summary.docx — precisely the pair §11.4.153 explicitly mandates as a FOUR-format export. So the only two DOCX artifacts git can see are the two a specific anchor named, and they survive not by rule but because they are already in the index. That makes this a PARTIAL condition, not a total one, and the two survivors are the interesting part — they are in the same position as frontend/e2e/credentials.spec.ts under BOB-212: alive only because they are already in the index, since git honours the index over .gitignore for tracked paths. One delete-and-re-add, one file move, and they vanish silently like any other. So the state is worse than a clean 'we never track docx': it is an inconsistent one where two artifacts appear to prove the format IS tracked while 342 prove it is not.
+
+ACCEPTANCE: (1) the operator decision above is taken and recorded; (2) whichever way, the exporter and the ignore rule AGREE — if .docx is not tracked, nothing should silently generate one into a tracked doc directory; (3) if carved out, a check that a generated twin is actually trackable, so this cannot recur silently; (4) §11.4.153 compliance is either met or recorded as an honest gap, never left implicitly failing.
+
+DISCOVERY CHANNEL (§11.4.238): found by the BOB-102 round-9 remediation stream when it regenerated its own guide twins and noticed the .docx could not be added. Not by the automated QA regime — and the regime cannot see it, which is the point.
 

@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 94
-**Last modified:** 2026-09-23T00:58:03Z
+**Revision:** 95
+**Last modified:** 2026-09-23T06:27:31Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -1492,25 +1492,6 @@ HONEST NOTE ON SCOPE: this item does not argue §11.4.18 should be enforced imme
 
 DISCOVERY CHANNEL (§11.4.238): found by the T042 readiness preflight while explaining why a new file broke invariant 16. Not by the automated QA regime.
 
-## BOB-225 — *.docx is globally gitignored while the §11.4.65 exporters generate .docx twins — every DOCX artifact this project produces is untrackable by construction
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** major
-
-WHAT, conductor-verified: .gitignore:266 ignores *.docx globally. The §11.4.65 export pipeline GENERATES .docx twins — the workable-items export produces Issues.docx / Fixed.docx / Issues_Summary.docx / Fixed_Summary.docx, and the doc exporter produced docs/scripts/check_cm_lan_routes_authenticated.docx during round 9. Every one of them is untrackable by construction: they exist on disk, git will never see them, and no gate can notice because the absence is silent.
-
-WHY THIS IS THE BOB-212 CLASS, NOT A DUPLICATE OF IT: BOB-212 is a deny-all glob plus a hand-maintained per-file ALLOWLIST, where new files leak through the gaps in the list. This is a deny-all glob with NO allowlist at all for a file type the project MANDATES producing. The mechanism differs; the false-null is identical — git status stays silent, so the exporter appears to succeed and the artifact appears to exist. It is filed separately per §11.4.214 (distinct-but-similar), with BOB-212 and BOB-219 as siblings.
-
-THE TENSION TO RESOLVE HONESTLY: §11.4.153 mandates a FOUR-format export (HTML + PDF + DOCX) for its document class, and §11.4.65 governs the twins generally. So the constitution requires producing an artifact the repository is configured to refuse. One of the two is wrong and the resolution is an operator decision (§11.4.66): (a) the .docx mandate applies here and the glob must carve out generated doc twins; (b) .docx is deliberately untracked as a heavy binary derivative regenerable per §11.4.77 from its .md, in which case the EXPORTERS should stop producing it, or produce it into an explicitly untracked location, and the §11.4.153 four-format requirement should be recorded as consciously not-adopted rather than silently unmet.
-What is NOT acceptable is the present state: generate it, ignore it, and let both the mandate and the glob appear satisfied.
-
-MEASURED SCOPE: tracked .docx files = 0. So this is not a partial condition — no DOCX artifact has ever been committed, and the project has been producing them into a void.
-
-ACCEPTANCE: (1) the operator decision above is taken and recorded; (2) whichever way, the exporter and the ignore rule AGREE — if .docx is not tracked, nothing should silently generate one into a tracked doc directory; (3) if carved out, a check that a generated twin is actually trackable, so this cannot recur silently; (4) §11.4.153 compliance is either met or recorded as an honest gap, never left implicitly failing.
-
-DISCOVERY CHANNEL (§11.4.238): found by the BOB-102 round-9 remediation stream when it regenerated its own guide twins and noticed the .docx could not be added. Not by the automated QA regime — and the regime cannot see it, which is the point.
-
 ## BOB-226 — Repair-side walk over foreign-owned INTERIOR directories is untested by any automated path
 
 **Status:** Queued
@@ -1521,16 +1502,6 @@ DISCOVERY CHANNEL (§11.4.238): found by the BOB-102 round-9 remediation stream 
 
 WHAT: ownership_repair walks a declared root and repairs items whose uid is not the operator. The unit suite seeds a foreign uid only onto FILES and SYMLINKS; interior DIRECTORIES stay operator-owned (case 22 seeds only a foreign declared ROOT, on the failure path). Production first-start repairs exactly the untested shape. MANIFEST: tests/unit/test_ownership_repair.sh seed_tree/seed_wrong; scripts/ownership_repair.sh walk at :994. REPRO: seed a tree whose interior directories carry uid 100000 via podman unshare, run the repair, observe no automated assertion covers the outcome. WHY UNTESTED: the unprivileged harness cannot create symlinks inside a directory it no longer owns, which cases 8/9/18 require. The DECLARED GAPS note cross-references tests/ownership/test_container_writes_owned_files.py, but that covers the CREATION side (FR-002), not the repair-side walk. ACCEPTANCE: an integration-layer test (where the unprivileged-harness constraint does not bind) that seeds foreign-owned interior directories, runs the repair, and asserts post-state ownership plus mode preservation. Surfaced by the BOB-207 independent review 2026-08-27.
 
-## BOB-227 — The LAN-route auth gate ships UNTRACKED: analyzer, wrapper and its 197-assertion harness exist only in one working tree
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** critical
-**Created-By:** Claude
-**Assigned-To:** Claude
-
-WHAT: three of the four artifacts of the CM-LAN-ROUTES-AUTHENTICATED pre-build gate are untracked in git. MEASURED 2026-08-27 with git ls-files --error-unmatch, control-needled against a known-tracked file: scripts/pre_build/lan_route_auth_analyzer.py UNTRACKED, scripts/pre_build/check_cm_lan_routes_authenticated.sh UNTRACKED, tests/pre_build/test_check_cm_lan_routes_authenticated.sh UNTRACKED; only docs/scripts/check_cm_lan_routes_authenticated.md is TRACKED. IMPACT: (1) losing this checkout loses an entire security gate plus 197 assertions; (2) no round-over-round diff claim across review rounds 8 through 14 was ever checkable, because no committed baseline exists - the same §11.4.226 evidence-custody failure the BOB-195 chain hit independently; (3) a fresh clone runs a pre-build gate whose implementation is absent. ACCEPTANCE: all four artifacts tracked and committed, and a gate asserting that every executable a pre-build invariant invokes is itself tracked. Surfaced by the BOB-102 round-13 remediation and independently verified 2026-08-27.
-
 ## BOB-228 — README does not link the LAN-route auth gate guide, so a §11.4.65-scope doc is an orphan under §11.4.212
 
 **Status:** Queued
@@ -1540,4 +1511,13 @@ WHAT: three of the four artifacts of the CM-LAN-ROUTES-AUTHENTICATED pre-build g
 **Assigned-To:** Claude
 
 WHAT: §11.4.212 makes the main README the canonical entry point for ALL project documentation, with no §11.4.65-scope doc reachable by no link path. docs/scripts/check_cm_lan_routes_authenticated.md is not reachable from README.md. MEASURED 2026-08-27: grep -c for the guide name in README.md returns 0, control-needled against a doc README does link (CONTINUATION returns 1), so the instrument is not blind. ACCEPTANCE: README links the guide directly or transitively, and the doc-link generator covers docs/scripts/ so the next such guide cannot land orphaned. Surfaced by the BOB-102 round-13 remediation and independently verified 2026-08-27.
+
+## BOB-231 — A gate asserting every executable a pre-build invariant invokes is itself tracked (BOB-227 criterion 2 follow-up)
+
+**Status:** Queued
+**Type:** Task
+**Severity:** Major
+**Created-By:** AI
+
+BOB-227 measured 3 of 4 artifacts of the CM-LAN-ROUTES-AUTHENTICATED gate untracked in git; criterion 1 (commit them) was already resolved by an unrelated prior commit before this session, closed 2026-09-23. Criterion 2 was NOT addressed: 'a gate asserting that every executable a pre-build invariant invokes is itself tracked' -- a general mechanism preventing this whole CLASS of defect (a pre-build gate's own implementation files shipping untracked, invisible to a fresh clone, no committed baseline for round-over-round diffs) from recurring for ANY future gate, not merely this one. ACCEPTANCE: (1) enumerate every file path scripts/pre_build_verification.sh invokes (via bash/timeout/python3 calls to scripts under scripts/pre_build/, plus every tests/pre_build/*.sh and tests/hooks/*.sh it runs) -- likely via a static grep/parse of pre_build_verification.sh itself, or a runtime trace; (2) assert every one of those paths is git-tracked (git ls-files --error-unmatch); (3) wire this as a new pre-build invariant so a future untracked gate implementation is caught immediately, not discovered independently weeks later; (4) a RED test creating an untracked fake gate-invocation target and asserting the new check fails on it, GREEN once the mechanism exists and the fake target is either removed or tracked.
 

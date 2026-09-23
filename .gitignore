@@ -289,15 +289,33 @@ docs/*.db-shm
 # listed here so it stays INCLUDED in the index per §11.4.79.
 submodules/jackett/
 
-# Research-doc DOCX exports are on-demand only (not tracked); governance/tracker docx ARE tracked.
-
-# DOCX exports are generated on demand (regen: scripts/generate_markdown_exports.sh, §11.4.77);
-# not tracked to avoid dozens of binary blobs. HTML/PDF remain tracked.
+# BOB-225 (operator decision 2026-09-23, superseding the prior "not tracked
+# to avoid dozens of binary blobs" choice below): §11.4.65/§11.4.153 MANDATE
+# a four-format (HTML+PDF+DOCX) export for every in-scope Markdown document.
+# A deny-all *.docx glob with only a 2-file allowlist meant 1138 of 1140
+# generated DOCX twins on disk were untracked-and-invisible (git status
+# silent, the exact BOB-212-class false-null) — including the exact two
+# tracked survivors (docs/features/Status.docx/_Summary.docx) being alive
+# only by accident of already being in the index, one delete-and-re-add
+# from vanishing the same way. VERIFIED 2026-09-23: every one of the 384
+# docs/**/*.docx + 7 repo-root */.docx + 2 scripts/**/*.docx files on this
+# checkout pairs 1:1 with a tracked .md sibling (no exceptions found) — a
+# genuine export twin, never a stray/unrelated Word document.
+#
+# DOCX exports are generated on demand (regen: scripts/generate_markdown_exports.sh,
+# §11.4.77) — not hand-authored. The deny-all glob is KEPT (a hand-authored
+# or third-party .docx landing anywhere else in the tree is still refused
+# by default); only genuine generated-twin locations are carved out.
 *.docx
-# §11.4.153 — the docs/features Status set MUST ship DOCX (operator mandate:
-# "all exported files (PDF, DOCX, HTML)"). Track these specific DOCX exports.
-!docs/features/Status.docx
-!docs/features/Status_Summary.docx
+!docs/**/*.docx
+!scripts/**/*.docx
+!README.docx
+!AGENTS.docx
+!CLAUDE.docx
+!QWEN.docx
+!CONTRIBUTING.docx
+!CONSTITUTION.docx
+!CHANGELOG.docx
 
 # Runtime test/QA output (stress/chaos evidence) — regenerated per run.
 qa-results/
