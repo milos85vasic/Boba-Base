@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260923</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260923</h1>
+</header>
+<h1 id="bob-189-closure-evidence-2026-09-23">BOB-189 closure evidence —
+2026-09-23</h1>
+<h2 id="defect">Defect</h2>
+<p>The §11.4.252 fail-open scanner’s silent-default-return heuristic
+flagged 3 genuine fail-CLOSED sites inside
+<code>_is_safe_fetch_url</code> (an SSRF guard in
+<code>download-proxy/src/api/routes.py</code>) as fail-open — every call
+site gates on the return value and refuses
+(<code>if not X(): ...; continue</code>), so acting on the finding
+naively would mean deleting an SSRF protection.</p>
+<h2 id="fix">Fix</h2>
+<p>Call-site-aware discrimination in <code>classify_suppress</code>’s
+surrounding AST machinery (constitution submodule): a hit is suppressed
+only when EVERY call site of that bare function name in the file is
+refuse-shaped (escapes via continue/break/return/raise, anywhere at top
+level, not only as the first statement). Zero call sites or any ungated
+caller keeps the hit flagged (conservative-safe default, §11.4.201(4)).
+A suppressed hit prints as an honest NOTE citing the call-site evidence,
+never silent.</p>
+<h2
+id="independent-verification-coordinator-from-clean-shell">Independent
+verification (coordinator, from clean shell)</h2>
+<pre><code>$ nice -n 19 ionice -c 3 bash constitution/scripts/gates/cm_dangerous_combination_fail_closed_mutation_test.sh
+[189 fixtures including L82-L86 BOB-189 discrimination-boundary cases]
+✅ META PASS — ... META_EXIT=0</code></pre>
+<p>Direct invocation against the real current
+<code>routes.py</code>:</p>
+<pre><code>$ bash constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh --root &lt;copy&gt; --max-depth 1 --quiet
+❌ FAIL — silent default return ... :376
+❌ FAIL — swallowed exception ... :529
+❌ FAIL — swallowed exception ... :1244
+⚠ NOTE — CALL-SITE-GATED ... :1352
+⚠ NOTE — CALL-SITE-GATED ... :1364
+⚠ NOTE — CALL-SITE-GATED ... :1385
+❌ FAIL — 3 fail-open anti-pattern hit(s) found</code></pre>
+<p>The 3 <code>_is_safe_fetch_url</code> SSRF sites now print as honest
+NOTEs (down from FAIL); the 3 unrelated, out-of-scope findings remain
+correctly flagged — confirming the fix is precisely scoped and doesn’t
+over-suppress.</p>
+<p>The item’s originally-named <code>_qbit_add_succeeded</code> false
+positives no longer exist (independently reconfirmed) — that function
+was refactored into a bare delegation with no try/except of its own
+since the item was filed.</p>
+<h2 id="status">Status</h2>
+<p>Fixed. Pushed to all 6 constitution-submodule remotes (commit
+<code>eba38e8</code>). Closed by coordinator after independent
+re-verification.</p>
+</body>
+</html>

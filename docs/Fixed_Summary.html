@@ -190,7 +190,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td>Bug</td>
 <td>Fixed (→ Fixed.md)</td>
-<td>96</td>
+<td>102</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -210,7 +210,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td>Task</td>
 <td>Fixed (→ Fixed.md)</td>
-<td>5</td>
+<td>10</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -220,7 +220,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>166</strong></td>
+<td><strong>177</strong></td>
 </tr>
 </tbody>
 </table>
@@ -1012,6 +1012,15 @@ constitution/scripts/gates/ and thin boba’s copy to a delegator
 </tr>
 <tr>
 <td>110</td>
+<td>Low</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-141 — CLAUDE.md claims the Go profile serves 7186/7187/7188 but
+its container binds only 7187 — doc contradicts the Dockerfile</td>
+</tr>
+<tr>
+<td>111</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1020,7 +1029,7 @@ constitution/scripts/gates/ and thin boba’s copy to a delegator
 amplify into a 43-tracker fan-out carrying arbitrary payload</td>
 </tr>
 <tr>
-<td>111</td>
+<td>112</td>
 <td>Low</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1030,7 +1039,7 @@ fail-closed but via an uncaught traceback, inconsistent with the two SSE
 generators</td>
 </tr>
 <tr>
-<td>112</td>
+<td>113</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1040,7 +1049,7 @@ Deduplicator.merge_results so O(N^2) regex work stops blocking the
 asyncio event loop</td>
 </tr>
 <tr>
-<td>113</td>
+<td>114</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1050,7 +1059,7 @@ asyncio event loop</td>
 not a census</td>
 </tr>
 <tr>
-<td>114</td>
+<td>115</td>
 <td>Medium</td>
 <td>Completed (→ Fixed.md)</td>
 <td>Task</td>
@@ -1059,7 +1068,7 @@ not a census</td>
 fixed, 14 correct idioms, 14 vendored</td>
 </tr>
 <tr>
-<td>115</td>
+<td>116</td>
 <td>Medium</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1069,7 +1078,7 @@ test_no_credentials asserts has_session False, gets True — real defect
 or non-hermetic test, undecided</td>
 </tr>
 <tr>
-<td>116</td>
+<td>117</td>
 <td>Low</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1079,7 +1088,25 @@ constitution, CLAUDE.md and the README badge; the badge is
 hand-maintained and unguarded</td>
 </tr>
 <tr>
-<td>117</td>
+<td>118</td>
+<td>Low</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-150 — pre_build_verification.sh invariant labels read N/44 but
+only 35 invariants are labelled</td>
+</tr>
+<tr>
+<td>119</td>
+<td>Medium</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-152 — Constitution sweep walks vendored third-party code: 82% of
+one gate’s 38,291 findings come from submodules/</td>
+</tr>
+<tr>
+<td>120</td>
 <td>Medium</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1088,7 +1115,16 @@ hand-maintained and unguarded</td>
 Dockerfile builder is golang:1.23-alpine</td>
 </tr>
 <tr>
-<td>118</td>
+<td>121</td>
+<td>Medium</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-154 — Host venv and production container run different starlette
+versions (1.4.1 vs 1.6.0)</td>
+</tr>
+<tr>
+<td>122</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1097,7 +1133,7 @@ Dockerfile builder is golang:1.23-alpine</td>
 having opened zero Markdown files when –issues/–fixed are omitted</td>
 </tr>
 <tr>
-<td>119</td>
+<td>123</td>
 <td>Medium</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1107,7 +1143,7 @@ flaky: 8786ms under host load vs a 900-1500ms ceiling calibrated on a
 quiet host</td>
 </tr>
 <tr>
-<td>120</td>
+<td>124</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1117,7 +1153,7 @@ service: faulthandler dump_traceback(all_threads=True) hits an unpatched
 CPython 3.12 defect</td>
 </tr>
 <tr>
-<td>121</td>
+<td>125</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1127,7 +1163,7 @@ interpreter: binds asyncio.events._get_event_loop_policy, a 3.13+
 private API, while production is 3.12.13</td>
 </tr>
 <tr>
-<td>122</td>
+<td>126</td>
 <td>Medium</td>
 <td>Completed (→ Fixed.md)</td>
 <td>Task</td>
@@ -1165,7 +1201,7 @@ extracted standalone run of the invariant’s exact block reporting a
 non-zero RAN count that includes files from both directories.</td>
 </tr>
 <tr>
-<td>123</td>
+<td>127</td>
 <td>Medium</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1246,7 +1282,7 @@ mutation proving assertion (c) still catches a genuinely degraded
 sibling endpoint – narrowing it must not blind it (11.4.201(1)).</td>
 </tr>
 <tr>
-<td>124</td>
+<td>128</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1331,7 +1367,7 @@ documents that the interim recipe has a blast radius, so nobody reads a
 workaround artifact as a regression.</td>
 </tr>
 <tr>
-<td>125</td>
+<td>129</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1386,7 +1422,7 @@ evidence-backed. NOT CLAIMED. No fix is implemented by this filing. The
 its own evidence, not a bulk UPDATE.</td>
 </tr>
 <tr>
-<td>126</td>
+<td>130</td>
 <td>Medium</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1438,7 +1474,91 @@ headers, never driven to exhaustion — the limiter is per-IP and shared
 with concurrent agents on this host (§11.4.119).</td>
 </tr>
 <tr>
-<td>127</td>
+<td>131</td>
+<td>Low</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-168 — WHAT. scripts/run_all_challenges.sh:66 lists
+“scaling_horizontal_challenge.sh” in its challenge set.
+challenges/scripts/scaling_horizontal_challenge.sh does not exist: $ sed
+-n ‘66p’ scripts/run_all_challenges.sh “scaling_horizontal_challenge.sh”
+$ ls challenges/scripts/scaling_horizontal_challenge.sh ls: cannot
+access …: No such file or directory VERIFIED independently, not taken on
+report — surfaced by the BOB-109 scaling agent and re-checked here by
+direct invocation. WHY IT MATTERS. Whether this is cosmetic or a
+§11.4.201 gate-honesty defect depends entirely on how the runner treats
+a missing entry, and that is the first thing to determine: if it SKIPs
+silently, the challenge bank advertises coverage it does not have (a
+§11.4.266 claim-vs-reality row with no passing challenge behind it); if
+it FAILs, the runner is permanently red for a reason unrelated to the
+system under test, which trains readers to ignore it. Neither outcome is
+acceptable; they need different fixes. ACCEPTANCE. (a) Determine and
+record the runner’s actual behaviour on the missing entry by invoking
+it, not by reading it. (b) EITHER author the challenge, OR remove the
+entry — with §11.4.124 discipline: check git history for whether it once
+existed and was deleted, since a silently-dropped challenge is the more
+interesting defect. (c) If the runner silently skips missing entries,
+that is its own finding: a missing challenge must be loud (§11.4.3
+SKIP-with-reason at minimum), never absent-and-quiet. SEVERITY. Low as a
+defect, but it sits on the challenge-coverage seam, so (c) may deserve
+its own item. CORRECTION 2026-08-22 (§11.4.6) — THIS ITEM’S PREMISE WAS
+FALSE, and the error was mine. Recorded openly rather than quietly
+edited. scaling_horizontal_challenge.sh EXISTS. It is at
+submodules/challenges/challenges/scripts/scaling_horizontal_challenge.sh,
+executable, 3107 bytes, dated Aug 7. So do all 14 other entries and the
+meta-runner. It was never deleted: added to the roster at 1c959ba, the
+challenge itself added in the submodule at 873c0b1, and a pickaxe search
+across both repositories and all branches finds ZERO deletions. HOW I
+GOT IT WRONG. run_all_challenges.sh reads
+submodules/challenges/challenges/scripts/. I checked challenges/scripts/
+— a DIFFERENT directory belonging to a DIFFERENT, glob-based runner. Two
+similarly-named directories; I measured the wrong one. That is a
+§11.4.201(9) field-identity error. Worse, I wrote that it was “verified
+by invocation”: I had listed a directory and never run the aggregator,
+so the claim overstated the evidence class as well as getting the answer
+wrong. THE LESSON, which generalises past this item. In the SAME commit
+I correctly caught a sibling agent making this exact class of error on
+BOB-167 — a zero-hit produced by searching one symbol name — and applied
+a control needle there. Then I omitted the needle one paragraph later on
+my own measurement. The distinction that would have caught it: A CONTROL
+NEEDLE PROVES THE INSTRUMENT CAN SEE; IT DOES NOT PROVE IT IS POINTED AT
+THE THING UNDER TEST. §11.4.201(7)(b) as commonly applied guards
+blindness; it does not guard mis-aiming. The needle for THIS query would
+have been to resolve the path the runner itself reads, not to confirm
+that some directory listing works. WHAT IS ACTUALLY WRONG, and it is
+worse than what I filed. The missing-entry path runs no challenges by
+definition, so it can be exercised safely. Run against a checkout where
+the submodule is absent — the ordinary state of a clone made without
+–recursive — the REAL runner (byte-identity sha-asserted, not a replica)
+reports: PASS: 0 FAIL: 0 SKIP: 16 TOTAL: 16 OBSERVED EXIT CODE: 0 An
+ENTIRELY UN-RUN BANK REPORTS SUCCESS. Not one dangling entry tolerated —
+the whole suite silently passes without executing anything. That is
+§11.4.201(6) false-null verbatim, and it is observed-reachable rather
+than constructed (§11.4.115(G)). REVISED ACCEPTANCE. (a) ANSWERED,
+though not as filed: the runner reports a loud, counted SKIP and then
+never blocks, because the exit expression reads only the FAIL count. (b)
+The dangling-entry half is VOID — nothing is dangling. (c) The real work
+is the exit contract: a roster entry the runner cannot execute must not
+be indistinguishable from a healthy run. See the decision recorded in
+docs/qa/BOB-168/decision_missing_vs_skip.md. RELATED, REPORTED NOT
+FIXED: scripts/pre_build_verification.sh:1792 carries the same
+SKIP/MISSING conflation one level up, for the other runner. Filed
+separately.</td>
+</tr>
+<tr>
+<td>132</td>
+<td>Medium</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-169 — WHAT. The §11.4.65 markdown-export mandate requires every
+in-scope doc to ship .html/.pdf twins. 286 of the 326 .html files under
+docs/ (excluding dist/ and node_modules/) are pandoc FRAGMENTS — they
+begin at </td>
+</tr>
+<tr>
+<td>133</td>
 <td>Low</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1491,7 +1611,7 @@ real users legitimately share one address. NOT CLAIMED. No change made.
 Both sites still parse leftmost; the flag still defaults off.</td>
 </tr>
 <tr>
-<td>128</td>
+<td>134</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1559,7 +1679,7 @@ corruption §11.4.201(7)(c) warns about — the path is part of the
 instrument, and it failed without erroring.</td>
 </tr>
 <tr>
-<td>129</td>
+<td>135</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1627,7 +1747,7 @@ write honest; it does nothing about a SUCCESSFUL write of wrong data
 derived from a misread file.</td>
 </tr>
 <tr>
-<td>130</td>
+<td>136</td>
 <td>Medium</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1678,7 +1798,7 @@ one codebase suggests nobody has checked them together
 deployment; read from source by the BOB-172 agent and recorded on its
 report. The reading is specific and checkable, but whoever takes this
 should confirm by invocation before relying on it. |
-| 131 | High | Fixed (→ Fixed.md) | Bug | — | BOB-177 — WHAT: BOB-172
+| 137 | High | Fixed (→ Fixed.md) | Bug | — | BOB-177 — WHAT: BOB-172
 wired an identical 4-line HTTP-refusal guard at five private-tracker
 fetch sites in download-proxy/src/merge_service/search.py (rutracker
 cookie :1390, rutracker credential :1468, kinozal :1648, nnmclub :1761,
@@ -1699,7 +1819,7 @@ byte-identical-fork extraction). Alternative: parametrise the guard
 tests across all five sites with per-site stub sessions.  ACCEPTANCE:
 mutating the wiring at ANY of the five sites reddens at least one test.
 Prove it by running the same R1 deletion at each site in turn. |
-| 132 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-178 — WHAT:
+| 138 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-178 — WHAT:
 download-proxy/src/merge_service/search.py:1638-1640 handles a failed
 kinozal LOGIN response with if login_resp.status not in (200, 301, 302):
 logger.error(...); return [] -- and sets NO diagnostic.  FAILING
@@ -1716,7 +1836,7 @@ return, or an auth_failure diag for the
 status-in-(200,301,302)-but-no-cookie case.  ACCEPTANCE: a stubbed 403
 on the kinozal login endpoint produces a non-None error on the kinozal
 chip, with a RED captured against the pre-fix code first (11.4.115). |
-| 133 | Low | Fixed (→ Fixed.md) | Bug | — | BOB-180 — WHAT:
+| 139 | Low | Fixed (→ Fixed.md) | Bug | — | BOB-180 — WHAT:
 download-proxy/src/api/routes.py:727-745 sets status=captcha_required
 with a hardcoded message naming RuTracker: 'RuTracker requires CAPTCHA.
 Use /api/v1/auth/rutracker/captcha'.  FAILING SCENARIO: a whole search
@@ -1734,7 +1854,7 @@ rather than hardcoding one.  SCOPE NOTE: api/ was owned by a sibling
 stream during BOB-172; the author was correct not to touch
 it.  ACCEPTANCE: an NNMClub-only captcha diagnostic on a zero-result
 search produces a headline naming NNMClub. |
-| 134 | High | Fixed (→ Fixed.md) | Bug | — | BOB-181 — WHAT:
+| 140 | High | Fixed (→ Fixed.md) | Bug | — | BOB-181 — WHAT:
 scripts/generate_markdown_exports.sh accepts no arguments. It
 unconditionally scans PROJECT_ROOT/*.md, docs/ recursively and scripts/
 recursively (scan loops at lines 105/111/116 as of 2026-08-23; they were
@@ -1777,7 +1897,65 @@ matched the wrong surface; the quiet zero read as absence). The
 instrument that DOES see it is ’find </td>
 </tr>
 <tr>
-<td>135</td>
+<td>141</td>
+<td>Medium</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-182 — <strong>OPERATOR DECISION (2026-08-26, §11.4.66
+interactive clarification): KEEP THE MONOTONE RATCHET</strong>
+§11.4.224(E) brownfield adoption answer, recorded as consumer DATA: the
+adoption model for CM-EXPORT-CHARSET-VALID is the MONOTONE-DECREASE
+RATCHET. The count may only go down, never up. Immediate hard floor,
+changed-code-only-with-deadline, and per-corpus phase-in were all
+offered and NOT chosen. This closes half of BOB-182 — the half that was
+genuinely the operator’s. THE REMAINING HALF IS A REAL DEFECT STILL
+OWED: BASELINE is a hardcoded constant, so the ratchet does not actually
+ratchet — on improvement the gate PASSES and PRINTS the value to lower
+it to, but nothing lowers it, and the gate keeps permitting regression
+back to the original count after the corpus heals. The fix must NOT
+collapse §11.4.249 role separation: a gate that writes its own threshold
+during a pre-build run becomes a PRODUCER as well as a GATE. Acceptable
+shapes include a persisted baseline the gate READS but never writes with
+lowering via a separate explicitly-invoked command, or a gate that FAILS
+loudly when the live count is below baseline so drift becomes an
+actionable refusal. This answer is recorded as consumer DATA per
+§11.4.35 — it is the operator’s stated choice, not an agent inference,
+and supersedes any prior agent-chosen default on this question. Options
+not chosen are named above so a future reader does not re-litigate a
+settled call (§11.4.112(5) bounded-verdict discipline applied to
+decisions). — prior item text follows — WHAT: CM-EXPORT-CHARSET-VALID
+(pre-build invariant 50) adopts its 301 pre-existing violations via a
+monotone-decrease ratchet rather than a hard floor. Two things are owed.
+(1) THE ADOPTION DECISION IS THE OPERATOR’S, NOT THE SCRIPT’S.
+11.4.224(E) requires the brownfield adoption question be SURFACED to the
+operator and the answer recorded as consumer DATA – never an invented
+ratchet. What exists today is a header comment plus a
+BOBA_EXPORT_CHARSET_BASELINE override: that DOCUMENTS a decision the
+agent made, it does not RECORD an answer the operator gave. The
+independent reviewer judged the choice defensible and would not reverse
+it (a hard floor on 301 violations makes the build unreachable, which
+11.4.234 forbids; 11.4.101 favours the reversible option) but correctly
+held that it is not yet compliant. Options for the operator: immediate
+hard floor (BASELINE=0) / keep the monotone ratchet / per-corpus
+phase-in / changed-code-only with a scheduled full-corpus deadline. (2)
+THE RATCHET DOES NOT ACTUALLY RATCHET. BASELINE is a hardcoded constant.
+On improvement the gate PASSES and PRINTS the value to lower it to, but
+nothing lowers it, so the gate keeps permitting regression all the way
+back to 301 after the corpus heals. The header now says tightening is
+MANUAL rather than claiming automatic behaviour that does not exist
+(11.4.6), but the honest statement is a stopgap, not the fix. WHY IT WAS
+NOT BUILT WITH THE FIX: a gate that writes its own threshold during a
+pre-build run becomes a PRODUCER as well as a GATE (11.4.249 role
+separation), and that is a design change the operator should approve
+rather than receive as a side effect. ACCEPTANCE: the operator’s
+adoption answer recorded as consumer DATA; and either a persisted
+baseline the gate lowers and never raises (with the role-separation
+question answered), or an explicit decision that manual tightening is
+acceptable.</td>
+</tr>
+<tr>
+<td>142</td>
 <td>High</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1800,7 +1978,7 @@ download-proxy/src/ui/dist/frontend/browser exits 0 with zero violation
 nodes and zero blocking incomplete nodes.</td>
 </tr>
 <tr>
-<td>136</td>
+<td>143</td>
 <td>—</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1888,7 +2066,36 @@ classes <code>diff</code> does not compare (revision headers,
 *_Summary.md).</td>
 </tr>
 <tr>
-<td>137</td>
+<td>144</td>
+<td>—</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-189 — WHAT: the fail-open scanner’s shape-(A2) heuristic cannot
+distinguish ‘return False’ meaning PROCEED-AS-IF-FINE from ‘return
+False’ meaning REFUSE. It flags six textbook fail-CLOSED guards as
+fail-open defects: _is_safe_fetch_url (x3), _qbit_add_succeeded (x2),
+and the hooks path-boundary guard. INDEPENDENTLY VERIFIED 2026-08-25 by
+the conductor rather than taken on the triage agent’s word:
+download-proxy/src/api/routes.py:1122 defines _is_safe_fetch_url
+returning bool, and its only call site at :1476 reads ’if not
+_is_safe_fetch_url(url): logger.warning(Refusing SSRF-unsafe download
+URL (non-public target); skipping); continue’ - a False return REFUSES
+the URL. WHY THIS MATTERS: per §11.4.201(1) a false-positive refusal is
+a FAIL-bluff of equal severity to a false-negative pass, and here the
+consequence is worse than noise - acting on the finding would mean
+making the SSRF guard stop returning False, i.e. deleting an SSRF
+protection to satisfy a gate. A gate that instructs you to remove a
+security control is actively dangerous, not merely imprecise. REPRO: run
+the fail-open scan; observe six hits; read each call site. ACCEPTANCE:
+the scanner distinguishes refuse-shaped from proceed-shaped False
+returns (call-site-aware, or an audited waiver list with per-entry
+justification), the six drop out, AND a golden-FALSE fixture containing
+a real fail-closed guard is added so the discrimination is itself
+falsifiable per §1.1.</td>
+</tr>
+<tr>
+<td>145</td>
 <td>—</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1914,7 +2121,7 @@ owes a coverage-escape note: no automated check asserts the documented
 test invocation actually runs.</td>
 </tr>
 <tr>
-<td>138</td>
+<td>146</td>
 <td>—</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -1948,7 +2155,134 @@ absorbed so the residual defect is not retired along with the logging
 that revealed it.</td>
 </tr>
 <tr>
-<td>139</td>
+<td>147</td>
+<td>—</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-195 — <strong>OPERATOR DECISION (2026-08-26, §11.4.66
+interactive clarification): TEACH THE SCANNER With NODES — KEEP
+SIM105</strong> The §11.4.252 fail-open scanner is FIXED to see
+<code>contextlib.suppress</code>; ruff’s SIM105 rule STAYS ENABLED in
+pyproject.toml. Disabling SIM105, and the belt-and-braces both-at-once
+option, were offered and NOT chosen. Rationale carried with the
+decision: fixing the gate makes SIM105 harmless, whereas disabling
+SIM105 alone would leave the gate blind to any suppress written by hand,
+inherited from a dependency’s style, or already present in the tree.
+REQUIRED BEHAVIOUR: <code>with contextlib.suppress(...)</code> and
+<code>with suppress(...)</code> (the
+<code>from contextlib import suppress</code> binding) wrapping a
+dangerous-combination call are DETECTED with the same severity and
+message shape as the try/except/pass form; a narrow
+<code>suppress(SpecificError)</code> around a NON-dangerous call must
+NOT fire, since a false-positive refusal is a §11.4.201(1) FAIL-bluff of
+equal severity to a missed real one. CONSEQUENCE FOR THE NUMBER: once
+landed, the scanner’s finding count stops being a floor over try/except
+shapes and becomes a genuine census — any prior count citing
+completeness was scoped to try/except only. This answer is recorded as
+consumer DATA per §11.4.35 — it is the operator’s stated choice, not an
+agent inference, and supersedes any prior agent-chosen default on this
+question. Options not chosen are named above so a future reader does not
+re-litigate a settled call (§11.4.112(5) bounded-verdict discipline
+applied to decisions). — prior item text follows — WHAT: the §11.4.252
+fail-open scanner matches Try-handler shapes (A1)/(A2).
+contextlib.suppress is a With node, so a swallow written that way is
+invisible. VERIFIED BY THE CONDUCTOR with a control needle through the
+same invocation path (§11.4.201(7)(b)), because a first attempt returned
+0 for BOTH forms and was itself blind - the gate takes –root, not a
+positional, so a bare path exits on an unknown arg (§11.4.201(7)(c): the
+invocation path is part of the instrument). Correct run: try/except/pass
+around os.unlink(user_supplied_path) -&gt; ‘FAIL - swallowed exception …
+:5’, the needle sees. contextlib.suppress(Exception) around the
+IDENTICAL call -&gt; ‘PASS - no swallowed-exception … anti-patterns
+found’. Both combine untrusted input with an irreversible unlink; both
+swallow everything; one is caught and one is not. WHY IT IS WORSE THAN A
+PLAIN GAP: pyproject.toml enables ruff’s SIM ruleset, and SIM105 is ‘use
+contextlib.suppress instead of try-except-pass’. Our own linter
+therefore instructs authors to rewrite the form this gate CAN see into
+the form it CANNOT. The two tools are pulling in opposite directions and
+the lint one runs more often. Every SIM105 autofix silently shrinks this
+gate’s coverage while the count goes down, which reads as progress.
+CONSEQUENCE FOR THE NUMBER: the scanner’s finding count is a FLOOR over
+try/except shapes, not a census of swallows. Any statement of the form
+‘N fail-open sites remain’ must be read as ‘N among try/except shapes’.
+ACCEPTANCE: the scanner recognises contextlib.suppress (a With whose
+items call contextlib.suppress with a broad exception type) and applies
+the same ≥2-capability test; a golden-TRUE fixture in suppress form; a
+golden-FALSE fixture where suppress wraps a single-capability diagnostic
+emitter and must NOT fire; and an explicit decision on the SIM105
+tension - either exempt the shapes this gate governs, or accept suppress
+and teach the gate to read it. Discovered by the §11.4.252 remediation
+agent when its own MINOR-3 fix required using contextlib.suppress at
+three diagnostic-emitter sites; those three uses are legitimate and
+justified in-source.</td>
+</tr>
+<tr>
+<td>148</td>
+<td>—</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-197 — <strong>OPERATOR DECISION (2026-08-26, §11.4.66): GENERATE
+THE TOKEN AND ARM IT</strong> The conductor generates a 32-byte random
+token and writes BOBA_API_TOKEN into .env; the operator configures
+clients with it. DONE 2026-08-26: token generated via
+secrets.token_hex(32), appended to .env with a comment naming BOB-197
+and the routes.py:83 env-gating fact, chmod 600, value shown to the
+operator ONCE and never written to any other file. Safety verified
+BEFORE writing (§11.4.30/§11.4.10): .env matched .gitignore:27 ’*.env’
+and was untracked (needle-proven — the same matcher confirmed
+docker-compose.yml IS tracked, so the negative is real); a §9.2 pre-op
+backup was taken and is itself ignored; post-write re-check confirmed
+.env still ignored and absent from git status. Pre-store audit found the
+only tracked BOBA_API_TOKEN= occurrences are the docker-compose
+passthrough <span class="math inline">${BOBA_API_TOKEN:-} and prose in
+the leak-audit challenge — no literal value has ever been committed.
+STILL OWED, and the item stays open until it lands: the BOOT-TIME
+INVARIANT (§11.4.254) that refuses to start LAN-bound when the token is
+unset or empty. Without it the arming is a state fix, not a defect fix —
+§11.4.226(5) is explicit that a state-only repair cannot close a defect
+item. Options not chosen: operator sets it themselves with the invariant
+blocking until then; invariant warns first and blocks on a named
+date.  Recorded as consumer DATA per §11.4.35 — the operator's stated
+choice, not an agent inference. Options not chosen are named so a future
+reader does not re-litigate a settled call.  --- prior item text follows
+---  OPERATOR DECISION (2026-08-26): arm BOBA_API_TOKEN and keep
+0.0.0.0, backed by a BOOT-TIME invariant that refuses to start LAN-bound
+with the token unset. This item IS that invariant.  MEASURED FACT, not
+inference. download-proxy/src/api/routes.py:83 require_api_token() reads
+BOBA_API_TOKEN at request time and returns immediately when unset or
+empty. Its own docstring states it plainly: "BOBA_API_TOKEN unset/empty
+-&gt; return (OPEN). This is the DEFAULT and preserves the current
+no-auth contract + dev workflow". docker-compose.yml:237 passes
+BOBA_API_TOKEN=$</span>{BOBA_API_TOKEN:-}, so the container inherits
+empty unless the operator declares it. The operator .env does NOT
+declare it, needle-verified per 11.4.201(7)(b): the same matcher hit
+QBITTORRENT_DATA_DIR in the same file, so the miss is a real absence and
+not a blind read. The qbittorrent-proxy container was RUNNING and
+LAN-bound at measurement time. Consequence: the ten routes the BOB-102
+guard resolves as auth-wired are open in practice on a default deploy.
+WHY A STATIC GATE CANNOT COVER THIS. The BOB-102 gate asserts static
+route WIRING - that a Depends(require_api_token) marker exists on
+handler, decorator or router. It cannot assert runtime ARMING, which
+depends on an env var read per request. Claiming the static gate covers
+it would be exactly the bluff the gate exists to prevent (11.4.262:
+machine evidence must match the layer it claims). This is a boot-time
+invariant class per 11.4.254. ACCEPTANCE: a boot-time check that, when
+the listener is LAN-bound (not loopback), refuses to start with a
+non-zero exit and a named cause if BOBA_API_TOKEN is unset or empty, so
+the open state becomes UNREACHABLE rather than the default. Paired 1.1
+mutation: remove the check, prove the service starts LAN-bound-and-open.
+Golden-FALSE per 11.4.201(1): a loopback-bound listener with the token
+unset must NOT be refused, or the check becomes a false-positive refusal
+blocking legitimate dev work. 11.4.238 COVERAGE-ESCAPE NOTE: found by a
+subagent reading source during BOB-102 guard construction, NOT by the
+automated QA regime - which is itself the defect class 11.4.238 names.
+The boot-time check IS the new automated check that would have caught
+it.</td>
+</tr>
+<tr>
+<td>149</td>
 <td>—</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2004,7 +2338,7 @@ Go profile as dev-only that must refuse to start LAN-bound - with a
 guard enforcing whichever is chosen.</td>
 </tr>
 <tr>
-<td>140</td>
+<td>150</td>
 <td>—</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Task</td>
@@ -2102,7 +2436,7 @@ but SAFE in fact, and want a justified exemption entry rather than a
 code change.</td>
 </tr>
 <tr>
-<td>141</td>
+<td>151</td>
 <td>Medium</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2136,7 +2470,7 @@ not become a false-positive refusal; (4) paired 1.1 mutation: restore
 the swallow-find-failure behaviour and the new fixture MUST fail.</td>
 </tr>
 <tr>
-<td>142</td>
+<td>152</td>
 <td>Medium</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2181,7 +2515,7 @@ mutation: restore the un-resolved behaviour and the fixture MUST
 fail.</td>
 </tr>
 <tr>
-<td>143</td>
+<td>153</td>
 <td>Medium</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2261,7 +2595,7 @@ coverage-escape note above is SHARPENED - the sibling's own comment
 already states that a fixture-scope suite cannot see this class, so the
 required automated check must exercise a row with a genuinely empty
 middle field, not merely a well-formed one. |
-| 144 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-203 — MEASURED
+| 154 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-203 — MEASURED
 LIVE 2026-08-26 against the running stack from LAN 192.168.1.90 (NOT
 loopback - qBittorrent's localhost bypass would have exercised a
 different code path). Evidence:
@@ -2335,7 +2669,7 @@ different service, not a demonstrated unauthenticated mutating route on
 UNVERIFIED and is the open question this note raises. Recorded here so
 the 7188 surface is not overlooked when this item's scope is settled —
 and so nobody later "discovers" it as new. |
-| 145 | critical | Fixed (→ Fixed.md) | Bug | — | BOB-204 — WHAT:
+| 155 | critical | Fixed (→ Fixed.md) | Bug | — | BOB-204 — WHAT:
 internal/jackettapi/credentials.go:234-253 (boba-jackett, port 7189).
 The DELETE credential handler checks the DB delete, then discards the
 errors of BOTH `_ = envfile.Delete(...)` (line 240) and `_ =
@@ -2437,7 +2771,7 @@ Bonus: runs.go:43 `_ = json.Unmarshal(...)` is benign but mildly lossy —
 a corrupt ErrorsJSON silently reports error_count=0, documented as
 deliberate degradation in its GoDoc. Cosmetic under-report, not an
 integrity issue; recorded so it is not re-investigated. |
-| 146 | major | Fixed (→ Fixed.md) | Bug | — | BOB-205 — WHAT: the
+| 156 | major | Fixed (→ Fixed.md) | Bug | — | BOB-205 — WHAT: the
 §11.4.252 fail-closed scanner is driven per-root by invariant 39 at
 scripts/pre_build_verification.sh:1481-1544 over a hand-maintained
 DANGER_ROOTS list. `cmd/boba-ctl/` — 4 files, 947 LOC — is NOT in that
@@ -2540,7 +2874,7 @@ omission-guard is the SAME computation — the only question is whether it
 drives the scan or audits the list. The tests/ question (324 files) is
 an operator §11.4.66 decision; production-only is defensible but
 currently UNDECLARED. |
-| 147 | critical | Obsolete (→ Fixed.md) | Bug | — | BOB-206 — STATUS:
+| 157 | critical | Obsolete (→ Fixed.md) | Bug | — | BOB-206 — STATUS:
 UNCONFIRMED — surfaced by the T041 review-scope preflight
 (docs/qa/T041/review_scope_map_20260826.md), which stated it as "factor
 6 is unguarded as far as I could tell". That hedge is preserved
@@ -2594,7 +2928,7 @@ it.  NOTE ON THIS RECORD: the first write of this description was
 corrupted by shell backtick expansion (three terms silently emptied).
 This is the repaired text; the corruption is recorded here rather than
 quietly overwritten, per §11.4.6. |
-| 148 | critical | Fixed (→ Fixed.md) | Bug | — | BOB-207 — WHAT:
+| 158 | critical | Fixed (→ Fixed.md) | Bug | — | BOB-207 — WHAT:
 scripts/lib/ownership.sh:299-320 probe_location() reads stat -c '%u' and
 compares against ownership_operator_uid (id -u). It NEVER reads '%g'.
 Meanwhile ownership_operator_gid is defined at
@@ -2676,10 +3010,10 @@ RED fix-direction-agnostic rather than a vote.  THE FIX, NOT APPLIED —
 scripts/ownership_repair.sh:963:   -    find_args+=(\( ! -uid
 "$</span>{OP_UID}” -o ! -gid “<span class="math inline">${OP_GID}" \)
 -printf '%U\t%G\t%m\t%p\0')   +    find_args+=(! -uid "$</span>{OP_UID}”
--printf’%U 149</td>
+-printf’%U 159</td>
 </tr>
 <tr>
-<td>151</td>
+<td>161</td>
 <td>major</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2722,7 +3056,7 @@ substring). DISCOVERY CHANNEL (§11.4.238): found by the BOB-206
 verification stream.</td>
 </tr>
 <tr>
-<td>152</td>
+<td>162</td>
 <td>critical</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2883,7 +3217,7 @@ from two independent streams, is not a coincidence rate — it is the
 defect operating normally.</td>
 </tr>
 <tr>
-<td>153</td>
+<td>163</td>
 <td>critical</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2910,13 +3244,13 @@ credential handling, container control and gates are shell. start.sh
 alone is 1288 LOC and is, per CLAUDE.md, THE orchestrator. Fail-open in
 shell is also unusually easy to write — a bare `cmd \|\| true`, an
 unchecked `$</span>?<code>, a</code>set
-+e<code>region, a swallowed</code>2&gt;/dev/null<code>— and §11.4.67(6) already records one live instance of exactly this class (a bare exec redirection silencing an interactive shell for its lifetime).  CORRECTION TO A PREVIOUSLY-STATED ACCEPTANCE CRITERION (§11.4.6): I asserted, when filing BOB-205, that "the honest-blindness path (§11.4.3 SKIP-with-reason, which the gate already implements correctly for unenumerated extensions) is preserved". THAT IS WRONG. The gate's honest SKIP-with-reason exists for the PYTHON ARM's degradations, NOT for extensions absent from the ext list. An unenumerated extension is a SILENT false-null, not an honest skip. The distinction is load-bearing and I stated it backwards.  NOTE ON LINE NUMBERS: the BOB-205 stream cited the ext list at :318; the conductor measured it at :457. Both are correct at their read times — a sibling stream (BOB-195 r7) is actively editing this file. Re-derive before acting.  ACCEPTANCE: (1) either shell is added to the ext list WITH an arm that can actually analyse it, or unenumerated extensions produce an explicit UNANALYSED verdict per file — never a silent pass (this is the same analyser-registry fix BOB-191 needs, and doing it once covers both); (2) the driver's summary reports files ANALYSED, not files present, so an under-count cannot masquerade as a census; (3) a RED planting a shell fail-open under scripts/ and asserting it is SEEN; (4) golden-FALSE per §11.4.201(1) — a correctly fail-CLOSED shell guard must NOT be flagged; §11.4.67's own brace-scoped exec form is the natural fixture.  COMPOSES: BOB-191 (matcher hole — same primitive: classify by local shape, never consult semantic role; and the analyser-registry fix closes both) and BOB-205 (scope hole). Per §11.4.250 these are three symptoms of one primitive defect; per §11.4.214 they stay three items because the fixes differ.  DISCOVERY CHANNEL (§11.4.238): found by the BOB-205 verification stream, confirmed independently by the conductor. Not by the automated QA regime. | | 154 | critical | Fixed (→ Fixed.md) | Bug | — | BOB-214 — WHAT: DANGER_ROOTS = (download-proxy/src plugins scripts qBitTorrent-go frontend/src) at scripts/pre_build_verification.sh:1511. The REPOSITORY ROOT itself is not among them (conductor-verified: no "." entry). Everything living at the top level is scanned by no arm.  THE LIVE HIT: webui-bridge.py — tracked at root (conductor-verified), 466 LOC, a live HTTP service on port 7188 (BaseHTTPRequestHandler:85, do_GET/do_POST:92-97, request path read at :103, outbound urlopen at :273, environment credentials read at :55-74). The gate REPORTS A REAL HIT AT :295 when pointed at it directly. This is not a hypothetical gap: the existing gate, unmodified, finds a genuine defect in this file the moment scope reaches it.  ALSO UNSCANNED AT ROOT: 13 first-party shell scripts including start.sh (1288 LOC — per CLAUDE.md the project's orchestrator and the sole sanctioned container-control entry point), stop.sh, ci.sh, install-plugin.sh, and the credential-handling init-qbit-password.sh / fix-qbit-password.sh. (These are additionally invisible for the separate LANGUAGE-hole reason — shell is not in the gate's ext list — so root files get missed twice over, by scope AND by extension.)  THE SCALE THIS SITS IN: 266 files in scope / 512 out of scope — 66% of the gate-visible first-party corpus is never scanned. Other unscanned roots measured: tests/ (324 files, excluded-by-intent but UNDECLARED — an undeclared exclusion is exactly what §11.4.224(E) fences against), extension/ (108, shipped browser extension), docs/ (51), challenges/ (18), tools/ (1, and it CONCEALS 3 REAL HITS at plugin_update_automation.py:189,198,215), frontend/e2e + 2 configs (5).  SO THE SCOPE HOLE CONCEALS AT LEAST 4 REAL HITS the gate itself finds when pointed at them (1 in webui-bridge.py, 3 in tools/). Invariant 39's reported count is an under-count, not a census.  ACCEPTANCE: (1) repository root and tools/ are scanned, or explicitly fenced with a stated reason per §11.4.224(E) — silence is not an exclusion; (2) the 4 concealed hits are triaged (each is either a real defect to fix or a false positive to fix in the gate — both are findings); (3) tests/ (324 files) gets an OPERATOR decision per §11.4.66 — production-only is defensible but must be DECLARED; (4) a RED proving a root-level fail-open is seen; (5) golden-FALSE proving genuine build artefacts and vendored trees stay excluded.  FIX DIRECTION (measured by the BOB-205 stream, not guessed): a §11.4.251 manifest is feasible but the source of truth must be chosen carefully — docker-compose.yml build contexts MISS plugins/, frontend/src, cmd/boba-ctl and webui-bridge.py; language markers (go.mod/package.json) MISS plugins/ and webui-bridge.py. Only derive-from-git-tracked-source-extensions minus a declared §11.4.224(E) exclusion fence reaches every gap. Note the derivation must be built either way — if the operator prefers keeping a hand list, the omission-guard that audits it is the SAME computation; the only question is whether it drives the scan or audits the list.  DISCOVERY CHANNEL (§11.4.238): found by the BOB-205 verification stream while enumerating the full gap list — the item it was verifying named only one missing root. Not by the automated QA regime.  === CORRECTION 2026-08-26 — THE "4 CONCEALED REAL HITS" CLAIM IN THIS ITEM IS REFUTED (§11.4.6) ===  When I filed this item I wrote that the scope hole "conceals at least 4 real hits the gate itself finds when pointed at them". A dedicated triage stream ran the UNMODIFIED gate against scratch copies, reproduced all four hits exactly, and triaged them: **4 of 4 are FALSE POSITIVES.** The instrument was control-needle-proven in BOTH directions first (fired on a planted</code>except:
-pass<code>, stayed silent on a clean log-and-reraise), so this is evidence, not a null.  All four are the SAME detector class — shape (A2) "silent default return" — which is precisely the BOB-189 false-positive shape: the returned literal IS the function's designed refusal value, consumed by a caller that checks it.  - webui-bridge.py:295 (_is_root_liveness_probe): False -&gt; send_error(502) at :438. The except DENIES the lenient 200 path. Fail-CLOSED. Combines ZERO of the six §11.4.252 capabilities — a pure classifier over self.path/self.command.  - tools/...:189 (_download_url): None -&gt; :110 handles it explicitly (warn + continue), no write. Handler BOUNDED to (URLError, HTTPError); anything else propagates.  - tools/...:198 (_extract_version): "unknown" gates nothing — the update decision is the HASH compare at :116. (It IS a bare</code>except:<code>though, so Ctrl-C is swallowed — a separate signal-handling defect, filed with the README item.)  - tools/...:215 (_validate_plugin): False -&gt; :151 returns BEFORE the write at :165. This IS the refusal. Canonical BOB-189 shape.  WHAT THIS DOES AND DOES NOT CHANGE. The scope hole itself is UNCHANGED and still real — the repository root and tools/ are in no DANGER_ROOT, verified verbatim at scripts/pre_build_verification.sh:1511. What changes is the ARGUMENT: I justified this item partly on "it hides four known defects", and that justification is wrong. The correct justification is narrower and does not depend on any current hit: webui-bridge.py is a LIVE, LAN-BOUND HTTP service (see below) handling request paths, outbound calls, and environment credentials — a surface that belongs in scope on its capabilities, whether or not it currently contains a defect.  NEW FACT RAISING THE STAKES — 7188 IS LAN-REACHABLE. webui-bridge.py:447 binds ThreadingHTTPServer(("", BRIDGE_PORT)) — conductor-verified. The empty host string is INADDR_ANY, so port 7188 listens on ALL INTERFACES, not loopback. Neither localhost-only nor internet-exposed (internet only if forwarded). No severity is assigned to :295 because it is fail-closed — but this is the argument for putting the root in scope: a live LAN-bound service should be scanned on principle, not after a defect is found in it.  webui-bridge.py IS LIVE, DECISIVELY (§11.4.124 never engages — do NOT treat it as superseded): 142 tracked files reference it, including config/served_ports.yaml and the credential-leak-audit challenge; download-proxy actively probes it via bridge_health() at download-proxy/src/api/__init__.py:198; newest of 12 commits is a real functional fix (6e3da73, 2026-06-14). Critically, served_ports.yaml:66-69 records that the Go webui-bridge is a SEPARATE binary the qbittorrent-proxy-go container never starts — so NOTHING ELSE BINDS 7188 and this Python file is the only thing serving that port.  tools/ RECOMMENDATION (§11.4.224(E)): FENCE IT OUT, DECLARED — exclusion class "non-shipping developer utility". Evidence: 2 tracked files, neither gitignored; the script is invoked by NOTHING (control-needle-proven: 91 needle hits, 0 negative control — referenced only by its own README, its own docstring, and a tracker note; zero hits across *.sh/*.yml/*.py/Makefile outside tools/); its README self-declares "not invoked by the normal start/stop flow"; last functional commit 2026-04-12. Because it is FIRST-PARTY, §11.4.224(E) requires the exclusion carry a tracked §11.4.197 item — and the two REAL defects found in it must be tracked regardless of scope, since a hand-run --update still executes them. | | 155 | major | Fixed (→ Fixed.md) | Bug | — | BOB-215 — WHAT: cmd/boba-ctl/main.go:498-509, authMethod(). Its default branch (:507) returns remote.AuthSSHKey. A deploy-registry entry whose auth: key is misspelled, empty, or set to an unrecognised value therefore resolves SILENTLY to SSH-key authentication rather than refusing to act.  WHY IT IS A §11.4.252 VIOLATION: this is a credential-selection decision on a path that also performs remote mutation and external side effects. §11.4.252 requires a path combining &gt;=2 dangerous capabilities to FAIL CLOSED — verify every precondition, refuse when any is unverifiable, and name the unresolved precondition. Silently substituting a default credential MECHANISM for an unreadable declaration is the textbook fail-open shape: the operator's intent was not determined, and the code proceeded anyway using a method they may not have chosen.  WHY NO GATE CAUGHT IT: three independent reasons, each sufficient on its own — (a) cmd/boba-ctl is in no DANGER_ROOT (BOB-205); (b) even in scope, .go files are structurally unanalysable by the current gate (BOB-191); (c) this shape is a semantic default-branch decision, not one of the two text patterns the non-Python arms match. It was found by a human-equivalent read, which is precisely the §11.4.238 escape class.  HONEST QUALIFICATION (§11.4.6): cmd/boba-ctl/main.go has NO</code>_
++e<code>region, a swallowed</code>2&gt;/dev/null<code>— and §11.4.67(6) already records one live instance of exactly this class (a bare exec redirection silencing an interactive shell for its lifetime).  CORRECTION TO A PREVIOUSLY-STATED ACCEPTANCE CRITERION (§11.4.6): I asserted, when filing BOB-205, that "the honest-blindness path (§11.4.3 SKIP-with-reason, which the gate already implements correctly for unenumerated extensions) is preserved". THAT IS WRONG. The gate's honest SKIP-with-reason exists for the PYTHON ARM's degradations, NOT for extensions absent from the ext list. An unenumerated extension is a SILENT false-null, not an honest skip. The distinction is load-bearing and I stated it backwards.  NOTE ON LINE NUMBERS: the BOB-205 stream cited the ext list at :318; the conductor measured it at :457. Both are correct at their read times — a sibling stream (BOB-195 r7) is actively editing this file. Re-derive before acting.  ACCEPTANCE: (1) either shell is added to the ext list WITH an arm that can actually analyse it, or unenumerated extensions produce an explicit UNANALYSED verdict per file — never a silent pass (this is the same analyser-registry fix BOB-191 needs, and doing it once covers both); (2) the driver's summary reports files ANALYSED, not files present, so an under-count cannot masquerade as a census; (3) a RED planting a shell fail-open under scripts/ and asserting it is SEEN; (4) golden-FALSE per §11.4.201(1) — a correctly fail-CLOSED shell guard must NOT be flagged; §11.4.67's own brace-scoped exec form is the natural fixture.  COMPOSES: BOB-191 (matcher hole — same primitive: classify by local shape, never consult semantic role; and the analyser-registry fix closes both) and BOB-205 (scope hole). Per §11.4.250 these are three symptoms of one primitive defect; per §11.4.214 they stay three items because the fixes differ.  DISCOVERY CHANNEL (§11.4.238): found by the BOB-205 verification stream, confirmed independently by the conductor. Not by the automated QA regime. | | 164 | critical | Fixed (→ Fixed.md) | Bug | — | BOB-214 — WHAT: DANGER_ROOTS = (download-proxy/src plugins scripts qBitTorrent-go frontend/src) at scripts/pre_build_verification.sh:1511. The REPOSITORY ROOT itself is not among them (conductor-verified: no "." entry). Everything living at the top level is scanned by no arm.  THE LIVE HIT: webui-bridge.py — tracked at root (conductor-verified), 466 LOC, a live HTTP service on port 7188 (BaseHTTPRequestHandler:85, do_GET/do_POST:92-97, request path read at :103, outbound urlopen at :273, environment credentials read at :55-74). The gate REPORTS A REAL HIT AT :295 when pointed at it directly. This is not a hypothetical gap: the existing gate, unmodified, finds a genuine defect in this file the moment scope reaches it.  ALSO UNSCANNED AT ROOT: 13 first-party shell scripts including start.sh (1288 LOC — per CLAUDE.md the project's orchestrator and the sole sanctioned container-control entry point), stop.sh, ci.sh, install-plugin.sh, and the credential-handling init-qbit-password.sh / fix-qbit-password.sh. (These are additionally invisible for the separate LANGUAGE-hole reason — shell is not in the gate's ext list — so root files get missed twice over, by scope AND by extension.)  THE SCALE THIS SITS IN: 266 files in scope / 512 out of scope — 66% of the gate-visible first-party corpus is never scanned. Other unscanned roots measured: tests/ (324 files, excluded-by-intent but UNDECLARED — an undeclared exclusion is exactly what §11.4.224(E) fences against), extension/ (108, shipped browser extension), docs/ (51), challenges/ (18), tools/ (1, and it CONCEALS 3 REAL HITS at plugin_update_automation.py:189,198,215), frontend/e2e + 2 configs (5).  SO THE SCOPE HOLE CONCEALS AT LEAST 4 REAL HITS the gate itself finds when pointed at them (1 in webui-bridge.py, 3 in tools/). Invariant 39's reported count is an under-count, not a census.  ACCEPTANCE: (1) repository root and tools/ are scanned, or explicitly fenced with a stated reason per §11.4.224(E) — silence is not an exclusion; (2) the 4 concealed hits are triaged (each is either a real defect to fix or a false positive to fix in the gate — both are findings); (3) tests/ (324 files) gets an OPERATOR decision per §11.4.66 — production-only is defensible but must be DECLARED; (4) a RED proving a root-level fail-open is seen; (5) golden-FALSE proving genuine build artefacts and vendored trees stay excluded.  FIX DIRECTION (measured by the BOB-205 stream, not guessed): a §11.4.251 manifest is feasible but the source of truth must be chosen carefully — docker-compose.yml build contexts MISS plugins/, frontend/src, cmd/boba-ctl and webui-bridge.py; language markers (go.mod/package.json) MISS plugins/ and webui-bridge.py. Only derive-from-git-tracked-source-extensions minus a declared §11.4.224(E) exclusion fence reaches every gap. Note the derivation must be built either way — if the operator prefers keeping a hand list, the omission-guard that audits it is the SAME computation; the only question is whether it drives the scan or audits the list.  DISCOVERY CHANNEL (§11.4.238): found by the BOB-205 verification stream while enumerating the full gap list — the item it was verifying named only one missing root. Not by the automated QA regime.  === CORRECTION 2026-08-26 — THE "4 CONCEALED REAL HITS" CLAIM IN THIS ITEM IS REFUTED (§11.4.6) ===  When I filed this item I wrote that the scope hole "conceals at least 4 real hits the gate itself finds when pointed at them". A dedicated triage stream ran the UNMODIFIED gate against scratch copies, reproduced all four hits exactly, and triaged them: **4 of 4 are FALSE POSITIVES.** The instrument was control-needle-proven in BOTH directions first (fired on a planted</code>except:
+pass<code>, stayed silent on a clean log-and-reraise), so this is evidence, not a null.  All four are the SAME detector class — shape (A2) "silent default return" — which is precisely the BOB-189 false-positive shape: the returned literal IS the function's designed refusal value, consumed by a caller that checks it.  - webui-bridge.py:295 (_is_root_liveness_probe): False -&gt; send_error(502) at :438. The except DENIES the lenient 200 path. Fail-CLOSED. Combines ZERO of the six §11.4.252 capabilities — a pure classifier over self.path/self.command.  - tools/...:189 (_download_url): None -&gt; :110 handles it explicitly (warn + continue), no write. Handler BOUNDED to (URLError, HTTPError); anything else propagates.  - tools/...:198 (_extract_version): "unknown" gates nothing — the update decision is the HASH compare at :116. (It IS a bare</code>except:<code>though, so Ctrl-C is swallowed — a separate signal-handling defect, filed with the README item.)  - tools/...:215 (_validate_plugin): False -&gt; :151 returns BEFORE the write at :165. This IS the refusal. Canonical BOB-189 shape.  WHAT THIS DOES AND DOES NOT CHANGE. The scope hole itself is UNCHANGED and still real — the repository root and tools/ are in no DANGER_ROOT, verified verbatim at scripts/pre_build_verification.sh:1511. What changes is the ARGUMENT: I justified this item partly on "it hides four known defects", and that justification is wrong. The correct justification is narrower and does not depend on any current hit: webui-bridge.py is a LIVE, LAN-BOUND HTTP service (see below) handling request paths, outbound calls, and environment credentials — a surface that belongs in scope on its capabilities, whether or not it currently contains a defect.  NEW FACT RAISING THE STAKES — 7188 IS LAN-REACHABLE. webui-bridge.py:447 binds ThreadingHTTPServer(("", BRIDGE_PORT)) — conductor-verified. The empty host string is INADDR_ANY, so port 7188 listens on ALL INTERFACES, not loopback. Neither localhost-only nor internet-exposed (internet only if forwarded). No severity is assigned to :295 because it is fail-closed — but this is the argument for putting the root in scope: a live LAN-bound service should be scanned on principle, not after a defect is found in it.  webui-bridge.py IS LIVE, DECISIVELY (§11.4.124 never engages — do NOT treat it as superseded): 142 tracked files reference it, including config/served_ports.yaml and the credential-leak-audit challenge; download-proxy actively probes it via bridge_health() at download-proxy/src/api/__init__.py:198; newest of 12 commits is a real functional fix (6e3da73, 2026-06-14). Critically, served_ports.yaml:66-69 records that the Go webui-bridge is a SEPARATE binary the qbittorrent-proxy-go container never starts — so NOTHING ELSE BINDS 7188 and this Python file is the only thing serving that port.  tools/ RECOMMENDATION (§11.4.224(E)): FENCE IT OUT, DECLARED — exclusion class "non-shipping developer utility". Evidence: 2 tracked files, neither gitignored; the script is invoked by NOTHING (control-needle-proven: 91 needle hits, 0 negative control — referenced only by its own README, its own docstring, and a tracker note; zero hits across *.sh/*.yml/*.py/Makefile outside tools/); its README self-declares "not invoked by the normal start/stop flow"; last functional commit 2026-04-12. Because it is FIRST-PARTY, §11.4.224(E) requires the exclusion carry a tracked §11.4.197 item — and the two REAL defects found in it must be tracked regardless of scope, since a hand-run --update still executes them. | | 165 | major | Fixed (→ Fixed.md) | Bug | — | BOB-215 — WHAT: cmd/boba-ctl/main.go:498-509, authMethod(). Its default branch (:507) returns remote.AuthSSHKey. A deploy-registry entry whose auth: key is misspelled, empty, or set to an unrecognised value therefore resolves SILENTLY to SSH-key authentication rather than refusing to act.  WHY IT IS A §11.4.252 VIOLATION: this is a credential-selection decision on a path that also performs remote mutation and external side effects. §11.4.252 requires a path combining &gt;=2 dangerous capabilities to FAIL CLOSED — verify every precondition, refuse when any is unverifiable, and name the unresolved precondition. Silently substituting a default credential MECHANISM for an unreadable declaration is the textbook fail-open shape: the operator's intent was not determined, and the code proceeded anyway using a method they may not have chosen.  WHY NO GATE CAUGHT IT: three independent reasons, each sufficient on its own — (a) cmd/boba-ctl is in no DANGER_ROOT (BOB-205); (b) even in scope, .go files are structurally unanalysable by the current gate (BOB-191); (c) this shape is a semantic default-branch decision, not one of the two text patterns the non-Python arms match. It was found by a human-equivalent read, which is precisely the §11.4.238 escape class.  HONEST QUALIFICATION (§11.4.6): cmd/boba-ctl/main.go has NO</code>_
 = err<code>, NO empty</code>if err != nil
 {}<code>, and NO silent</code>return
-nil<code>today — grep-verified with a control needle against qBitTorrent-go/internal/config/config.go. This finding is the exception, not one of many; the scope hole around boba-ctl is otherwise LATENT (it hides nothing else live, it guarantees a future one lands unseen).  ACCEPTANCE: (1) an unrecognised/empty auth: value REFUSES with an error naming the offending key and its declared value, never silently defaults; (2) a RED driving a typo'd auth: and asserting today's silent SSH-key resolution, flipping to refusal post-fix; (3) golden-FALSE proving every LEGITIMATE auth: value still resolves correctly — a false refusal here would break real deploys (§11.4.201(1)).  DISCOVERY CHANNEL (§11.4.238): found by the BOB-205 verification stream while confirming boba-ctl qualifies as a §11.4.252 surface. | | 156 | major | Fixed (→ Fixed.md) | Bug | — | BOB-216 — WHAT: three carrier classes fire in the gate's PRIMARY mode, not only its degraded text fallback. Measured ast_rc=1 AND text_rc=1 (both modes report the hit):  (a) a COMMENT or DOCSTRING quoting the credential anti-pattern is reported as a LIVE credential default — both spellings;  (b) a // comment or a string constant holding</code>try
+nil<code>today — grep-verified with a control needle against qBitTorrent-go/internal/config/config.go. This finding is the exception, not one of many; the scope hole around boba-ctl is otherwise LATENT (it hides nothing else live, it guarantees a future one lands unseen).  ACCEPTANCE: (1) an unrecognised/empty auth: value REFUSES with an error naming the offending key and its declared value, never silently defaults; (2) a RED driving a typo'd auth: and asserting today's silent SSH-key resolution, flipping to refusal post-fix; (3) golden-FALSE proving every LEGITIMATE auth: value still resolves correctly — a false refusal here would break real deploys (§11.4.201(1)).  DISCOVERY CHANNEL (§11.4.238): found by the BOB-205 verification stream while confirming boba-ctl qualifies as a §11.4.252 surface. | | 166 | major | Fixed (→ Fixed.md) | Bug | — | BOB-216 — WHAT: three carrier classes fire in the gate's PRIMARY mode, not only its degraded text fallback. Measured ast_rc=1 AND text_rc=1 (both modes report the hit):  (a) a COMMENT or DOCSTRING quoting the credential anti-pattern is reported as a LIVE credential default — both spellings;  (b) a // comment or a string constant holding</code>try
 { x(); } catch (e) {
-}<code>is reported as an empty catch, once per carrier line. Shape (b), and the C-family half of shape (a), are LANGUAGE-AGNOSTIC GREPS with NO structural counterpart in any mode — so there is no parser to be immune.  WHY IT MATTERS: the gate's header carried a blanket claim that "A parser is immune to both by construction". That is OVER-BROAD and now corrected in place, scoped to the Python Try/With shapes where it is actually true. Everything else — every non-Python extension, and the credential/empty-catch text matchers even on Python — has no AST arm at all, so the immunity never applied there. A §11.4.201(1) false refusal in the PRIMARY mode is materially worse than one in a fallback nobody expects to be exact: it refuses provably-healthy code on the path the gate is trusted on.  THE CONTROL NEEDLE THAT SHARPENS IT (recorded so the next reader inherits the measurement): a #-COMMENTED import does NOT poison the licensing table (text=0), because those regexes are line-anchored. So the blindness is to STRINGS specifically, not to non-code generally. That distinction is what makes the comment-strip fix tractable for one class and not for the others.  WHY IT WAS NOT FIXED IN THE ROUND THAT FOUND IT (§11.4.6 honest boundary, and this is the right call): closing these needs a PER-LANGUAGE comment-and-string model across every configured extension. That model's failure direction is the UNDER-reporting one — a mis-parsed string region silently swallows real violations for the remainder of the file. The same reasoning made the round DECLINE the triple-quote fence counter for OVER-1 while ACCEPTING the comment strip for OVER-A: the comment strip's ambiguity resolves toward KEEPING text (proven by three control needles — real violation + comment, # inside a string, escaped quote before # — all 1/1), whereas a fence counter's ambiguity resolves toward DROPPING text. Direction of failure, not difficulty, is the discriminator. Building a full lexer here would import the under-reporting failure mode this gate refuses everywhere else.  OPERATOR DECISION (§11.4.66 / §11.4.197): whether to build per-language comment-and-string models is a consumer call, not a default this gate should pick unilaterally. Options: (a) accept the over-reports and DISCLOSE them per class (what the round did — a new MODE-INDEPENDENT CARRIERS section now enumerates all three); (b) build the models per language and own the under-report risk with a fixture per language; (c) narrow the language-agnostic greps so they only fire where a structural arm exists, trading coverage for precision.  RELATION TO SIBLINGS (§11.4.214 distinct-but-similar, deliberately not merged): BOB-189 is the gate flagging a fail-CLOSED SSRF guard — a semantic-role miss in the PYTHON arm. This is a CARRIER miss (comment/string read as code) that is MODE-INDEPENDENT. BOB-213 is a language absent from the ext list entirely. All three share the primitive §11.4.250 named in BOB-191: classify by local syntactic shape, never consult semantic role — but the fixes differ, so the items stay separate.  ACCEPTANCE: (1) the operator decision above is taken and recorded; (2) whichever path is chosen, each of the three classes has a fixture proving current behaviour, so a future change cannot silently alter it; (3) if (b) is chosen, a golden-FALSE per language proving a REAL violation adjacent to a carrier is still caught — the under-report guard, which is the whole risk.  DISCOVERY CHANNEL (§11.4.238): found by the BOB-195 round-7 remediation stream while closing a different finding, NOT by the automated QA regime and NOT by the independent reviewer that audited the same file in round 6. | | 157 | critical | Fixed (→ Fixed.md) | Bug | — | BOB-217 — WHAT: tools/plugin_update_automation.py update_plugin() combines three §11.4.252 dangerous capabilities and is gated by nothing that could stop a hostile payload:  - UNTRUSTED INPUT: 14 URLs across four GitHub repositories, THREE of which are third-party PERSONAL repos, not the official qbittorrent organisation.  - MUTATION: writes plugins/&lt;name&gt;.py.  - DEFERRED CODE EXECUTION: qBittorrent EXECUTES those engine files. The bytes fetched over the network become running code on the operator's host. The ONLY validation is compile(content, "&lt;string&gt;", "exec") at tools/plugin_update_automation.py:213 — conductor-verified as the sole compile call. That is a SYNTAX check. A syntactically valid file is exactly what a hostile payload is. There is NO signature verification, NO pinned commit SHA, NO hash allowlist, NO provenance check of any kind.  §11.4.252 requires a path combining &gt;=2 dangerous capabilities to FAIL CLOSED — verify every precondition, refuse when any is unverifiable. This path combines THREE and verifies none of them. §11.4.246's supply-chain clause is the direct counterpart: dependencies are either vendored hash-verified, provenance-attested, or mirrored through a hash-pinning registry — an unattested public source is an integrity risk, and here the unattested public source becomes EXECUTED CODE.  THE SHARPEST FACT ABOUT THIS FINDING: the fail-closed gate produced THREE FALSE POSITIVES in this same file (:189, :198, :215 — all triaged FALSE POSITIVE, see BOB-214's correction) while MISSING this, the one genuine dangerous combination in it. That is the §11.4.201 both-directions failure — false-positive and false-negative — demonstrated inside a single file. It is the strongest available evidence that the detector classifies by local syntactic shape and never consults semantic role (the §11.4.250 primitive named in BOB-191/BOB-216).  REACHABILITY, STATED HONESTLY (§11.4.6): the script is invoked by NOTHING — control-needle-proven (91 needle hits, 0 negative control) it is referenced only by its own README, its own docstring, and a tracker note; zero hits across *.sh / *.yml / *.py / Makefile outside tools/. Its own README self-declares "not invoked by the normal start/stop flow". Last functional commit 2026-04-12. So this is NOT live in any automated path. It IS reachable by a hand-run --update, which is exactly what the tool exists for. Severity is Critical on the capability combination, bounded by that reachability — not on an active exploitation path.  ACCEPTANCE: (1) plugin sources are pinned (commit SHA or content hash) and verified before write; (2) an unverifiable source REFUSES and names which check failed (§11.4.252) rather than proceeding on a syntax pass; (3) the compile() call is documented in-source as a syntax check that is NOT a safety gate, so nobody reads it as one; (4) a RED serving a syntactically-valid hostile payload and asserting it is REFUSED pre-fix-absent / post-fix-present; (5) golden-FALSE proving a legitimate pinned update still succeeds (§11.4.201(1)).  DISCOVERY CHANNEL (§11.4.238): found by the concealed-hits triage stream while establishing that the gate's four hits in this area were false positives. Not by the automated QA regime — and the regime that WAS pointed here reported the wrong three lines. | | 158 | major | Fixed (→ Fixed.md) | Bug | — | BOB-218 — WHAT: tools/README.md:30 states "the backup is restored" on validation failure. Conductor-verified: shutil.copy2 appears EXACTLY ONCE in tools/plugin_update_automation.py and copies FORWARD only — a reverse-direction restore has ZERO occurrences (grep control-needle-proven seeing: needle 2 hits, negative control 0). The plugin write opens in mode "w", which TRUNCATES IMMEDIATELY.  USER-OBSERVABLE HARM (the reason this is not merely a doc defect): a failure part-way through the write leaves a TRUNCATED, NON-IMPORTABLE plugin on disk. The operator is told the update FAILED and reasonably concludes the previous file survived — because the README says it was restored. It was not. The next ./install-plugin.sh copies the corrupt file into config/qBittorrent/nova3/engines/ and that search engine SILENTLY STOPS WORKING. The .bak needed to recover DOES exist on disk; the tool never mentions it and never uses it.  This is a §11.4 documentation-layer bluff with a real downstream consequence: the doc asserts a safety property the code does not implement, and the operator's recovery decision is made on that false assertion.  SECOND, SMALLER DOC DIVERGENCE: the README claims JSON goes to stdout; :274 writes it to a FILE (open(args.output, "w")).  THIRD, SEPARATE MINOR DEFECT in the same file (recorded here rather than as its own item because it shares the file and the fix window): _extract_version at ~:198 uses a BARE</code>except:<code>, so a Ctrl-C during the 14-URL sweep is SWALLOWED. That is a signal-handling defect, not a fail-open — the gate flagged this line, but for the wrong reason (it read the silent default return; the real issue is the bare except catching KeyboardInterrupt).  ACCEPTANCE: (1) either the rollback is IMPLEMENTED (restore the .bak on failure) or the README claim is DELETED — the doc and the code must agree (§11.4.6); if implemented, write to a temp file and rename atomically rather than truncating in place; (2) the stdout-vs-file claim corrected; (3) the bare except narrowed so KeyboardInterrupt propagates; (4) a RED that fails the write mid-way and asserts the previous plugin is intact (post-fix) / truncated (pre-fix).  REACHABILITY: same as the sibling item — hand-run only, not in any automated path, last functional commit 2026-04-12. Severity Major on the harm shape, bounded by that reachability.  DISCOVERY CHANNEL (§11.4.238): found by the concealed-hits triage stream. Not by the automated QA regime. | | 159 | minor | Fixed (→ Fixed.md) | Bug | — | BOB-220 — WHAT: scripts/ownership_repair.sh:891-895 runs chmod 755 intending to strip setuid/setgid bits. Traced live: the chmod RUNS and SUCCEEDS, yet the mode stays 2755. Root cause measured — GNU chmod with a 3-DIGIT symbolic-equivalent octal PRESERVES the setgid bit on DIRECTORIES; only a 4-digit form (00755) or an explicit g-s clears it. The comment at :868-884 describes a strip that does not occur for directories.  EFFECT: benign today — the surviving setgid bit is not itself harmful, and no defect is known to follow from it. This is filed as a §11.4.6 accuracy defect: an in-source comment asserting behaviour the code does not perform. That matters because the next reader will trust it, and because a future security-relevant strip written against the same pattern would silently fail the same way.  RELATION TO BOB-207: the same stream measured that after repair a new file inherits gid 1000 with THE SETGID BIT STILL SET — the two facts compound. If BOB-207 is resolved by narrowing the repair (the recommended direction), the setgid survival becomes moot for that path but the misleading comment remains.  ACCEPTANCE: (1) either the strip is made real (00755 or g-s) or the comment is corrected to state that directories retain setgid — code and comment must agree; (2) if made real, a RED asserting mode 2755 -&gt; 0755 on a directory, since the current form silently no-ops; (3) golden-FALSE proving a directory that SHOULD keep its mode is not gratuitously changed.  DISCOVERY CHANNEL (§11.4.238): found by the BOB-207 stream while tracing an unrelated behaviour. Not by the automated QA regime. | | 160 | critical | Fixed (→ Fixed.md) | Bug | — | BOB-221 — WHAT: scripts/pre_build_verification.sh invariant 30 (CM-BASH-UNIT-TESTS-EXECUTED) enumerates suites by FILESYSTEM GLOB (:1196) and calls fail() on any non-zero exit. It therefore RUNS untracked suites, and it has NO concept of a test that is SUPPOSED to fail.  MEASURED: tests/pre_build/test_bob205_danger_roots_scope.sh exits 1 — correctly, because it is a RED test for BOB-205, an unfixed defect. Invariant 30 counts that as a gate failure. The predicted T042 verdict is FAIL, and this is one of its three blocking causes.  THE STRUCTURAL PROBLEM: §11.4.115 and §11.4.224 REQUIRE a RED authored FIRST and OBSERVED TO FAIL before the fix exists. §11.4.135 requires the RED to persist as the permanent regression guard. So the discipline mandates that failing tests exist in the tree between authoring and fixing — and the blocking gate treats their existence as a defect. Following the constitution correctly makes the gate refuse the commit. That is a §11.4.120 wrong-seam problem: the gate asserts "no suite fails" when the invariant it should assert is "no suite fails UNEXPECTEDLY".  WHY IT SURFACED NOW: this session authored FOUR REDs across parallel streams (BOB-204, BOB-205, BOB-207, BOB-212) — the first time the discipline was applied at this volume. Previously REDs were flipped GREEN within the same round, so the window never spanned a gate run. The defect is not new; the exposure is.  THE FORBIDDEN RESPONSES (§11.4.120): do NOT delete the RED to make the gate green; do NOT weaken invariant 30 to ignore failures; do NOT mark the RED skipped without a tracked reason. Each converts a real signal into silence.  FIX DIRECTION — this is §11.4.248's quarantine mechanism, which the constitution already specifies and this project has not wired: a RED declares its expected-failing status and its tracked item (a header marker, a naming convention, or a manifest), invariant 30 reads that declaration, and a declared-RED failure is reported as EXPECTED (not a fail) while an UNDECLARED failure still blocks. Crucially the declaration must EXPIRE or be tracked — §11.4.248 pairs quarantine with a stabilisation deadline precisely so "expected to fail" cannot become permanent cover. A RED whose item closes must flip GREEN or the gate should FAIL on the stale declaration.  ACCEPTANCE: (1) a declared RED does not block; (2) an UNDECLARED failing suite still blocks (the §11.4.201(1) guard — a fix that ignores all failures is strictly worse than the defect); (3) a declared RED whose tracked item is CLOSED blocks, so declarations cannot rot; (4) a paired §1.1 mutation removing the declaration-check makes the gate accept an undeclared failure -&gt; gate FAILs.  DISCOVERY CHANNEL (§11.4.238): found by the T042 readiness preflight, before the endgame rather than during it. Not by the automated QA regime — the regime IS the thing that would have blocked.  === CORRECTED 2026-08-26 — MY FIX DIRECTION IN THIS ITEM WAS WRONG, AND THE BLOCKER IS WIDER (§11.4.6) ===  CORRECTION 1 — §11.4.248 IS NOT THE MECHANISM. I wrote "this is §11.4.248's quarantine mechanism, which the constitution already specifies and this project has not wired." That is half right and the wrong half matters. §11.4.248(A) QUARANTINE targets FLAKY tests — its trigger is literally "two-consecutive-run-different-verdict OR rerun-after-red", and its remedy is to MOVE the suite to tests/quarantine/ and run the blocking suite WITHOUT it "so green means green". §11.4.248(B) PROTECTED-SPEC is a tag plus a required-reviewer gate on MODIFYING a regression test; it never says a test may fail. A RED is DETERMINISTIC and MUST STILL BE RUN — §11.4.115(F) and §11.4.226 require the RED verdict to be PRODUCED as the evidence. Excluding it destroys the very artifact the discipline mandates. Merging the two would also let a genuinely flaky suite hide behind a RED declaration and vice versa. What §11.4.248 legitimately supplies, and what should be INHERITED rather than re-invented (§11.4.227), is the SHAPE: a by-name list + a tracked item + a deadline + a must-only-shrink ratchet.  CORRECTION 2 — THIS IS A LANGUAGE-PARITY GAP, NOT A DESIGN VACUUM. Conductor-verified: the project ALREADY runs this mechanism on the PYTHON side. pytest.mark.xfail(strict=True) is used deliberately for OPEN defects at tests/scaling/test_scaling_envelope.py:907 (BOB-167, documented in tests/scaling/README.md:64) and tests/stress/test_plugin_parsers_stress_chaos.py:90 — whose own comments carry the ratchet discipline verbatim ("it stays visible as xfailed in every report", "then remove this xfail"). So "declared expected-failure, strict so an unexpected pass fails" is ALREADY accepted policy in one language. The BASH side has no equivalent. That is the real gap.  CORRECTION 3 — BOB-221 IS NOT SUFFICIENT TO UNBLOCK T042. A full replication of invariant 30 measured RAN=38 FAILED=4 SKIPPED=2:   rc=124 300s test_compute_badges_carrier_match.sh  &lt;- a HANG, not a RED. Blocks independently. Filed separately.   rc=1     3s test_ownership_gid_agreement.sh       &lt;- BOB-207's RED (a SECOND in-glob RED; this item assumed one)   rc=1     1s test_bob205_danger_roots_scope.sh     &lt;- BOB-205's RED   rc=127   9s test_check_cm_lan_routes_authenticated.sh &lt;- CONTAMINATED: a sibling stream was writing lan_route_auth_analyzer.py during and after the run (§11.4.119 — the surveying stream did not own that resource and correctly declined to adjudicate). rc=127 is the §11.4.1 script-internal FAIL-bluff signature, not a product verdict either way. Returned to its owning stream. ALSO: BOB-204's and BOB-212's REDs share tests/security/test_gitignore_swallow_is_loud.sh, which is OUTSIDE invariant 30's glob and executed by NOTHING (BOB-222) — they do not block today, and widening the glob would immediately add another blocker.  THE DESIGN, RECOMMENDED: two-place declaration + SSoT expiry + strict semantics. THREE independent facts must agree before a failure is excused — (1) the suite is listed in scripts/lib/expected_red.sh, a file the PRODUCING streams do not own; (2) the suite file itself carries</code>#
+}<code>is reported as an empty catch, once per carrier line. Shape (b), and the C-family half of shape (a), are LANGUAGE-AGNOSTIC GREPS with NO structural counterpart in any mode — so there is no parser to be immune.  WHY IT MATTERS: the gate's header carried a blanket claim that "A parser is immune to both by construction". That is OVER-BROAD and now corrected in place, scoped to the Python Try/With shapes where it is actually true. Everything else — every non-Python extension, and the credential/empty-catch text matchers even on Python — has no AST arm at all, so the immunity never applied there. A §11.4.201(1) false refusal in the PRIMARY mode is materially worse than one in a fallback nobody expects to be exact: it refuses provably-healthy code on the path the gate is trusted on.  THE CONTROL NEEDLE THAT SHARPENS IT (recorded so the next reader inherits the measurement): a #-COMMENTED import does NOT poison the licensing table (text=0), because those regexes are line-anchored. So the blindness is to STRINGS specifically, not to non-code generally. That distinction is what makes the comment-strip fix tractable for one class and not for the others.  WHY IT WAS NOT FIXED IN THE ROUND THAT FOUND IT (§11.4.6 honest boundary, and this is the right call): closing these needs a PER-LANGUAGE comment-and-string model across every configured extension. That model's failure direction is the UNDER-reporting one — a mis-parsed string region silently swallows real violations for the remainder of the file. The same reasoning made the round DECLINE the triple-quote fence counter for OVER-1 while ACCEPTING the comment strip for OVER-A: the comment strip's ambiguity resolves toward KEEPING text (proven by three control needles — real violation + comment, # inside a string, escaped quote before # — all 1/1), whereas a fence counter's ambiguity resolves toward DROPPING text. Direction of failure, not difficulty, is the discriminator. Building a full lexer here would import the under-reporting failure mode this gate refuses everywhere else.  OPERATOR DECISION (§11.4.66 / §11.4.197): whether to build per-language comment-and-string models is a consumer call, not a default this gate should pick unilaterally. Options: (a) accept the over-reports and DISCLOSE them per class (what the round did — a new MODE-INDEPENDENT CARRIERS section now enumerates all three); (b) build the models per language and own the under-report risk with a fixture per language; (c) narrow the language-agnostic greps so they only fire where a structural arm exists, trading coverage for precision.  RELATION TO SIBLINGS (§11.4.214 distinct-but-similar, deliberately not merged): BOB-189 is the gate flagging a fail-CLOSED SSRF guard — a semantic-role miss in the PYTHON arm. This is a CARRIER miss (comment/string read as code) that is MODE-INDEPENDENT. BOB-213 is a language absent from the ext list entirely. All three share the primitive §11.4.250 named in BOB-191: classify by local syntactic shape, never consult semantic role — but the fixes differ, so the items stay separate.  ACCEPTANCE: (1) the operator decision above is taken and recorded; (2) whichever path is chosen, each of the three classes has a fixture proving current behaviour, so a future change cannot silently alter it; (3) if (b) is chosen, a golden-FALSE per language proving a REAL violation adjacent to a carrier is still caught — the under-report guard, which is the whole risk.  DISCOVERY CHANNEL (§11.4.238): found by the BOB-195 round-7 remediation stream while closing a different finding, NOT by the automated QA regime and NOT by the independent reviewer that audited the same file in round 6. | | 167 | critical | Fixed (→ Fixed.md) | Bug | — | BOB-217 — WHAT: tools/plugin_update_automation.py update_plugin() combines three §11.4.252 dangerous capabilities and is gated by nothing that could stop a hostile payload:  - UNTRUSTED INPUT: 14 URLs across four GitHub repositories, THREE of which are third-party PERSONAL repos, not the official qbittorrent organisation.  - MUTATION: writes plugins/&lt;name&gt;.py.  - DEFERRED CODE EXECUTION: qBittorrent EXECUTES those engine files. The bytes fetched over the network become running code on the operator's host. The ONLY validation is compile(content, "&lt;string&gt;", "exec") at tools/plugin_update_automation.py:213 — conductor-verified as the sole compile call. That is a SYNTAX check. A syntactically valid file is exactly what a hostile payload is. There is NO signature verification, NO pinned commit SHA, NO hash allowlist, NO provenance check of any kind.  §11.4.252 requires a path combining &gt;=2 dangerous capabilities to FAIL CLOSED — verify every precondition, refuse when any is unverifiable. This path combines THREE and verifies none of them. §11.4.246's supply-chain clause is the direct counterpart: dependencies are either vendored hash-verified, provenance-attested, or mirrored through a hash-pinning registry — an unattested public source is an integrity risk, and here the unattested public source becomes EXECUTED CODE.  THE SHARPEST FACT ABOUT THIS FINDING: the fail-closed gate produced THREE FALSE POSITIVES in this same file (:189, :198, :215 — all triaged FALSE POSITIVE, see BOB-214's correction) while MISSING this, the one genuine dangerous combination in it. That is the §11.4.201 both-directions failure — false-positive and false-negative — demonstrated inside a single file. It is the strongest available evidence that the detector classifies by local syntactic shape and never consults semantic role (the §11.4.250 primitive named in BOB-191/BOB-216).  REACHABILITY, STATED HONESTLY (§11.4.6): the script is invoked by NOTHING — control-needle-proven (91 needle hits, 0 negative control) it is referenced only by its own README, its own docstring, and a tracker note; zero hits across *.sh / *.yml / *.py / Makefile outside tools/. Its own README self-declares "not invoked by the normal start/stop flow". Last functional commit 2026-04-12. So this is NOT live in any automated path. It IS reachable by a hand-run --update, which is exactly what the tool exists for. Severity is Critical on the capability combination, bounded by that reachability — not on an active exploitation path.  ACCEPTANCE: (1) plugin sources are pinned (commit SHA or content hash) and verified before write; (2) an unverifiable source REFUSES and names which check failed (§11.4.252) rather than proceeding on a syntax pass; (3) the compile() call is documented in-source as a syntax check that is NOT a safety gate, so nobody reads it as one; (4) a RED serving a syntactically-valid hostile payload and asserting it is REFUSED pre-fix-absent / post-fix-present; (5) golden-FALSE proving a legitimate pinned update still succeeds (§11.4.201(1)).  DISCOVERY CHANNEL (§11.4.238): found by the concealed-hits triage stream while establishing that the gate's four hits in this area were false positives. Not by the automated QA regime — and the regime that WAS pointed here reported the wrong three lines. | | 168 | major | Fixed (→ Fixed.md) | Bug | — | BOB-218 — WHAT: tools/README.md:30 states "the backup is restored" on validation failure. Conductor-verified: shutil.copy2 appears EXACTLY ONCE in tools/plugin_update_automation.py and copies FORWARD only — a reverse-direction restore has ZERO occurrences (grep control-needle-proven seeing: needle 2 hits, negative control 0). The plugin write opens in mode "w", which TRUNCATES IMMEDIATELY.  USER-OBSERVABLE HARM (the reason this is not merely a doc defect): a failure part-way through the write leaves a TRUNCATED, NON-IMPORTABLE plugin on disk. The operator is told the update FAILED and reasonably concludes the previous file survived — because the README says it was restored. It was not. The next ./install-plugin.sh copies the corrupt file into config/qBittorrent/nova3/engines/ and that search engine SILENTLY STOPS WORKING. The .bak needed to recover DOES exist on disk; the tool never mentions it and never uses it.  This is a §11.4 documentation-layer bluff with a real downstream consequence: the doc asserts a safety property the code does not implement, and the operator's recovery decision is made on that false assertion.  SECOND, SMALLER DOC DIVERGENCE: the README claims JSON goes to stdout; :274 writes it to a FILE (open(args.output, "w")).  THIRD, SEPARATE MINOR DEFECT in the same file (recorded here rather than as its own item because it shares the file and the fix window): _extract_version at ~:198 uses a BARE</code>except:<code>, so a Ctrl-C during the 14-URL sweep is SWALLOWED. That is a signal-handling defect, not a fail-open — the gate flagged this line, but for the wrong reason (it read the silent default return; the real issue is the bare except catching KeyboardInterrupt).  ACCEPTANCE: (1) either the rollback is IMPLEMENTED (restore the .bak on failure) or the README claim is DELETED — the doc and the code must agree (§11.4.6); if implemented, write to a temp file and rename atomically rather than truncating in place; (2) the stdout-vs-file claim corrected; (3) the bare except narrowed so KeyboardInterrupt propagates; (4) a RED that fails the write mid-way and asserts the previous plugin is intact (post-fix) / truncated (pre-fix).  REACHABILITY: same as the sibling item — hand-run only, not in any automated path, last functional commit 2026-04-12. Severity Major on the harm shape, bounded by that reachability.  DISCOVERY CHANNEL (§11.4.238): found by the concealed-hits triage stream. Not by the automated QA regime. | | 169 | minor | Fixed (→ Fixed.md) | Bug | — | BOB-220 — WHAT: scripts/ownership_repair.sh:891-895 runs chmod 755 intending to strip setuid/setgid bits. Traced live: the chmod RUNS and SUCCEEDS, yet the mode stays 2755. Root cause measured — GNU chmod with a 3-DIGIT symbolic-equivalent octal PRESERVES the setgid bit on DIRECTORIES; only a 4-digit form (00755) or an explicit g-s clears it. The comment at :868-884 describes a strip that does not occur for directories.  EFFECT: benign today — the surviving setgid bit is not itself harmful, and no defect is known to follow from it. This is filed as a §11.4.6 accuracy defect: an in-source comment asserting behaviour the code does not perform. That matters because the next reader will trust it, and because a future security-relevant strip written against the same pattern would silently fail the same way.  RELATION TO BOB-207: the same stream measured that after repair a new file inherits gid 1000 with THE SETGID BIT STILL SET — the two facts compound. If BOB-207 is resolved by narrowing the repair (the recommended direction), the setgid survival becomes moot for that path but the misleading comment remains.  ACCEPTANCE: (1) either the strip is made real (00755 or g-s) or the comment is corrected to state that directories retain setgid — code and comment must agree; (2) if made real, a RED asserting mode 2755 -&gt; 0755 on a directory, since the current form silently no-ops; (3) golden-FALSE proving a directory that SHOULD keep its mode is not gratuitously changed.  DISCOVERY CHANNEL (§11.4.238): found by the BOB-207 stream while tracing an unrelated behaviour. Not by the automated QA regime. | | 170 | critical | Fixed (→ Fixed.md) | Bug | — | BOB-221 — WHAT: scripts/pre_build_verification.sh invariant 30 (CM-BASH-UNIT-TESTS-EXECUTED) enumerates suites by FILESYSTEM GLOB (:1196) and calls fail() on any non-zero exit. It therefore RUNS untracked suites, and it has NO concept of a test that is SUPPOSED to fail.  MEASURED: tests/pre_build/test_bob205_danger_roots_scope.sh exits 1 — correctly, because it is a RED test for BOB-205, an unfixed defect. Invariant 30 counts that as a gate failure. The predicted T042 verdict is FAIL, and this is one of its three blocking causes.  THE STRUCTURAL PROBLEM: §11.4.115 and §11.4.224 REQUIRE a RED authored FIRST and OBSERVED TO FAIL before the fix exists. §11.4.135 requires the RED to persist as the permanent regression guard. So the discipline mandates that failing tests exist in the tree between authoring and fixing — and the blocking gate treats their existence as a defect. Following the constitution correctly makes the gate refuse the commit. That is a §11.4.120 wrong-seam problem: the gate asserts "no suite fails" when the invariant it should assert is "no suite fails UNEXPECTEDLY".  WHY IT SURFACED NOW: this session authored FOUR REDs across parallel streams (BOB-204, BOB-205, BOB-207, BOB-212) — the first time the discipline was applied at this volume. Previously REDs were flipped GREEN within the same round, so the window never spanned a gate run. The defect is not new; the exposure is.  THE FORBIDDEN RESPONSES (§11.4.120): do NOT delete the RED to make the gate green; do NOT weaken invariant 30 to ignore failures; do NOT mark the RED skipped without a tracked reason. Each converts a real signal into silence.  FIX DIRECTION — this is §11.4.248's quarantine mechanism, which the constitution already specifies and this project has not wired: a RED declares its expected-failing status and its tracked item (a header marker, a naming convention, or a manifest), invariant 30 reads that declaration, and a declared-RED failure is reported as EXPECTED (not a fail) while an UNDECLARED failure still blocks. Crucially the declaration must EXPIRE or be tracked — §11.4.248 pairs quarantine with a stabilisation deadline precisely so "expected to fail" cannot become permanent cover. A RED whose item closes must flip GREEN or the gate should FAIL on the stale declaration.  ACCEPTANCE: (1) a declared RED does not block; (2) an UNDECLARED failing suite still blocks (the §11.4.201(1) guard — a fix that ignores all failures is strictly worse than the defect); (3) a declared RED whose tracked item is CLOSED blocks, so declarations cannot rot; (4) a paired §1.1 mutation removing the declaration-check makes the gate accept an undeclared failure -&gt; gate FAILs.  DISCOVERY CHANNEL (§11.4.238): found by the T042 readiness preflight, before the endgame rather than during it. Not by the automated QA regime — the regime IS the thing that would have blocked.  === CORRECTED 2026-08-26 — MY FIX DIRECTION IN THIS ITEM WAS WRONG, AND THE BLOCKER IS WIDER (§11.4.6) ===  CORRECTION 1 — §11.4.248 IS NOT THE MECHANISM. I wrote "this is §11.4.248's quarantine mechanism, which the constitution already specifies and this project has not wired." That is half right and the wrong half matters. §11.4.248(A) QUARANTINE targets FLAKY tests — its trigger is literally "two-consecutive-run-different-verdict OR rerun-after-red", and its remedy is to MOVE the suite to tests/quarantine/ and run the blocking suite WITHOUT it "so green means green". §11.4.248(B) PROTECTED-SPEC is a tag plus a required-reviewer gate on MODIFYING a regression test; it never says a test may fail. A RED is DETERMINISTIC and MUST STILL BE RUN — §11.4.115(F) and §11.4.226 require the RED verdict to be PRODUCED as the evidence. Excluding it destroys the very artifact the discipline mandates. Merging the two would also let a genuinely flaky suite hide behind a RED declaration and vice versa. What §11.4.248 legitimately supplies, and what should be INHERITED rather than re-invented (§11.4.227), is the SHAPE: a by-name list + a tracked item + a deadline + a must-only-shrink ratchet.  CORRECTION 2 — THIS IS A LANGUAGE-PARITY GAP, NOT A DESIGN VACUUM. Conductor-verified: the project ALREADY runs this mechanism on the PYTHON side. pytest.mark.xfail(strict=True) is used deliberately for OPEN defects at tests/scaling/test_scaling_envelope.py:907 (BOB-167, documented in tests/scaling/README.md:64) and tests/stress/test_plugin_parsers_stress_chaos.py:90 — whose own comments carry the ratchet discipline verbatim ("it stays visible as xfailed in every report", "then remove this xfail"). So "declared expected-failure, strict so an unexpected pass fails" is ALREADY accepted policy in one language. The BASH side has no equivalent. That is the real gap.  CORRECTION 3 — BOB-221 IS NOT SUFFICIENT TO UNBLOCK T042. A full replication of invariant 30 measured RAN=38 FAILED=4 SKIPPED=2:   rc=124 300s test_compute_badges_carrier_match.sh  &lt;- a HANG, not a RED. Blocks independently. Filed separately.   rc=1     3s test_ownership_gid_agreement.sh       &lt;- BOB-207's RED (a SECOND in-glob RED; this item assumed one)   rc=1     1s test_bob205_danger_roots_scope.sh     &lt;- BOB-205's RED   rc=127   9s test_check_cm_lan_routes_authenticated.sh &lt;- CONTAMINATED: a sibling stream was writing lan_route_auth_analyzer.py during and after the run (§11.4.119 — the surveying stream did not own that resource and correctly declined to adjudicate). rc=127 is the §11.4.1 script-internal FAIL-bluff signature, not a product verdict either way. Returned to its owning stream. ALSO: BOB-204's and BOB-212's REDs share tests/security/test_gitignore_swallow_is_loud.sh, which is OUTSIDE invariant 30's glob and executed by NOTHING (BOB-222) — they do not block today, and widening the glob would immediately add another blocker.  THE DESIGN, RECOMMENDED: two-place declaration + SSoT expiry + strict semantics. THREE independent facts must agree before a failure is excused — (1) the suite is listed in scripts/lib/expected_red.sh, a file the PRODUCING streams do not own; (2) the suite file itself carries</code>#
 EXPECTED-RED:
 <ID><code>with the SAME id; (3) &lt;ID&gt; is OPEN in docs/workable_items.db, FAIL-CLOSED on unreadable store or unknown id (§11.4.252). Plus STRICT-XFAIL PARITY: a declared suite that PASSES blocks, which mechanically forces the ratchet to shrink in the same commit as the fix.  EXIT-CODE CONVENTION REJECTED ON MEASURED EVIDENCE — and I had flagged it as promising. The non-{0,1} exit space is ALREADY CLAIMED IN THIS REPO FOR THE OPPOSITE MEANING: test_gitignore_swallow_is_loud.sh uses exit 2 = "INSTRUMENT BROKEN or SECRET LEAK — verdict void", and test_bob205_danger_roots_scope.sh uses exit 3 = ABORT (instrument blind). Both were chosen precisely so a blind harness can never be read as a verdict. Overloading either for "expected red" would make a genuinely BLIND INSTRUMENT INDISTINGUISHABLE FROM A DECLARED RED — the gate would swallow exactly the failure class those codes exist to make loud. It also fails acceptance (4) (an integer carries no item id) and (3) (nothing to rot-check), and it puts the declaration inside the PRODUCER, collapsing producer!=gate (§11.4.240/§11.4.249).  HONEST BOUNDARY ON THE DESIGN (§11.4.240): it achieves separation by LOCATION and MULTI-PLACE AGREEMENT, not by true CAPABILITY, which §11.4.240 prefers. There is no PR/CODEOWNERS seam here to enforce capability — CLAUDE.md Hard Stop #1 removed all CI/PR gates, so the CODEOWNERS half of §11.4.248(B) is STRUCTURALLY UNENFORCEABLE in this project. What the design buys is that silencing a failure requires a coherent three-place story visible in a diff, instead of one comment line.  THE RED: tests/pre_build/test_bob221_expected_red_declaration.sh. It extracts invariant 30's loop and its blocking predicate VERBATIM FROM THE LIVE GATE BY CONTENT MARKER (never line number) and RUNS them against a hermetic scratch PROJECT_ROOT — so the logic under test is the gate's own text, not a paraphrase (§11.4.226 anti-echo). Measured RED: 3 of 5 properties unmet, exit 1. P3 is asserted on the blocking REASON, not merely on "it blocked" — today everything blocks, so a bare did-it-block check would pass FOR THE WRONG REASON and keep passing if the anti-rot half were never built. Polarity flip proven with the BYTE-IDENTICAL test file against a sandbox carrying the patch: exit 0, all five properties met. Four paired §1.1 mutations each kill exactly ONE property, one-to-one, no cross-talk.  THE PATCH: 72 lines, 4 hunks + one new file scripts/lib/expected_red.sh,</code>git
 apply
@@ -2948,7 +3282,7 @@ until the mechanism lands — at which point its already-present marker
 and table row clear it. The mechanism is its own first customer.</td>
 </tr>
 <tr>
-<td>161</td>
+<td>171</td>
 <td>major</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -2995,7 +3329,7 @@ QA regime — and notably not by the two previous fixes of this same
 class, neither of which asked why it happened.</td>
 </tr>
 <tr>
-<td>162</td>
+<td>172</td>
 <td>critical</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -3040,7 +3374,7 @@ stream while surveying invariant 30 more widely than its brief required
 boundary honestly, which is what prompted the wider survey.</td>
 </tr>
 <tr>
-<td>163</td>
+<td>173</td>
 <td>major</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -3107,7 +3441,7 @@ be added. Not by the automated QA regime — and the regime cannot see it,
 which is the point.</td>
 </tr>
 <tr>
-<td>164</td>
+<td>174</td>
 <td>critical</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -3131,7 +3465,25 @@ invariant invokes is itself tracked. Surfaced by the BOB-102 round-13
 remediation and independently verified 2026-08-27.</td>
 </tr>
 <tr>
-<td>165</td>
+<td>175</td>
+<td>minor</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Task</td>
+<td>—</td>
+<td>BOB-228 — WHAT: §11.4.212 makes the main README the canonical entry
+point for ALL project documentation, with no §11.4.65-scope doc
+reachable by no link path.
+docs/scripts/check_cm_lan_routes_authenticated.md is not reachable from
+README.md. MEASURED 2026-08-27: grep -c for the guide name in README.md
+returns 0, control-needled against a doc README does link (CONTINUATION
+returns 1), so the instrument is not blind. ACCEPTANCE: README links the
+guide directly or transitively, and the doc-link generator covers
+docs/scripts/ so the next such guide cannot land orphaned. Surfaced by
+the BOB-102 round-13 remediation and independently verified
+2026-08-27.</td>
+</tr>
+<tr>
+<td>176</td>
 <td>Critical</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
@@ -3162,7 +3514,7 @@ discipline (every discovered defect lands as a tracked item) even though
 it is being closed in the same session it was found.</td>
 </tr>
 <tr>
-<td>166</td>
+<td>177</td>
 <td>Minor</td>
 <td>Completed (→ Fixed.md)</td>
 <td>Task</td>

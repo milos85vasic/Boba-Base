@@ -396,6 +396,55 @@ def start_original_proxy() -> None:
         logger.error(f"Original proxy failed: {e}")
 
 
+def _refuse_if_lan_bound_and_unarmed(host: str) -> None:
+    """BOB-197 boot-time invariant (§11.4.254): refuse to serve the merge
+    service unauthenticated to the whole LAN.
+
+    ``require_api_token()`` (``api/routes.py``) reads ``BOBA_API_TOKEN``
+    PER-REQUEST and, by design, leaves every route OPEN when the token is
+    unset or empty -- its own docstring states this is deliberate, to
+    preserve the no-auth dev workflow. That default is correct when the
+    listener is loopback-only. It is NOT correct for the deployment
+    default: ``merge_host`` below defaults to ``0.0.0.0`` (LAN-bound,
+    because the container uses ``network_mode: host``), so a fresh
+    deployment that never arms ``BOBA_API_TOKEN`` silently serves every
+    route, unauthenticated, to the whole LAN.
+
+    A static route-wiring gate (BOB-102) cannot catch this -- it can only
+    assert that ``Depends(require_api_token)`` markers exist on handlers,
+    never that the token is armed at runtime, since arming is a
+    per-request env read, not a route-wiring property. This is a
+    boot-time invariant, enforced here, once, before the listener binds.
+
+    Uses ``os._exit`` rather than ``sys.exit``/``SystemExit``: this check
+    runs inside ``start_fastapi_server()``, which ``main()`` below always
+    runs on a DAEMON THREAD. ``SystemExit`` raised on a non-main thread
+    only terminates that thread -- the process keeps running with the
+    original-proxy thread still serving on 7186 and the merge service
+    just silently absent, which is exactly the partial-boot state
+    §11.4.254 forbids ("Service booting partially ... is worse than
+    refusing to start"). ``os._exit`` terminates the whole process
+    immediately regardless of which thread calls it.
+    """
+    # Local import: mirrors the sys.path dance start_fastapi_server() performs
+    # before this is ever called in production; a direct unit test of this
+    # function sets up sys.path itself (see tests/unit/test_main.py).
+    from config.proxy import _is_loopback
+
+    if _is_loopback(host):
+        return
+    if os.environ.get("BOBA_API_TOKEN", "").strip():
+        return
+    logger.error(
+        "Refusing to start: merge service is bound to %s (not loopback-only) "
+        "but BOBA_API_TOKEN is unset -- every route would be served "
+        "unauthenticated to the whole LAN. Set BOBA_API_TOKEN in .env, or "
+        "bind MERGE_SERVICE_HOST=127.0.0.1 for local-only development.",
+        host,
+    )
+    os._exit(1)
+
+
 def start_fastapi_server() -> None:
     """Start the FastAPI merge service."""
     logger.info("Starting FastAPI merge service...")
@@ -416,6 +465,7 @@ def start_fastapi_server() -> None:
         # service should be localhost-only.
         merge_port = int(os.environ.get("MERGE_SERVICE_PORT", "7187"))
         merge_host = os.environ.get("MERGE_SERVICE_HOST", "0.0.0.0")  # nosec B104  # noqa: S104
+        _refuse_if_lan_bound_and_unarmed(merge_host)
         config = uvicorn.Config(
             app,
             host=merge_host,

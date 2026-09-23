@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 100
-**Last modified:** 2026-09-23T09:34:59Z
+**Revision:** 103
+**Last modified:** 2026-09-23T13:29:46Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -383,61 +383,6 @@ The dead-count alone understates the residual: 25.5% of probes stalled >1s (<0.1
 WHY THIS ROW STAYS OPEN: the acceptance evidence this item names is '22/26 dead -> 0/N dead'. Achieved: 22/26 -> 2/141. The user-visible symptom — 7187 unresponsive while 7186 answers in the same process — STILL OCCURS, twice in 15 minutes. That is precisely BOB-145's own predicted residual: search.py:914 is still a plain synchronous call, and removing the symptom needs a change at that CALL SITE (offload or await), which BOB-145 explicitly scoped out.
 
 Two criteria that ARE satisfied: no permanently-R thread (48 of 80 census samples had zero R threads), and the in-process 20s watchdog logged 0 stalls — with a control needle, since that same watchdog produced 167,971 bytes of dumps pre-fix.
-## BOB-141 — CLAUDE.md claims the Go profile serves 7186/7187/7188 but its container binds only 7187 — doc contradicts the Dockerfile
-
-**Status:** Queued
-**Type:** Task
-**Severity:** Low
-**Created-By:** Claude
-
-**Reported-Via:** §11.4.202 reporting directive `task` on 2026-08-20T14:56:38Z
-**Reported-By:** Claude
-
-**What (the report, verbatim):**
-CLAUDE.md's Architecture section states:
-
-  "qbittorrent-proxy-go (Go/Gin, opt-in via --profile go) -- replaces the Python
-   proxy on 7186, 7187, 7188"
-
-The container cannot deliver that. Read from source rather than prose:
-
-  qBitTorrent-go/Dockerfile:16    CMD ["/app/qbittorrent-proxy"]        (ONE binary)
-  qBitTorrent-go/Dockerfile:15    EXPOSE 7187 7188                      (declares 2)
-  cmd/qbittorrent-proxy/main.go   r.Run(fmt.Sprintf(":%d", cfg.ServerPort))  (binds 1)
-  internal/config/config.go:58    ServerPort = MERGE_SERVICE_PORT (default 7187)
-
-So the qbittorrent-proxy-go container binds 7187 ONLY. webui-bridge is a SEPARATE
-binary (cmd/webui-bridge, /bridge/health, cfg.BridgePort) that this container never
-starts, and nothing in it binds 7186 either -- although the compose service does set
-PROXY_PORT=7186 and BRIDGE_PORT=7188 in its environment, which reinforces the wrong
-impression. EXPOSE likewise declares a port nothing binds.
-
-WHY THIS MATTERS BEYOND TIDINESS: this prose was used as the source of truth when
-first authoring config/served_ports.yaml, producing a manifest entry of
-[7186, 7187, 7188] for that service. The healthcheck gate built on it then FAILED a
-service whose healthcheck was already correct -- a §11.4.201(1) false-positive
-refusal caused directly by trusting the doc over the Dockerfile. The manifest was
-corrected against source; the doc was not, and will mislead the next reader the
-same way.
-
-Either the doc is wrong, or the Go container is under-provisioned relative to intent
-(it should also run webui-bridge and a 7186 listener). Determining WHICH is part of
-this task -- do not simply reword the doc to match the current binary if the
-intended design was a three-port container.
-
-Related: the Go service's compose block sets PROXY_PORT and BRIDGE_PORT that no
-process in the container consumes, and EXPOSE lists 7188 unbound. Whichever way the
-above resolves, those should agree with reality afterwards.
-
-**Affected scope / file-scope manifest:**
-CLAUDE.md (Architecture + Port Map), docker-compose.yml (qbittorrent-proxy-go env/EXPOSE), qBitTorrent-go/Dockerfile
-
-**Reproduction / context:**
-Read qBitTorrent-go/Dockerfile:16 (single CMD) against CLAUDE.md's 'replaces the Python proxy on 7186, 7187, 7188'; confirm cfg.ServerPort resolves to MERGE_SERVICE_PORT=7187 in internal/config/config.go:58.
-
-**Acceptance criteria:**
-Doc and container agree, with the direction of the fix decided deliberately (correct the doc, or provision the container to match the documented intent). PROXY_PORT/BRIDGE_PORT env and EXPOSE lines agree with what the container actually binds.
-
 ## BOB-143 — Orphaned .worktrees/ dirs (46M, unresolvable gitdir) pollute gate scan scope and manufacture false BOB-126-class findings
 
 **Status:** Queued
@@ -503,28 +448,6 @@ git worktree list shows only the main checkout; git -C .worktrees/<dir> log -1 r
 **Acceptance criteria:**
 Whole-tree gates no longer report findings sourced from orphaned worktrees: either the dirs are removed after operator confirmation with a §9.2 pre-op backup, or .worktrees/ is added to a checked-in §11.4.224(E)-fenced exclusion list with justification. Verify by re-running the sweep and confirming zero .worktrees-sourced findings.
 
-## BOB-150 — pre_build_verification.sh invariant labels read N/50 but only 41 invariants are labelled
-
-**Status:** Queued
-**Type:** Task
-**Severity:** Low
-**Created-By:** AI
-
-**Reported-Via:** §11.4.202 reporting directive `task` on 2026-08-21T14:46:07Z
-**Reported-By:** AI
-
-**What (the report, verbatim):**
-The pre-build runner announces each invariant as [N/44], but only 35 invariants carry a label and only 35 distinct CM-* gate names are announced. Numbers 33-38, 40, 42 and 43 are unused; there are no duplicates. An operator reading the output sees '[44/44]' scroll past and reasonably concludes 44 invariants ran, when 35 did - the output overstates coverage by 9. This is PRE-EXISTING and was surfaced while wiring CM-OWNERSHIP-INVARIANTS, which deliberately took free slot 33 precisely to avoid a 35-label renumbering that would have conflicted with concurrent work. That gate neither introduced nor fixed this. Filing rather than absorbing it silently, per the closed-or-tracked rule: an unstated finding reads as no finding.
-
-**Affected scope / file-scope manifest:**
-scripts/pre_build_verification.sh
-
-**Reproduction / context:**
-grep -oE '\[[0-9]+/44\]' scripts/pre_build_verification.sh | wc -l  -> 35 (denominator says 44); numbers 33-38, 40, 42, 43 are unused, no duplicates. Distinct CM-* names announced in the file: 35, which agrees with the label count and not with the denominator.
-
-**Acceptance criteria:**
-Either the denominator matches the real number of labelled invariants, or the numbering is compacted to be contiguous - and whichever is chosen, a gate or the runner itself derives the denominator rather than restating it as a literal, so the two cannot drift apart again.
-
 ## BOB-151 — CM-SCRIPT-DOCS-SYNC is a named gate with no implementation, and 24 of 36 scripts have no companion doc
 
 **Status:** Queued
@@ -546,50 +469,6 @@ grep -rl CM-SCRIPT-DOCS-SYNC --include='*.sh' --include='*.py' . (excluding subm
 
 **Acceptance criteria:**
 Either the gate is implemented and the 24 missing companions are written (the count becoming a monotone-decreasing ratchet so it cannot grow), or the obligation is explicitly scoped down to a defined subset with the reason recorded. What is NOT acceptable is the current state, where the rule is stated and nothing measures it.
-
-## BOB-152 — Constitution sweep walks vendored third-party code: 82% of one gate's 38,291 findings come from submodules/
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** Medium
-**Created-By:** AI
-
-**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-21T15:10:28Z
-**Reported-By:** AI
-
-**What (the report, verbatim):**
-The constitution sweep passes --root at the repository root, so every gate walks vendored third-party code the project neither wrote nor ships: submodules/helixqa/tools/opensource/perfetto, chroma, skyvern, mem0 and so on. Measured today, 82% of one gate's findings originate there. This is a false-positive refusal at scale: it fails the sweep over code that cannot be fixed here, and it buries the 4497 first-party findings that might actually matter under 31496 that do not. A second, subtler instance: cm_killpg_pgid_guard flags its OWN golden-bad fixtures and the BOB-126 incident docstrings - the gate reporting on the very artifacts that prove it works. Surfaced while fixing the .worktrees/ half of this problem (BOB-143), which was the smaller 6% slice; that fix was deliberately scoped to .worktrees/ rather than quietly widened to cover this, because excluding submodules/ is a materially larger decision about what the sweep is for and deserves its own review.
-
-**Affected scope / file-scope manifest:**
-scripts/verify-all-constitution-rules.sh, config/constitution-sweep.conf, constitution/scripts/gates/*
-
-**Reproduction / context:**
-config/constitution-sweep.conf line 27 passes 'DEFAULT --root @ROOT@', so every gate walks the whole repository. Per-tree census of cm_oracle_strategy_named_and_independent over the full root: 38291 findings total - 31496 (82%) from submodules/, 2280 (6%) from .worktrees/, 4497 from the real tree. cm_killpg_pgid_guard: 18 findings - 9 from submodules/, and of the 8 in the real tree several are the gate's OWN golden-bad fixtures and BOB-126 docstrings.
-
-**Acceptance criteria:**
-The sweep scans code this project actually ships. Vendored third-party trees under submodules/ are excluded or scoped explicitly, and any gate's own golden-bad fixtures are excluded from its own scan - with the exclusion validated in BOTH directions (a planted violation in first-party code must still FAIL) so this does not become narrow-until-green.
-
-## BOB-154 — Host venv and production container run different starlette versions (1.4.1 vs 1.6.0)
-
-**Status:** Ready for testing
-**Type:** Bug
-**Severity:** Medium
-**Created-By:** AI
-
-**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-21T15:46:07Z
-**Reported-By:** AI
-
-**What (the report, verbatim):**
-The host virtualenv used to run this project's unit tests resolves starlette 1.4.1 while the running qbittorrent-proxy container resolves 1.6.0. Every other implicated package matches, so this is a genuine unpinned-transitive-dependency drift rather than a deliberate difference. It matters because it silently weakens every test result: a green suite on the host is evidence about 1.4.1, and production is 1.6.0. A behavioural change between those versions would be invisible to the tests that exist to catch it, which is the build-once-run-the-same-bytes property the constitution asks for. Surfaced while investigating BOB-129, where the defect happened to reproduce IDENTICALLY at both versions - which is what allowed that ticket's slowapi/starlette-incompatibility premise to be refuted. That was luck, not design: the next divergence may not be version-independent, and nothing would tell us.
-
-**Affected scope / file-scope manifest:**
-download-proxy/requirements.txt, .venv, container qbittorrent-proxy
-
-**Reproduction / context:**
-.venv/bin/python -c 'import starlette;print(starlette.__version__)' -> 1.4.1 ; podman exec qbittorrent-proxy python -c 'import starlette;print(starlette.__version__)' -> 1.6.0. Same fastapi (0.141.1), same slowapi (0.1.10), same limits (5.8.0) - starlette alone diverges.
-
-**Acceptance criteria:**
-The interpreter that runs the tests and the interpreter that serves production resolve the same versions, pinned so they cannot drift apart silently - or, if a divergence is deliberate, it is declared and a check asserts the declared pair rather than leaving it to chance.
 
 ## BOB-159 — Warm ./start.sh over an already-running stack leaves the FR-004d repair window open
 
@@ -727,96 +606,6 @@ Run tests/ux/test_live_dashboard_accessibility.py against the running merge serv
 **Acceptance criteria:**
 axe-core reports ZERO color-contrast violations against the live rendered dashboard, with the fix made in production component CSS rather than by relaxing the assertion or excluding the rule (11.4.120: reconcile to the correct mechanism, never weaken the check). The existing tests/ux/ suite is the guard and already fails today, so the RED is captured -- closure requires it flipping GREEN against the live surface, which is runtime-class evidence per 11.4.226.
 
-## BOB-168 — run_all_challenges.sh lists scaling_horizontal_challenge.sh which does not exist on disk, so the runner references a challenge that can never execute
-
-**Status:** In progress
-**Type:** Task
-**Severity:** Low
-**Created-By:** Claude
-**Assigned-To:** Claude
-
-WHAT. scripts/run_all_challenges.sh:66 lists "scaling_horizontal_challenge.sh" in its challenge set. challenges/scripts/scaling_horizontal_challenge.sh does not exist:
-
-    $ sed -n '66p' scripts/run_all_challenges.sh
-        "scaling_horizontal_challenge.sh"
-    $ ls challenges/scripts/scaling_horizontal_challenge.sh
-      ls: cannot access ...: No such file or directory
-
-VERIFIED independently, not taken on report — surfaced by the BOB-109 scaling agent and re-checked here by direct invocation.
-
-WHY IT MATTERS. Whether this is cosmetic or a §11.4.201 gate-honesty defect depends entirely on how the runner treats a missing entry, and that is the first thing to determine: if it SKIPs silently, the challenge bank advertises coverage it does not have (a §11.4.266 claim-vs-reality row with no passing challenge behind it); if it FAILs, the runner is permanently red for a reason unrelated to the system under test, which trains readers to ignore it. Neither outcome is acceptable; they need different fixes.
-
-ACCEPTANCE. (a) Determine and record the runner's actual behaviour on the missing entry by invoking it, not by reading it. (b) EITHER author the challenge, OR remove the entry — with §11.4.124 discipline: check git history for whether it once existed and was deleted, since a silently-dropped challenge is the more interesting defect. (c) If the runner silently skips missing entries, that is its own finding: a missing challenge must be loud (§11.4.3 SKIP-with-reason at minimum), never absent-and-quiet.
-
-SEVERITY. Low as a defect, but it sits on the challenge-coverage seam, so (c) may deserve its own item.
-
-CORRECTION 2026-08-22 (§11.4.6) — THIS ITEM'S PREMISE WAS FALSE, and the error was mine. Recorded openly rather than quietly edited.
-
-scaling_horizontal_challenge.sh EXISTS. It is at submodules/challenges/challenges/scripts/scaling_horizontal_challenge.sh, executable, 3107 bytes, dated Aug 7. So do all 14 other entries and the meta-runner. It was never deleted: added to the roster at 1c959ba, the challenge itself added in the submodule at 873c0b1, and a pickaxe search across both repositories and all branches finds ZERO deletions.
-
-HOW I GOT IT WRONG. run_all_challenges.sh reads submodules/challenges/challenges/scripts/. I checked challenges/scripts/ — a DIFFERENT directory belonging to a DIFFERENT, glob-based runner. Two similarly-named directories; I measured the wrong one. That is a §11.4.201(9) field-identity error. Worse, I wrote that it was "verified by invocation": I had listed a directory and never run the aggregator, so the claim overstated the evidence class as well as getting the answer wrong.
-
-THE LESSON, which generalises past this item. In the SAME commit I correctly caught a sibling agent making this exact class of error on BOB-167 — a zero-hit produced by searching one symbol name — and applied a control needle there. Then I omitted the needle one paragraph later on my own measurement. The distinction that would have caught it: A CONTROL NEEDLE PROVES THE INSTRUMENT CAN SEE; IT DOES NOT PROVE IT IS POINTED AT THE THING UNDER TEST. §11.4.201(7)(b) as commonly applied guards blindness; it does not guard mis-aiming. The needle for THIS query would have been to resolve the path the runner itself reads, not to confirm that some directory listing works.
-
-WHAT IS ACTUALLY WRONG, and it is worse than what I filed. The missing-entry path runs no challenges by definition, so it can be exercised safely. Run against a checkout where the submodule is absent — the ordinary state of a clone made without --recursive — the REAL runner (byte-identity sha-asserted, not a replica) reports:
-
-    PASS: 0   FAIL: 0   SKIP: 16   TOTAL: 16
-    OBSERVED EXIT CODE: 0
-
-An ENTIRELY UN-RUN BANK REPORTS SUCCESS. Not one dangling entry tolerated — the whole suite silently passes without executing anything. That is §11.4.201(6) false-null verbatim, and it is observed-reachable rather than constructed (§11.4.115(G)).
-
-REVISED ACCEPTANCE. (a) ANSWERED, though not as filed: the runner reports a loud, counted SKIP and then never blocks, because the exit expression reads only the FAIL count. (b) The dangling-entry half is VOID — nothing is dangling. (c) The real work is the exit contract: a roster entry the runner cannot execute must not be indistinguishable from a healthy run. See the decision recorded in docs/qa/BOB-168/decision_missing_vs_skip.md.
-
-RELATED, REPORTED NOT FIXED: scripts/pre_build_verification.sh:1792 carries the same SKIP/MISSING conflation one level up, for the other runner. Filed separately.
-
-## BOB-169 — 286 of 326 exported .html docs are headless pandoc fragments with no DOCTYPE and no charset, so UTF-8 section marks and arrows render as mojibake when opened directly
-
-**Status:** In progress
-**Type:** Bug
-**Severity:** Medium
-**Created-By:** Claude
-**Assigned-To:** Claude
-
-WHAT. The §11.4.65 markdown-export mandate requires every in-scope doc to ship .html/.pdf twins. 286 of the 326 .html files under docs/ (excluding dist/ and node_modules/) are pandoc FRAGMENTS — they begin at <h1> with no <!DOCTYPE>, no <html>/<head>, and critically no <meta charset='utf-8'>. Census run 2026-08-21.
-
-CONCRETE HARM, measured not assumed. Sample docs/BOBA_DATABASE.html: DOCTYPE 0, charset 0, and 30 lines carrying non-ASCII — the distinct characters present are § — ' " " →. With no charset declaration a browser opening the file directly (file:// or a plain static host sending no charset header) falls back to its default encoding, typically windows-1252, and renders § as Â§ and → as â†'. Those are not incidental characters in this corpus: every constitutional cross-reference in these documents is a § literal, so the mojibake lands on the most load-bearing token in the text. Fragments also carry no viewport meta, so they do not scale on mobile.
-
-HOW IT SURFACED. Chasing a CM-DOCS-CHAIN-ENGINE-VERIFY failure on the features-status context. docs_chain sync regenerated docs/features/Status.{html,docx,pdf} and the HTML diff was 183 insertions / 0 DELETIONS — the body was untouched and a full pandoc preamble was PREPENDED, proving the committed file had been a fragment. Its sibling docs/codegraph/Status.html already began with <!DOCTYPE>, so two derivatives in the same docs_chain config were being produced in different modes. That mismatch is what made verify FAIL, and the gate's own message ('derived docs drift from .md sources') misattributes it: the content was not drifting from the source, the generator was inconsistent.
-
-THE DETECTION GAP (§11.4.238). Pre-build invariant 16 CM-MARKDOWN-EXPORT-SYNC PASSED on the whole corpus — 'all in-scope docs have fresh .html/.pdf siblings'. It checks PRESENCE and FRESHNESS, never VALIDITY, so a 0-byte-preamble fragment satisfies it exactly as a well-formed document does. This was found by reading a failing gate's diff, not by the regime: a §11.4.238 discovery-channel escape, and the missing check is the interesting half.
-
-ROOT CAUSE IS NOT YET PROVEN (§11.4.6). Two generators exist — scripts/generate_markdown_exports.sh (invoked via workable-items-export.sh) and the docs_chain engine — and they demonstrably disagree on standalone vs fragment mode for the same source. WHICH one emits fragments, and whether it does so always or under specific flags, is NOT established here and must not be assumed. Whoever takes this item determines it by invoking both on one fixture and comparing, before changing either.
-
-ACCEPTANCE. (a) Determine by invocation which generator emits fragments and under what conditions; record it. (b) Make the emitting generator produce standalone documents (charset + viewport at minimum), so the two paths agree — §11.4.251: one artifact should not have two generators that disagree. (c) Regenerate the 286 affected files. (d) Extend CM-MARKDOWN-EXPORT-SYNC (or add a sibling) to assert VALIDITY, not just presence: every exported .html declares a charset. Paired §1.1 mutation — strip the charset from one export and the gate must FAIL. Include a negative control so a legitimately standalone doc does not fire (§11.4.201(1)). (e) Honest boundary: this is about the HTML twins only; the .pdf twins embed their own encoding and are not implicated by this measurement.
-
-ALREADY DONE. docs/features/Status.{html,docx,pdf} regenerated via 'docs_chain sync features-status' (evidence qa-results/docs_chain/20260821T202805Z); verify --all now exits 0. That is 3 of the 289 files; the remaining 286 are untouched.
-
-CORRECTION 2026-08-21 (§11.4.6) — recorded openly rather than quietly edited, per the convention BOB-136's own body establishes. An earlier revision of this item asserted: "the .pdf twins embed their own encoding and are not implicated by this measurement." That assertion is FALSE. It was written without probing a single PDF.
-
-Probing docs/BOBA_DATABASE.pdf via pdftotext returns 'Â§ 5', 'Jackettâ€™s' and 'â†' — UTF-8 byte sequences (§ = 0xC2 0xA7) decoded as latin-1 — while the SOURCE .md at the corresponding construct is clean UTF-8. So the corruption was introduced during export, not authored.
-
-The PDF case is WORSE than the HTML case, not merely additional. An HTML fragment still holds correct UTF-8 BYTES on disk; a browser told the right encoding renders it correctly, so adding <meta charset> fixes it with no re-render. In a PDF the mis-decoded characters are baked into the text layer as glyphs — no viewer setting recovers them, and only regeneration from clean source fixes it.
-
-MECHANISM (hypothesis, NOT proven — §11.4.6): the PDF is plausibly rendered FROM the charset-less HTML fragment, so the missing declaration propagates into the PDF pipeline and freezes there. Consistent with both artifacts sharing one root defect, but the pipeline was NOT traced. Establish it by invocation before relying on it.
-
-SCOPE NOT MEASURED: exactly ONE pdf was probed. The 286-file census covered .html only. How many of the ~300 PDFs carry baked mojibake is UNKNOWN and must be COUNTED, not extrapolated from a single sample. Acceptance (e) is therefore REPLACED: it previously scoped PDFs out; it now requires the PDF corpus to be counted and regenerated alongside the HTML.
-
-Evidence: docs/qa/BOB-169/pdf_mojibake_correction_20260821.log
-
-ROOT CAUSE PROVEN 2026-08-21 — acceptance (a) is SATISFIED, do not repeat it. Full evidence: docs/qa/BOB-169/root_cause_proven_20260821.md
-
-THE GENERATOR: scripts/generate_markdown_exports.sh:57 runs `pandoc -f markdown -t html5 -o "$html" "$md" --metadata title=...` with NO --standalone/-s, so pandoc emits a body fragment with no DOCTYPE, no head, and no <meta charset>. A tell that the flag was intended and lost: --metadata title= is passed on that same line, and a title can only render inside a standalone document's <head><title> — the script computes a title it is structurally unable to emit.
-
-THE TWO BRANCHES DISAGREE, AND THE FALLBACK IS THE CORRECT ONE: the else-branch (python-markdown, used only when pandoc is ABSENT) explicitly writes <!DOCTYPE html><html><head><meta charset="utf-8">. So the PREFERRED path is the defective one and a host WITHOUT pandoc produces CORRECT exports. That inversion is why this survived — the defect is invisible on exactly the machines least likely to be treated as degraded.
-
-THE PDF MECHANISM IS NO LONGER A HYPOTHESIS: line 76 runs `weasyprint "$html" "$pdf"` — the PDF is rendered FROM the charset-less fragment, so weasyprint's encoding fallback bakes the mis-decoded glyphs into the PDF text layer.
-
-CONFIRMED BY A FALSIFIABLE PREDICTION: DOCX takes a THIRD path (line 85, pandoc -t docx direct from markdown, never touching the HTML), so it must be clean if the chain is right. Measured on docs/BOBA_DATABASE.*: .docx = 0 mojibake sequences and 7 clean § characters; .pdf = 'Â§ 5' / 'Jackettâ€™s' / 'â†'; .html = no DOCTYPE, no charset, 30 non-ASCII lines. The DOCX shares the same source and the same pandoc binary and differs ONLY in not passing through the HTML — isolating the defect to the HTML step and ruling out both a corrupt source and a broken pandoc.
-
-THE FIX IS NOT JUST THE FLAG. The generator is mtime-guarded ([[ ! -f "$html" || "$md" -nt "$pdf" ]]), measured: a full export run AFTER docs_chain rewrote Status.html standalone did NOT revert it. So adding -s heals a file only when its .md is next touched — the corpus would heal silently, unevenly, over an unbounded period, with no point at which anyone can declare it done. Acceptance (c) therefore requires a FORCED regeneration pass, and HTML must be regenerated BEFORE the PDFs, since regenerating PDFs first re-bakes the same mojibake from the still-broken fragment.
-
-DELIBERATELY NOT FIXED IN THIS PASS. The flag is one character but the regeneration is ~286 HTML plus their PDFs in a single commit, and four subagent streams are live in this checkout. A 600-file rewrite during parallel dispatch is a §11.4.84 collision waiting to happen. This is scoped for a dedicated pass on a quiescent tree.
-
 ## BOB-170 — Capture one quiescent GREEN run of the scaling growth gate, which has never executed under its own loadavg<=0.75/cpu precondition and has no scheduled window that would make it
 
 **Status:** Queued
@@ -907,32 +696,6 @@ FIX DIRECTION: Gap A needs the exception to reach a diagnostic rather than being
 
 ACCEPTANCE: both gaps closed with their own REDs, or explicitly closed per 11.4.112 with evidence. Immediate sub-task: append a stated-gaps paragraph to docs/qa/BOB-172/fix_evidence_20260822.log.
 
-## BOB-182 — Operator decision owed on the export-charset ratchet, plus an auto-lowering baseline
-
-**Status:** In progress
-**Type:** Task
-**Severity:** Medium
-**Created-By:** Claude
-**Assigned-To:** Claude
-
-**OPERATOR DECISION (2026-08-26, §11.4.66 interactive clarification): KEEP THE MONOTONE RATCHET**
-
-§11.4.224(E) brownfield adoption answer, recorded as consumer DATA: the adoption model for CM-EXPORT-CHARSET-VALID is the MONOTONE-DECREASE RATCHET. The count may only go down, never up. Immediate hard floor, changed-code-only-with-deadline, and per-corpus phase-in were all offered and NOT chosen. This closes half of BOB-182 — the half that was genuinely the operator's. THE REMAINING HALF IS A REAL DEFECT STILL OWED: BASELINE is a hardcoded constant, so the ratchet does not actually ratchet — on improvement the gate PASSES and PRINTS the value to lower it to, but nothing lowers it, and the gate keeps permitting regression back to the original count after the corpus heals. The fix must NOT collapse §11.4.249 role separation: a gate that writes its own threshold during a pre-build run becomes a PRODUCER as well as a GATE. Acceptable shapes include a persisted baseline the gate READS but never writes with lowering via a separate explicitly-invoked command, or a gate that FAILS loudly when the live count is below baseline so drift becomes an actionable refusal.
-
-This answer is recorded as consumer DATA per §11.4.35 — it is the operator's stated choice, not an agent inference, and supersedes any prior agent-chosen default on this question. Options not chosen are named above so a future reader does not re-litigate a settled call (§11.4.112(5) bounded-verdict discipline applied to decisions).
-
---- prior item text follows ---
-
-WHAT: CM-EXPORT-CHARSET-VALID (pre-build invariant 50) adopts its 301 pre-existing violations via a monotone-decrease ratchet rather than a hard floor. Two things are owed.
-
-(1) THE ADOPTION DECISION IS THE OPERATOR'S, NOT THE SCRIPT'S. 11.4.224(E) requires the brownfield adoption question be SURFACED to the operator and the answer recorded as consumer DATA -- never an invented ratchet. What exists today is a header comment plus a BOBA_EXPORT_CHARSET_BASELINE override: that DOCUMENTS a decision the agent made, it does not RECORD an answer the operator gave. The independent reviewer judged the choice defensible and would not reverse it (a hard floor on 301 violations makes the build unreachable, which 11.4.234 forbids; 11.4.101 favours the reversible option) but correctly held that it is not yet compliant. Options for the operator: immediate hard floor (BASELINE=0) / keep the monotone ratchet / per-corpus phase-in / changed-code-only with a scheduled full-corpus deadline.
-
-(2) THE RATCHET DOES NOT ACTUALLY RATCHET. BASELINE is a hardcoded constant. On improvement the gate PASSES and PRINTS the value to lower it to, but nothing lowers it, so the gate keeps permitting regression all the way back to 301 after the corpus heals. The header now says tightening is MANUAL rather than claiming automatic behaviour that does not exist (11.4.6), but the honest statement is a stopgap, not the fix.
-
-WHY IT WAS NOT BUILT WITH THE FIX: a gate that writes its own threshold during a pre-build run becomes a PRODUCER as well as a GATE (11.4.249 role separation), and that is a design change the operator should approve rather than receive as a side effect.
-
-ACCEPTANCE: the operator's adoption answer recorded as consumer DATA; and either a persisted baseline the gate lowers and never raises (with the role-separation question answered), or an explicit decision that manual tightening is acceptable.
-
 ## BOB-184 — Icon-glyph controls are unverified for non-text contrast because neither contrast oracle can measure them
 
 **Status:** Queued
@@ -987,13 +750,6 @@ Also an 11.4.30 question the operator owns: bin/workable-items and bin/workable-
 
 ACCEPTANCE: (a) resolution must never prefer a stale artifact over a current one - either the tracked binaries are removed and resolution falls through to build-on-demand, or a freshness check refuses a binary older than its sources (see the BOB-183 fingerprint gate for a working pattern); (b) the false comment at :519-523 corrected; (c) a paired 1.1 mutation proving the new refusal fires, plus a negative control proving a genuinely fresh binary still passes so the fix is not an 11.4.201(1) false-positive refusal; (d) the 11.4.30 tracked-binary decision recorded as operator DATA. Discovered out-of-band during BOB-166 remediation - a 11.4.238 coverage escape in its own right.
 
-## BOB-189 — CM-NO-FAIL-OPEN-SKIP scanner flags fail-CLOSED SSRF guards as fail-open (§11.4.201(1) FAIL-bluff in our own gate)
-
-**Status:** Queued
-**Type:** Bug
-
-WHAT: the fail-open scanner's shape-(A2) heuristic cannot distinguish 'return False' meaning PROCEED-AS-IF-FINE from 'return False' meaning REFUSE. It flags six textbook fail-CLOSED guards as fail-open defects: _is_safe_fetch_url (x3), _qbit_add_succeeded (x2), and the hooks path-boundary guard. INDEPENDENTLY VERIFIED 2026-08-25 by the conductor rather than taken on the triage agent's word: download-proxy/src/api/routes.py:1122 defines _is_safe_fetch_url returning bool, and its only call site at :1476 reads 'if not _is_safe_fetch_url(url): logger.warning(Refusing SSRF-unsafe download URL (non-public target); skipping); continue' - a False return REFUSES the URL. WHY THIS MATTERS: per §11.4.201(1) a false-positive refusal is a FAIL-bluff of equal severity to a false-negative pass, and here the consequence is worse than noise - acting on the finding would mean making the SSRF guard stop returning False, i.e. deleting an SSRF protection to satisfy a gate. A gate that instructs you to remove a security control is actively dangerous, not merely imprecise. REPRO: run the fail-open scan; observe six hits; read each call site. ACCEPTANCE: the scanner distinguishes refuse-shaped from proceed-shaped False returns (call-site-aware, or an audited waiver list with per-entry justification), the six drop out, AND a golden-FALSE fixture containing a real fail-closed guard is added so the discrimination is itself falsifiable per §1.1.
-
 ## BOB-191 — Fail-open scanner is a MATCHER hole blind to 5 enumerated languages (Go/Rust/Ruby/C/…) — enumerated-but-unanalysable prints PASS instead of SKIP (§11.4.201(6))
 
 **Status:** Queued
@@ -1015,52 +771,12 @@ WHAT: the BOB-161 gate lands with 6 real fail-open skips RATCHETED rather than f
 
 WHAT: agent worktrees under .claude/worktrees/ are ephemeral copies pinned at arbitrary commits - never built, never shipped, deleted when the agent finishes. Pre-build gates that walk the tree with find(1) from the repo root descend into them anyway. MEASURED INSTANCE (2026-08-25): CM-GO-TOOLCHAIN-MATCHES-BUILDER FAILED the main build with exactly one finding, from .claude/worktrees/agent-afda1df906c537ab4 - a worktree 86 commits behind still carrying 'FROM golang:1.23-alpine' against a go.mod long since at 1.26.2. The main tree was CORRECT throughout. Per §11.4.201(1) a false-positive refusal is a FAIL-bluff of equal severity to a false pass: it blocks real work and teaches people to bypass the gate. FIXED FOR ONE GATE: '.claude' added to that gate's PRUNE_DIRS with a deterministic §1.1 pair - a stale mismatch inside .claude/worktrees must NOT fail a healthy tree, the SAME mismatch outside it MUST still fail, so the prune cannot widen into blindness (§11.4.201(6)). Mutation verified: reverting the prune fails 2 checks. SURVEY, measured not inferred: 8 of 13 pre_build gates walk the tree; only the fixed one prunes .claude. Gates using 'git ls-files' are structurally immune - worktrees are untracked. Empirically probed: check_cm_closure_seam_binds, check_cm_killpg_pgid_guard and check_cm_no_production_mutation_residue all rc=0 with ZERO worktree references - clean in practice today. UNMEASURED, not clean: check_cm_test_mock_pid_explicit_int and check_cm_test_mock_pid_patched_when_real_pid were not reached before the probe budget expired. HYPOTHESIS REFUTED, recorded so nobody re-walks it: an earlier revision of this item speculated that check_cm_plugin_count's 90s timeout was caused by walking worktrees. It is NOT. That gate's find is scoped to $PLUGINS_DIR (check_cm_plugin_count.sh:224), so worktrees are outside its walk entirely. Its slowness is real - still running past 54s on a re-measure - but has a different, still-unidentified cause and belongs to its own item, not this one. ACCEPTANCE: every tree-walking gate either prunes agent scratch or is proven immune by measurement, each with a paired mutation. NOTE the asymmetry that bounds the risk: a stale worktree can only ADD findings to a security-relevant scan (killpg, mutation-residue), never remove them - so the exposure is false refusal and eroded trust, not a missed defect.
 
-## BOB-195 — CM-DANGEROUS-COMBINATION-FAIL-CLOSED cannot see contextlib.suppress, and ruff SIM105 pushes authors into that blind spot
-
-**Status:** In progress
-**Type:** Bug
-
-**OPERATOR DECISION (2026-08-26, §11.4.66 interactive clarification): TEACH THE SCANNER With NODES — KEEP SIM105**
-
-The §11.4.252 fail-open scanner is FIXED to see `contextlib.suppress`; ruff's SIM105 rule STAYS ENABLED in pyproject.toml. Disabling SIM105, and the belt-and-braces both-at-once option, were offered and NOT chosen. Rationale carried with the decision: fixing the gate makes SIM105 harmless, whereas disabling SIM105 alone would leave the gate blind to any suppress written by hand, inherited from a dependency's style, or already present in the tree. REQUIRED BEHAVIOUR: `with contextlib.suppress(...)` and `with suppress(...)` (the `from contextlib import suppress` binding) wrapping a dangerous-combination call are DETECTED with the same severity and message shape as the try/except/pass form; a narrow `suppress(SpecificError)` around a NON-dangerous call must NOT fire, since a false-positive refusal is a §11.4.201(1) FAIL-bluff of equal severity to a missed real one. CONSEQUENCE FOR THE NUMBER: once landed, the scanner's finding count stops being a floor over try/except shapes and becomes a genuine census — any prior count citing completeness was scoped to try/except only.
-
-This answer is recorded as consumer DATA per §11.4.35 — it is the operator's stated choice, not an agent inference, and supersedes any prior agent-chosen default on this question. Options not chosen are named above so a future reader does not re-litigate a settled call (§11.4.112(5) bounded-verdict discipline applied to decisions).
-
---- prior item text follows ---
-
-WHAT: the §11.4.252 fail-open scanner matches Try-handler shapes (A1)/(A2). contextlib.suppress is a With node, so a swallow written that way is invisible. VERIFIED BY THE CONDUCTOR with a control needle through the same invocation path (§11.4.201(7)(b)), because a first attempt returned 0 for BOTH forms and was itself blind - the gate takes --root, not a positional, so a bare path exits on an unknown arg (§11.4.201(7)(c): the invocation path is part of the instrument). Correct run: try/except/pass around os.unlink(user_supplied_path) -> 'FAIL - swallowed exception ... :5', the needle sees. contextlib.suppress(Exception) around the IDENTICAL call -> 'PASS - no swallowed-exception ... anti-patterns found'. Both combine untrusted input with an irreversible unlink; both swallow everything; one is caught and one is not. WHY IT IS WORSE THAN A PLAIN GAP: pyproject.toml enables ruff's SIM ruleset, and SIM105 is 'use contextlib.suppress instead of try-except-pass'. Our own linter therefore instructs authors to rewrite the form this gate CAN see into the form it CANNOT. The two tools are pulling in opposite directions and the lint one runs more often. Every SIM105 autofix silently shrinks this gate's coverage while the count goes down, which reads as progress. CONSEQUENCE FOR THE NUMBER: the scanner's finding count is a FLOOR over try/except shapes, not a census of swallows. Any statement of the form 'N fail-open sites remain' must be read as 'N among try/except shapes'. ACCEPTANCE: the scanner recognises contextlib.suppress (a With whose items call contextlib.suppress with a broad exception type) and applies the same ≥2-capability test; a golden-TRUE fixture in suppress form; a golden-FALSE fixture where suppress wraps a single-capability diagnostic emitter and must NOT fire; and an explicit decision on the SIM105 tension - either exempt the shapes this gate governs, or accept suppress and teach the gate to read it. Discovered by the §11.4.252 remediation agent when its own MINOR-3 fix required using contextlib.suppress at three diagnostic-emitter sites; those three uses are legitimate and justified in-source.
-
 ## BOB-196 — check_cm_plugin_count runs for over a minute on ~69 files — cause unidentified, and it is not worktree traversal
 
 **Status:** Queued
 **Type:** Task
 
 WHAT: the CM-PLUGIN-COUNT pre-build gate takes 189 SECONDS to verify 8 documented counts. Measured 2026-08-25: exceeded a 90s probe budget (rc=124), then a bounded re-run completed at 'rc=0 wall=189s' - it PASSES, it is simply slow. CAUSE, MEASURED NOT GUESSED: the marker loop at check_cm_plugin_count.sh:273-290 iterates EVERY LINE of every governed document and spawns a pipeline per line. Per iteration: 'printf | grep -oE | wc -l | tr -d' (4 processes) plus 'printf | sed -n' (2) = ~6. Governed docs are AGENTS.md 689 + CLAUDE.md 494 + docs/features/Status.md 670 = 1853 lines, so ~11,118 process spawns, measuring ~102 ms/line. Classic per-line-subprocess shell trap. THE IRONY WORTH PRESERVING, because it explains why nobody simplified it: the in-code comment shows '-oE | wc -l' was chosen DELIBERATELY over 'grep -c' after measuring the §11.4.201(12) footgun - on this host (ugrep 7.8.4) 'grep -coE' returned 3 at top level but 1 inside a 'set -euo pipefail' subshell, a context-dependent reading. The correctness fix is right and must be kept; it is the PER-LINE application of it that costs the three minutes. HYPOTHESIS REFUTED, recorded so nobody re-walks it: this is NOT worktree traversal. The gate's find is scoped to $PLUGINS_DIR (:224), so the five agent worktrees are outside its walk. That guess was raised on BOB-194 and is dead. LIKELY FIX (unverified, stated as a candidate not a conclusion): pre-filter with ONE grep for lines containing 'CM-PLUGIN-COUNT:' before entering the loop, reducing ~1853 iterations to the ~8 lines that carry a marker, while leaving the per-line parsing logic - and its footgun-avoiding form - completely unchanged. WHY IT MATTERS beyond impatience: this gate is on the pre-build critical path, and CLAUDE.md leans on it as the mechanical authority for the three distinct plugin rosters (43 curated / 43 engines / 12 bootstrap) whose conflation was BOB-149. A gate slow enough to tempt anyone into skipping it protects nothing. ACCEPTANCE: runtime reduced with the counts and the footgun-avoiding parse preserved byte-for-byte in behaviour, proven by the existing paired mutation still biting plus a before/after wall-clock recorded. §11.4.6: nothing here questions the gate's VERDICTS - only its runtime.
-
-## BOB-197 — Auth is env-gated and OFF by default, so the LAN-bound merge service ships open — needs a boot-time invariant, not a static gate
-
-**Status:** In progress
-**Type:** Bug
-**Created-By:** Claude
-**Assigned-To:** milos85vasic
-
-**OPERATOR DECISION (2026-08-26, §11.4.66): GENERATE THE TOKEN AND ARM IT**
-
-The conductor generates a 32-byte random token and writes BOBA_API_TOKEN into .env; the operator configures clients with it. DONE 2026-08-26: token generated via secrets.token_hex(32), appended to .env with a comment naming BOB-197 and the routes.py:83 env-gating fact, chmod 600, value shown to the operator ONCE and never written to any other file. Safety verified BEFORE writing (§11.4.30/§11.4.10): .env matched .gitignore:27 '*.env' and was untracked (needle-proven — the same matcher confirmed docker-compose.yml IS tracked, so the negative is real); a §9.2 pre-op backup was taken and is itself ignored; post-write re-check confirmed .env still ignored and absent from git status. Pre-store audit found the only tracked BOBA_API_TOKEN= occurrences are the docker-compose passthrough ${BOBA_API_TOKEN:-} and prose in the leak-audit challenge — no literal value has ever been committed. STILL OWED, and the item stays open until it lands: the BOOT-TIME INVARIANT (§11.4.254) that refuses to start LAN-bound when the token is unset or empty. Without it the arming is a state fix, not a defect fix — §11.4.226(5) is explicit that a state-only repair cannot close a defect item. Options not chosen: operator sets it themselves with the invariant blocking until then; invariant warns first and blocks on a named date.
-
-Recorded as consumer DATA per §11.4.35 — the operator's stated choice, not an agent inference. Options not chosen are named so a future reader does not re-litigate a settled call.
-
---- prior item text follows ---
-
-OPERATOR DECISION (2026-08-26): arm BOBA_API_TOKEN and keep 0.0.0.0, backed by a BOOT-TIME invariant that refuses to start LAN-bound with the token unset. This item IS that invariant.
-
-MEASURED FACT, not inference. download-proxy/src/api/routes.py:83 require_api_token() reads BOBA_API_TOKEN at request time and returns immediately when unset or empty. Its own docstring states it plainly: "BOBA_API_TOKEN unset/empty -> return (OPEN). This is the DEFAULT and preserves the current no-auth contract + dev workflow". docker-compose.yml:237 passes BOBA_API_TOKEN=${BOBA_API_TOKEN:-}, so the container inherits empty unless the operator declares it. The operator .env does NOT declare it, needle-verified per 11.4.201(7)(b): the same matcher hit QBITTORRENT_DATA_DIR in the same file, so the miss is a real absence and not a blind read. The qbittorrent-proxy container was RUNNING and LAN-bound at measurement time. Consequence: the ten routes the BOB-102 guard resolves as auth-wired are open in practice on a default deploy.
-
-WHY A STATIC GATE CANNOT COVER THIS. The BOB-102 gate asserts static route WIRING - that a Depends(require_api_token) marker exists on handler, decorator or router. It cannot assert runtime ARMING, which depends on an env var read per request. Claiming the static gate covers it would be exactly the bluff the gate exists to prevent (11.4.262: machine evidence must match the layer it claims). This is a boot-time invariant class per 11.4.254.
-
-ACCEPTANCE: a boot-time check that, when the listener is LAN-bound (not loopback), refuses to start with a non-zero exit and a named cause if BOBA_API_TOKEN is unset or empty, so the open state becomes UNREACHABLE rather than the default. Paired 1.1 mutation: remove the check, prove the service starts LAN-bound-and-open. Golden-FALSE per 11.4.201(1): a loopback-bound listener with the token unset must NOT be refused, or the check becomes a false-positive refusal blocking legitimate dev work.
-
-11.4.238 COVERAGE-ESCAPE NOTE: found by a subagent reading source during BOB-102 guard construction, NOT by the automated QA regime - which is itself the defect class 11.4.238 names. The boot-time check IS the new automated check that would have caught it.
 
 ## BOB-211 — LATENT + OPERATOR-GATED: on a uid-flattening mount whose uid is not the operator, chown fails EPERM with no fstype-aware diagnosis, and fmask/dmask silently defeat the preserve_mode 600 contract
 
@@ -1129,16 +845,6 @@ DISCOVERY CHANNEL (§11.4.238): found by the T042 readiness preflight while expl
 
 WHAT: ownership_repair walks a declared root and repairs items whose uid is not the operator. The unit suite seeds a foreign uid only onto FILES and SYMLINKS; interior DIRECTORIES stay operator-owned (case 22 seeds only a foreign declared ROOT, on the failure path). Production first-start repairs exactly the untested shape. MANIFEST: tests/unit/test_ownership_repair.sh seed_tree/seed_wrong; scripts/ownership_repair.sh walk at :994. REPRO: seed a tree whose interior directories carry uid 100000 via podman unshare, run the repair, observe no automated assertion covers the outcome. WHY UNTESTED: the unprivileged harness cannot create symlinks inside a directory it no longer owns, which cases 8/9/18 require. The DECLARED GAPS note cross-references tests/ownership/test_container_writes_owned_files.py, but that covers the CREATION side (FR-002), not the repair-side walk. ACCEPTANCE: an integration-layer test (where the unprivileged-harness constraint does not bind) that seeds foreign-owned interior directories, runs the repair, and asserts post-state ownership plus mode preservation. Surfaced by the BOB-207 independent review 2026-08-27.
 
-## BOB-228 — README does not link the LAN-route auth gate guide, so a §11.4.65-scope doc is an orphan under §11.4.212
-
-**Status:** Queued
-**Type:** Task
-**Severity:** minor
-**Created-By:** Claude
-**Assigned-To:** Claude
-
-WHAT: §11.4.212 makes the main README the canonical entry point for ALL project documentation, with no §11.4.65-scope doc reachable by no link path. docs/scripts/check_cm_lan_routes_authenticated.md is not reachable from README.md. MEASURED 2026-08-27: grep -c for the guide name in README.md returns 0, control-needled against a doc README does link (CONTINUATION returns 1), so the instrument is not blind. ACCEPTANCE: README links the guide directly or transitively, and the doc-link generator covers docs/scripts/ so the next such guide cannot land orphaned. Surfaced by the BOB-102 round-13 remediation and independently verified 2026-08-27.
-
 ## BOB-231 — A gate asserting every executable a pre-build invariant invokes is itself tracked (BOB-227 criterion 2 follow-up)
 
 **Status:** Queued
@@ -1147,4 +853,12 @@ WHAT: §11.4.212 makes the main README the canonical entry point for ALL project
 **Created-By:** AI
 
 BOB-227 measured 3 of 4 artifacts of the CM-LAN-ROUTES-AUTHENTICATED gate untracked in git; criterion 1 (commit them) was already resolved by an unrelated prior commit before this session, closed 2026-09-23. Criterion 2 was NOT addressed: 'a gate asserting that every executable a pre-build invariant invokes is itself tracked' -- a general mechanism preventing this whole CLASS of defect (a pre-build gate's own implementation files shipping untracked, invisible to a fresh clone, no committed baseline for round-over-round diffs) from recurring for ANY future gate, not merely this one. ACCEPTANCE: (1) enumerate every file path scripts/pre_build_verification.sh invokes (via bash/timeout/python3 calls to scripts under scripts/pre_build/, plus every tests/pre_build/*.sh and tests/hooks/*.sh it runs) -- likely via a static grep/parse of pre_build_verification.sh itself, or a runtime trace; (2) assert every one of those paths is git-tracked (git ls-files --error-unmatch); (3) wire this as a new pre-build invariant so a future untracked gate implementation is caught immediately, not discovered independently weeks later; (4) a RED test creating an untracked fake gate-invocation target and asserting the new check fails on it, GREEN once the mechanism exists and the fake target is either removed or tracked.
+
+## BOB-232 — AGENTS.md echoes the same stale 7186/7187/7188 Go-profile claim CLAUDE.md already corrected under BOB-141
+
+**Status:** Queued
+**Type:** Task
+**Created-By:** AI
+
+AGENTS.md:55 states the Go backend (qbittorrent-proxy-go) serves 7186, 7187, AND 7188, and 'replaces Python proxy' — the exact false claim CLAUDE.md's Architecture section already corrected (2026-08-20, BOB-141): the container runs exactly ONE binary (CMD ["/app/qbittorrent-proxy"]), binding a single ServerPort resolved from MERGE_SERVICE_PORT (default 7187); 7188 is declared via EXPOSE but nothing binds it, and 7186 is never bound either. Surfaced while independently verifying BOB-141's closure (2026-09-23) — the coordinator confirmed CLAUDE.md is already fully corrected but AGENTS.md was out of that dispatch's authorized scope, so it was flagged rather than silently left stale (§11.4.238 discovery-channel completeness). Acceptance: AGENTS.md's port-map/service-description table for the Go backend is corrected to match CLAUDE.md's already-accurate BOB-141 text (same citations: qBitTorrent-go/Dockerfile:16, internal/config/config.go:58), reusing that correction's phrasing/citation style rather than inventing a new one.
 

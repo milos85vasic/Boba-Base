@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260923</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260923</h1>
+</header>
+<h1 id="bob-197-closure-evidence-2026-09-23">BOB-197 closure evidence —
+2026-09-23</h1>
+<h2 id="operator-decision-already-recorded-2026-08-26">Operator decision
+(already recorded, 2026-08-26)</h2>
+<p>“Arm BOBA_API_TOKEN and keep 0.0.0.0, backed by a BOOT-TIME invariant
+that refuses to start LAN-bound with the token unset.” The token was
+already generated/armed in <code>.env</code> in a prior session; this
+item is specifically the still-owed boot-time invariant.</p>
+<h2 id="defect">Defect</h2>
+<p><code>download-proxy/src/main.py</code>’s
+<code>start_fastapi_server()</code> configured uvicorn with
+<code>MERGE_SERVICE_HOST</code> defaulting to <code>0.0.0.0</code>
+(LAN-bound) with no check that <code>BOBA_API_TOKEN</code> was armed
+before serving — the service started open on a default deployment.</p>
+<h2 id="fix">Fix</h2>
+<p>New <code>_refuse_if_lan_bound_and_unarmed(host)</code> function,
+called after <code>merge_host</code> is resolved and before the uvicorn
+server starts. Reuses the existing
+<code>config.proxy._is_loopback</code> helper (no new closed-set check
+invented). Refuses (via <code>os._exit(1)</code>, NOT
+<code>sys.exit</code>/<code>SystemExit</code>) only when host is
+non-loopback AND the token is unset/empty. Uses <code>os._exit</code>
+specifically because <code>start_fastapi_server()</code> runs on a
+daemon thread — empirically verified <code>SystemExit</code> raised
+there does NOT terminate the process (only the daemon thread silently
+dies while the main thread continues, the original-proxy thread keeps
+serving on 7186 with no error — exactly the partial-boot anti-pattern
+§11.4.254 exists to prevent).</p>
+<h2
+id="independent-verification-coordinator-from-clean-shell">Independent
+verification (coordinator, from clean shell)</h2>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/test_main.py::TestStartFastapiServerBootTimeLanAuthInvariant tests/unit/test_main.py::TestRefuseIfLanBoundAndUnarmed tests/unit/test_main.py::TestMainFastAPIServer -v
+14 passed in 2.94s</code></pre>
+<p>All 4 pre-existing <code>TestMainFastAPIServer</code> tests (which
+the fix’s real <code>os._exit(1)</code> would otherwise have silently
+killed under an unarmed ambient shell) also pass — confirming the
+implementing agent’s disclosed regression-fix (arming
+<code>BOBA_API_TOKEN</code> in those tests’ env mocks) is correct.</p>
+<h3
+id="red-independently-reproduced-via-git-stash-not-trusted-from-report">RED
+independently reproduced (via git stash, not trusted from report)</h3>
+<pre><code>$ git stash push -m &quot;...&quot; -- download-proxy/src/main.py
+$ .venv/bin/python -m pytest tests/unit/test_main.py::TestStartFastapiServerBootTimeLanAuthInvariant -v
+FAILED test_start_fastapi_server_refuses_lan_bound_default_without_token
+  Failed: DID NOT RAISE SystemExit
+FAILED test_start_fastapi_server_refuses_lan_bound_explicit_without_token
+2 failed, 2 passed
+$ git stash pop   # byte-identical restore confirmed via py_compile
+$ .venv/bin/python -m pytest tests/unit/test_main.py::TestStartFastapiServerBootTimeLanAuthInvariant -q
+4 passed</code></pre>
+<p>Genuine “DID NOT RAISE SystemExit” on the pre-fix code, exactly
+matching the defect description — not a synthetic/constructed RED.</p>
+<h3
+id="golden-false-both-cases-confirmed-part-of-the-same-14-test-run">Golden-FALSE
+both cases confirmed (part of the same 14-test run)</h3>
+<p>Loopback+token-unset does not refuse; LAN-bound+token-armed does not
+refuse (the deployment’s actual current happy-path state).</p>
+<h2
+id="note-found-honestly-by-the-implementing-agent-not-acted-on-out-of">Note
+found honestly by the implementing agent, not acted on (out of</h2>
+<p>this item’s scope): host was under extreme, unrelated resource
+contention throughout this dispatch (4 parallel subagents + this
+coordinator’s own gate sweep drove load average to 175+ and swap to full
+exhaustion) — some invocations appeared to stall from pure CPU/ memory
+starvation, independently confirmed harmless once contention eased. Not
+a code defect.</p>
+<h2 id="status">Status</h2>
+<p>Fixed. Closed by coordinator after independent re-verification,
+including a from-scratch RED reproduction distinct from the implementing
+agent’s own report.</p>
+</body>
+</html>

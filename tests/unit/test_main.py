@@ -173,7 +173,17 @@ class TestMainFastAPIServer:
         # _DIAG_ON is a module-level constant read at import, so patch the
         # attribute rather than the env var: with the heartbeat off the wrapper
         # coroutine completes as soon as serve() returns.
-        with patch("main._DIAG_ON", False), patch("main.logger") as mock_logger:
+        #
+        # BOB-197: this test does not care about host/token -- it is
+        # asserting the uvicorn wiring. It must still arm BOBA_API_TOKEN so
+        # the new boot-time invariant (LAN-bound default + unarmed token ->
+        # os._exit(1)) never fires against whatever the ambient shell
+        # environment happens to hold when this suite runs.
+        with (
+            patch("main._DIAG_ON", False),
+            patch("main.logger") as mock_logger,
+            patch.dict(os.environ, {"BOBA_API_TOKEN": "test-only-armed-token"}),
+        ):
             with patch.dict("sys.modules"):
                 with patch("uvicorn.Config", return_value=mock_config) as mock_config_cls:
                     with patch("uvicorn.Server", return_value=mock_server) as mock_server_cls:
@@ -229,7 +239,12 @@ class TestMainFastAPIServer:
         """start_fastapi_server should use default host and port."""
         import main
 
-        with patch.dict(os.environ, {}, clear=True):
+        # BOB-197: an entirely empty environment now defaults to LAN-bound
+        # (0.0.0.0) AND unarmed (no BOBA_API_TOKEN) -- exactly the state the
+        # new boot-time invariant refuses. This test is about host/port
+        # resolution, not the invariant, so it arms a token to keep testing
+        # the DEFAULT host/port while staying past the new check.
+        with patch.dict(os.environ, {"BOBA_API_TOKEN": "test-only-armed-token"}, clear=True):
             with patch("main.logger"):
                 with patch("uvicorn.Config") as mock_config_cls:
                     with patch("uvicorn.Server"):
@@ -244,12 +259,16 @@ class TestMainFastAPIServer:
         """start_fastapi_server should log error when uvicorn fails."""
         import main
 
-        with patch("main.logger") as mock_logger:
-            with patch("uvicorn.Config", side_effect=RuntimeError("uvicorn crash")):
-                with patch("api.app", MagicMock()):
-                    main.start_fastapi_server()
-                    mock_logger.error.assert_called_once()
-                    assert "FastAPI server failed" in str(mock_logger.error.call_args)
+        # BOB-197: arm a token so the boot-time invariant never intercepts
+        # this scenario before it reaches the uvicorn.Config failure this
+        # test is actually exercising.
+        with patch.dict(os.environ, {"BOBA_API_TOKEN": "test-only-armed-token"}):
+            with patch("main.logger") as mock_logger:
+                with patch("uvicorn.Config", side_effect=RuntimeError("uvicorn crash")):
+                    with patch("api.app", MagicMock()):
+                        main.start_fastapi_server()
+                        mock_logger.error.assert_called_once()
+                        assert "FastAPI server failed" in str(mock_logger.error.call_args)
 
     def test_start_fastapi_server_app_import_error(self, caplog):
         """start_fastapi_server should log error when api.app import fails."""
@@ -321,3 +340,172 @@ class TestMainMain:
                         mock_logger.info.assert_any_call("Shutdown complete")
         finally:
             main._shutdown_event.clear()
+
+
+class TestRefuseIfLanBoundAndUnarmed:
+    """BOB-197: boot-time invariant -- refuse to start LAN-bound with an
+    unarmed BOBA_API_TOKEN.
+
+    ``require_api_token()`` (api/routes.py) intentionally leaves every route
+    OPEN when BOBA_API_TOKEN is unset/empty -- that default is correct for a
+    loopback-only bind (the dev workflow) but wrong for the deployment
+    default (MERGE_SERVICE_HOST defaults to 0.0.0.0 / LAN-bound). A static
+    route-wiring gate cannot see this: arming is a per-request env read, not
+    a route-wiring property. This is a boot-time invariant (§11.4.254),
+    unit-tested directly against the extracted, pure check function
+    (``main._refuse_if_lan_bound_and_unarmed``) -- no socket ever binds.
+    """
+
+    def test_refuses_when_lan_bound_default_and_token_unset(self):
+        """LAN-bound (the 0.0.0.0 default) + unarmed token -> os._exit(1)."""
+        import main
+
+        with patch.dict(os.environ, {}, clear=True):
+            with patch("main.logger") as mock_logger:
+                with patch("os._exit", side_effect=SystemExit(1)) as mock_exit:
+                    with pytest.raises(SystemExit) as exc_info:
+                        main._refuse_if_lan_bound_and_unarmed("0.0.0.0")
+                    assert exc_info.value.code == 1
+                    mock_exit.assert_called_once_with(1)
+                    mock_logger.error.assert_called_once()
+                    logged = str(mock_logger.error.call_args)
+                    assert "0.0.0.0" in logged
+                    assert "BOBA_API_TOKEN" in logged
+
+    def test_refuses_when_lan_bound_explicit_and_token_empty_string(self):
+        """A present-but-blank BOBA_API_TOKEN is unarmed, same as unset."""
+        import main
+
+        with patch.dict(os.environ, {"BOBA_API_TOKEN": "   "}, clear=True):
+            with patch("main.logger"):
+                with patch("os._exit", side_effect=SystemExit(1)) as mock_exit:
+                    with pytest.raises(SystemExit):
+                        main._refuse_if_lan_bound_and_unarmed("0.0.0.0")
+                    mock_exit.assert_called_once_with(1)
+
+    def test_allows_loopback_bind_with_token_unset(self):
+        """Golden-FALSE: 127.0.0.1 + unarmed token must NOT be refused --
+        this is the dev-workflow path that must keep working exactly as
+        before."""
+        import main
+
+        with patch.dict(os.environ, {}, clear=True):
+            with patch("main.logger") as mock_logger:
+                with patch("os._exit") as mock_exit:
+                    result = main._refuse_if_lan_bound_and_unarmed("127.0.0.1")
+                    assert result is None
+                    mock_exit.assert_not_called()
+                    mock_logger.error.assert_not_called()
+
+    def test_allows_localhost_and_ipv6_loopback_with_token_unset(self):
+        """Golden-FALSE variants: the 'localhost' name and ::1 are also
+        loopback and must not be refused."""
+        import main
+
+        with patch.dict(os.environ, {}, clear=True):
+            with patch("os._exit") as mock_exit:
+                main._refuse_if_lan_bound_and_unarmed("localhost")
+                main._refuse_if_lan_bound_and_unarmed("::1")
+                mock_exit.assert_not_called()
+
+    def test_allows_lan_bind_with_token_armed(self):
+        """Golden-FALSE: 0.0.0.0 with a real armed token must start
+        normally -- this is the deployment's actual current state (token
+        already generated and armed per the BOB-197 operator decision)."""
+        import main
+
+        with patch.dict(os.environ, {"BOBA_API_TOKEN": "a-real-looking-armed-token-value"}, clear=True):
+            with patch("main.logger") as mock_logger:
+                with patch("os._exit") as mock_exit:
+                    result = main._refuse_if_lan_bound_and_unarmed("0.0.0.0")
+                    assert result is None
+                    mock_exit.assert_not_called()
+                    mock_logger.error.assert_not_called()
+
+
+class TestStartFastapiServerBootTimeLanAuthInvariant:
+    """BOB-197: the same invariant, driven through the real entry point
+    (start_fastapi_server()) with uvicorn/asyncio mocked out -- proves the
+    check is genuinely WIRED IN (not merely defined-but-unused, §11.4.196(F))
+    and runs BEFORE the listener would bind."""
+
+    def test_start_fastapi_server_refuses_lan_bound_default_without_token(self):
+        """RED/GREEN scenario: MERGE_SERVICE_HOST unset (defaults to
+        0.0.0.0, LAN-bound) + BOBA_API_TOKEN unset must refuse to start
+        before uvicorn.Config is ever constructed."""
+        import main
+
+        with patch.dict(os.environ, {}, clear=True):
+            with patch("main.logger"):
+                with patch("os._exit", side_effect=SystemExit(1)) as mock_exit:
+                    with patch("uvicorn.Config") as mock_config_cls:
+                        with patch("uvicorn.Server") as mock_server_cls:
+                            with patch("asyncio.run") as mock_asyncio_run:
+                                with patch("api.app", MagicMock()):
+                                    with pytest.raises(SystemExit) as exc_info:
+                                        main.start_fastapi_server()
+                                    assert exc_info.value.code == 1
+                                    mock_exit.assert_called_once_with(1)
+                                    # Positive evidence the refusal happened
+                                    # BEFORE the listener would have bound:
+                                    mock_config_cls.assert_not_called()
+                                    mock_server_cls.assert_not_called()
+                                    mock_asyncio_run.assert_not_called()
+
+    def test_start_fastapi_server_refuses_lan_bound_explicit_without_token(self):
+        """Same scenario with MERGE_SERVICE_HOST=0.0.0.0 set explicitly."""
+        import main
+
+        with patch.dict(os.environ, {"MERGE_SERVICE_HOST": "0.0.0.0"}, clear=True):
+            with patch("main.logger"):
+                with patch("os._exit", side_effect=SystemExit(1)):
+                    with patch("uvicorn.Config") as mock_config_cls:
+                        with patch("uvicorn.Server"):
+                            with patch("asyncio.run"):
+                                with patch("api.app", MagicMock()):
+                                    with pytest.raises(SystemExit):
+                                        main.start_fastapi_server()
+                                    mock_config_cls.assert_not_called()
+
+    def test_start_fastapi_server_allows_loopback_without_token(self):
+        """Golden-FALSE: MERGE_SERVICE_HOST=127.0.0.1 + no token starts
+        normally -- proves the check is not a false-positive refusal that
+        would block legitimate local dev work (§11.4.201(1))."""
+        import main
+
+        with patch.dict(os.environ, {"MERGE_SERVICE_HOST": "127.0.0.1"}, clear=True):
+            with patch("main.logger"):
+                with patch("os._exit") as mock_exit:
+                    with patch("uvicorn.Config") as mock_config_cls:
+                        with patch("uvicorn.Server"):
+                            with patch("asyncio.run"):
+                                with patch("api.app", MagicMock()):
+                                    main.start_fastapi_server()
+                                    mock_exit.assert_not_called()
+                                    mock_config_cls.assert_called_once()
+                                    call_kwargs = mock_config_cls.call_args.kwargs
+                                    assert call_kwargs["host"] == "127.0.0.1"
+
+    def test_start_fastapi_server_allows_lan_bound_with_token_armed(self):
+        """Golden-FALSE: MERGE_SERVICE_HOST=0.0.0.0 WITH BOBA_API_TOKEN set
+        starts normally -- this is the deployment's actual current state
+        (token already generated and armed) and must be the happy-path
+        GREEN, proving the check does not over-fire once properly armed."""
+        import main
+
+        with patch.dict(
+            os.environ,
+            {"MERGE_SERVICE_HOST": "0.0.0.0", "BOBA_API_TOKEN": "a-real-looking-armed-token-value"},
+            clear=True,
+        ):
+            with patch("main.logger"):
+                with patch("os._exit") as mock_exit:
+                    with patch("uvicorn.Config") as mock_config_cls:
+                        with patch("uvicorn.Server"):
+                            with patch("asyncio.run"):
+                                with patch("api.app", MagicMock()):
+                                    main.start_fastapi_server()
+                                    mock_exit.assert_not_called()
+                                    mock_config_cls.assert_called_once()
+                                    call_kwargs = mock_config_cls.call_args.kwargs
+                                    assert call_kwargs["host"] == "0.0.0.0"

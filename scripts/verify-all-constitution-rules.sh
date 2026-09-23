@@ -282,15 +282,75 @@ fi
 # The gates accept exclusions ONLY via environment (an unknown argv is exit 2),
 # which is why this is an export here and not a row in the consumer conf file.
 #
-# HONEST SCOPE: this addresses `.worktrees/`. It does NOT address the larger
-# pollution measured alongside it — 82% of cm_oracle_strategy findings come from
-# `submodules/`, i.e. vendored third-party code the sweep also walks. That is a
-# separate, larger decision and is filed rather than silently folded in here.
+# HONEST SCOPE (BOB-143 as originally landed): this block addressed only
+# `.worktrees/`. The larger pollution measured alongside it — vendored
+# third-party code under `submodules/` — was DELIBERATELY left unaddressed
+# here and filed as its own, larger decision (BOB-152) rather than silently
+# folded into this block. BOB-152 is landed immediately below and SUPERSEDES
+# this block's defaults for MOCK_PID_GUARD_EXCLUDE / ORACLE_GUARD_EXCLUDE /
+# KILLPG_GUARD_EXCLUDE (a broader list, still starting from this same one —
+# see BOB-152 below for why those three, and only those three, move).
+# DANGEROUS_COMBO_EXCLUDE is set HERE, ONCE, and is NOT touched by BOB-152
+# (cm_dangerous_combination_fail_closed.sh is explicitly out of BOB-152's
+# scope — see the BOB-152 block's own SCOPE note).
 _BOB143_SWEEP_EXCLUDE=".git node_modules vendor .venv __pycache__ scripts/gates out build dist .worktrees"
-export MOCK_PID_GUARD_EXCLUDE="${MOCK_PID_GUARD_EXCLUDE:-$_BOB143_SWEEP_EXCLUDE}"
-export ORACLE_GUARD_EXCLUDE="${ORACLE_GUARD_EXCLUDE:-$_BOB143_SWEEP_EXCLUDE}"
-export KILLPG_GUARD_EXCLUDE="${KILLPG_GUARD_EXCLUDE:-$_BOB143_SWEEP_EXCLUDE}"
 export DANGEROUS_COMBO_EXCLUDE="${DANGEROUS_COMBO_EXCLUDE:-$_BOB143_SWEEP_EXCLUDE}"
+
+# ── BOB-152: keep VENDORED THIRD-PARTY code out of the same three gates'
+#    scan scope, per the §11.4.224(E) exclusion-list-fence pattern ─────────
+#
+# WHY THIS EXISTS. `submodules/` (helixqa/tools/opensource/perfetto, chroma,
+# skyvern, mem0, ...) is vendored third-party code this project neither wrote
+# nor ships as its own source — boba cannot fix a defect inside an upstream
+# submodule's own test suite, so a finding against it is the SAME
+# §11.4.201(1) FALSE-POSITIVE REFUSAL class BOB-143 already fixed for
+# `.worktrees/`, just a different dead-to-us tree.
+#
+# MEASURED, not assumed (2026-09-23, re-verified per §11.4.6 rather than
+# trusting the item's 2026-08-27 numbers): `cm_oracle_strategy_named_and_
+# independent` over the whole root, run to completion, reported 39873
+# findings total, 35165 (88%) from `submodules/`, leaving 4708 first-party
+# findings — the sweep's real, actionable deliverable. `cm_killpg_pgid_guard`
+# with `submodules/` EXCLUDED reports exactly 9 first-party findings, run to
+# completion; its full-root (unexcluded) total was NOT run to completion —
+# the gate's own runtime over `submodules/`'s ~2.6 GB / ~68k source files
+# exceeded the budget available for this measurement — but real findings
+# under `submodules/` ARE confirmed present (at least two distinct hits
+# observed: `submodules/containers/pkg/crossbuild/subprocess_group_unix.go`
+# and `submodules/helixqa/tools/opensource/stagehand/.../browser.py`), so the
+# exclusion is not academic for this gate either; the honest UNCONFIRMED
+# figure is the full-root total, never invented (§11.4.6). `cm_test_mock_pid_
+# explicit_int` inherits the exclusion for the identical reason (it already
+# shares this exact class, see BOB-143 above).
+#
+# EXCLUSION-LIST-FENCE (§11.4.224(E)): `submodules` is a single checked-in
+# entry justified from the closed class `vendored-third-party` — code this
+# project incorporates but does not author, per §11.4.28's own definition of
+# an owned-vs-third-party submodule. It is NOT a first-party exclusion and so
+# needs no separate tracked §11.4.197 item to license it.
+#
+# THIS IS NOT "NARROW THE GATE UNTIL IT PASSES". The exclusion was validated
+# in BOTH directions (§1.1 paired-mutation proof, see
+# tests/pre_build/test_bob152_vendored_exclude_scope.sh, all 3 gates GREEN):
+# a synthetic violation planted under `submodules/<fixture>/` is EXCLUDED
+# (the gate does not see it), while the BYTE-IDENTICAL violation planted
+# under `tests/<fixture>/` (first-party) is STILL CAUGHT and the gate still
+# exits 1 — proven against a no-exclude baseline run first, so neither
+# location was ever a blind spot of the harness itself (§11.4.201(7)(b)).
+# It removes vendored-tree findings and nothing else — the 4708 (oracle) / 9
+# (killpg) first-party findings that remain after this fix are the sweep's
+# real, actionable deliverable.
+#
+# SCOPE (out of this item, deliberately untouched): `cm_dangerous_combination
+# _fail_closed.sh` already ships its own working `DANGEROUS_COMBO_EXCLUDE`
+# default (see the BOB-143 block above) and is explicitly out of scope for
+# BOB-152 — its exported default is left exactly as BOB-143 set it, carrying
+# NO `submodules` entry, so this change cannot collide with concurrent work
+# on that gate.
+_BOB152_VENDORED_EXCLUDE="${_BOB143_SWEEP_EXCLUDE} submodules"
+export MOCK_PID_GUARD_EXCLUDE="${MOCK_PID_GUARD_EXCLUDE:-$_BOB152_VENDORED_EXCLUDE}"
+export ORACLE_GUARD_EXCLUDE="${ORACLE_GUARD_EXCLUDE:-$_BOB152_VENDORED_EXCLUDE}"
+export KILLPG_GUARD_EXCLUDE="${KILLPG_GUARD_EXCLUDE:-$_BOB152_VENDORED_EXCLUDE}"
 
 # ── PHASE B — every gate the runner does not cover, run individually ────────
 echo
