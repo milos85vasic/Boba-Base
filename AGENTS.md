@@ -52,7 +52,7 @@ Two-container setup via `docker-compose.yml` (`network_mode: host`), with an opt
 | qBittorrent | `qbittorrent` | `lscr.io/linuxserver/qbittorrent:latest` | 7185 | Internal WebUI; hardcoded credentials `admin`/`admin` |
 | Jackett | `jackett` | `lscr.io/linuxserver/jackett:latest` | 9117 | Auto-configured; API key extracted at startup |
 | Download proxy + Merge service | `qbittorrent-proxy` | `python:3.12-alpine` | 7186, 7187 | Python multi-threaded entrypoint (`download-proxy/src/main.py`) |
-| Go backend | `qbittorrent-proxy-go` | Built from `qBitTorrent-go/Dockerfile` | 7186, 7187, 7188 | Opt-in via `--profile go`; replaces Python proxy |
+| Go backend | `qbittorrent-proxy-go` | Built from `qBitTorrent-go/Dockerfile` | 7187 | Opt-in via `--profile go`; serves the merge service on 7187 only (single binary, `MERGE_SERVICE_PORT`); does NOT bind 7186 or 7188 — see BOB-141 |
 | boba-jackett | `boba-jackett` | Built from `qBitTorrent-go/Dockerfile.jackett` | 7189 | Owns Jackett credentials + indexer overrides + autoconfig run history; backed by encrypted SQLite at `/config/boba.db` |
 | WebUI bridge | Host process | `python3 webui-bridge.py` | 7188 | Not a container; bridges private-tracker auth |
 

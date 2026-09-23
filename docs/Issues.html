@@ -175,8 +175,8 @@
 </head>
 <body>
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 103 <strong>Last modified:</strong>
-2026-09-23T13:29:46Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 104 <strong>Last modified:</strong>
+2026-09-23T16:19:50Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -1068,64 +1068,6 @@ alongside the existing PRECONDITION_BEFORE_DOWN / REPAIR_AFTER_DOWN /
 REPAIR_BEFORE_UP checks, each with a paired 1.1 mutation that kills
 it.</p>
 <h2
-id="bob-161-the-11.4.69-cm-no-fail-open-skip-gate-is-mandated-but-does-not-exist-in-this-project">BOB-161
-— The §11.4.69 CM-NO-FAIL-OPEN-SKIP gate is mandated but does not exist
-in this project</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
-<strong>Severity:</strong> High <strong>Created-By:</strong> BOB-092
-remediation, residual finding</p>
-<p><strong>Reported-Via:</strong> §11.4.202 reporting directive
-<code>task</code> on 2026-08-21T19:31:12Z <strong>Reported-By:</strong>
-BOB-092 remediation, residual finding</p>
-<p><strong>What (the report, verbatim):</strong> §11.4.69 names
-CM-NO-FAIL-OPEN-SKIP as one of three mandatory pre-build gates: it
-audits sink-side probe helpers and FAILs if any code path converts an
-empty or unreachable response into a PASS-counting SKIP for a feature
-class with a sink-side probe. This project does not have it.</p>
-<p>Why this matters now rather than in the abstract: the BOB-092
-remediation just removed TWO fail-opens of exactly this class from
-tests/e2e/test_live_stack_evidence.py — the nnmclub SKIP-on-404 (already
-removed at 7baef2b) and a surviving sibling at
-test_iptorrents_is_authenticated_in_search that skipped on ‘not
-authenticated and status != success’ while asserting ‘treating as
-transient outage’. That assertion was false for rejected credentials
-(upstream_http_403) and for a broken container (plugin_env_missing),
-both of which are definitive product failures the product already
-classifies via error_type.</p>
-<p>Two fail-opens of one class, found one at a time, is the §11.4.146
-extend-to-all-cases signal and the §11.4.238 coverage-escape signal
-together: the regime did not surface either, an agent reading code
-did.</p>
-<p>The remediation’s own guards are AST-structural and lethal under
-three discriminating mutations, but they LIVE IN THE FILE THEY GUARD, so
-deleting that file evades them entirely. A pre-build gate is the durable
-home because it audits the corpus rather than one file.</p>
-<p>Honest boundary (§11.4.6): this item does NOT claim the two
-remediated fail-opens are unguarded — they are guarded, with runtime
-evidence (13 passed in 97.36s against the live stack). It claims the
-CLASS has no corpus-wide detector, so the next instance in a different
-file is invisible again.</p>
-<p><strong>Affected scope / file-scope manifest:</strong>
-scripts/pre_build/ (gate absent); tests/e2e/test_live_stack_evidence.py
-(guards currently live inside the file they guard)</p>
-<p><strong>Reproduction / context:</strong> grep -rl
-‘CM-NO-FAIL-OPEN-SKIP’ scripts/ tests/ returns exactly ONE hit, and it
-is tests/e2e/test_live_stack_evidence.py — the file the guards live in,
-not a gate. Control needle: the same query for CM-OWNERSHIP-INVARIANTS
-(a gate that does exist) returns 3 files, so the instrument can see gate
-tokens and the single hit is a real absence, not a blind zero
-(§11.4.201(7)(b)).</p>
-<p><strong>Acceptance criteria:</strong> A scripts/pre_build/ gate named
-CM-NO-FAIL-OPEN-SKIP exists, is wired into
-scripts/pre_build_verification.sh, and audits sink-side probe helpers
-for code paths converting an empty/unreachable/error response into a
-PASS-counting SKIP for a feature class that HAS a sink-side probe. It
-ships a golden-TRUE fixture (a real fail-open -&gt; gate FIRES) and a
-golden-FALSE-with-carrier (an honest topology/geo skip, and a comment
-merely MENTIONING the phrase -&gt; gate MUST NOT fire), per
-§11.4.107(10)/§11.4.201(1). Paired §1.1 mutation makes the gate FAIL
-before the gate is trusted.</p>
-<h2
 id="bob-162-two-new-guards-exist-but-no-seam-invokes-them-plus-the-brownfield-adoption-decision-the-commit-guard-needs">BOB-162
 — Two new guards exist but no seam invokes them — plus the brownfield
 adoption decision the commit guard needs</h2>
@@ -1944,27 +1886,5 @@ independently weeks later; (4) a RED test creating an untracked fake
 gate-invocation target and asserting the new check fails on it, GREEN
 once the mechanism exists and the fake target is either removed or
 tracked.</p>
-<h2
-id="bob-232-agents.md-echoes-the-same-stale-718671877188-go-profile-claim-claude.md-already-corrected-under-bob-141">BOB-232
-— AGENTS.md echoes the same stale 7186/7187/7188 Go-profile claim
-CLAUDE.md already corrected under BOB-141</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
-<strong>Created-By:</strong> AI</p>
-<p>AGENTS.md:55 states the Go backend (qbittorrent-proxy-go) serves
-7186, 7187, AND 7188, and ‘replaces Python proxy’ — the exact false
-claim CLAUDE.md’s Architecture section already corrected (2026-08-20,
-BOB-141): the container runs exactly ONE binary (CMD
-[“/app/qbittorrent-proxy”]), binding a single ServerPort resolved from
-MERGE_SERVICE_PORT (default 7187); 7188 is declared via EXPOSE but
-nothing binds it, and 7186 is never bound either. Surfaced while
-independently verifying BOB-141’s closure (2026-09-23) — the coordinator
-confirmed CLAUDE.md is already fully corrected but AGENTS.md was out of
-that dispatch’s authorized scope, so it was flagged rather than silently
-left stale (§11.4.238 discovery-channel completeness). Acceptance:
-AGENTS.md’s port-map/service-description table for the Go backend is
-corrected to match CLAUDE.md’s already-accurate BOB-141 text (same
-citations: qBitTorrent-go/Dockerfile:16, internal/config/config.go:58),
-reusing that correction’s phrasing/citation style rather than inventing
-a new one.</p>
 </body>
 </html>

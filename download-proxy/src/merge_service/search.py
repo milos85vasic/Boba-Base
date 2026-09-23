@@ -1077,7 +1077,14 @@ class SearchOrchestrator:
                 if error:
                     metadata.errors.append(f"{name}: {error}")
 
-            merged = self.deduplicator.merge_results(all_results)
+            # BOB-137: the merge is CPU-bound pure Python. Called synchronously
+            # here it froze the event loop for its whole duration -- port 7187
+            # (this loop) answered nothing while 7186 (same process, a poll loop
+            # that releases the GIL) kept answering. On a worker thread the GIL
+            # switch interval hands the loop a turn every few ms instead.
+            # Deduplicator.merge_results is re-entrant (local accumulator), so
+            # concurrent searches sharing self.deduplicator are safe.
+            merged = await asyncio.to_thread(self.deduplicator.merge_results, all_results)
             metadata.merged_results = len(merged)
             self._last_merged_results[search_id] = (merged, all_results)
             # BUG-7: when EVERY searched tracker errored and we have zero

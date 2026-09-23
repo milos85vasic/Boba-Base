@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 103
-**Last modified:** 2026-09-23T13:29:46Z
+**Revision:** 104
+**Last modified:** 2026-09-23T16:19:50Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -508,36 +508,6 @@ start.sh (warm-start dispatch, run_ownership_gate call site); scripts/ownership_
 **Acceptance criteria:**
 A warm ./start.sh cannot complete an ownership repair while a container that writes to a declared location is running. Either the repair is deferred with an actionable refusal naming --recreate, or the stack is quiesced for the walk. Asserted behaviourally in tests/unit/test_start_reload_recreate.sh alongside the existing PRECONDITION_BEFORE_DOWN / REPAIR_AFTER_DOWN / REPAIR_BEFORE_UP checks, each with a paired 1.1 mutation that kills it.
 
-## BOB-161 — The §11.4.69 CM-NO-FAIL-OPEN-SKIP gate is mandated but does not exist in this project
-
-**Status:** Queued
-**Type:** Task
-**Severity:** High
-**Created-By:** BOB-092 remediation, residual finding
-
-**Reported-Via:** §11.4.202 reporting directive `task` on 2026-08-21T19:31:12Z
-**Reported-By:** BOB-092 remediation, residual finding
-
-**What (the report, verbatim):**
-§11.4.69 names CM-NO-FAIL-OPEN-SKIP as one of three mandatory pre-build gates: it audits sink-side probe helpers and FAILs if any code path converts an empty or unreachable response into a PASS-counting SKIP for a feature class with a sink-side probe. This project does not have it.
-
-Why this matters now rather than in the abstract: the BOB-092 remediation just removed TWO fail-opens of exactly this class from tests/e2e/test_live_stack_evidence.py — the nnmclub SKIP-on-404 (already removed at 7baef2b) and a surviving sibling at test_iptorrents_is_authenticated_in_search that skipped on 'not authenticated and status != success' while asserting 'treating as transient outage'. That assertion was false for rejected credentials (upstream_http_403) and for a broken container (plugin_env_missing), both of which are definitive product failures the product already classifies via error_type.
-
-Two fail-opens of one class, found one at a time, is the §11.4.146 extend-to-all-cases signal and the §11.4.238 coverage-escape signal together: the regime did not surface either, an agent reading code did.
-
-The remediation's own guards are AST-structural and lethal under three discriminating mutations, but they LIVE IN THE FILE THEY GUARD, so deleting that file evades them entirely. A pre-build gate is the durable home because it audits the corpus rather than one file.
-
-Honest boundary (§11.4.6): this item does NOT claim the two remediated fail-opens are unguarded — they are guarded, with runtime evidence (13 passed in 97.36s against the live stack). It claims the CLASS has no corpus-wide detector, so the next instance in a different file is invisible again.
-
-**Affected scope / file-scope manifest:**
-scripts/pre_build/ (gate absent); tests/e2e/test_live_stack_evidence.py (guards currently live inside the file they guard)
-
-**Reproduction / context:**
-grep -rl 'CM-NO-FAIL-OPEN-SKIP' scripts/ tests/ returns exactly ONE hit, and it is tests/e2e/test_live_stack_evidence.py — the file the guards live in, not a gate. Control needle: the same query for CM-OWNERSHIP-INVARIANTS (a gate that does exist) returns 3 files, so the instrument can see gate tokens and the single hit is a real absence, not a blind zero (§11.4.201(7)(b)).
-
-**Acceptance criteria:**
-A scripts/pre_build/ gate named CM-NO-FAIL-OPEN-SKIP exists, is wired into scripts/pre_build_verification.sh, and audits sink-side probe helpers for code paths converting an empty/unreachable/error response into a PASS-counting SKIP for a feature class that HAS a sink-side probe. It ships a golden-TRUE fixture (a real fail-open -> gate FIRES) and a golden-FALSE-with-carrier (an honest topology/geo skip, and a comment merely MENTIONING the phrase -> gate MUST NOT fire), per §11.4.107(10)/§11.4.201(1). Paired §1.1 mutation makes the gate FAIL before the gate is trusted.
-
 ## BOB-162 — Two new guards exist but no seam invokes them — plus the brownfield adoption decision the commit guard needs
 
 **Status:** Queued
@@ -853,12 +823,4 @@ WHAT: ownership_repair walks a declared root and repairs items whose uid is not 
 **Created-By:** AI
 
 BOB-227 measured 3 of 4 artifacts of the CM-LAN-ROUTES-AUTHENTICATED gate untracked in git; criterion 1 (commit them) was already resolved by an unrelated prior commit before this session, closed 2026-09-23. Criterion 2 was NOT addressed: 'a gate asserting that every executable a pre-build invariant invokes is itself tracked' -- a general mechanism preventing this whole CLASS of defect (a pre-build gate's own implementation files shipping untracked, invisible to a fresh clone, no committed baseline for round-over-round diffs) from recurring for ANY future gate, not merely this one. ACCEPTANCE: (1) enumerate every file path scripts/pre_build_verification.sh invokes (via bash/timeout/python3 calls to scripts under scripts/pre_build/, plus every tests/pre_build/*.sh and tests/hooks/*.sh it runs) -- likely via a static grep/parse of pre_build_verification.sh itself, or a runtime trace; (2) assert every one of those paths is git-tracked (git ls-files --error-unmatch); (3) wire this as a new pre-build invariant so a future untracked gate implementation is caught immediately, not discovered independently weeks later; (4) a RED test creating an untracked fake gate-invocation target and asserting the new check fails on it, GREEN once the mechanism exists and the fake target is either removed or tracked.
-
-## BOB-232 — AGENTS.md echoes the same stale 7186/7187/7188 Go-profile claim CLAUDE.md already corrected under BOB-141
-
-**Status:** Queued
-**Type:** Task
-**Created-By:** AI
-
-AGENTS.md:55 states the Go backend (qbittorrent-proxy-go) serves 7186, 7187, AND 7188, and 'replaces Python proxy' — the exact false claim CLAUDE.md's Architecture section already corrected (2026-08-20, BOB-141): the container runs exactly ONE binary (CMD ["/app/qbittorrent-proxy"]), binding a single ServerPort resolved from MERGE_SERVICE_PORT (default 7187); 7188 is declared via EXPOSE but nothing binds it, and 7186 is never bound either. Surfaced while independently verifying BOB-141's closure (2026-09-23) — the coordinator confirmed CLAUDE.md is already fully corrected but AGENTS.md was out of that dispatch's authorized scope, so it was flagged rather than silently left stale (§11.4.238 discovery-channel completeness). Acceptance: AGENTS.md's port-map/service-description table for the Go backend is corrected to match CLAUDE.md's already-accurate BOB-141 text (same citations: qBitTorrent-go/Dockerfile:16, internal/config/config.go:58), reusing that correction's phrasing/citation style rather than inventing a new one.
 

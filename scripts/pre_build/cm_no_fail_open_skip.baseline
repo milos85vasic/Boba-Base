@@ -1,0 +1,23 @@
+# cm_no_fail_open_skip.baseline — CM-NO-FAIL-OPEN-SKIP finding SET (BOB-161)
+#
+# One key per line: <path>:<qualname>:<TRIGGERS>#<n>. Lines starting with '#'
+# and blank lines are ignored. This is a MONOTONE-DECREASING ratchet
+# (§11.4.135(5) / §11.4.224(E) brownfield default; §11.4.227(A)):
+#   * a finding NOT listed here FAILs the gate (NEW) — never add a row to
+#     silence a new fail-open skip;
+#   * a row whose finding no longer exists FAILs the gate (STALE) — delete the
+#     row in the SAME change that remediates the finding.
+# The comparison is by SET, not count, so a one-out-one-in swap is caught.
+# Remediation of every row below is tracked as BOB-192 (target: this file
+# holds zero keys). Seeded 2026-09-23 from `check_cm_no_fail_open_skip.sh
+# --list` against the real tree.
+tests/integration/test_jackett_autoconfig_real.py:jackett_ready:STATUS#1
+tests/integration/test_jackett_autoconfig_real.py:jackett_ready:UNREACH#1
+tests/integration/test_merge_api.py:TestDownloadEndpoint.test_download_magnet_added_to_real_qbittorrent:STATUS#1
+tests/integration/test_merge_api.py:TestSearchEndpoint.test_search_finds_real_results_for_common_query:EMPTY#1
+tests/integration/test_merge_api.py:_qbit_login:STATUS#1
+tests/integration/test_tracker_auth_live.py:_merge_service_required:EMPTY#1
+tests/integration/test_tracker_auth_live.py:_merge_service_required:STATUS#1
+tests/integration/test_tracker_auth_live.py:_merge_service_required:UNREACH#1
+tests/integration/test_tracker_auth_live.py:_run_live_search:EMPTY#1
+tests/scaling/test_boba_scaling.py:_services_up:EMPTY#1

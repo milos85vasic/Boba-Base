@@ -415,8 +415,10 @@ host-level bridge process:</p>
 <td>Go backend</td>
 <td><code>qbittorrent-proxy-go</code></td>
 <td>Built from <code>qBitTorrent-go/Dockerfile</code></td>
-<td>7186, 7187, 7188</td>
-<td>Opt-in via <code>--profile go</code>; replaces Python proxy</td>
+<td>7187</td>
+<td>Opt-in via <code>--profile go</code>; serves the merge service on
+7187 only (single binary, <code>MERGE_SERVICE_PORT</code>); does NOT
+bind 7186 or 7188 — see BOB-141</td>
 </tr>
 <tr>
 <td>boba-jackett</td>

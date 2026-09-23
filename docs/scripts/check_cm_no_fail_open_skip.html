@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>check_cm_no_fail_open_skip</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">check_cm_no_fail_open_skip</h1>
+</header>
+<h1
+id="check_cm_no_fail_open_skip.sh-cm-no-fail-open-skip">check_cm_no_fail_open_skip.sh
+— CM-NO-FAIL-OPEN-SKIP</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-09-23T12:00:00Z <strong>Authority:</strong> §11.4.69 (names this
+gate as mandatory) · §11.4.3 (topology SKIP-with-reason) · §11.4.201
+(guards assert the real condition; control needle) · §11.4.135 /
+§11.4.227(A) (monotone ratchet) · §11.4.18 (script documentation)
+<strong>Scope:</strong> pre-build invariant 57,
+<code>scripts/pre_build/check_cm_no_fail_open_skip.sh</code>, its engine
+<code>scripts/pre_build/cm_no_fail_open_skip_analyzer.py</code>, and its
+baseline <code>scripts/pre_build/cm_no_fail_open_skip.baseline</code>
+<strong>Tracker:</strong> BOB-161 (the gate) · BOB-192 (remediating the
+baselined findings)</p>
+<h2 id="overview">Overview</h2>
+<p>A <strong>fail-open skip</strong> is a test that sees evidence the
+far side <em>answered</em> — an HTTP status, an empty or incomplete
+body, an exception that also carries answered HTTP errors — and turns it
+into a SKIP. Every summary a human reads counts a skip alongside a pass
+(“N passed, M skipped, 0 failed”), so a failure the product really
+exhibited leaves the run green.</p>
+<p>This gate scans every test under <code>tests/</code> and fails the
+build when a new fail-open skip appears. It exists because BOB-092
+removed two of these from
+<code>tests/e2e/test_live_stack_evidence.py</code> one at a time, both
+found by an agent reading code rather than by the automated regime (a
+§11.4.238 coverage escape). The guards written then live in the file
+they guard; this gate covers the whole corpus.</p>
+<p><strong>What is NOT a finding:</strong> a skip on
+<em>environment</em> evidence — a missing binary
+(<code>shutil.which</code>), unset credentials
+(<code>os.environ</code>), a missing file, a TCP port that refuses
+connections, or an <code>except</code> that catches
+<strong>only</strong> connection-class errors
+(<code>ConnectionError</code>, <code>ConnectError</code>,
+<code>Timeout</code>). Those mean the topology is absent, which is the
+legitimate §11.4.3 SKIP.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><code>bash</code>, <code>git</code>, <code>python3</code> (standard
+library only — no venv needed).</li>
+<li>The root passed with <code>--root</code> must be a git work
+tree.</li>
+</ul>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Normal gate run (what pre-build invariant 57 does)</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build/check_cm_no_fail_open_skip.sh</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Print the current finding SET (use when you tighten the baseline)</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build/check_cm_no_fail_open_skip.sh <span class="at">--list</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Scan another tree against another baseline (the self-test does this)</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build/check_cm_no_fail_open_skip.sh <span class="at">--root</span> /path/to/tree <span class="at">--baseline</span> /path/to/file</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Self-test (golden-TRUE, golden-FALSE with carriers, ratchet, blind, §1.1 mutations)</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> tests/pre_build/test_check_cm_no_fail_open_skip.sh</span></code></pre></div>
+<p>Exit codes: <code>0</code> PASS (finding SET equals the baseline SET)
+· <code>1</code> FAIL (NEW finding or STALE baseline row) ·
+<code>2</code> ERROR (the tree is UNVERIFIED — see below).</p>
+<h2 id="the-detection-rule">The detection rule</h2>
+<p>A <em>skip site</em> is <code>pytest.skip(...)</code>, a bare
+<code>skip(...)</code>, <code>&lt;x&gt;.skipTest(...)</code>, or
+<code>raise [unittest.]SkipTest(...)</code>.
+<code>@pytest.mark.skip</code> decorators are not runtime skips and are
+not counted. A skip site is a finding when, inside the same function, it
+is enclosed by:</p>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 51%" />
+<col style="width: 21%" />
+</colgroup>
+<thead>
+<tr>
+<th>Trigger</th>
+<th>Enclosing construct</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>STATUS</code></td>
+<td>an <code>if</code>/<code>elif</code>/<code>while</code>/ternary test
+that reads a status of response-derived data — <code>.status</code>,
+<code>.status_code</code>, <code>.ok</code>, <code>.code</code>,
+<code>.reason</code>, a <code>["status"]</code> /
+<code>.get("error_type")</code>-style key, or a comparison with an int
+literal in 100..599</td>
+<td><code>if resp.status &gt;= 400: pytest.skip(...)</code></td>
+</tr>
+<tr>
+<td><code>EMPTY</code></td>
+<td>such a test that checks response-derived data for absence —
+<code>not x</code>, <code>x is None</code>, <code>len(x) == 0</code>,
+<code>x == ""</code>, <code>"k" not in x</code>, or bare truthiness of
+<code>x</code></td>
+<td><code>if not data["results"]: pytest.skip(...)</code></td>
+</tr>
+<tr>
+<td><code>UNREACH</code></td>
+<td>an <code>except</code> whose <code>try</code> performs a network
+call and whose caught types include one that ALSO carries answered
+errors — <code>HTTPError</code>, <code>URLError</code>,
+<code>RequestException</code>, <code>OSError</code>,
+<code>Exception</code>, bare <code>except</code></td>
+<td><code>except urllib.error.URLError: pytest.skip(...)</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>urllib.request.urlopen</code> raises <code>HTTPError</code> — a
+subclass of <code>URLError</code> — for every 4xx/5xx response, so
+<code>except URLError</code> turns an answered 500 into a skip. That is
+why <code>UNREACH</code> is keyed on what the handler <em>can</em>
+catch, not on its intent.</p>
+<p><strong>Response-derived</strong> means intra-module taint: a name
+bound from a network call (<code>requests.*</code>,
+<code>httpx.*</code>, <code>urlopen</code>,
+<code>&lt;client&gt;.get</code> …), from a call to a module function
+that transitively performs one, or from an expression over an already
+tainted name.</p>
+<p><strong>Shell tests:</strong> a bare <code>ab_skip</code> at command
+position is a finding (<code>SHELL_BARE_SKIP</code>); so is
+<code>ab_skip_with_reason</code> whose reason is outside the §11.4.69
+closed set or is <code>network_unreachable_external</code>
+(<code>SHELL_REASON</code> — forbidden for sink-probed features, and the
+feature class is not statically knowable, so it is refused
+conservatively).</p>
+<p><strong>Carriers are never findings.</strong> Comments, strings,
+docstrings and heredoc bodies that merely <em>mention</em> a skip are
+ignored (Python is parsed with <code>ast</code>; shell strings, comments
+and heredocs are blanked before matching). The free-text reason of a
+pytest skip and any <code># allow-skip:</code> comment never excuse a
+finding.</p>
+<h2 id="keys-and-the-baseline">Keys and the baseline</h2>
+<p>Each finding has a key
+<code>&lt;path&gt;:&lt;qualname&gt;:&lt;TRIGGERS&gt;#&lt;n&gt;</code>,
+where <code>n</code> numbers the findings of that trigger inside that
+function in line order. Keys, not line numbers, so editing an unrelated
+part of the file does not churn the baseline.</p>
+<p>The baseline is compared as a <strong>set</strong>, in both
+directions:</p>
+<ul>
+<li>a live finding not in the baseline is <strong>NEW</strong> → FAIL.
+Fix the test; never add a row to silence it.</li>
+<li>a baseline row with no live finding is <strong>STALE</strong> →
+FAIL. Delete the row in the same change that fixes the finding, so the
+bar follows the corpus down.</li>
+</ul>
+<p>A count-only baseline would accept a one-out-one-in swap; the set
+comparison does not (self-test case 6d).</p>
+<h3
+id="baseline-as-seeded-on-2026-09-23-10-findings-all-tracked-by-bob-192">Baseline
+as seeded on 2026-09-23 (10 findings, all tracked by BOB-192)</h3>
+<table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 18%" />
+<col style="width: 65%" />
+</colgroup>
+<thead>
+<tr>
+<th>Key</th>
+<th>Line</th>
+<th>Why it is fail-open</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tests/integration/test_jackett_autoconfig_real.py:jackett_ready:STATUS#1</code></td>
+<td>50</td>
+<td>skips on Jackett answering 5xx</td>
+</tr>
+<tr>
+<td><code>tests/integration/test_jackett_autoconfig_real.py:jackett_ready:UNREACH#1</code></td>
+<td>52</td>
+<td><code>RequestException</code> also covers answered errors</td>
+</tr>
+<tr>
+<td><code>tests/integration/test_merge_api.py:TestDownloadEndpoint.test_download_magnet_added_to_real_qbittorrent:STATUS#1</code></td>
+<td>508</td>
+<td>skips when the service answers a non-<code>initiated</code>
+status</td>
+</tr>
+<tr>
+<td><code>tests/integration/test_merge_api.py:TestSearchEndpoint.test_search_finds_real_results_for_common_query:EMPTY#1</code></td>
+<td>186</td>
+<td>skips on a 200 with an empty result set</td>
+</tr>
+<tr>
+<td><code>tests/integration/test_merge_api.py:_qbit_login:STATUS#1</code></td>
+<td>126</td>
+<td>skips on a rejected qBittorrent login</td>
+</tr>
+<tr>
+<td><code>tests/integration/test_tracker_auth_live.py:_merge_service_required:STATUS#1</code></td>
+<td>105</td>
+<td>skips on health answering ≥400</td>
+</tr>
+<tr>
+<td><code>tests/integration/test_tracker_auth_live.py:_merge_service_required:EMPTY#1</code></td>
+<td>108</td>
+<td>skips on a health body with no <code>"status"</code></td>
+</tr>
+<tr>
+<td><code>tests/integration/test_tracker_auth_live.py:_merge_service_required:UNREACH#1</code></td>
+<td>110</td>
+<td><code>URLError</code>/<code>OSError</code> also catch
+<code>HTTPError</code></td>
+</tr>
+<tr>
+<td><code>tests/integration/test_tracker_auth_live.py:_run_live_search:EMPTY#1</code></td>
+<td>152</td>
+<td>skips when an answering service never finishes the search</td>
+</tr>
+<tr>
+<td><code>tests/scaling/test_boba_scaling.py:_services_up:EMPTY#1</code></td>
+<td>152</td>
+<td><code>_healthy()</code> is False on an answered non-200 as well as
+on refusal</td>
+</tr>
+</tbody>
+</table>
+<h2 id="edge-cases-and-the-error-rc2-states">Edge cases and the ERROR
+(rc=2) states</h2>
+<p>The gate refuses rather than reporting a PASS it cannot back:</p>
+<ul>
+<li><strong>Control needle not seen.</strong> Before scanning, the
+engine runs built-in canaries through the same functions: one
+golden-TRUE per trigger class plus a shell bare <code>ab_skip</code>
+must all be found, and a golden-FALSE canary full of carriers and
+environment-derived skips must yield zero findings while all of its real
+skip sites are still counted. If any canary misbehaves the instrument is
+blind (§11.4.201(7)(b)). A PASS line ends with
+<code>control-needle: seen</code>.</li>
+<li><strong>Blind zero.</strong> Zero skip sites across the whole corpus
+is refused: a broken extractor and a clean corpus look identical
+(§11.4.201(6)).</li>
+<li><strong>Unparseable test file.</strong> The file is named, and the
+tree is UNVERIFIED, not clean.</li>
+<li><strong>Not a git tree / python3 missing / engine
+missing.</strong></li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<ol type="1">
+<li>The wrapper checks its preconditions and runs the engine.</li>
+<li>The engine runs the control needle.</li>
+<li>It enumerates <code>tests/**/*.py</code> and
+<code>tests/**/*.sh</code> with
+<code>git ls-files --cached --others --exclude-standard</code>, so a new
+test file that is not yet staged is scanned too, and git-ignored paths
+(for example agent worktrees) are not.</li>
+<li>Python files are parsed with <code>ast</code>; each function gets a
+taint set; each skip site’s enclosing conditions and exception handlers
+are classified.</li>
+<li>Findings are keyed, compared against the baseline set, and a
+one-line verdict is printed last.</li>
+</ol>
+<h2 id="honest-limits">Honest limits</h2>
+<ul>
+<li>Taint does not cross module boundaries or pytest fixture parameters.
+A skip on data a fixture fetched in another file (for example
+<code>tests/integration/test_iptorrents.py</code> line 160) is not
+seen.</li>
+<li>Two same-trigger skips swapped inside one function keep the same key
+set.</li>
+<li>The <code>UNREACH</code> rule needs the network call to appear in
+the <code>try</code> body (directly or via a module-local helper).
+Wrappers around <code>request.getfixturevalue(...)</code> are not
+flagged; they depend on the fixture raising only on real
+unreachability.</li>
+<li>Shell coverage is limited to the <code>ab_skip</code> family; a
+shell test’s own ad-hoc skip helper conditioned on a curl status is not
+analysed.</li>
+</ul>
+<h2 id="related-scripts">Related scripts</h2>
+<ul>
+<li><code>scripts/pre_build_verification.sh</code> — invariant 57 runs
+this gate (blocking).</li>
+<li><code>tests/pre_build/test_check_cm_no_fail_open_skip.sh</code> —
+the self-test, also run by invariant 30.</li>
+<li><code>scripts/pre_build/check_cm_sse_route_rate_limit_classed.sh</code>
+— same wrapper-plus-AST-engine pattern.</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-09-23 — self-test all cases PASS; real tree PASS with 10
+baselined findings, 69 skip sites across 412 test files.</p>
+</body>
+</html>

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260923</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260923</h1>
+</header>
+<h1
+id="bob-164-closure-evidence-re-verification-pass-2026-09-23">BOB-164 —
+closure evidence (re-verification pass, 2026-09-23)</h1>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Revision</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Last modified</td>
+<td>2026-09-23T15:13:00Z</td>
+</tr>
+<tr>
+<td>HEAD</td>
+<td><code>ffe3ed3</code></td>
+</tr>
+<tr>
+<td>Verdict</td>
+<td>Fix already landed. No source change needed in this pass. The
+rendered-DOM oracle is GREEN on the SHIPPED artifact across all 16
+palette × mode combinations. The LIVE-service acceptance leg was NOT run
+because the stack is down.</td>
+</tr>
+</tbody>
+</table>
+<h2
+id="systematic-debugging-outcome-11.4.102-item-is-stale-as-open-not-broken">1.
+Systematic-debugging outcome (§11.4.102): item is stale-as-open, not
+broken</h2>
+<ul>
+<li>The root-cause fix is commit <code>5f9a04b</code> (“fix(BOB-164):
+contrast failed because a literal cannot be correct against a fill that
+moves with the palette”). It introduced the <code>accentText</code> role
+and the <code>on&lt;Fill&gt;</code> tokens. The round-2 evidence is in
+<code>docs/qa/BOB-164/README.md</code>.</li>
+<li>The artifact-layer gap that README §9 recorded (a stale
+<code>dist/</code>) was tracked as BOB-183, which is now Fixed. The
+shipped bundle <code>download-proxy/src/ui/dist/frontend/browser/</code>
+was rebuilt on 2026-09-22. The last commit touching
+<code>frontend/src</code> is <code>deed8bf</code> from 2026-09-02, so
+the bundle is newer than its sources. <code>git status</code> shows no
+uncommitted changes under <code>frontend/src</code> or
+<code>download-proxy/src/ui</code>.</li>
+<li>I made no production change. None was warranted: forcing a change
+onto an already-fixed defect would violate §11.4.6 and §11.4.120.</li>
+</ul>
+<p>Shipped bundle fingerprint:
+<code>sha256(main-CLXE6FZU.js) = 44cca2500f975582d4f5b9349de45f09e22e212e6250d026f5850fb989841832</code></p>
+<h2
+id="the-oracle-is-validated-before-any-result-from-it-is-believed-11.4.10710-11.4.273">2.
+The oracle is validated before any result from it is believed
+(§11.4.107(10) / §11.4.273)</h2>
+<pre><code>$ .venv/bin/python docs/qa/BOB-164/axe_contrast_scan.py --self-check      # rc=0
+  golden-bad  #golden-bad-equal    CAUGHT
+  golden-bad  #golden-bad-plain    CAUGHT
+  neg-control #negative-control  correctly silent
+
+self-check: PASS</code></pre>
+<h2
+id="red-the-defect-re-injected-into-a-scratch-copy-of-the-shipped-artifact">3.
+RED: the defect re-injected into a scratch copy of the SHIPPED
+artifact</h2>
+<p>Mutation (scratch copy only, the repo was not touched): in the
+shipped <code>main-CLXE6FZU.js</code>, the darcula/dark
+<code>accentText:"#ffaebd"</code> was replaced with the pre-fix
+<code>accentText:"#9d001e"</code>. The original value occurred exactly
+once before the replacement and 0 times after it. Mutant fingerprint:
+<code>5421f09e…dbb85</code>.</p>
+<pre><code>$ axe_contrast_scan.py --dist &lt;scratch&gt;/dist_red --all-palettes --out &lt;scratch&gt;/scan_RED_mutant.json
+rc=1
+=== theme darcula/dark: 5 colour-contrast violation node(s), 22 passing node(s) ===
+  .brand[_ngcontent-ng-c230444366=&quot;&quot;]  fg=#9d001e bg=#3c3f41 12.0pt/700 axe=1.43 py=1.44 floor=4.5 (ratio+floor agree)
+  h1                                   fg=#9d001e bg=#3c3f41 18.0pt/700 axe=1.62 py=1.62 floor=3.0 (ratio+floor agree)
+  h2                                   fg=#9d001e bg=#3c3f41 16.5pt/700 axe=1.45 py=1.46 floor=3.0 (ratio+floor agree)
+  .active.tab                          fg=#9d001e bg=#3c3f41 12.0pt/400 axe=1.44 py=1.44 floor=4.5 (ratio+floor agree)
+  .vd-link                             fg=#9d001e bg=#2b2b2b  9.8pt/400 axe=1.8  py=1.79 floor=4.5 (ratio+floor agree)
+  [incomplete/FAIL] .stat-item:nth-child(1..3) &gt; .stat-value  fg=#9d001e bg=#2b2b2b py=1.95 floor=3.0
+TOTAL colour-contrast violation nodes across 16 theme(s): 5
+TOTAL blocking `incomplete` nodes (FAIL / UNDECIDABLE / GLYPH_FAIL): 3</code></pre>
+<p>This matches the reported pairs exactly: <code>.brand</code> at
+1.43:1 and <code>h1</code> at 1.62:1, <code>#9d001e</code> on
+<code>#3c3f41</code>. So on this exact artifact and code path, the
+oracle does detect the defect class.</p>
+<h2 id="green-the-unmodified-shipped-artifact">4. GREEN: the unmodified
+shipped artifact</h2>
+<pre><code>$ axe_contrast_scan.py --dist download-proxy/src/ui/dist/frontend/browser --all-palettes --out &lt;scratch&gt;/scan_shipped_all.json
+rc=0
+... (every theme) 0 colour-contrast violation node(s), 30 passing node(s) ...
+TOTAL colour-contrast violation nodes across 16 theme(s): 0
+TOTAL blocking `incomplete` nodes (FAIL / UNDECIDABLE / GLYPH_FAIL): 0
+TOTAL fenced GLYPH_UNMEASURED nodes (reported, not blocking; SC 1.4.11 unverified): 40</code></pre>
+<p>Arithmetic (declared-pair) oracles, run individually:</p>
+<pre><code>$ cd frontend &amp;&amp; npx ng test --watch=false \
+    --include=src/app/models/palette.contrast.spec.ts --include=src/app/models/style-contrast.spec.ts
+ Test Files  2 passed (2)
+      Tests  2371 passed (2371)
+rc=0</code></pre>
+<h2 id="honest-gaps-11.4.6-why-the-tracker-item-is-not-closed">5. Honest
+gaps (§11.4.6): why the tracker item is NOT closed</h2>
+<ol type="1">
+<li><strong>The live-service leg did not run.</strong> The acceptance
+criterion names
+<code>tests/ux/test_live_dashboard_accessibility.py</code> against the
+running merge service. <code>curl http://localhost:7187/health</code>
+returned <code>000</code>, so the stack is down. I did not boot it: host
+memory is tight, and <code>merge_service_live</code> →
+<code>compose_up</code> would start the whole container stack. The GREEN
+above is ARTIFACT-class evidence: the real shipped bundle, rendered in
+real Chromium, measured by real axe-core, served statically with no
+backend. It is not the RUNTIME-class live-surface flip that §11.4.226
+requires for closure. <strong>Owed:</strong> start the stack
+(<code>./start.sh</code>), then run
+<code>.venv/bin/python -m pytest tests/ux/test_live_dashboard_accessibility.py -v</code>
+and confirm <code>test_live_dashboard_axe_scan</code> passes.</li>
+<li><strong>Data-driven nodes</strong> (badges and status pills) are
+absent from a no-backend render. This is tracked as BOB-185. The
+arithmetic spec covers them.</li>
+<li><strong>Icon glyphs</strong>: 40 GLYPH_UNMEASURED nodes, and SC
+1.4.11 is unverified for them. This is tracked as BOB-184.</li>
+<li><strong>§11.4.185 manual QA</strong>: no human has looked at the
+colours. This is still owed.</li>
+<li><code>/jackett/*</code> routes were not rendered and scanned in this
+pass.</li>
+</ol>
+</body>
+</html>

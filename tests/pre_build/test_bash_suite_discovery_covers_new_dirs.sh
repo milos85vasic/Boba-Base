@@ -40,7 +40,7 @@
 #
 #   HONEST LAYER BOUNDARY (§11.4.226): this is a runtime-class test of
 #   invariant 30's discovery + guard logic. It is NOT a full
-#   pre_build_verification.sh run — that gate is a 56-invariant monolith and
+#   pre_build_verification.sh run — that gate is a 57-invariant monolith and
 #   running it here would recurse (invariant 30 executes this very file).
 #
 # INSTRUMENT VIABILITY (§11.4.201(7)(b))

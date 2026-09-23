@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260923</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260923</h1>
+</header>
+<h1
+id="bob-137-closure-evidence-partial-merge-moved-off-the-event-loop-thread">BOB-137
+— closure evidence (partial): merge moved off the event-loop thread</h1>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Revision</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Created</td>
+<td>2026-09-23T15:22:23Z</td>
+</tr>
+<tr>
+<td>Last modified</td>
+<td>2026-09-23T15:22:23Z</td>
+</tr>
+<tr>
+<td>Base commit</td>
+<td>ffe3ed3 (changes uncommitted at time of writing)</td>
+</tr>
+<tr>
+<td>Item status</td>
+<td><strong>NOT closed</strong> — live soak still owed (see “Honest
+gaps”)</td>
+</tr>
+</tbody>
+</table>
+<h2
+id="what-was-still-wrong-investigation-before-any-change-11.4.102">1.
+What was still wrong (investigation before any change, §11.4.102)</h2>
+<p>The tracker row already records the root cause (1dd7b0a, 16 real
+stack dumps): <code>Deduplicator.merge_results()</code> runs as a plain
+synchronous call on the asyncio loop thread. BOB-145 (0572b71) made the
+merge ~17x cheaper but, by its own scope note, left the <strong>call
+site</strong> synchronous; the 2026-08-21 soak still measured 2/141 dead
+7187 probes with the loop thread at
+<code>R</code>/<code>wchan 0</code>.</p>
+<p>Re-read at HEAD ffe3ed3, there were <strong>two</strong> synchronous
+call sites on the loop thread, not one:</p>
+<ul>
+<li><code>download-proxy/src/merge_service/search.py</code>
+(<code>_run_search</code>, formerly line 1080):
+<code>merged = self.deduplicator.merge_results(all_results)</code></li>
+<li><code>download-proxy/src/api/streaming.py</code>
+<code>_build_merged_update()</code> →
+<code>dedup.merge_results(raw)</code>, called from the SSE generator for
+every interim and final <code>merged_update</code> — once per open SSE
+client per 1.5 s throttle window, so it scales with client count.</li>
+</ul>
+<p>A third defect only becomes live once the merge leaves the loop:
+<code>Deduplicator.merge_results</code> accumulated into
+<code>self._merged_groups</code>, rebinding it on entry. The
+orchestrator shares ONE <code>Deduplicator</code> across all searches,
+so two merges on worker threads would interleave and the first would
+append into — and return — the second’s list.</p>
+<h2
+id="mechanism-measured-directly-real-corpus-from-the-bob-145-guard-this-host">2.
+Mechanism measured directly (real corpus from the BOB-145 guard, this
+host)</h2>
+<p>Command:
+<code>nice -n 19 ionice -c 3 .venv/bin/python &lt;scratch&gt;/gap_probe.py</code>
+(same <code>build_corpus</code> as
+<code>test_dedup_event_loop_blocking.py</code>, 5 ms heartbeat).</p>
+<pre><code>on-loop (pre-fix call shape)     N=400 merge_wall=  132.2ms worst_gap=  135.4ms ticks_during_merge=1
+to_thread (post-fix call shape)  N=400 merge_wall=  125.7ms worst_gap=   10.8ms ticks_during_merge=13
+on-loop (pre-fix call shape)     N=800 merge_wall=  283.5ms worst_gap=  286.7ms ticks_during_merge=1
+to_thread (post-fix call shape)  N=800 merge_wall=  311.8ms worst_gap=   16.4ms ticks_during_merge=30</code></pre>
+<p>On the loop, the loop is frozen for the whole merge (worst gap ==
+merge wall, one tick). Off the loop, the GIL switch interval hands the
+loop a turn every few ms; merge wall-clock is unchanged (this is latency
+isolation, not a speed-up).</p>
+<h2 id="red-new-test-file-against-unfixed-code">3. RED — new test file
+against UNFIXED code</h2>
+<p>Test:
+<code>tests/unit/merge_service/test_bob137_merge_off_event_loop.py</code>
+Command:
+<code>nice -n 19 ionice -c 3 .venv/bin/python -m pytest tests/unit/merge_service/test_bob137_merge_off_event_loop.py --import-mode=importlib -q -p no:cacheprovider</code></p>
+<pre><code>E       AssertionError: the SSE generator re-merged ON the event-loop thread — every open SSE client freezes port 7187 for the merge duration (BOB-137).
+E       AssertionError: SearchOrchestrator._run_search ran Deduplicator.merge_results ON the event-loop thread — while it runs, port 7187 services no request (BOB-137).
+E       AssertionError: merge A returned groups from merge B ([&#39;magnet:?xt=urn:btih:0000000000000000000000000000000000000064&#39;, &#39;magnet:?xt=urn:btih:0000000000000000000000000000000000000065&#39;, &#39;magnet:?xt=urn:btih:0000000000000000000000000000000000000066&#39;]...) — Deduplicator shares its working list across concurrent calls
+FAILED tests/unit/merge_service/test_bob137_merge_off_event_loop.py::test_sse_merged_update_remerges_off_the_event_loop_thread
+FAILED tests/unit/merge_service/test_bob137_merge_off_event_loop.py::test_run_search_merges_off_the_event_loop_thread
+FAILED tests/unit/merge_service/test_bob137_merge_off_event_loop.py::test_interleaved_merges_on_one_deduplicator_do_not_share_output
+3 failed, 3 passed in 4.41s</code></pre>
+<p>Each of the three defects fails its own test, for its own stated
+reason (the three passing cases are the sequential-behaviour
+characterization, which must pass both before and after). Note: a first
+RED run failed the characterization test too, but for a FIXTURE reason
+(near-identical titles fuzzy-merged); the fixture was corrected to
+dissimilar titles before the RED above was recorded.</p>
+<p>Oracles: (1) structural — thread ident of the executing merge vs. the
+loop thread (load-independent); (2) user-observable — 5 ms heartbeat
+worst gap &lt; 200 ms while a 400 ms GIL-holding merge runs; (3)
+deterministic forced interleave for re-entrancy.</p>
+<h2 id="fix-minimal">4. Fix (minimal)</h2>
+<ul>
+<li><code>merge_service/search.py</code>:
+<code>merged = await asyncio.to_thread(self.deduplicator.merge_results, all_results)</code>.</li>
+<li><code>api/streaming.py</code>: <code>_build_merged_update</code>
+split into <code>_snapshot_merge_inputs</code> (reads orchestrator state
+— runs ON the loop so the worker never iterates a
+<code>_tracker_results</code> dict the fan-out may be resizing) and
+<code>_merge_and_serialize</code> (pure; no orchestrator state). New
+<code>_build_merged_update_off_loop</code> does the snapshot on the loop
+and <code>await asyncio.to_thread(_merge_and_serialize, ...)</code>;
+both SSE call sites use it. The sync <code>_build_merged_update</code>
+keeps its signature and behaviour (existing stress tests call it
+directly).</li>
+<li><code>merge_service/deduplicator.py</code>:
+<code>merge_results</code> accumulates into a local list, assigns
+<code>self._merged_groups</code> once at the end, returns the local
+list.</li>
+</ul>
+<h2 id="green">5. GREEN</h2>
+<pre><code>tests/unit/merge_service/test_bob137_merge_off_event_loop.py::test_sse_merged_update_remerges_off_the_event_loop_thread PASSED [ 16%]
+tests/unit/merge_service/test_bob137_merge_off_event_loop.py::test_merge_output_unchanged_by_reentrancy_fix[5] PASSED [ 33%]
+tests/unit/merge_service/test_bob137_merge_off_event_loop.py::test_merge_output_unchanged_by_reentrancy_fix[1] PASSED [ 50%]
+tests/unit/merge_service/test_bob137_merge_off_event_loop.py::test_merge_output_unchanged_by_reentrancy_fix[0] PASSED [ 66%]
+tests/unit/merge_service/test_bob137_merge_off_event_loop.py::test_interleaved_merges_on_one_deduplicator_do_not_share_output PASSED [ 83%]
+tests/unit/merge_service/test_bob137_merge_off_event_loop.py::test_run_search_merges_off_the_event_loop_thread PASSED [100%]
+
+============================== 6 passed in 3.33s ===============================</code></pre>
+<p>Regression: every test file under <code>tests/unit</code> +
+<code>tests/integration</code> that references
+<code>deduplicator|merge_results|_run_search(|search_results_stream</code>
+(includes the BOB-145 golden/order-independence guard, merged_update
+streaming, SSE disconnect, all-trackers-errored SSE contract), plus
+<code>tests/stress/test_search_orchestration_stress_chaos.py</code>:</p>
+<pre><code>252 passed in 32.91s          # targeted 13-file set incl. stress/chaos
+543 passed, 1 warning in 139.42s (0:02:19)   # full grep-selected set, fixed tree
+537 passed, 1 warning in 95.25s (0:01:35)    # same set on a pristine HEAD worktree (baseline; 543-537 = the 6 new tests)</code></pre>
+<p><code>ruff check</code> on the four changed/new files:
+<code>All checks passed!</code></p>
+<h2 id="honest-gaps-11.4.6">6. Honest gaps (§11.4.6)</h2>
+<ol type="1">
+<li><strong>Live soak NOT run.</strong> The item’s acceptance criterion
+is a sustained-traffic soak against the running container with real
+tracker traffic (before/after curl timings on 7186/7187 + thread-state
+census). That needs live network and a
+<code>./start.sh --reload-python</code> of the operator’s running stack;
+it was not done here. Until it is, the row must stay open. Expectation,
+UNCONFIRMED: the 2/141 dead-probe residual drops toward 0, but the &gt;1
+s stall tail may remain partially, because a GIL-holding worker still
+slows the loop (it no longer freezes it) and other synchronous work on
+the loop was not audited here.</li>
+<li><strong>Other loop-thread CPU work not audited.</strong> Only the
+two <code>merge_results</code> call sites were moved.
+<code>_serialize_merged_rows</code> in <code>GET /search/{id}</code> and
+any other synchronous per-request work on the loop are unexamined.</li>
+<li><strong>Intermittent unrelated failure observed once.</strong> In
+one run of the full grep-selected set (run with <code>-x</code>,
+concurrently with the gap probe above, 184 s wall),
+<code>tests/unit/merge_service/test_search_deep_coverage.py::TestFetchTorrentDeep::test_fetch_torrent_client_error_reraises</code>
+failed. It did not reproduce in isolation (<code>1 passed</code>) nor in
+the subsequent full run (<code>543 passed</code>). It exercises
+<code>fetch_torrent</code>/tenacity retry, code this change does not
+touch; the failure text was not captured. Cause: UNKNOWN — candidate
+flake, should be tracked separately.</li>
+<li><strong>§11.4.214 linkage with BOB-145</strong> remains the
+operator/tracker decision recorded on the row; this evidence does not
+resolve it.</li>
+</ol>
+</body>
+</html>

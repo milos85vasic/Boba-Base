@@ -331,7 +331,12 @@ class Deduplicator:
         Returns:
             List of MergedResult objects (deduplicated)
         """
-        self._merged_groups = []
+        # BOB-137: accumulate into a LOCAL list. merge_results is now invoked on
+        # worker threads (off the event loop), so two searches can merge on this
+        # shared instance at once; rebinding and appending to self._merged_groups
+        # made an interleaved call append into -- and return -- the other call's
+        # list. The attribute is assigned once, at the end, for introspection only.
+        groups: list[MergedResult] = []
         unmatched = list(results)
 
         # Sort by seed count (higher seeds = more likely to be canonical),
@@ -369,9 +374,10 @@ class Deduplicator:
             self._update_best_quality(merged)
 
             pending = remaining
-            self._merged_groups.append(merged)
+            groups.append(merged)
 
-        return self._merged_groups
+        self._merged_groups = groups
+        return groups
 
     def _build_view(self, result: SearchResult) -> _ResultView:
         """Derive everything the matcher needs from one result.

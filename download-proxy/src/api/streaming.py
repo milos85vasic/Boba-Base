@@ -114,6 +114,39 @@ def _build_merged_update(orchestrator: Any, search_id: str) -> dict[str, Any] | 
     the SAME helper ``GET /search/{id}`` uses, so a final
     ``merged_update`` is byte-identical to the eventual GET payload.
     """
+    inputs = _snapshot_merge_inputs(orchestrator, search_id)
+    if inputs is None:
+        return None
+    return _merge_and_serialize(*inputs)
+
+
+async def _build_merged_update_off_loop(orchestrator: Any, search_id: str) -> dict[str, Any] | None:
+    """``_build_merged_update`` for use FROM the event loop (BOB-137).
+
+    The re-merge is CPU-bound pure Python. Run on the loop thread it freezes
+    every other callback — port 7187 answers nothing while port 7186 (same
+    process, poll loop that releases the GIL) keeps answering: the BOB-137
+    wedge. Each open SSE client re-merges once per throttle window, so this
+    site multiplies with client count.
+
+    The orchestrator's shared state (``_tracker_results`` dicts mutated by the
+    fan-out on the loop thread) is SNAPSHOTTED here, on the loop thread, so the
+    worker never iterates a dict the loop may be resizing. Only the merge and
+    the serialization run on the worker; the GIL switch interval then lets the
+    loop keep servicing requests throughout.
+    """
+    inputs = _snapshot_merge_inputs(orchestrator, search_id)
+    if inputs is None:
+        return None
+    return await asyncio.to_thread(_merge_and_serialize, *inputs)
+
+
+def _snapshot_merge_inputs(orchestrator: Any, search_id: str) -> tuple[Any, list | None, list] | None:
+    """Read everything the merge needs from the orchestrator (cheap; loop-safe).
+
+    Returns ``(dedup, cached_merged_or_None, raw_snapshot)`` or ``None`` when no
+    deduplicator is wired.
+    """
     dedup = getattr(orchestrator, "deduplicator", None)
     if dedup is None:
         return None
@@ -135,9 +168,17 @@ def _build_merged_update(orchestrator: Any, search_id: str) -> dict[str, Any] | 
                     merged = stored[0]
         except Exception:  # pragma: no cover - defensive cache access
             merged = None
+    raw: list = []
     if merged is None:
         get_all = getattr(orchestrator, "get_all_tracker_results", None)
         raw = list(get_all(search_id)) if callable(get_all) else []
+    return dedup, merged, raw
+
+
+def _merge_and_serialize(dedup: Any, merged: list | None, raw: list) -> dict[str, Any]:
+    """Merge ``raw`` (unless an authoritative ``merged`` is supplied) and
+    serialize. Touches no orchestrator state, so it is safe on a worker thread."""
+    if merged is None:
         merged = dedup.merge_results(raw)
 
     try:
@@ -348,7 +389,7 @@ class SSEHandler:
                 # added no new raw results so the throttled interim emit was
                 # skipped. A failure here is non-fatal but MUST be observable.
                 try:
-                    final_merged = _build_merged_update(orchestrator, search_id)
+                    final_merged = await _build_merged_update_off_loop(orchestrator, search_id)
                     if final_merged is not None:
                         yield SSEHandler.format_event(
                             event="merged_update",
@@ -451,7 +492,7 @@ class SSEHandler:
                 raw_count = metadata.total_results
                 now = time.monotonic()
                 if raw_count != last_merged_raw_count and (now - last_merged_emit_ts) >= MERGED_UPDATE_MIN_INTERVAL_S:
-                    payload = _build_merged_update(orchestrator, search_id)
+                    payload = await _build_merged_update_off_loop(orchestrator, search_id)
                     if payload is not None:
                         yield SSEHandler.format_event(
                             event="merged_update",
