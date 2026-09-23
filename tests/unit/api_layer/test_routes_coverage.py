@@ -817,6 +817,71 @@ class TestSearchSync:
         assert "CAPTCHA" in body["message"]
         assert body["results"] == []
 
+    def _captcha_orch(self, errors):  # type: ignore[no-untyped-def]
+        """Shared scaffold for the BOB-180 captcha-headline tests below --
+        mirrors test_sync_search_captcha_required's MagicMock meta but takes
+        the tracker error list as a parameter so each scenario only differs
+        in which tracker(s) actually erred."""
+        orch = _make_orch()
+        orch._last_merged_results = {}
+        meta = MagicMock()
+        meta.search_id = "sid"
+        meta.query = "test"
+        meta.total_results = 0
+        meta.merged_results = 0
+        meta.trackers_searched = []
+        meta.errors = errors
+        from datetime import datetime
+
+        meta.started_at = datetime(2026, 1, 1)
+        meta.completed_at = datetime(2026, 1, 1)
+        meta.to_dict.return_value = {"tracker_stats": []}
+        orch.search = AsyncMock(return_value=meta)
+        return orch
+
+    def test_sync_search_captcha_required_names_nnmclub_not_rutracker(self, client_factory):
+        # BOB-180: metadata.errors entries carry a "<tracker>: <message>"
+        # prefix (merge_service/search.py:
+        # `metadata.errors.append(f"{name}: {error}")`). An NNMClub-only
+        # captcha diagnostic must name NNMClub in the headline -- not the
+        # hardcoded "RuTracker" the pre-fix code always emitted.
+        orch = self._captcha_orch(["nnmclub: CAPTCHA challenge (Turnstile) required"])
+        c = client_factory(orch)
+        resp = c.post("/api/v1/search/sync", json={"query": "test"})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["status"] == "captcha_required"
+        assert "NNMClub" in body["message"]
+        assert "RuTracker" not in body["message"]
+
+    def test_sync_search_captcha_required_names_rutracker_when_only_rutracker_errors(self, client_factory):
+        # Golden-FALSE / negative control: the original rutracker-only
+        # scenario must still name RuTracker after the fix -- proves the
+        # derivation doesn't regress the case it used to handle correctly
+        # (even if only by accident, since the pre-fix message was
+        # hardcoded).
+        orch = self._captcha_orch(["rutracker: CAPTCHA required"])
+        c = client_factory(orch)
+        resp = c.post("/api/v1/search/sync", json={"query": "test"})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["status"] == "captcha_required"
+        assert "RuTracker" in body["message"]
+
+    def test_sync_search_captcha_required_names_all_erroring_trackers(self, client_factory):
+        # Multiple trackers erring with captcha simultaneously must all be
+        # named, not just one.
+        orch = self._captcha_orch(
+            ["nnmclub: CAPTCHA challenge required", "rutracker: CAPTCHA required"]
+        )
+        c = client_factory(orch)
+        resp = c.post("/api/v1/search/sync", json={"query": "test"})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["status"] == "captcha_required"
+        assert "NNMClub" in body["message"]
+        assert "RuTracker" in body["message"]
+
     def test_sync_search_sort_by_type(self, client_factory, orch_with_results):
         c = client_factory(orch_with_results)
         resp = c.post("/api/v1/search/sync", json={"query": "test", "sort_by": "type"})

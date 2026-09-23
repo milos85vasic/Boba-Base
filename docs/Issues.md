@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 97
-**Last modified:** 2026-09-23T08:34:57Z
+**Revision:** 100
+**Last modified:** 2026-09-23T09:34:59Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -697,50 +697,6 @@ Both guards run correctly by hand and are covered by passing tests (9/9 and 15/1
 **Acceptance criteria:**
 Each guard is invoked by a named seam, OR carries a registered deferral pointing at this item. For unattributed-commit-guard.sh specifically, the operator has answered the adoption question below and the answer is recorded as consumer DATA -- never an invented ratchet.
 
-## BOB-163 — Now that :7187 really rate-limits, the DDoS challenge's cross-endpoint isolation assertion reads a sibling 429 as endpoint-degraded
-
-**Status:** In progress
-**Type:** Bug
-**Severity:** Medium
-**Created-By:** BOB-114 remediation, pre-existing defect surfaced by BOB-111 landing a real limiter
-
-**OPERATOR DECISION (2026-08-26, §11.4.66 interactive clarification): YES — 429 IS RESPONSIVE IF Retry-After IS WELL-FORMED**
-
-A 429 carrying a VALID Retry-After header counts as the sibling endpoint being RESPONSIVE. Assertion (c) of the DDoS challenge accepts 2xx OR a well-formed 429 (positive integer seconds or valid HTTP-date — PARSED, not merely present/non-empty). DEGRADED remains: connection failure, timeout, any 5xx, and a 429 with absent or malformed Retry-After. RESIDUAL RISK, accepted knowingly and to be stated in the script source per §11.4.6: a genuinely wedged endpoint that happens to answer 429-with-Retry-After would pass — the Retry-After parse narrows that window, it does not close it. Options (b) limiter-aware drain and (c) exempt healthz probe were both offered and NOT chosen. STILL OPEN, not covered by this decision: the detector counts 429 only, not 503, though the script header says '429 (or equivalent)'; counting 503 would collide with the crash detector's 5xx tally. Decide when BOB-111 lands limiters on :7185 and :7189.
-
-This answer is recorded as consumer DATA per §11.4.35 — it is the operator's stated choice, not an agent inference, and supersedes any prior agent-chosen default on this question. Options not chosen are named above so a future reader does not re-litigate a settled call (§11.4.112(5) bounded-verdict discipline applied to decisions).
-
---- prior item text follows ---
-
-**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-21T19:41:08Z
-**Reported-By:** BOB-114 remediation, pre-existing defect surfaced by BOB-111 landing a real limiter
-
-**What (the report, verbatim):**
-PRE-EXISTING, NOT INTRODUCED -- and proven so rather than asserted: git diff shows assertion (c) is BYTE-IDENTICAL to HEAD, and the failure reproduces against the unmodified HEAD script. What changed is not the challenge but the SYSTEM: BOB-111 appears at least partially delivered, because :7187 now returns real 429s where it previously returned none. :7185 and :7189 still produce zero 429s.
-
-This is a 11.4.248-class corrosion risk and that is why it is filed rather than left as a footnote: run_all_challenges.sh will now fail INTERMITTENTLY, and an intermittent red trains everyone to re-run until green, at which point a real regression is dismissed as 'probably the flaky rate-limit one'.
-
-THE DECISION, which is an operator call under 11.4.66 and which I deliberately did NOT invent:
-
-  Does a 429 from a WORKING limiter count as the sibling endpoint being RESPONSIVE?
-
-  (a) YES -- a 429 proves the endpoint is alive and correctly protecting itself. Assertion (c) accepts 2xx OR 429, and only a connection failure / 5xx / timeout counts as degraded. Risk: a genuinely wedged endpoint that happens to answer 429 would pass.
-  (b) NO -- keep requiring 2xx, but make the challenge limiter-aware: drain or wait out the window before the sibling probe (retry-after is served, so the budget is knowable rather than guessed).
-  (c) Probe siblings on a path the limiter exempts (a healthz-class route), so the isolation question is asked without spending the bucket.
-
-Recommendation with reasoning, not just a pick: (a) composed with a bounded liveness check -- a 429 carrying a well-formed Retry-After IS evidence of a live, correctly-behaving service, and (b) makes the challenge slower and couples it to a window value that will drift. But the semantics of 'responsive' here are a product judgement, so the answer is recorded, not assumed.
-
-RELATED, stated as fact rather than folded in: the detector counts 429 only, not 503, though the script header says '429 (or equivalent)'. Counting 503 would collide with the crash detector's 5xx tally. Worth deciding when BOB-111 lands limiters on :7185 and :7189.
-
-**Affected scope / file-scope manifest:**
-challenges/scripts/ddos_resilience_challenge.sh assertion (c) cross-endpoint isolation; run_all_challenges.sh which invokes it
-
-**Reproduction / context:**
-Assertion (c) requires a sibling-endpoint probe to answer ^2 (a 2xx). :7187 now enforces a real limiter (measured live: x-ratelimit-limit: 120, x-ratelimit-remaining: 86, retry-after: 45, server: uvicorn). A full challenge run sends roughly 250 requests to :7187, so sibling probes fired during the OTHER endpoints' tiers land on an exhausted bucket and receive 429 -- which assertion (c) scores as 'endpoint degraded'. Timing-dependent: one run measured PASS=5 FAIL=2; the UNMODIFIED HEAD script against the same live stack ~30s later measured PASS=7 FAIL=0 SKIP=2.
-
-**Acceptance criteria:**
-The operator has answered the classification question below, the answer is recorded as consumer DATA, and assertion (c) implements it. The challenge then produces the same verdict across 3 consecutive runs against a rate-limited stack (11.4.50 deterministic consistency), and the fix ships a paired 1.1 mutation proving assertion (c) still catches a genuinely degraded sibling endpoint -- narrowing it must not blind it (11.4.201(1)).
-
 ## BOB-164 — Live dashboard fails WCAG AA colour contrast on 21 nodes — brand heading measures 1.43:1 against a 3:1 floor
 
 **Status:** In progress
@@ -770,31 +726,6 @@ Run tests/ux/test_live_dashboard_accessibility.py against the running merge serv
 
 **Acceptance criteria:**
 axe-core reports ZERO color-contrast violations against the live rendered dashboard, with the fix made in production component CSS rather than by relaxing the assertion or excluding the rule (11.4.120: reconcile to the correct mechanism, never weaken the check). The existing tests/ux/ suite is the guard and already fails today, so the RED is captured -- closure requires it flipping GREEN against the live surface, which is runtime-class evidence per 11.4.226.
-
-## BOB-167 — Two SSE routes, one rate-limit class: /search/stream carries @_rl('sse_stream') but the sibling /theme/stream carries no limiter and falls to the 120/min default
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** Medium
-**Created-By:** Claude
-**Assigned-To:** Claude
-
-WHAT. download-proxy exposes two Server-Sent-Events routes. They are the same expensive class — long-lived connections that hold a worker and a generator for their lifetime — but only one is rate-limit classed:
-
-  routes.py:801  @router.get('/search/stream/{search_id}')
-                 @_rl('sse_stream')                          <- classed
-  routes.py:150  @router.get('/theme/stream')
-                 async def stream_theme(...)                 <- NO limiter decorator
-
-_rl(cls) resolves to limiter.limit(limit_for(cls)), so /search/stream is bound to the sse_stream class while /theme/stream falls through to the application default. Measured live on the running stack: /api/v1/theme/stream reports x-ratelimit-limit 120.
-
-PROVENANCE + A CORRECTION WORTH KEEPING (§11.4.6). This was surfaced by the BOB-109 scaling agent, whose report framed it as: 'sse_stream_limit_decorator is defined and imported/applied nowhere ... SSE falls through to the 120/minute default: 24x less protected'. That framing is WRONG and was NOT filed as given. The agent searched for one symbol NAME; the wiring uses a different mechanism (@_rl('sse_stream')), and it IS applied — to /search/stream. Verified by reading routes.py:795-806 and the _rl helper at routes.py:46-51, with a control needle confirming other *_limit_decorator symbols show real usage in api/__init__.py so the zero-hit was not a blind search. The agent's MEASUREMENT (120 on /theme/stream) was correct and is what makes this a real finding; its MECHANISM was not. Both halves are recorded so the next reader does not re-derive the same wrong cause.
-
-WHY IT MATTERS. An unclassed SSE endpoint is the cheapest way to pin server resources: each connection is held open, and the default class permits 120/min of them. The declared sse_stream class exists precisely because this route shape needs a tighter bound than ordinary GETs.
-
-ACCEPTANCE. (a) A decision, recorded, on whether /theme/stream belongs in the sse_stream class or genuinely warrants the default — this is a policy question, not automatically a bug to patch. (b) If it belongs in sse_stream, the decorator is applied and a test drives BOTH SSE routes and asserts each returns its INTENDED class limit from x-ratelimit-limit, so a future route added without a class is caught. (c) A guard that enumerates SSE-shaped routes and fails on any that carries no explicit rate-limit class — the general form, so the third SSE route does not repeat this. (d) Honest boundary: this does not claim 120/min is exploitable in this deployment; with network_mode host and no reverse proxy every caller shares the 127.0.0.1 bucket, which BOB-111 measured and recorded separately.
-
-NOT CLAIMED. No change made. The limit values were read from headers, never driven to exhaustion — the limiter is per-IP and shared with concurrent agents on this host (§11.4.119).
 
 ## BOB-168 — run_all_challenges.sh lists scaling_horizontal_challenge.sh which does not exist on disk, so the runner references a challenge that can never execute
 
@@ -933,76 +864,6 @@ ACCEPTANCE. (a) Determine whether the 403 is permanent policy, rate/reputation-b
 
 HONEST BOUNDARY. Measured from ONE host, ONE time, UNAUTHENTICATED. Whether an authenticated session with a browser-like client succeeds was NOT tested and must not be assumed either way. The finding is that the current code path gets a 403; it is not a claim about what every client would get.
 
-## BOB-173 — Hook create and delete return HTTP success even when persistence fails, because _save_hooks swallows every exception — a user is told their webhook exists when it does not
-
-**Status:** Ready for testing
-**Type:** Bug
-**Severity:** High
-**Created-By:** Claude
-**Assigned-To:** Claude
-
-WHAT. download-proxy/src/api/hooks.py:96-102:
-
-    def _save_hooks(hooks: list[dict[str, Any]]) -> None:
-        try:
-            os.makedirs(os.path.dirname(HOOKS_FILE), exist_ok=True)
-            with open(HOOKS_FILE, 'w') as f:
-                json.dump(hooks, f, indent=2)
-        except Exception as e:
-            logger.error(f'Failed to save hooks: {e}')
-
-It catches EVERY exception, logs, and returns None. The signature returns None, so the caller has no channel to learn the write failed. Both call sites then report success unconditionally:
-
-    :152  _save_hooks(hooks)                     :174  _save_hooks(hooks)
-    :154  logger.info('Created hook: ...')       :175  logger.info('Deleted hook: ...')
-    :156  return HookResponse(hook_id=..., ...)  :176  return {'message': 'Hook deleted', ...}
-
-USER-VISIBLE CONSEQUENCE, which is why this is High and not a code-hygiene nit. A user POSTs a webhook, receives HTTP 200 and a hook_id, and the hook was never written — their automation silently never fires, and the API told them it exists. Symmetrically, a user DELETEs a hook, is told 'Hook deleted', the file still holds it, and it fires again after the next restart. In both directions the product reports the opposite of what happened, and the only trace is a log line nobody is watching.
-
-THIS IS THE §11.4.252 SHAPE. The path combines two dangerous capabilities from that anchor's taxonomy — MUTATION of a shared resource (a filesystem write) and EXTERNAL SIDE EFFECT (hooks are outbound calls the system will or will not make) — so it is required to FAIL CLOSED: verify the precondition, refuse when it cannot be satisfied, and surface the refusal. Instead it fails open, and a bare 'except Exception:' that only logs is the exact anti-pattern §11.4.252 enumerates. At the product layer it is also a §11.4.201(6) false-null: a successful write and a swallowed failure are indistinguishable to the caller.
-
-PROVENANCE. Surfaced as an out-of-scope observation by the independent reviewer of the BOB-135 test-isolation work — this swallow is what turned that defect into an 'assert 0 == 1' mystery, because the EACCES on /config was logged and discarded while the endpoint kept returning 200. Verified here directly from source before filing (the function body and both call sites read above), not taken on report. Recorded as a §11.4.238 discovery-channel escape: found by an agent reading code during an unrelated investigation, not by the automated QA regime — the coverage gap is a defect of equal standing to the defect itself.
-
-ACCEPTANCE. (a) _save_hooks propagates failure — raise, or return a status the callers must consume. (b) Both endpoints translate a persistence failure into an HTTP error (500-class), never a success body; a create that did not persist must not return a hook_id. (c) A test drives each endpoint with the hooks file unwritable (read-only dir or a patched open raising OSError) and asserts a non-2xx status AND that a subsequent GET does not list the phantom hook — assert on the user-observable outcome, not on the log line. (d) Paired §1.1 mutation: restore the swallow; the test must FAIL. (e) Audit the same file for sibling swallows — this is a pattern, and one instance is rarely alone. (f) Honest boundary: this does not claim the write currently fails in production; it claims that WHEN it fails the user is told the opposite, and the BOB-135 investigation shows it does fail in at least one real environment.
-
-NOT CLAIMED. No change made. No assessment of how often the write fails in the operator's deployment.
-
-RECORDING A SHELL ERROR OF MY OWN (§11.4.6): the first version of this description was written with the anti-pattern snippet inside backticks in a double-quoted shell argument, so the shell ran it as command substitution and the text was replaced by nothing — the stored description read 'and  is the exact anti-pattern'. This is the SECOND time this session that backticks-inside-double-quotes has corrupted content (the first mangled a commit message). Fixed here by editing through a Python client with no shell quoting in the path. Noted because a silently-truncated defect description is exactly the kind of quiet corruption §11.4.201(7)(c) warns about — the path is part of the instrument, and it failed without erroring.
-
-## BOB-174 — A corrupt hooks file reads as zero hooks and the next create silently destroys every existing hook, while the non-atomic write manufactures the corruption
-
-**Status:** In progress
-**Type:** Bug
-**Severity:** High
-**Created-By:** Claude
-**Assigned-To:** Claude
-
-WHAT. A corrupt hooks file is silently indistinguishable from "no hooks configured", and the next create then DESTROYS every existing hook while returning HTTP 200. Three defects on one path, filed together because fixing any one alone leaves the data loss reachable.
-
-A1 — download-proxy/src/api/hooks.py:104-112. _load_hooks wraps the read in `except Exception: logger.error(...)` and falls through to `return []`. A truncated or malformed hooks.json is therefore reported to every caller as an empty, healthy hook list. Confirmed at source.
-
-A2 — the consequence, and the reason this is High. create_hook loads, appends, saves. Given a corrupt file that load turns into [], the save writes a one-element list over the top. Every previously-configured hook is gone. Measured by the implementing agent against the ALREADY-FIXED tree, so this survives the BOB-173 write-failure fix:
-
-    BEFORE  on disk : ['prod-hook-0', 'prod-hook-1', 'prod-hook-2']
-    GET     reports : 200 {'hooks': [], 'count': 0}    <- claims ZERO hooks configured
-    DELETE  reports : 404 {'detail': 'Hook not found'} <- for a hook that IS in the file
-    POST    reports : 200 hook_id=3c8a5930-...
-    AFTER   on disk : ['3c8a5930-...']
-
-Three prod hooks destroyed, HTTP 200 throughout, nothing surfaced to the user.
-
-A5 — _save_hooks writes with a plain `open(path, "w")`. A crash, ENOSPC, or a kill mid-write truncates the file in place. That is precisely the corruption A1 then reads as "no hooks" and A2 overwrites. The same codebase already has the correct pattern: theme_state.py:115-126 uses tmp-file + os.replace.
-
-WHY THE THREE ARE ONE ITEM. A5 manufactures the corrupt file, A1 misreads it as empty, A2 destroys the contents. Fixing only A1 leaves truncation reachable; fixing only A5 leaves an existing corrupt file a data-loss trigger; fixing only A2 leaves the API lying about what is configured. The chain is the defect.
-
-DELIBERATELY NOT FIXED UNDER BOB-173, and the reasoning is sound. The implementing agent identified all three while auditing sibling swallows as that item required, and declined to fix them in the same change because: they change GET semantics on an endpoint the frontend consumes (200 -> 5xx); they need a CORRUPT-file reproduction rather than the UNWRITABLE-file one BOB-173 built; and they need a design decision that is genuinely not obvious — a MISSING hooks file legitimately means "no hooks configured", while a CORRUPT one does not, and today's code cannot tell those apart. Expanding BOB-173's scope to cover them would have meant shipping that decision unexamined.
-
-ACCEPTANCE. (a) Distinguish MISSING from CORRUPT: a missing file remains an empty list; a corrupt one is an error, never silently []. (b) Decide and RECORD what GET does on corruption — 5xx, or 200 with an explicit degraded marker the frontend can render. This is the design decision, and it should be stated rather than inferred from whatever the patch happens to do. (c) create/delete MUST NOT overwrite a file they could not parse — refuse, do not clobber (§11.4.252: mutation plus external side effect must fail closed). (d) Make the write atomic via tmp + os.replace, reusing theme_state.py's existing pattern rather than re-inventing it (§11.4.28). (e) Tests asserting the USER-OBSERVABLE outcome, not log lines: seed a corrupt file, assert GET does not claim zero hooks, assert a create refuses rather than destroying, and assert the file still holds the original hooks afterwards. (f) Paired §1.1 mutation per guard. (g) NEGATIVE CONTROLS (§11.4.201(1)): a MISSING file must still yield an empty list and a working create; a VALID file must behave exactly as today. A fix that makes every load fail closed by failing always is not a fix.
-
-A3, RECORDED SEPARATELY, NOT PART OF THIS CHAIN. VALID_EVENTS and HookEventType are two sources of truth for one closed set. Verified identical today, unguarded against drift: if they diverge a hook registers successfully and then silently never fires. One assertion pinning them would close it.
-
-NOT CLAIMED. No change made. The BOB-173 write-failure fix is real and orthogonal — it makes a FAILED write honest; it does nothing about a SUCCESSFUL write of wrong data derived from a misread file.
-
 ## BOB-175 — update --location Fixed --status <non-terminal> can still mint a row that update's own validator rejects, because the status-location guard is one-directional
 
 **Status:** Queued
@@ -1045,26 +906,6 @@ GAP B -- soft refusal at HTTP 200. Reviewer probe A, captured: _classify_upstrea
 FIX DIRECTION: Gap A needs the exception to reach a diagnostic rather than being swallowed. Gap B needs a DISTINCT detector (final-URL check or login-form marker) with its own RED -- explicitly NOT a widening of the status-code trigger.
 
 ACCEPTANCE: both gaps closed with their own REDs, or explicitly closed per 11.4.112 with evidence. Immediate sub-task: append a stated-gaps paragraph to docs/qa/BOB-172/fix_evidence_20260822.log.
-
-## BOB-180 — Zero-result search with any captcha-flavoured diagnostic emits a RuTracker-specific headline
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** Low
-**Created-By:** Claude
-**Assigned-To:** Claude
-
-WHAT: download-proxy/src/api/routes.py:727-745 sets status=captcha_required with a hardcoded message naming RuTracker: 'RuTracker requires CAPTCHA. Use /api/v1/auth/rutracker/captcha'.
-
-FAILING SCENARIO: a whole search returns zero results and the captcha-flavoured diagnostic came from NNMClub's Turnstile, not RuTracker. The user is told to visit a RuTracker captcha endpoint for an NNMClub problem.
-
-SEVERITY BOUNDED: the full errors[] and tracker_stats travel in the same response payload, so the truth is present and a client that reads them is not misled -- only the headline is wrong. The branch was revived by BOB-172's error propagation (correctly: suppressing that propagation would recreate the same false-null one layer up, 11.4.247) and is already covered at the routes layer by tests/unit/api_layer/test_routes_coverage.py:782.
-
-FIX DIRECTION: derive the message from the tracker(s) that actually erred rather than hardcoding one.
-
-SCOPE NOTE: api/ was owned by a sibling stream during BOB-172; the author was correct not to touch it.
-
-ACCEPTANCE: an NNMClub-only captcha diagnostic on a zero-result search produces a headline naming NNMClub.
 
 ## BOB-182 — Operator decision owed on the export-charset ratchet, plus an auto-lowering baseline
 
@@ -1220,45 +1061,6 @@ WHY A STATIC GATE CANNOT COVER THIS. The BOB-102 gate asserts static route WIRIN
 ACCEPTANCE: a boot-time check that, when the listener is LAN-bound (not loopback), refuses to start with a non-zero exit and a named cause if BOBA_API_TOKEN is unset or empty, so the open state becomes UNREACHABLE rather than the default. Paired 1.1 mutation: remove the check, prove the service starts LAN-bound-and-open. Golden-FALSE per 11.4.201(1): a loopback-bound listener with the token unset must NOT be refused, or the check becomes a false-positive refusal blocking legitimate dev work.
 
 11.4.238 COVERAGE-ESCAPE NOTE: found by a subagent reading source during BOB-102 guard construction, NOT by the automated QA regime - which is itself the defect class 11.4.238 names. The boot-time check IS the new automated check that would have caught it.
-
-## BOB-199 — Fail-open scanner flags narrow try/except/pass but not narrow contextlib.suppress — SIM105 still moves those sites out of scope
-
-**Status:** Queued
-**Type:** Task
-**Created-By:** Claude
-**Assigned-To:** milos85vasic
-
-**OPERATOR DECISION (2026-08-26, §11.4.66): FLAG NARROW SUPPRESS ONLY WITH AN IRREVERSIBLE CAPABILITY**
-
-The scanner flags a narrow contextlib.suppress ONLY when combined with an irreversible capability (delete / truncate / kill) — the shape that actually causes harm. Idiomatic narrow tolerances stay quiet, so the gate keeps its credibility and no false-positive storm trains readers to ignore it. Options not chosen: accept the asymmetry permanently with a header statement; flag all narrow suppress and absorb existing sites via a justified exemption list. MEASUREMENT CORRECTED TWICE, and the second correction explains the first: the original '37 narrow sites, all idiomatic' was propagated by this conductor without verification, then re-measured by the authoring agent as OBSERVER CONTAMINATION (§11.4.201(10)) — 27 vendored third-party + 9 sibling-agent worktree COPIES of the very tree being measured + 1 real = 37. The instrument was counting other agents' duplicates of its own subject. Reproducible figures, each with its scope stated: constitution repo 0 narrow with-suppress; boba DANGER_ROOTS 0 narrow with-suppress and 23 narrow except-pass; boba repo minus vendored 1 narrow with-suppress (a suppress(OSError)); narrow except-pass RETRACTED-AND-RESTATED 2026-08-26 per 11.4.201(9): the figure 97 previously recorded here reproduces under NO scope and is withdrawn. Measured replacements, each with its scope and both independently reproduced: 34 narrow except-pass git-tracked first-party (canonical); 50 narrow except-pass on-disk minus scratch dirs (the 'minus vendored' scope this sentence states). Brackets that explain the bad number: 87 ALL-except-pass git-tracked and 113 ALL-except-pass on-disk-minus-scratch straddle 97, so 97 was a class-scope conflation (narrow-vs-all), not a corpus-scope one. The 35 cited later in this record is the same measurement at git-tracked scope and agrees with 34 within one site. The 'every one idiomatic' claim was also false — the except-pass census contains SystemExit x2 (tests/unit/test_plugin_torrentscsv.py:305,328), which is not a benign tolerance. CORRECTION 2026-08-26: a 'KeyboardInterrupt x1' previously written in this sentence was itself unsourced and is WITHDRAWN — it reproduces at NEITHER stated scope. Independent AST count over git-tracked *.py: ZERO genuine 'except KeyboardInterrupt: pass'. The only genuine instance in the checkout is .worktrees/ci-split-workflows/tests/unit/test_main.py:63 — a sibling-agent scratch worktree, i.e. the exact observer-contamination class (11.4.201(10)) this very record teaches to exclude — and the only main-tree textual match (tests/unit/test_graceful_shutdown.py:165) sits inside a triple-quoted string literal, a carrier not code (11.4.201(7)(a)). Recorded because the error is instructive: it was introduced BY the retraction that removed the 97, so a correction is not exempt from the discipline it applies.
-
-Recorded as consumer DATA per §11.4.35 — the operator's stated choice, not an agent inference. Options not chosen are named so a future reader does not re-litigate a settled call.
-
---- prior item text follows ---
-
-RESIDUAL ASYMMETRY surfaced by the BOB-195 fix, reported rather than silently closed. After teaching the scanner With nodes, a BROAD suppress (Exception / BaseException) is detected with the same severity as try/except/pass. A NARROW suppress (suppress(FileNotFoundError)) is not - but the semantically identical narrow try/except FileNotFoundError: pass IS flagged. So ruff SIM105 rewriting a narrow handler still moves that site out of the gate's scope, a smaller version of the exact mechanism BOB-195 was filed to close.
-
-WHY IT WAS NOT CLOSED IN THAT PASS, with the measurement that decided it: the authoring agent reported 37 narrow suppress sites, all idiomatic. CORRECTION (2026-08-26, independent review): that figure DOES NOT REPRODUCE and this conductor propagated it into this item as fact without verifying - the error is mine, not the reviewer's. Measured: the constitution repo has 0 narrow `with suppress(X)` sites; boba first-party has exactly 1 (a suppress(OSError)). The nearest corpus match is 35 narrow `except X: pass` handlers in boba first-party - a DIFFERENT construct - and their class census (OSError x7, ImportError x7, BrokenPipeError x3, RuntimeError x3, ValueError x2, FileNotFoundError x2, IndexError x2, SystemExit x2) contradicts 'every one idiomatic': a bare `SystemExit: pass` is not a benign tolerance. The two populations must not be conflated, and the distinction is the whole substance of this item. The false-positive-storm argument therefore rests on the 35 narrow except-handlers, not on 37 suppress sites, and its strength should be re-judged on that basis, which under 11.4.201(1) is a FAIL-bluff of equal severity to the gap it would close, and worse in practice because it trains readers to ignore the gate. The subagent recorded the asymmetry in the gate header as a known gap rather than shipping the storm. That was the right call, and is why this is a separate tracked item rather than an unfinished one.
-
-THE DECISION IS THE OPERATOR'S, mirroring BOB-195 itself: (a) accept the asymmetry permanently, with the gate header stating it so no reader mistakes the count for a census; (b) flag narrow suppress ONLY when combined with an irreversible capability (delete / truncate / kill), catching the shape that actually matters and leaving the 37 idiomatic sites quiet; (c) flag all narrow suppress and absorb the 37 via a justified exemption list like the LAN-route guard uses.
-
-RELATED FACT worth carrying: the five newly-visible production sites in download-proxy/src/merge_service/search.py (1294, 1303, 1322, 1329, 1333) wrap proc.kill / os.killpg / proc.wait in the BOB-126 cleanup path. The conductor verified the 11.4.263 pgid guard IS present and correct at both killpg sites - _pid and _pgid each checked isinstance(int) and > 1 before the syscall, with the BOB-126 forensic reasoning inline - so those sites are true-by-the-scanner's-definition but SAFE in fact, and want a justified exemption entry rather than a code change.
-
-## BOB-200 — cm_dangerous_combination_fail_closed gate reads a dead find(1) as a topology SKIP (exit 0) instead of failing closed
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** Medium
-
-WHAT: scripts/gates/cm_dangerous_combination_fail_closed.sh builds its scan file list with find(1). If find itself DIES (permission error, resource exhaustion, interrupted), the gate receives an EMPTY file list and interprets that as 'no files in scope' -> honest topology SKIP -> exit 0. The failure IS loud on stderr but SILENT in the exit code, so any caller gating on exit status reads a dead instrument as a clean corpus.
-
-WHY IT MATTERS: this is a textbook 11.4.201(6) FALSE-NULL -- a blind instrument and a clean artifact return the identical quiet zero. It is also a 11.4.252 fail-OPEN on exactly the 'cannot enumerate the corpus' condition where the gate's own stated discipline is to fail CLOSED. A gate that cannot see must refuse, not pass.
-
-AFFECTED SCOPE: constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh (the find invocation and the empty-list branch). PRE-EXISTING -- NOT introduced by the BOB-195 change; found by the independent round-2 reviewer while reviewing that change and explicitly scoped OUT of its remediation.
-
-REPRODUCTION: make find(1) fail during the gate run (unreadable scan root, or a find stub returning non-zero with empty stdout) and observe the gate exit 0 with a topology-SKIP message, indistinguishable from a genuinely empty corpus.
-
-ACCEPTANCE: (1) the gate distinguishes 'find succeeded and found zero files' from 'find failed' -- check find's exit status, not only its output; (2) a failed enumeration is a FINDING (non-zero exit) naming the unresolved precondition, never a SKIP; (3) a genuinely empty scan root still SKIPs honestly at exit 0 -- the 11.4.201(1) golden-FALSE guard, so the fix does not become a false-positive refusal; (4) paired 1.1 mutation: restore the swallow-find-failure behaviour and the new fixture MUST fail.
 
 ## BOB-211 — LATENT + OPERATOR-GATED: on a uid-flattening mount whose uid is not the operator, chown fails EPERM with no fstype-aware diagnosis, and fmask/dmask silently defeat the preserve_mode 600 contract
 

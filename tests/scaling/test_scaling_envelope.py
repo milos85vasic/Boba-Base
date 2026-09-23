@@ -901,22 +901,13 @@ class TestRateLimitAdmissionEnvelope:
                 f"remaining={obs['remaining']}"
             )
 
-    # KNOWN-OPEN DEFECT (filed by the coordinator as BOB-167), observed
-    # on every run. `strict=True` is load-bearing: the moment both SSE
-    # routes carry the same class this flips to XPASS and FAILS the run,
-    # forcing this marker's removal. A self-clearing record, not a
-    # suppression — it stays visible as `xfailed` in every report
-    # (§11.4.226).
-    # SKIP-OK: BOB-167 — evidence docs/qa/BOB-109/rate_limit_class_wiring.json
-    @pytest.mark.xfail(
-        strict=True,
-        reason=(
-            "BOB-167: two SSE routes, one rate-limit class. "
-            "/api/v1/search/stream carries @_rl('sse_stream') and serves 5; "
-            "the sibling /api/v1/theme/stream carries no limiter and falls "
-            "to the 120/minute default."
-        ),
-    )
+    # BOB-167 CLOSED. Both SSE routes now carry `@_rl("sse_stream")` (routes.py
+    # :161, :990) — confirmed live against a freshly `--reload-python`'d
+    # container (§11.4.108 runtime-signature on a clean target): the
+    # `xfail(strict=True)` this test used to carry flipped to
+    # `XPASS(strict)` the moment the reload landed, which is exactly the
+    # self-clearing behaviour that marker was designed to force. Marker
+    # removed per its own documented condition, not silently.
     @pytest.mark.timeout(60)
     def test_sse_shaped_routes_serve_a_consistent_limit_class(
         self, merge_service_live_or_skip

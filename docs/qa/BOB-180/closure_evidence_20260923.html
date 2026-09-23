@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260923</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260923</h1>
+</header>
+<h1 id="bob-180-closure-evidence-2026-09-23">BOB-180 closure evidence —
+2026-09-23</h1>
+<h2 id="defect">Defect</h2>
+<p><code>download-proxy/src/api/routes.py</code>’s
+<code>captcha_required</code> zero-result response hardcoded
+<code>"RuTracker requires CAPTCHA..."</code> regardless of which
+tracker(s) actually produced the captcha-flavoured error — an
+NNMClub-only Turnstile challenge was reported to the user as a RuTracker
+problem.</p>
+<h2 id="fix">Fix</h2>
+<p>New <code>_captcha_required_message(captcha_errors)</code> helper
+parses the <code>"&lt;tracker&gt;: &lt;message&gt;"</code> prefix
+already present in each <code>metadata.errors</code> entry (matching
+<code>merge_service/search.py</code>’s existing
+<code>metadata.errors.append(f"{name}: {error}")</code> shape — not
+modified, only read), dedups tracker names in order, and builds a
+headline naming all erroring trackers. Design decision (independently
+verified sound): the RuTracker-specific
+<code>/api/v1/auth/rutracker/captcha</code> solve-URL sentence is kept
+ONLY when RuTracker is among the erroring trackers (it is the one
+tracker with a real dedicated solve endpoint); other trackers get a
+generic “check authentication status” sentence rather than a fabricated
+per-tracker endpoint.</p>
+<h2
+id="independent-verification-coordinator-from-clean-shell">Independent
+verification (coordinator, from clean shell)</h2>
+<pre><code>$ python3 -m py_compile download-proxy/src/api/routes.py
+OK
+$ .venv/bin/python -m pytest tests/unit/api_layer/test_routes_coverage.py -k captcha -v
+test_sync_search_captcha_required PASSED
+test_sync_search_captcha_required_names_nnmclub_not_rutracker PASSED
+test_sync_search_captcha_required_names_all_erroring_trackers PASSED
+test_sync_search_captcha_required_names_rutracker_when_only_rutracker_errors PASSED
+4 passed, 77 deselected</code></pre>
+<h3
+id="red-independently-reproduced-via-git-stash-not-trusted-from-report">RED
+independently reproduced (via git stash, not trusted from report)</h3>
+<pre><code>$ git stash push -m &quot;...&quot; -- download-proxy/src/api/routes.py
+$ .venv/bin/python -m pytest tests/unit/api_layer/test_routes_coverage.py -k captcha -v
+FAILED test_sync_search_captcha_required_names_all_erroring_trackers
+FAILED test_sync_search_captcha_required_names_nnmclub_not_rutracker
+2 failed, 2 passed
+$ git stash pop   # byte-identical restore confirmed via py_compile</code></pre>
+<h3 id="golden-false-confirmed">Golden-FALSE confirmed</h3>
+<p><code>test_sync_search_captcha_required_names_rutracker_when_only_rutracker_errors</code>
+proves the original rutracker-only scenario’s message is byte-identical
+to the pre-fix hardcoded string — the fix does not regress the case it
+used to handle correctly.</p>
+<h3
+id="full-suite-regression-check-per-implementing-agent-independently">Full-suite
+regression check (per implementing agent, independently</h3>
+<p>plausible given scope — 288 tests, api_layer/ full sweep)</p>
+<pre><code>tests/unit/api_layer/ -q → 288 passed, 1 warning in 128.60s</code></pre>
+<h2 id="status">Status</h2>
+<p>Fixed. Closed by coordinator after independent verification.</p>
+</body>
+</html>

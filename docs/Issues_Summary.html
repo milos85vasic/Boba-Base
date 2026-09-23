@@ -190,7 +190,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>In progress</td>
-<td>11</td>
+<td>9</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -200,12 +200,12 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>11</td>
+<td>8</td>
 </tr>
 <tr>
 <td>Bug</td>
 <td>Ready for testing</td>
-<td>4</td>
+<td>3</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -215,7 +215,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Task</td>
 <td>Queued</td>
-<td>30</td>
+<td>29</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -225,7 +225,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>71</strong></td>
+<td><strong>64</strong></td>
 </tr>
 </tbody>
 </table>
@@ -796,86 +796,6 @@ adoption question below and the answer is recorded as consumer DATA –
 never an invented ratchet.</td>
 </tr>
 <tr>
-<td>BOB-163</td>
-<td>Bug</td>
-<td>In progress</td>
-<td>Medium</td>
-<td><strong>OPERATOR DECISION (2026-08-26, §11.4.66 interactive
-clarification): YES — 429 IS RESPONSIVE IF Retry-After IS
-WELL-FORMED</strong> A 429 carrying a VALID Retry-After header counts as
-the sibling endpoint being RESPONSIVE. Assertion (c) of the DDoS
-challenge accepts 2xx OR a well-formed 429 (positive integer seconds or
-valid HTTP-date — PARSED, not merely present/non-empty). DEGRADED
-remains: connection failure, timeout, any 5xx, and a 429 with absent or
-malformed Retry-After. RESIDUAL RISK, accepted knowingly and to be
-stated in the script source per §11.4.6: a genuinely wedged endpoint
-that happens to answer 429-with-Retry-After would pass — the Retry-After
-parse narrows that window, it does not close it. Options (b)
-limiter-aware drain and (c) exempt healthz probe were both offered and
-NOT chosen. STILL OPEN, not covered by this decision: the detector
-counts 429 only, not 503, though the script header says ‘429 (or
-equivalent)’; counting 503 would collide with the crash detector’s 5xx
-tally. Decide when BOB-111 lands limiters on :7185 and :7189. This
-answer is recorded as consumer DATA per §11.4.35 — it is the operator’s
-stated choice, not an agent inference, and supersedes any prior
-agent-chosen default on this question. Options not chosen are named
-above so a future reader does not re-litigate a settled call
-(§11.4.112(5) bounded-verdict discipline applied to decisions). — prior
-item text follows — <strong>Reported-Via:</strong> §11.4.202 reporting
-directive <code>bug</code> on 2026-08-21T19:41:08Z
-<strong>Reported-By:</strong> BOB-114 remediation, pre-existing defect
-surfaced by BOB-111 landing a real limiter <strong>What (the report,
-verbatim):</strong> PRE-EXISTING, NOT INTRODUCED – and proven so rather
-than asserted: git diff shows assertion (c) is BYTE-IDENTICAL to HEAD,
-and the failure reproduces against the unmodified HEAD script. What
-changed is not the challenge but the SYSTEM: BOB-111 appears at least
-partially delivered, because :7187 now returns real 429s where it
-previously returned none. :7185 and :7189 still produce zero 429s. This
-is a 11.4.248-class corrosion risk and that is why it is filed rather
-than left as a footnote: run_all_challenges.sh will now fail
-INTERMITTENTLY, and an intermittent red trains everyone to re-run until
-green, at which point a real regression is dismissed as ‘probably the
-flaky rate-limit one’. THE DECISION, which is an operator call under
-11.4.66 and which I deliberately did NOT invent: Does a 429 from a
-WORKING limiter count as the sibling endpoint being RESPONSIVE? (a) YES
-– a 429 proves the endpoint is alive and correctly protecting itself.
-Assertion (c) accepts 2xx OR 429, and only a connection failure / 5xx /
-timeout counts as degraded. Risk: a genuinely wedged endpoint that
-happens to answer 429 would pass. (b) NO – keep requiring 2xx, but make
-the challenge limiter-aware: drain or wait out the window before the
-sibling probe (retry-after is served, so the budget is knowable rather
-than guessed). (c) Probe siblings on a path the limiter exempts (a
-healthz-class route), so the isolation question is asked without
-spending the bucket. Recommendation with reasoning, not just a pick: (a)
-composed with a bounded liveness check – a 429 carrying a well-formed
-Retry-After IS evidence of a live, correctly-behaving service, and (b)
-makes the challenge slower and couples it to a window value that will
-drift. But the semantics of ‘responsive’ here are a product judgement,
-so the answer is recorded, not assumed. RELATED, stated as fact rather
-than folded in: the detector counts 429 only, not 503, though the script
-header says ‘429 (or equivalent)’. Counting 503 would collide with the
-crash detector’s 5xx tally. Worth deciding when BOB-111 lands limiters
-on :7185 and :7189. <strong>Affected scope / file-scope
-manifest:</strong> challenges/scripts/ddos_resilience_challenge.sh
-assertion (c) cross-endpoint isolation; run_all_challenges.sh which
-invokes it <strong>Reproduction / context:</strong> Assertion (c)
-requires a sibling-endpoint probe to answer ^2 (a 2xx). :7187 now
-enforces a real limiter (measured live: x-ratelimit-limit: 120,
-x-ratelimit-remaining: 86, retry-after: 45, server: uvicorn). A full
-challenge run sends roughly 250 requests to :7187, so sibling probes
-fired during the OTHER endpoints’ tiers land on an exhausted bucket and
-receive 429 – which assertion (c) scores as ‘endpoint degraded’.
-Timing-dependent: one run measured PASS=5 FAIL=2; the UNMODIFIED HEAD
-script against the same live stack ~30s later measured PASS=7 FAIL=0
-SKIP=2. <strong>Acceptance criteria:</strong> The operator has answered
-the classification question below, the answer is recorded as consumer
-DATA, and assertion (c) implements it. The challenge then produces the
-same verdict across 3 consecutive runs against a rate-limited stack
-(11.4.50 deterministic consistency), and the fix ships a paired 1.1
-mutation proving assertion (c) still catches a genuinely degraded
-sibling endpoint – narrowing it must not blind it (11.4.201(1)).</td>
-</tr>
-<tr>
 <td>BOB-164</td>
 <td>Bug</td>
 <td>In progress</td>
@@ -921,57 +841,6 @@ reconcile to the correct mechanism, never weaken the check). The
 existing tests/ux/ suite is the guard and already fails today, so the
 RED is captured – closure requires it flipping GREEN against the live
 surface, which is runtime-class evidence per 11.4.226.</td>
-</tr>
-<tr>
-<td>BOB-167</td>
-<td>Bug</td>
-<td>Queued</td>
-<td>Medium</td>
-<td>WHAT. download-proxy exposes two Server-Sent-Events routes. They are
-the same expensive class — long-lived connections that hold a worker and
-a generator for their lifetime — but only one is rate-limit classed:
-routes.py:801 <span class="citation"
-data-cites="router.get">@router.get</span>(‘/search/stream/{search_id}’)
-<span class="citation" data-cites="_rl">@_rl</span>(‘sse_stream’) &lt;-
-classed routes.py:150 <span class="citation"
-data-cites="router.get">@router.get</span>(‘/theme/stream’) async def
-stream_theme(…) &lt;- NO limiter decorator _rl(cls) resolves to
-limiter.limit(limit_for(cls)), so /search/stream is bound to the
-sse_stream class while /theme/stream falls through to the application
-default. Measured live on the running stack: /api/v1/theme/stream
-reports x-ratelimit-limit 120. PROVENANCE + A CORRECTION WORTH KEEPING
-(§11.4.6). This was surfaced by the BOB-109 scaling agent, whose report
-framed it as: ‘sse_stream_limit_decorator is defined and
-imported/applied nowhere … SSE falls through to the 120/minute default:
-24x less protected’. That framing is WRONG and was NOT filed as given.
-The agent searched for one symbol NAME; the wiring uses a different
-mechanism (<span class="citation"
-data-cites="_rl">@_rl</span>(‘sse_stream’)), and it IS applied — to
-/search/stream. Verified by reading routes.py:795-806 and the _rl helper
-at routes.py:46-51, with a control needle confirming other
-*_limit_decorator symbols show real usage in
-api/<strong>init</strong>.py so the zero-hit was not a blind search. The
-agent’s MEASUREMENT (120 on /theme/stream) was correct and is what makes
-this a real finding; its MECHANISM was not. Both halves are recorded so
-the next reader does not re-derive the same wrong cause. WHY IT MATTERS.
-An unclassed SSE endpoint is the cheapest way to pin server resources:
-each connection is held open, and the default class permits 120/min of
-them. The declared sse_stream class exists precisely because this route
-shape needs a tighter bound than ordinary GETs. ACCEPTANCE. (a) A
-decision, recorded, on whether /theme/stream belongs in the sse_stream
-class or genuinely warrants the default — this is a policy question, not
-automatically a bug to patch. (b) If it belongs in sse_stream, the
-decorator is applied and a test drives BOTH SSE routes and asserts each
-returns its INTENDED class limit from x-ratelimit-limit, so a future
-route added without a class is caught. (c) A guard that enumerates
-SSE-shaped routes and fails on any that carries no explicit rate-limit
-class — the general form, so the third SSE route does not repeat this.
-(d) Honest boundary: this does not claim 120/min is exploitable in this
-deployment; with network_mode host and no reverse proxy every caller
-shares the 127.0.0.1 bucket, which BOB-111 measured and recorded
-separately. NOT CLAIMED. No change made. The limit values were read from
-headers, never driven to exhaustion — the limiter is per-IP and shared
-with concurrent agents on this host (§11.4.119).</td>
 </tr>
 <tr>
 <td>BOB-168</td>
@@ -1056,36 +925,106 @@ doc to ship .html/.pdf twins. 286 of the 326 .html files under docs/
 </td>
 </tr>
 <tr>
-<td>BOB-200</td>
-<td>Bug</td>
+<td>BOB-196</td>
+<td>Task</td>
 <td>Queued</td>
-<td>Medium</td>
-<td>WHAT: scripts/gates/cm_dangerous_combination_fail_closed.sh builds
-its scan file list with find(1). If find itself DIES (permission error,
-resource exhaustion, interrupted), the gate receives an EMPTY file list
-and interprets that as ‘no files in scope’ -&gt; honest topology SKIP
--&gt; exit 0. The failure IS loud on stderr but SILENT in the exit code,
-so any caller gating on exit status reads a dead instrument as a clean
-corpus. WHY IT MATTERS: this is a textbook 11.4.201(6) FALSE-NULL – a
-blind instrument and a clean artifact return the identical quiet zero.
-It is also a 11.4.252 fail-OPEN on exactly the ‘cannot enumerate the
-corpus’ condition where the gate’s own stated discipline is to fail
-CLOSED. A gate that cannot see must refuse, not pass. AFFECTED SCOPE:
-constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh (the
-find invocation and the empty-list branch). PRE-EXISTING – NOT
-introduced by the BOB-195 change; found by the independent round-2
-reviewer while reviewing that change and explicitly scoped OUT of its
-remediation. REPRODUCTION: make find(1) fail during the gate run
-(unreadable scan root, or a find stub returning non-zero with empty
-stdout) and observe the gate exit 0 with a topology-SKIP message,
-indistinguishable from a genuinely empty corpus. ACCEPTANCE: (1) the
-gate distinguishes ‘find succeeded and found zero files’ from ‘find
-failed’ – check find’s exit status, not only its output; (2) a failed
-enumeration is a FINDING (non-zero exit) naming the unresolved
-precondition, never a SKIP; (3) a genuinely empty scan root still SKIPs
-honestly at exit 0 – the 11.4.201(1) golden-FALSE guard, so the fix does
-not become a false-positive refusal; (4) paired 1.1 mutation: restore
-the swallow-find-failure behaviour and the new fixture MUST fail.</td>
+<td>—</td>
+<td>WHAT: the CM-PLUGIN-COUNT pre-build gate takes 189 SECONDS to verify
+8 documented counts. Measured 2026-08-25: exceeded a 90s probe budget
+(rc=124), then a bounded re-run completed at ‘rc=0 wall=189s’ - it
+PASSES, it is simply slow. CAUSE, MEASURED NOT GUESSED: the marker loop
+at check_cm_plugin_count.sh:273-290 iterates EVERY LINE of every
+governed document and spawns a pipeline per line. Per iteration: ‘printf
+| grep -oE | wc -l | tr -d’ (4 processes) plus ‘printf | sed -n’ (2) =
+~6. Governed docs are AGENTS.md 689 + CLAUDE.md 494 +
+docs/features/Status.md 670 = 1853 lines, so ~11,118 process spawns,
+measuring ~102 ms/line. Classic per-line-subprocess shell trap. THE
+IRONY WORTH PRESERVING, because it explains why nobody simplified it:
+the in-code comment shows ‘-oE | wc -l’ was chosen DELIBERATELY over
+‘grep -c’ after measuring the §11.4.201(12) footgun - on this host
+(ugrep 7.8.4) ‘grep -coE’ returned 3 at top level but 1 inside a ‘set
+-euo pipefail’ subshell, a context-dependent reading. The correctness
+fix is right and must be kept; it is the PER-LINE application of it that
+costs the three minutes. HYPOTHESIS REFUTED, recorded so nobody re-walks
+it: this is NOT worktree traversal. The gate’s find is scoped to
+$PLUGINS_DIR (:224), so the five agent worktrees are outside its walk.
+That guess was raised on BOB-194 and is dead. LIKELY FIX (unverified,
+stated as a candidate not a conclusion): pre-filter with ONE grep for
+lines containing ‘CM-PLUGIN-COUNT:’ before entering the loop, reducing
+~1853 iterations to the ~8 lines that carry a marker, while leaving the
+per-line parsing logic - and its footgun-avoiding form - completely
+unchanged. WHY IT MATTERS beyond impatience: this gate is on the
+pre-build critical path, and CLAUDE.md leans on it as the mechanical
+authority for the three distinct plugin rosters (43 curated / 43 engines
+/ 12 bootstrap) whose conflation was BOB-149. A gate slow enough to
+tempt anyone into skipping it protects nothing. ACCEPTANCE: runtime
+reduced with the counts and the footgun-avoiding parse preserved
+byte-for-byte in behaviour, proven by the existing paired mutation still
+biting plus a before/after wall-clock recorded. §11.4.6: nothing here
+questions the gate’s VERDICTS - only its runtime.</td>
+</tr>
+<tr>
+<td>BOB-197</td>
+<td>Bug</td>
+<td>In progress</td>
+<td>—</td>
+<td><strong>OPERATOR DECISION (2026-08-26, §11.4.66): GENERATE THE TOKEN
+AND ARM IT</strong> The conductor generates a 32-byte random token and
+writes BOBA_API_TOKEN into .env; the operator configures clients with
+it. DONE 2026-08-26: token generated via secrets.token_hex(32), appended
+to .env with a comment naming BOB-197 and the routes.py:83 env-gating
+fact, chmod 600, value shown to the operator ONCE and never written to
+any other file. Safety verified BEFORE writing (§11.4.30/§11.4.10): .env
+matched .gitignore:27 ’*.env’ and was untracked (needle-proven — the
+same matcher confirmed docker-compose.yml IS tracked, so the negative is
+real); a §9.2 pre-op backup was taken and is itself ignored; post-write
+re-check confirmed .env still ignored and absent from git status.
+Pre-store audit found the only tracked BOBA_API_TOKEN= occurrences are
+the docker-compose passthrough <span
+class="math inline">${BOBA_API_TOKEN:-} and prose in the leak-audit
+challenge — no literal value has ever been committed. STILL OWED, and
+the item stays open until it lands: the BOOT-TIME INVARIANT (§11.4.254)
+that refuses to start LAN-bound when the token is unset or empty.
+Without it the arming is a state fix, not a defect fix — §11.4.226(5) is
+explicit that a state-only repair cannot close a defect item. Options
+not chosen: operator sets it themselves with the invariant blocking
+until then; invariant warns first and blocks on a named date.  Recorded
+as consumer DATA per §11.4.35 — the operator's stated choice, not an
+agent inference. Options not chosen are named so a future reader does
+not re-litigate a settled call.  --- prior item text follows
+---  OPERATOR DECISION (2026-08-26): arm BOBA_API_TOKEN and keep
+0.0.0.0, backed by a BOOT-TIME invariant that refuses to start LAN-bound
+with the token unset. This item IS that invariant.  MEASURED FACT, not
+inference. download-proxy/src/api/routes.py:83 require_api_token() reads
+BOBA_API_TOKEN at request time and returns immediately when unset or
+empty. Its own docstring states it plainly: "BOBA_API_TOKEN unset/empty
+-&gt; return (OPEN). This is the DEFAULT and preserves the current
+no-auth contract + dev workflow". docker-compose.yml:237 passes
+BOBA_API_TOKEN=$</span>{BOBA_API_TOKEN:-}, so the container inherits
+empty unless the operator declares it. The operator .env does NOT
+declare it, needle-verified per 11.4.201(7)(b): the same matcher hit
+QBITTORRENT_DATA_DIR in the same file, so the miss is a real absence and
+not a blind read. The qbittorrent-proxy container was RUNNING and
+LAN-bound at measurement time. Consequence: the ten routes the BOB-102
+guard resolves as auth-wired are open in practice on a default deploy.
+WHY A STATIC GATE CANNOT COVER THIS. The BOB-102 gate asserts static
+route WIRING - that a Depends(require_api_token) marker exists on
+handler, decorator or router. It cannot assert runtime ARMING, which
+depends on an env var read per request. Claiming the static gate covers
+it would be exactly the bluff the gate exists to prevent (11.4.262:
+machine evidence must match the layer it claims). This is a boot-time
+invariant class per 11.4.254. ACCEPTANCE: a boot-time check that, when
+the listener is LAN-bound (not loopback), refuses to start with a
+non-zero exit and a named cause if BOBA_API_TOKEN is unset or empty, so
+the open state becomes UNREACHABLE rather than the default. Paired 1.1
+mutation: remove the check, prove the service starts LAN-bound-and-open.
+Golden-FALSE per 11.4.201(1): a loopback-bound listener with the token
+unset must NOT be refused, or the check becomes a false-positive refusal
+blocking legitimate dev work. 11.4.238 COVERAGE-ESCAPE NOTE: found by a
+subagent reading source during BOB-102 guard construction, NOT by the
+automated QA regime - which is itself the defect class 11.4.238 names.
+The boot-time check IS the new automated check that would have caught
+it.</td>
 </tr>
 <tr>
 <td>BOB-211</td>

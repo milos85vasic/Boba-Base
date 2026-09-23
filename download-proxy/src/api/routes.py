@@ -158,8 +158,19 @@ def put_theme(body: ThemeUpdate, _: None = Depends(require_api_token)):  # type:
 
 
 @router.get("/theme/stream")
+@_rl("sse_stream")
 async def stream_theme(request: Request):  # type: ignore[no-untyped-def]
     """SSE feed of theme updates.
+
+    BOB-167: classed ``sse_stream`` (not the looser application
+    ``default``). This route holds the SAME resource shape as
+    ``GET /search/stream/{search_id}`` below — a long-lived connection
+    that pins a worker + a generator for the connection's lifetime — so it
+    carries the same rate-limit class that shape already gets there. See
+    ``scripts/pre_build/check_cm_sse_route_rate_limit_classed.sh`` (the
+    general guard that enumerates every SSE-shaped route and fails the
+    build if any of them carries no explicit class, so this specific gap
+    cannot recur unnoticed on a future SSE route).
 
     Emits the current state immediately (so late subscribers catch up),
     then one ``event: theme`` line per PUT. A ``: keepalive`` comment
@@ -827,6 +838,61 @@ async def search_sync(request: SearchRequest, req: Request):  # type: ignore[no-
     )
 
 
+#: BOB-180: display-name casing for known trackers, used only for the
+#: operator-facing captcha diagnostic below -- source-of-truth tracker keys
+#: stay lowercase (merge_service.trackers.PRIVATE_TRACKER_DOMAINS + the
+#: "jackett" aggregator source), so this is a presentation-only mapping,
+#: never a second source of truth.
+_TRACKER_DISPLAY_NAMES: dict[str, str] = {
+    "rutracker": "RuTracker",
+    "kinozal": "Kinozal",
+    "nnmclub": "NNMClub",
+    "iptorrents": "IPTorrents",
+    "jackett": "Jackett",
+}
+
+
+def _captcha_required_message(captcha_errors: list[str]) -> str:
+    """BOB-180: derive the captcha_required headline from the tracker(s)
+    that actually erred with a CAPTCHA challenge, instead of hardcoding
+    "RuTracker" -- a search where the captcha-flavoured diagnostic came
+    from NNMClub's Turnstile (or any other tracker) must not tell the
+    operator to visit RuTracker's captcha endpoint for someone else's
+    problem.
+
+    Each `metadata.errors` entry the search orchestrator appends is shaped
+    "<tracker>: <message>" (merge_service/search.py:
+    ``metadata.errors.append(f"{name}: {error}")``), so the tracker name is
+    already present in the string -- parsed out here rather than plumbing a
+    new field through. An error string with no parseable "<tracker>: "
+    prefix (e.g. a synthetic/legacy value) falls back to a generic message
+    rather than guessing a tracker.
+    """
+
+    trackers: list[str] = []
+    for err in captcha_errors:
+        prefix, sep, _rest = err.partition(":")
+        name = prefix.strip().lower()
+        if sep and name and name not in trackers:
+            trackers.append(name)
+
+    if not trackers:
+        return "CAPTCHA required. Check the affected tracker's authentication status to resolve it."
+
+    display_names = ", ".join(_TRACKER_DISPLAY_NAMES.get(t, t.capitalize()) for t in trackers)
+    verb = "requires" if len(trackers) == 1 else "require"
+    if "rutracker" in trackers:
+        # RuTracker is the only tracker with a dedicated captcha-solve
+        # endpoint (see api/auth.py's /rutracker/captcha) -- keep pointing
+        # to it verbatim (this is also the original, pre-BOB-180 wording)
+        # rather than inventing an equivalent for trackers that don't have
+        # one (e.g. NNMClub's Turnstile has no /captcha proxy).
+        action = "Use /api/v1/auth/rutracker/captcha to solve it."
+    else:
+        action = "Check the tracker's authentication status to resolve it."
+    return f"{display_names} {verb} CAPTCHA. {action}"
+
+
 async def _assemble_sync_payload(orch, request, req, metadata) -> str:  # type: ignore[no-untyped-def]
     """Build the `/search/sync` JSON body (string) from completed search
     metadata. Extracted so the streaming heartbeat wrapper can run it as a
@@ -915,7 +981,7 @@ async def _assemble_sync_payload(orch, request, req, metadata) -> str:  # type: 
                 "trackers_searched": metadata.trackers_searched,
                 "errors": metadata.errors,
                 "tracker_stats": metadata.to_dict()["tracker_stats"],
-                "message": "RuTracker requires CAPTCHA. Use /api/v1/auth/rutracker/captcha to solve it.",
+                "message": _captcha_required_message(captcha_errors),
                 "started_at": metadata.started_at.isoformat(),
                 "completed_at": metadata.completed_at.isoformat() if metadata.completed_at else None,
             }

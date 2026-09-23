@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260923</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260923</h1>
+</header>
+<h1 id="bob-167-closure-evidence-2026-09-23">BOB-167 closure evidence —
+2026-09-23</h1>
+<h2 id="defect">Defect</h2>
+<p>Two Server-Sent-Events routes in
+<code>download-proxy/src/api/routes.py</code> — the same expensive
+resource-holding shape — were asymmetrically classed:
+<code>/search/stream/{search_id}</code> carried
+<code>@_rl("sse_stream")</code>, <code>/theme/stream</code> carried no
+limiter decorator and fell through to the 120/min application default
+(24x looser).</p>
+<h2
+id="decision-coordinator-11.4.101-reversible-evidence-based">Decision
+(coordinator, §11.4.101 — reversible, evidence-based)</h2>
+<p><code>/theme/stream</code> belongs in the <code>sse_stream</code>
+class, matching its sibling route’s existing shape exactly.</p>
+<h2 id="fix">Fix</h2>
+<ul>
+<li><code>@_rl("sse_stream")</code> added to <code>/theme/stream</code>
+(routes.py:161).</li>
+<li>New general guard
+<code>scripts/pre_build/check_cm_sse_route_rate_limit_classed.sh</code>
+(+ AST-based <code>sse_route_rate_limit_class_analyzer.py</code>)
+enumerates every SSE-shaped route (both the inline
+<code>StreamingResponse(media_type=...)</code> idiom and the shared
+<code>create_streaming_response(...)</code> helper) and FAILs the build
+if any carries no explicit rate-limit class — so a future third SSE
+route cannot silently repeat this gap.</li>
+<li>Two new test files
+(<code>tests/unit/api_layer/test_bob167_sse_rate_limit_classification.py</code>,
+<code>tests/unit/api_layer/test_bob167_sse_route_rate_limit_gate.py</code>,
+10 tests total) covering both routes’ classification, the general gate’s
+golden-good/golden-bad fixtures (6 shapes including a non-SSE
+<code>StreamingResponse</code> negative control and a zero-SSE-route
+ERROR-not- silent-PASS guard), and a permanent in-memory paired-mutation
+regression test that mechanically strips the fix and asserts the gate
+re-fails.</li>
+</ul>
+<h2
+id="independent-verification-coordinator-from-clean-shell">Independent
+verification (coordinator, from clean shell)</h2>
+<h3 id="diff-scope-confirmed-minimal">Diff scope confirmed minimal</h3>
+<pre><code>download-proxy/src/api/routes.py | 11 +++++++++++</code></pre>
+<p>Plus 4 new files (gate wrapper, analyzer, 2 test files) — matches the
+implementing agent’s own report exactly.</p>
+<h3
+id="red-independently-reproduced-via-git-stash-not-trusted-from-report">RED
+independently reproduced (via git stash, not trusted from report)</h3>
+<pre><code>$ git stash push -m &quot;...&quot; -- download-proxy/src/api/routes.py
+$ bash scripts/pre_build/check_cm_sse_route_rate_limit_classed.sh
+FAIL(CM-SSE-ROUTE-RATE-LIMIT-CLASSED): 1 unclassed SSE-shaped route(s) of 2 resolved.
+$ .venv/bin/python -m pytest tests/unit/api_layer/test_bob167_sse_rate_limit_classification.py -q
+1 failed, 1 passed
+$ git stash pop   # byte-identical restore confirmed via py_compile</code></pre>
+<h3 id="green-independently-confirmed-unit-level">GREEN independently
+confirmed (unit level)</h3>
+<pre><code>$ bash scripts/pre_build/check_cm_sse_route_rate_limit_classed.sh
+PASS(CM-SSE-ROUTE-RATE-LIMIT-CLASSED): all 2 SSE-shaped route(s) carry an explicit rate-limit class.
+$ .venv/bin/python -m pytest tests/unit/api_layer/test_bob167_sse_rate_limit_classification.py tests/unit/api_layer/test_bob167_sse_route_rate_limit_gate.py -q
+10 passed</code></pre>
+<h3
+id="live-runtime-signature-the-strongest-evidence-tier-11.4.108-beyond">LIVE
+RUNTIME SIGNATURE — the strongest evidence tier (§11.4.108), beyond</h3>
+<p>what the implementing agent’s own scope covered:</p>
+<p>A pre-existing <code>xfail(strict=True)</code> test
+(<code>tests/scaling/test_scaling_envelope.py::TestRateLimitAdmissionEnvelope::test_sse_shaped_routes_serve_a_consistent_limit_class</code>),
+authored by the coordinator when BOB-167 was originally filed, was
+flagged by the implementing agent as an out-of-scope concern: its
+<code>strict=True</code> marker is deliberately load-bearing (its own
+comment: “the moment both SSE routes carry the same class this flips to
+XPASS and FAILS the run, forcing this marker’s removal”). The
+coordinator investigated this rather than leaving it as a residual
+gap:</p>
+<ol type="1">
+<li><p>The merge service was live (curl 200) but still serving PRE-fix
+code — running the xfail test against it produced genuine
+<code>XFAIL</code> (not <code>XPASS</code>), confirming the source fix
+alone does not update a running container (the exact
+SOURCE→ARTIFACT→RUNTIME distinction §11.4.108 exists to catch).</p></li>
+<li><p>Reloaded via the project’s own sanctioned mechanism:
+<code>./start.sh --reload-python</code> — clears
+<code>__pycache__</code> inside <code>qbittorrent-proxy</code> and
+restarts the container (CLAUDE.md-documented path, not a raw
+podman/docker command).</p></li>
+<li><p>Verified served content matches committed code (cache-bust
+guard):
+<code>podman exec qbittorrent-proxy grep -n '@_rl("sse_stream")' /config/download-proxy/src/api/routes.py</code>
+→ both routes confirmed present in the running container.</p></li>
+<li><p>Re-ran the xfail test:</p>
+<pre><code>FAILED ... [XPASS(strict)] BOB-167: two SSE routes, one rate-limit class...</code></pre>
+<p>Genuine <code>XPASS(strict)</code> — live, runtime proof the fix
+works against the real running service, not just unit-level
+mocks.</p></li>
+<li><p>Removed the now-obsolete <code>@pytest.mark.xfail(...)</code>
+decorator (its own documented self-clearing condition, exactly as
+designed) and confirmed the test PASSES cleanly:</p>
+<pre><code>test_sse_shaped_routes_serve_a_consistent_limit_class PASSED</code></pre></li>
+<li><p>3x determinism, live stack:</p>
+<pre><code>run 1: 1 passed in 0.24s
+run 2: 1 passed in 0.26s
+run 3: 1 passed in 0.26s</code></pre></li>
+</ol>
+<h2 id="honest-boundary">Honest boundary</h2>
+<p>Per the item’s own criterion (d): no claim is made that 5/minute (or
+the previous 120/minute) is itself an adequate limit value for either
+route in this deployment — this closure is scoped purely to the
+classification symmetry gap.</p>
+<h2 id="status">Status</h2>
+<p>Fixed. Closed by coordinator after independent verification at BOTH
+the unit-test layer AND a live-runtime-signature layer beyond the
+implementing agent’s own authorized scope.</p>
+</body>
+</html>
