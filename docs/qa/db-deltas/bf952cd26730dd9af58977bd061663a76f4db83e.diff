@@ -1,0 +1,54 @@
+# Differential SQLite Dump — docs/workable_items.db
+# §11.4.226 evidence-class-at-closure / §11.4.95 SSoT / §11.4.115(F) machine-written evidence
+# §11.4.209 review IMPORTANT-2 remedy — task tracker #79
+#
+# Commit:    bf952cd26730dd9af58977bd061663a76f4db83e
+# Parent:    c67bcec13ab96ef1540ca377023ff0a484832415
+# Generated: 2026-09-25T18:45:22Z
+# Tool:      sqlite3 3.50.6
+#
+## Row counts (table: before -> after)
+doc_segments                    247 -> 247         [same]
+firebase_metadata                 0 -> 0           [same]
+item_history                    564 -> 564         [same]
+items                           245 -> 245         [same]
+logic_groups                      0 -> 0           [same]
+meta                              4 -> 4           [same]
+obsolete_details                  2 -> 2           [same]
+operator_block_details            6 -> 6           [same]
+sqlite_sequence                   3 -> 3           [same]
+test_diary                       16 -> 17          [CHANGED]
+#
+## meta table (full content)
+### before
+schema_version|6|2026-06-16 08:12:32
+last_sync_direction|md-to-db|2026-08-21 18:39:28
+last_sync_timestamp|2026-08-21 18:39:28|2026-06-16 08:12:32
+integrity_hash||2026-06-16 08:12:32
+### after
+schema_version|6|2026-06-16 08:12:32
+last_sync_direction|md-to-db|2026-08-21 18:39:28
+last_sync_timestamp|2026-08-21 18:39:28|2026-06-16 08:12:32
+integrity_hash||2026-06-16 08:12:32
+#
+## Full logical .dump unified diff (before -> after)
+#
+--- /tmp/tmp.WO836Jayfv/before.sql	2026-09-25 20:45:22.480057713 +0200
++++ /tmp/tmp.WO836Jayfv/after.sql	2026-09-25 20:45:22.491057735 +0200
+@@ -684,6 +684,7 @@
+ INSERT INTO test_diary VALUES(14,'BOB-161','2026-08-21T21:21:48Z','AI-agent','SKIP','Measured the CM-NO-FAIL-OPEN-SKIP claim. The name resolves in exactly two places: constitution/scripts/gates/gate_ledger_prev_names.txt:347 (the §11.4.227(A) previously-known-gate-names registry) and three sites in tests/e2e/test_live_stack_evidence.py — all three of which are COMMENTS. Per §11.4.227(A) prose carriers never count as implementation, so the gate NAME is genuinely unimplemented. Control needle: the same query resolves CM-CLOSURE-SEAM-BINDS to two EXECUTABLE sites (scripts/pre_build_verification.sh and scripts/pre_build/check_cm_closure_seam_binds.sh), so the carrier-only result is a real distinction and not a blind query.','The distinction that matters, and which the item as filed does not draw: the gate NAME is unimplemented, but the BEHAVIOUR is guarded. tests/e2e/test_live_stack_evidence.py:252-262 really does assert it — on a non-authenticated non-success result it calls _auth_failure_is_definitive() and pytest.fail()s on a definitive class, with the comment recording that the OLD code skipped unconditionally and asserted ''transient outage'' as fact, turning rejected credentials (upstream_http_403) and a broken container (plugin_env_missing) into PASS-counting SKIPs. So this is a ledger/naming gap, not a coverage hole. Conflating the two would be wrong in either direction: reporting it as unguarded overstates the risk, and closing it because the behaviour is tested would leave the §11.4.227(A) ledger permanently inaccurate.','No change. Item re-scoped by measurement: the fix is to either implement a named gate asserting the fail-open invariant, or register an explicit deferral citing test_live_stack_evidence.py as the behavioural cover — §11.4.227(A) requires one or the other, and ''the behaviour is tested somewhere'' is not by itself a valid ledger entry.',0,NULL,NULL,NULL,'gate_ledger','2026-08-21 21:21:48');
+ INSERT INTO test_diary VALUES(15,'BOB-174','2026-08-22T10:25:24Z','AI-agent','SKIP','The BOB-173 reviewer''s mutation R2 narrowed _save_hooks from `except Exception` to `except OSError` and SURVIVED all 17 tests. So the non-OSError arm of that handler is unpinned: the guard suite proves the I/O failure path is honest, but nothing pins the serialisation failure path. Failing scenario under the mutant: a caller hands _save_hooks a non-JSON-serialisable value; open("w") has ALREADY truncated hooks.json; json.dump raises TypeError, which escapes unlabelled; the endpoint''s `except HookPersistenceError` misses it, so a 500 arrives only via the global handler at api/__init__.py:186-189 — after the store has been left a truncated fragment.','Classified MINOR rather than IMPORTANT because the reviewer PROVED the path unreachable via the API today rather than assuming it (§11.4.194(2)): every persisted field is parsed-JSON body content, str(uuid4()), an isoformat string, a bool, or a ge/le-bounded int — none can carry a non-serialisable value. It becomes reachable the moment a future caller persists anything richer.','Filed here rather than against BOB-173 on the reviewer''s recommendation, because the truncated-fragment half is precisely this item''s chain: truncate -> _load_hooks swallows the corrupt file to [] -> the next save destroys the survivors. The three-line pin (`with pytest.raises(HookPersistenceError): _save_hooks([{"x": object()}])`) should land alongside the atomic-write fix, since together they close both the reporting and the integrity halves of the same failure. Also confirmed by the reviewer: theme_state.py:113-126 already carries the correct donor pattern (mkstemp + fsync + os.replace) — reuse it, do not re-invent (§11.4.28).',0,NULL,NULL,NULL,'hook_persistence','2026-08-22 10:25:24');
+ INSERT INTO test_diary VALUES(16,'BOB-097','2026-09-25T14:34:25Z','AI-agent','FAIL','Independently re-verified the crashed subagent''s 3 DDoS-coverage test files. 2/3 clean: test_auth_stress_chaos.py (7 tests, 1.71s, all PASS) and test_download_trigger_stress_chaos.py (8 tests, 1.65s, all PASS) -- both committed as genuine BOB-097 progress. 1/3 genuinely broken: test_sse_stream_stress_chaos.py::TestThemeStreamBurstIsRefusedNotServed::test_burst_of_stream_opens_is_refused_past_the_limit_with_no_5xx hangs indefinitely (reproduced 3x: original dispatch >13min, retry >13min, isolated re-run needed a hard ''timeout 20'' wrapper to terminate it at all). Root cause (traced via pytest-timeout --timeout-method=thread stack dump): the test opens ''with c.stream(...)'' against a starlette TestClient SSE endpoint with no client-side read timeout; the call blocks deep inside concurrent.futures.Future.result() -> threading.Condition.wait() -> waiter.acquire() while portal.call() invokes the FastAPI SSE handler in an anyio worker thread -- a genuine C-level lock acquire that pytest-timeout''s thread-based interrupt CANNOT break (the well-known Python limitation: a thread blocked in a C-level lock.acquire() is not interruptible by an injected exception). NOT committed. BOB-097 stays Queued/incomplete: the SSE stress-chaos coverage this item asks for still needs a correct implementation (bounded byte/event read count or an explicit httpx timeout= on the stream() call, plus investigating whether the app''s own SSE handler has a connection-limit-refusal path that never fires in test conditions).','This is exactly why crashed-subagent work is never trusted without independent re-verification -- one of the three files silently didn''t work at all, would have hung the CI/pre-build sweep indefinitely if committed and run automatically.','status unchanged',0,NULL,NULL,NULL,'ddos_test_authoring','2026-09-25 14:34:25');
++INSERT INTO test_diary VALUES(17,'BOB-246','2026-09-25T18:44:19Z','AI-agent','FAIL','Second, distinct symptom of the same commit-push-all.sh message-handling class found 2026-09-25: a commit message containing markdown-style single-backtick inline code (e.g. the literal text `|| true`) had that exact span silently stripped from the landed commit message (git log -1 --format=%B c67bcec shows ''the same  guard'' where ''the same `|| true` guard'' was written) -- something in the wrapper''s own message-handling path interpreted the backtick pair as old-style shell command substitution. Checked 4 prior same-session commits with no backticks in their messages: zero instances found, so this is narrowly scoped to messages containing backtick-quoted inline code specifically, not a universal corruption. Impact so far: purely cosmetic (one commit''s message lost one inline-code span; the commit''s actual file diff/content is completely unaffected, git commit messages are metadata only). Not yet root-caused to an exact line in commit-push-all.sh; noted here as a second known symptom for whoever investigates BOB-246''s underlying message-handling defect class, not fixed in this pass.','Workaround for future commit messages this session: avoid single-backtick-quoted inline code spans in commit messages; use plain text or double-quotes instead until root-caused.','status unchanged',0,NULL,NULL,NULL,'commit_message_handling','2026-09-25 18:44:19');
+ CREATE TABLE IF NOT EXISTS "items" (
+     atm_id           TEXT NOT NULL,
+     type             TEXT NOT NULL,
+@@ -1240,7 +1241,7 @@
+ INSERT INTO obsolete_details VALUES('BOB-151','2026-09-25','duplicate-of','BOB-223','docs/qa/BOB-223/closure_evidence_20260925.md');
+ INSERT INTO sqlite_sequence VALUES('item_history',565);
+ INSERT INTO sqlite_sequence VALUES('doc_segments',1765);
+-INSERT INTO sqlite_sequence VALUES('test_diary',16);
++INSERT INTO sqlite_sequence VALUES('test_diary',17);
+ CREATE VIEW test_diary_summary AS
+ SELECT
+     d.atm_id                                                   AS atm_id,
