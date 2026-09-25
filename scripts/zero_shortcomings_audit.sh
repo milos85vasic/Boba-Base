@@ -128,7 +128,7 @@ main() {
     case "$mode" in
         -h|--help|"") usage; [[ "$mode" == "" ]] && return 1 || return 0 ;;
         enumerate) shift; cmd_enumerate "$@" ;;
-        verify-closure) shift; print_error "verify-closure: not yet implemented (Task 5)"; return 2 ;;
+        verify-closure) shift; cmd_verify_closure "$@" ;;
         standing-check) shift; print_error "standing-check: not yet implemented (Task 7)"; return 2 ;;
         *) print_error "unknown mode: $mode"; usage; return 1 ;;
     esac
@@ -140,5 +140,66 @@ count_blocked_with_conditions() {
         "SELECT i.atm_id, b.unblock_condition FROM items i
          JOIN operator_block_details b ON b.atm_id = i.atm_id
          WHERE i.status = 'Operator-blocked';"
+}
+
+AUDIT_QA_ROOT="${AUDIT_QA_ROOT:-$REPO_ROOT/docs/qa}"
+
+cmd_verify_closure() {
+    local item_id="${1:-}"
+    local reopen_on_mismatch=false
+    shift || true
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --reopen-on-mismatch) reopen_on_mismatch=true; shift ;;
+            *) print_error "verify-closure: unknown option: $1"; return 1 ;;
+        esac
+    done
+    if [[ -z "$item_id" ]]; then
+        print_error "verify-closure: an item id is required"
+        return 1
+    fi
+
+    # `|| true` guards against `find` exiting non-zero when the target
+    # directory does not exist at all (GNU find: "No such file or
+    # directory"); under this script's `set -euo pipefail`, an unguarded
+    # pipeline here would otherwise abort the whole script with a bare
+    # exit 1 BEFORE the `-z "$evidence_file"` check below ever runs,
+    # silently short-circuiting the deliberate "no evidence -> exit 2"
+    # contract (root-caused, not guessed, per §11.4.102/§11.4.201(12)).
+    local evidence_file
+    evidence_file="$(find "$AUDIT_QA_ROOT/$item_id" -maxdepth 1 -name 'closure_evidence_*.md' 2>/dev/null | head -1)" || true
+    if [[ -z "$evidence_file" ]]; then
+        print_error "verify-closure: no recorded evidence for $item_id under $AUDIT_QA_ROOT/$item_id"
+        return 2
+    fi
+
+    local recorded_command recorded_summary
+    recorded_command="$(grep -oP '(?<=\*\*Command:\*\* `).*(?=`)' "$evidence_file" | head -1)"
+    recorded_summary="$(grep -oP '(?<=\*\*Result Summary:\*\* ).*' "$evidence_file" | head -1)"
+
+    if [[ -z "$recorded_command" ]]; then
+        print_error "verify-closure: $evidence_file has no **Command:** field to re-run"
+        return 2
+    fi
+
+    # Review Focus item 3: compare the SEMANTIC result_summary, never raw
+    # bytes — a legitimately time-varying command (a timestamp, a duration)
+    # would otherwise false-positive-reopen every time (§11.4.201(1)).
+    local fresh_summary
+    fresh_summary="$(eval "$recorded_command")"
+
+    if [[ "$fresh_summary" == "$recorded_summary" ]]; then
+        print_success "verify-closure: $item_id reproduced its recorded evidence"
+        return 0
+    fi
+
+    print_error "verify-closure: $item_id MISMATCH — recorded '$recorded_summary', got '$fresh_summary'"
+    if [[ "$reopen_on_mismatch" == "true" ]]; then
+        print_warning "verify-closure: reopening $item_id (--reopen-on-mismatch)"
+        "$WORKABLE_ITEMS_BIN" reopen --id "$item_id" --db "$WORKABLE_ITEMS_DB" \
+            --why "test-failed" --who "AI" --when "$(date -u '+%Y-%m-%d')" \
+            --incident "$evidence_file" || true
+    fi
+    return 1
 }
 main "$@"
