@@ -279,6 +279,24 @@ cmd_verify_closure() {
 # name-preserving redaction the brief for this task requires, using the SAME
 # cited keyword vocabulary rather than the whole-file blank-out strategy.
 #
+# EXTENSION (Task 5C security review, agent a3c502c254c1b2ffc, Critical
+# finding): the cited library's keyword alternation alone does not cover
+# this project's own documented credential-variable surface --
+# BOBA_MASTER_KEY ("Loss = total credential loss", CLAUDE.md) does not
+# contain "api_key"/"access_token"/"auth_token" as a substring; BOBA_API_TOKEN
+# likewise (no "access"/"auth" prefix on "token"); and per-tracker
+# `<TRACKER>_COOKIES` ("cookie values NEVER enter logs", CLAUDE.md) is a
+# shape the upstream credential_scan_lib.sh detector never covers either
+# (confirmed absent there by direct grep). Per §11.4.251 (cite, don't fork),
+# this is NOT a second independently-invented detector: the cited generic
+# keyword set is kept in full, and three bare keywords -- `key`, `token`,
+# `cookies` -- are added as an explicit, documented project-specific
+# extension covering exactly the named gap, not a silent divergent pattern
+# set. Bare `key`/`token` favor recall over precision (a non-credential
+# "...key=" or "...token=" value is over-redacted rather than a real secret
+# passing through) -- the same tradeoff the cited `secret` keyword already
+# makes.
+#
 # Prints <text> to stdout with the VALUE half of every
 # `<keyword><sep><value>` credential-shaped match replaced with
 # `<redacted-per-§11.4.10>`; ordinary text with no such match passes through
@@ -286,10 +304,16 @@ cmd_verify_closure() {
 # required so RUTRACKER_PASSWORD / KINOZAL_PASSWORD / etc. match the
 # lowercase `password` alternation -- CLAUDE.md's own credential variable
 # list is exactly this shape (RUTRACKER_*, KINOZAL_*, NNMCLUB_*, IPTORRENTS_*,
-# BOBA_MASTER_KEY, BOBA_API_TOKEN -- every one of those names CONTAINS one of
-# the cited keywords).
+# BOBA_MASTER_KEY, BOBA_API_TOKEN, <TRACKER>_COOKIES -- every one of those
+# names CONTAINS one of the cited-or-extended keywords).
 audit_redact_before_write() {
-    local text="$1"
-    printf '%s' "$text" | sed -E 's/(password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret)([[:space:]]*[:=][[:space:]]*)[^[:space:]]+/\1\2<redacted-per-§11.4.10>/Ig'
+    # Minor finding, Task 5C security review (agent a3c502c254c1b2ffc): under
+    # this file's `set -euo pipefail`, `$1` on a no-argument call is an
+    # unbound-variable abort rather than a clear, callable-with-no-input
+    # no-op. No current caller invokes this with zero arguments, but a
+    # redaction helper failing loudly-but-uninformatively on empty input is
+    # itself worth hardening cheaply.
+    local text="${1:-}"
+    printf '%s' "$text" | sed -E 's/(password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret|key|token|cookies)([[:space:]]*[:=][[:space:]]*)[^[:space:]]+/\1\2<redacted-per-§11.4.10>/Ig'
 }
 main "$@"
