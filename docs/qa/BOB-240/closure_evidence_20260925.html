@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260925</h1>
+</header>
+<h1
+id="bob-240-closure-evidence-11.4.33-typestatus-mechanical-prevention-guard">BOB-240
+closure evidence — §11.4.33 Type↔︎Status mechanical-prevention guard</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-09-25T14:20:00Z <strong>Status:</strong> Fixed
+<strong>Location:</strong>
+<code>constitution/scripts/workable-items/cmd/workable-items/</code>
+(the Helix Universal Constitution’s own Go tooling, git submodule).
+<strong>Constitution HEAD at time of work:</strong>
+<code>25980c1c53ca5ec043b141984b6dba9ea0b2d75e</code>
+(2026-09-25T10:34:26+02:00) — the conductor performs the §11.4.26
+fetch/merge/push-to-all-upstreams commit for this submodule separately,
+outside this session’s scope. No
+<code>git add</code>/<code>commit</code>/<code>push</code> was executed
+inside <code>constitution/</code> by this session.</p>
+<h2 id="what-was-fixed">1. What was fixed</h2>
+<p><code>constitution/scripts/workable-items</code>’s <code>close</code>
+/ <code>update</code> subcommands accepted a <code>--status</code>
+keyword whose §11.4.33 closure vocabulary belongs to a DIFFERENT Type
+than the target item’s actual Type (e.g. a <code>Type=Task</code> item
+closed with <code>--status fixed</code>, the Bug-mapped word, instead of
+<code>--status completed</code>) — the exact mistake this session’s
+conductor made four times in a row (BOB-077/100/179/226) on a DB that
+already held 30+ historical instances of the same class (bulk-corrected
+in BOB-239). <code>validate</code> never checked this Type↔︎Status
+agreement either.</p>
+<p>Three surfaces now share ONE predicate
+(<code>typeStatusMismatch</code>, <code>crud.go</code>, derived from the
+pre-existing <code>closeStatusMap</code> so the status TEXT is never
+re-derived, §11.4.251):</p>
+<ol type="1">
+<li><strong><code>close</code></strong> (<code>crud.go</code>) — refuses
+a <code>--status</code> keyword whose Type-mapping mismatches the item’s
+Type, unless the keyword is <code>obsolete</code> (valid for ANY Type,
+criterion 5).</li>
+<li><strong><code>update</code></strong> (<code>mutate.go</code>) — the
+identical guard, scoped to a TERMINAL <code>--status</code>, so it
+composes cleanly with BOB-166/BOB-175’s existing location↔︎status guards
+rather than competing with them (see §4 below).</li>
+<li><strong><code>validate</code></strong> (<code>sync.go</code>,
+<code>typeStatusMismatches</code>) — a new full-table detective sweep
+over every Fixed-location item, catching rows minted before the guard
+existed or by raw SQL bypassing the CLI entirely.</li>
+</ol>
+<h2 id="exact-diff-applied">2. Exact diff applied</h2>
+<h3 id="a.-crud.go-new-shared-predicate-closecmd-guard-full-diff">2a.
+<code>crud.go</code> — new shared predicate + <code>closeCmd</code>
+guard (full diff)</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode diff"><code class="sourceCode diff"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">--- a/scripts/workable-items/cmd/workable-items/crud.go</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="dt">+++ b/scripts/workable-items/cmd/workable-items/crud.go</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="dt">@@ (immediately after closeStatusMap&#39;s declaration)</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="va">+// typeCloseKeyword is the §11.4.33 closed Type→close-keyword mapping BOB-240</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="va">+// enforces: which `close --status &lt;word&gt;` / `update --status &lt;word&gt;` keyword</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="va">+// is the ONLY correct one for each Type (Bug→fixed, Feature→implemented,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="va">+// Task→completed). Obsolete is deliberately ABSENT from this table — per</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="va">+// §11.4.90/§11.4.33 it is valid closure vocabulary for ANY Type (criterion 5),</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="va">+// so it is exempted explicitly in typeStatusMismatch rather than being a</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="va">+// fourth, always-true entry here.</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="va">+var typeCloseKeyword = map[string]string{</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="va">+   &quot;Bug&quot;:     &quot;fixed&quot;,</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="va">+   &quot;Feature&quot;: &quot;implemented&quot;,</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="va">+   &quot;Task&quot;:    &quot;completed&quot;,</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="va">+}</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="va">+// closeKeywordForStatus reverse-maps a terminal closed-set status TEXT back</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="va">+// onto its closeStatusMap keyword ...</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="va">+func closeKeywordForStatus(status string) string {</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="va">+   for k, m := range closeStatusMap {</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="va">+       if m.status == status {</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="va">+           return k</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="va">+       }</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="va">+   }</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="va">+   return &quot;&quot;</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="va">+}</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="va">+// typeStatusMismatch reports whether TERMINAL status ns violates the §11.4.33</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="va">+// Type↔Status mapping for typ ...</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="va">+func typeStatusMismatch(typ, ns string) (wantKeyword, wantStatus string, mismatch bool) {</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="va">+   if ns == closeStatusMap[&quot;obsolete&quot;].status {</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="va">+       return &quot;&quot;, &quot;&quot;, false</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="va">+   }</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="va">+   keyword, ok := typeCloseKeyword[typ]</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="va">+   if !ok {</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="va">+       return &quot;&quot;, &quot;&quot;, false</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="va">+   }</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="va">+   wantStatus = closeStatusMap[keyword].status</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a><span class="va">+   return keyword, wantStatus, ns != wantStatus</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="va">+}</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="dt">@@ closeCmd, after the itemExists(db, id, &quot;Fixed&quot;) check, before closedBody is built</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="va">+   // BOB-240 §11.4.33 Type↔Status guard: refuse a --status keyword whose</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="va">+   // implied Type-mapping does not match src.Type (Obsolete exempt for ANY</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="va">+   // Type — criterion 5). Placed BEFORE any write.</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="va">+   if wantKeyword, wantStatus, mismatch := typeStatusMismatch(src.Type, mapping.status); mismatch {</span></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="va">+       fmt.Fprintf(os.Stderr,</span></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a><span class="va">+           &quot;close: refusing — %s has Type=%s, whose §11.4.33 closure vocabulary is %q (--status %s), not %q (--status %s); Obsolete is valid for any Type.\n&quot;+</span></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a><span class="va">+               &quot;  correct command:  close %s --db &lt;db&gt; --status %s --evidence %s\n&quot;,</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a><span class="va">+           id, src.Type, wantStatus, wantKeyword, mapping.status, strings.ToLower(strings.TrimSpace(*status)),</span></span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a><span class="va">+           id, wantKeyword, *evidence)</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a><span class="va">+       return exitUsage</span></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a><span class="va">+   }</span></span></code></pre></div>
+<h3
+id="b.-mutate.go-updatecmd-guard-full-diff-inserted-right-before-cur.status-ns-at-the-end-of-the-setstatus-block-after-bob-166s-and-bob-175s-locationstatus-checks">2b.
+<code>mutate.go</code> — <code>updateCmd</code> guard (full diff,
+inserted right before <code>cur.Status = ns</code> at the end of the
+<code>set["status"]</code> block, after BOB-166’s and BOB-175’s
+location↔︎status checks)</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode diff"><code class="sourceCode diff"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">+       // BOB-240 §11.4.33 Type↔Status guard — scoped to ns TERMINAL: by this</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="va">+       // point EITHER loc==&quot;Issues&quot; &amp;&amp; !terminal (survived BOB-166 above)</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="va">+       // OR loc==&quot;Fixed&quot; &amp;&amp; terminal (survived BOB-175&#39;s mirror above) — the</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="va">+       // only two combinations reaching this line.</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="va">+       if terminalStatuses()[strings.TrimSpace(ns)] {</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="va">+           if wantKeyword, wantStatus, mismatch := typeStatusMismatch(cur.Type, ns); mismatch {</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="va">+               gotKeyword := closeKeywordForStatus(ns)</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="va">+               fmt.Fprintf(os.Stderr,</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="va">+                   &quot;update: refusing — %s has Type=%s, whose §11.4.33 closure vocabulary is %q (--status %s), not %q (--status %s); Obsolete is valid for any Type.\n&quot;+</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="va">+                       &quot;  correct command:  update --id %s --db &lt;db&gt; --location %s --status %s\n&quot;,</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="va">+                   *id, cur.Type, wantStatus, wantKeyword, ns, gotKeyword,</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="va">+                   *id, loc, wantKeyword)</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="va">+               return exitUsage</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="va">+           }</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="va">+       }</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>        cur.Status = ns</span></code></pre></div>
+<h3 id="c.-sync.go-typestatusmismatches-detective-invariant-wiring">2c.
+<code>sync.go</code> — <code>typeStatusMismatches</code> detective
+invariant + wiring</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode diff"><code class="sourceCode diff"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="dt">@@ (new function, before unresolvableClosureEvidence)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="va">+func typeStatusMismatches(items []item) []string {</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="va">+   terminal := terminalStatuses()</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="va">+   var out []string</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="va">+   for _, it := range items {</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="va">+       if it.CurrentLocation != &quot;Fixed&quot; {</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="va">+           continue</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="va">+       }</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="va">+       ns := strings.TrimSpace(it.Status)</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="va">+       if !terminal[ns] {</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="va">+           continue // fixedLocationNonTerminalStatus&#39;s own finding.</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="va">+       }</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="va">+       if wantKeyword, wantStatus, mismatch := typeStatusMismatch(it.Type, ns); mismatch {</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="va">+           out = append(out, fmt.Sprintf(</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="va">+               &quot;%s: Type=%s closed with status %q — §11.4.33 requires %q (`close --status %s`); Obsolete is valid for any Type [%s]&quot;,</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="va">+               it.AtmID, it.Type, it.Status, wantStatus, wantKeyword, it.repOrDefault()))</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="va">+       }</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="va">+   }</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="va">+   return out</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="va">+}</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="dt">@@ validateCmd, after unresolvableClosureEvidence, before the violations-report block</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="va">+   // (h) §11.4.33 / BOB-240 — Type↔Status mapping invariant.</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="va">+   violations = append(violations, typeStatusMismatches(items)...)</span></span></code></pre></div>
+<h3
+id="d.-new-test-file-bob240_type_status_test.go-full-contents-10-test">2d.
+New test file <code>bob240_type_status_test.go</code> (full contents —
+10 test</h3>
+<p>functions + 2 fixture helpers, ~430 lines; see the file itself in the
+submodule working tree for the complete text — reproduced in outline
+here):</p>
+<ul>
+<li><code>seedFixedItemOfType</code>,
+<code>injectTypeStatusMismatchAtFixed</code> — fixture helpers.</li>
+<li><code>TestCloseCmd_RefusesTypeStatusMismatch</code> (6 sub-cases
+incl. the exact BOB-077-class <code>Task_closed_fixed</code>).</li>
+<li><code>TestCloseCmd_RefusalNamesCorrectWord</code>.</li>
+<li><code>TestCloseCmd_AllowsMatchingTypeStatus</code> (3 sub-cases —
+Bug/Feature/Task).</li>
+<li><code>TestCloseCmd_AllowsObsoleteForAnyType</code> (3 sub-cases —
+criterion 5).</li>
+<li><code>TestUpdateCmd_RefusesTypeStatusMismatch</code>.</li>
+<li><code>TestUpdateCmd_RefusalNamesCorrectWord</code>.</li>
+<li><code>TestUpdateCmd_AllowsMatchingTypeStatus</code>.</li>
+<li><code>TestUpdateCmd_LocationGuardFiresBeforeTypeStatusGuard</code> —
+the BOB-175 composition proof (§4 below).</li>
+<li><code>TestValidate_CatchesTypeStatusMismatch</code>.</li>
+<li><code>TestValidate_DoesNotFireOnMatchingOrObsoleteClosures</code> (6
+sub-cases).</li>
+</ul>
+<h3
+id="e.-reconciliation-of-5-pre-existing-tests-whose-fixtures-were-themselves">2e.
+Reconciliation of 5 PRE-EXISTING tests whose fixtures were
+themselves</h3>
+<p>the exact Type↔︎Status mismatch class the new guard now refuses (found
+by running the guard against the full suite, not guessed in
+advance):</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Test</th>
+<th>Original (broken) pairing</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>crud_test.go</code></td>
+<td><code>TestClose_PositionalLast</code></td>
+<td>Task + <code>--status implemented</code></td>
+<td>seed Type → <code>Feature</code></td>
+</tr>
+<tr>
+<td><code>assign_test.go</code></td>
+<td><code>TestAssignGroupCompleteCmd_SucceedsWhenAllMembersTerminalWithEvidence</code></td>
+<td>Task + <code>--status fixed</code></td>
+<td><code>--status</code> → <code>completed</code></td>
+</tr>
+<tr>
+<td><code>closure_evidence_terminal_types_test.go</code></td>
+<td><code>seedClosedWithEvidenceAndStatus</code> (used by 2 test funcs ×
+4 sub-cases)</td>
+<td>hard-coded Type=Bug for ALL 4 status keywords</td>
+<td>seed Type derived per keyword (Bug/Feature/Task/Bug)</td>
+</tr>
+<tr>
+<td><code>update_location_status_invariant_test.go</code></td>
+<td><code>TestUpdateCmd_AllowsTerminalStatusOnFixedLocatedItem</code></td>
+<td>Bug (<code>seedFixedItem</code>) +
+<code>--status "Implemented (→ Fixed.md)"</code></td>
+<td>target status → <code>"Obsolete (→ Fixed.md)"</code> (still
+terminal, still a real transition, valid for any Type)</td>
+</tr>
+<tr>
+<td><code>repair_bodies_test.go</code></td>
+<td><code>TestRepairBodies_ClearsDesyncs_RedPolarity</code> +
+<code>TestRepairBodies_Idempotent</code></td>
+<td>ATM-971 (Type=Bug fixture) injected column →
+<code>Completed (→ Fixed.md)</code></td>
+<td>injected column → <code>Obsolete (→ Fixed.md)</code> (still
+terminal, still a genuine column-vs-body change, valid for any
+Type)</td>
+</tr>
+<tr>
+<td><code>roundtrip_test.go</code></td>
+<td><code>TestValidate_OK_RealDocs</code></td>
+<td>asserted blanket <code>validate == exitOK</code> against the LIVE
+<code>docs/Fixed.md</code></td>
+<td>changed to assert every reported finding is one of the 3
+<strong>already-known, real, pre-existing</strong> mismatches (see §5) —
+an UNEXPECTED finding still fails the test</td>
+</tr>
+</tbody>
+</table>
+<p>None of these edits weakens, removes, or bypasses the new guard —
+each reconciles a fixture’s OWN Type/status literal to a legitimate
+pairing (or, for the real-docs test, records the exact pre-existing
+defects it now honestly surfaces instead of hiding them behind a blanket
+assertion).</p>
+<h2 id="red-green-mutation-terminal-output-all-three-surfaces">3. RED /
+GREEN / mutation terminal output — all three surfaces</h2>
+<h3
+id="a.-red-confirmation-pure-functions-present-not-yet-wired-into-the-cli">3a.
+RED confirmation (pure functions present, NOT yet wired into the
+CLI)</h3>
+<pre><code>$ go test -count=1 -run &#39;TestCloseCmd_RefusesTypeStatusMismatch|TestCloseCmd_RefusalNamesCorrectWord|TestUpdateCmd_RefusesTypeStatusMismatch|TestUpdateCmd_RefusalNamesCorrectWord|TestValidate_CatchesTypeStatusMismatch&#39; -v ./...
+...
+    bob240_type_status_test.go:195: close ACCEPTED Type=Bug closed with --status implemented — §11.4.33 Type↔Status guard is a bluff
+--- FAIL: TestCloseCmd_RefusesTypeStatusMismatch (0.03s)   [6/6 sub-cases FAIL]
+--- FAIL: TestCloseCmd_RefusalNamesCorrectWord (0.00s)
+--- FAIL: TestUpdateCmd_RefusesTypeStatusMismatch (0.01s)
+--- FAIL: TestUpdateCmd_RefusalNamesCorrectWord (0.01s)
+--- FAIL: TestValidate_CatchesTypeStatusMismatch (0.01s)
+FAIL</code></pre>
+<p>Negative-control tests in the SAME run (proving the RED is real, not
+a tautology) correctly PASSED even before the guard existed — they
+assert states the guard was never supposed to touch:
+<code>TestCloseCmd_AllowsMatchingTypeStatus</code>,
+<code>TestCloseCmd_AllowsObsoleteForAnyType</code>,
+<code>TestUpdateCmd_AllowsMatchingTypeStatus</code>,
+<code>TestUpdateCmd_LocationGuardFiresBeforeTypeStatusGuard</code>,
+<code>TestValidate_DoesNotFireOnMatchingOrObsoleteClosures</code> (all
+PASS).</p>
+<h3
+id="b.-red_mode1-guard-absent-baseline-reproduction-the-exact-historical-incident">3b.
+<code>RED_MODE=1</code> guard-absent-baseline reproduction (the exact
+historical incident)</h3>
+<pre><code>$ RED_MODE=1 go test -count=1 -run &#39;TestCloseCmd_RefusesTypeStatusMismatch|TestUpdateCmd_RefusesTypeStatusMismatch|TestValidate_CatchesTypeStatusMismatch&#39; -v ./...
+add: created WIT-950 (Task, status=Queued) in Issues
+close: moved WIT-950 Issues→Fixed (status=Fixed (→ Fixed.md), evidence=docs/qa/WIT-950/Task_closed_fixed.md)
+validate: OK — 1 items, all invariants satisfied
+--- PASS: TestCloseCmd_RefusesTypeStatusMismatch (0.04s)   [reproduces: close accepts it, validate ALSO says OK]
+--- PASS: TestUpdateCmd_RefusesTypeStatusMismatch (0.01s)
+--- PASS: TestValidate_CatchesTypeStatusMismatch (0.01s)
+PASS</code></pre>
+<p>This is captured, physical proof that the guard-absent baseline
+reproduces the EXACT historical incident — <code>validate: OK</code>
+while a genuine Type/Status mismatch is live in the DB.</p>
+<h3 id="c.-green-guard-wired-into-close-update-validate">3c. GREEN
+(guard wired into <code>close</code>, <code>update</code>,
+<code>validate</code>)</h3>
+<pre><code>$ go test -count=1 -run &#39;TestCloseCmd_|TestUpdateCmd_|TestValidate_&#39; -v ./...
+--- PASS: TestCloseCmd_RefusesTypeStatusMismatch (0.03s)
+--- PASS: TestCloseCmd_RefusalNamesCorrectWord (0.00s)
+--- PASS: TestCloseCmd_AllowsMatchingTypeStatus (0.03s)
+--- PASS: TestCloseCmd_AllowsObsoleteForAnyType (0.03s)
+--- PASS: TestUpdateCmd_RefusesTypeStatusMismatch (0.01s)
+--- PASS: TestUpdateCmd_RefusalNamesCorrectWord (0.01s)
+--- PASS: TestUpdateCmd_AllowsMatchingTypeStatus (0.01s)
+--- PASS: TestUpdateCmd_LocationGuardFiresBeforeTypeStatusGuard (0.00s)
+--- PASS: TestValidate_CatchesTypeStatusMismatch (0.01s)
+--- PASS: TestValidate_DoesNotFireOnMatchingOrObsoleteClosures (0.04s)
+... [every other pre-existing test in the suite also PASS]</code></pre>
+<h3
+id="d.-1.1-paired-mutation-proofs-each-guard-neutered-one-at-a-time-in-place-then-restored-real-physical-toggling-in-this-session-not-merely-narrated">3d.
+§1.1 paired mutation proofs (each guard neutered ONE AT A TIME, in
+place, then restored — real physical toggling in this session, not
+merely narrated)</h3>
+<p><strong>Mutation 1 — <code>closeCmd</code> guard neutered</strong>
+(<code>mismatch</code> short-circuited with
+<code>false &amp;&amp;</code>):</p>
+<pre><code>$ go test -count=1 -run &#39;TestCloseCmd_RefusesTypeStatusMismatch|TestCloseCmd_RefusalNamesCorrectWord&#39; -v ./...
+--- FAIL: TestCloseCmd_RefusesTypeStatusMismatch (0.03s)
+--- FAIL: TestCloseCmd_RefusalNamesCorrectWord (0.00s)</code></pre>
+<p>Restored → re-ran → both PASS (confirmed in §3c).</p>
+<p><strong>Mutation 2 — <code>updateCmd</code> guard
+neutered:</strong></p>
+<pre><code>$ go test -count=1 -run &#39;TestUpdateCmd_RefusesTypeStatusMismatch|TestUpdateCmd_RefusalNamesCorrectWord|TestUpdateCmd_LocationGuardFiresBeforeTypeStatusGuard&#39; -v ./...
+--- FAIL: TestUpdateCmd_RefusesTypeStatusMismatch (0.01s)
+--- FAIL: TestUpdateCmd_RefusalNamesCorrectWord (0.01s)
+--- PASS: TestUpdateCmd_LocationGuardFiresBeforeTypeStatusGuard (0.01s)   [correctly UNAFFECTED — proves the two guard families are independent]</code></pre>
+<p>Restored → re-ran → all 3 PASS (confirmed in §3c).</p>
+<p><strong>Mutation 3 — <code>validateCmd</code>’s wiring of
+<code>typeStatusMismatches</code> disabled:</strong></p>
+<pre><code>$ go test -count=1 -run &#39;TestValidate_CatchesTypeStatusMismatch&#39; -v ./...
+--- FAIL: TestValidate_CatchesTypeStatusMismatch (0.01s)</code></pre>
+<p>Restored → re-ran → PASS (confirmed in §3c).</p>
+<p>Each of the three checks is proven load-bearing: neutering it — and
+ONLY it — flips exactly the tests that exercise it from PASS to FAIL,
+and restoring it flips them back.</p>
+<h2 id="obsolete-exemption-negative-control-proof-criterion-5">4.
+Obsolete-exemption negative-control proof (criterion 5)</h2>
+<p><code>TestCloseCmd_AllowsObsoleteForAnyType</code> and
+<code>TestValidate_DoesNotFireOnMatchingOrObsoleteClosures</code> each
+drive <code>close --status obsolete</code> for Bug, Feature, AND Task,
+asserting (a) <code>close</code> exits 0, (b) the item lands at
+<code>Fixed</code> with status <code>Obsolete (→ Fixed.md)</code>, and
+(c) <code>validate</code> reports OK — for every one of the three Types.
+All 6 sub-cases (3 per test × 2 tests) PASS.
+<code>TestUpdateCmd_AllowsMatchingTypeStatus</code> performs the
+analogous proof for <code>update</code> (Bug → Obsolete transition at
+Fixed).</p>
+<h2 id="bob-175-interaction-note-required-by-the-task">5.
+BOB-175-interaction note (required by the task)</h2>
+<p>BOB-166’s location↔︎status guard
+(<code>loc=="Issues" &amp;&amp; terminal</code>) and BOB-175’s mirror
+guard (<code>loc=="Fixed" &amp;&amp; !terminal</code>) already partition
+every <code>update</code> call into exactly one of THREE
+mutually-exclusive (location, terminality) cells:</p>
+<ul>
+<li><code>{Issues, terminal}</code> → refused by BOB-166.</li>
+<li><code>{Fixed, non-terminal}</code> → refused by BOB-175.</li>
+<li><code>{Issues, non-terminal}</code> → legitimate, passes through
+untouched.</li>
+</ul>
+<p>This leaves <code>{Fixed, terminal}</code> as the ONLY cell that can
+still reach BOB-240’s new check (placed textually last, gated on
+<code>terminalStatuses()[ns]</code>). <strong>A single
+<code>update</code> call can therefore never trigger more than one of
+the three guards</strong> — there is no ordering ambiguity to resolve,
+because the guard families never overlap on the same call in the first
+place.
+<code>TestUpdateCmd_LocationGuardFiresBeforeTypeStatusGuard</code>
+proves this at runtime: a call using a status that is TYPE-correct (no
+BOB-240 violation) but TERMINAL-while-still-in-Issues (a BOB-166
+violation) is refused with the BOB-166 message
+(<code>"located in Issues"</code>) and NEVER mentions
+<code>§11.4.33</code> — confirmed both with the guard present (PASS) and
+with the BOB-240 guard mutated out (still PASS, unaffected — Mutation 2
+above), demonstrating the two families are independent, not merely
+ordered.</p>
+<h2 id="full-go-test-suite-passfail-counts">6. Full Go test-suite
+pass/fail counts</h2>
+<p>Baseline (this submodule, BEFORE any BOB-240 change,
+<code>go test -count=1 ./... -v</code>): <strong>286 PASS, 0
+FAIL</strong> (3 pre-existing <code>SKIP-OK</code> entries not
+separately counted at that point).</p>
+<p>Final (after the fix + all reconciliations,
+<code>go test -race -count=1 ./... -v</code>):</p>
+<pre><code>$ go test -race -count=1 ./... -v 2&gt;&amp;1 | tail -3
+--- PASS: TestVersionTagsEmitJSON (0.02s)
+PASS
+ok      github.com/HelixDevelopment/HelixConstitution/scripts/workable-items/cmd/workable-items 6.031s</code></pre>
+<ul>
+<li><strong>PASS: 296</strong></li>
+<li><strong>FAIL: 0</strong></li>
+<li><strong>SKIP: 3</strong> (pre-existing <code>RED_MODE</code>-only
+skips, unrelated to this item)</li>
+<li><code>go build ./...</code> — clean.</li>
+<li><code>go vet ./...</code> — clean.</li>
+<li>Race detector (<code>-race</code>) — clean, no data races.</li>
+</ul>
+<p>Net delta vs. baseline: <strong>+10 top-level test
+functions</strong>, all new
+(<code>TestCloseCmd_RefusesTypeStatusMismatch</code>,
+<code>TestCloseCmd_RefusalNamesCorrectWord</code>,
+<code>TestCloseCmd_AllowsMatchingTypeStatus</code>,
+<code>TestCloseCmd_AllowsObsoleteForAnyType</code>,
+<code>TestUpdateCmd_RefusesTypeStatusMismatch</code>,
+<code>TestUpdateCmd_RefusalNamesCorrectWord</code>,
+<code>TestUpdateCmd_AllowsMatchingTypeStatus</code>,
+<code>TestUpdateCmd_LocationGuardFiresBeforeTypeStatusGuard</code>,
+<code>TestValidate_CatchesTypeStatusMismatch</code>,
+<code>TestValidate_DoesNotFireOnMatchingOrObsoleteClosures</code>),
+several carrying multiple sub-cases (<code>t.Run</code>) — <strong>ZERO
+previously-passing tests now fail.</strong></p>
+<h2
+id="honest-in-scope-discovery-real-pre-existing-data-defects-found-not-fixed">7.
+HONEST, IN-SCOPE DISCOVERY — real pre-existing data defects found (not
+fixed)</h2>
+<p>Running the new <code>validate</code> invariant against the LIVE
+<code>docs/Fixed.md</code> + <code>docs/Issues.md</code> (via
+<code>TestValidate_OK_RealDocs</code>, read-only — no CLI invocation
+against the live DB, no write to any live doc) surfaced <strong>THREE
+real, currently-live §11.4.33 Type↔︎Status violations</strong> that
+BOB-239’s 30-item bulk correction did NOT include (they were closed with
+the mismatch AFTER that bulk-correction ran, later in this same
+session):</p>
+<pre><code>- BOB-135: Type=Bug closed with status &quot;Completed (→ Fixed.md)&quot; — §11.4.33 requires &quot;Fixed (→ Fixed.md)&quot; (`close --status fixed`); Obsolete is valid for any Type [section]
+- BOB-238: Type=Bug closed with status &quot;Completed (→ Fixed.md)&quot; — §11.4.33 requires &quot;Fixed (→ Fixed.md)&quot; (`close --status fixed`); Obsolete is valid for any Type [section]
+- BOB-239: Type=Bug closed with status &quot;Completed (→ Fixed.md)&quot; — §11.4.33 requires &quot;Fixed (→ Fixed.md)&quot; (`close --status fixed`); Obsolete is valid for any Type [section]</code></pre>
+<p><strong>These were NOT corrected as part of this task</strong> —
+BOB-240’s own acceptance criteria scope it to the mechanical-PREVENTION
+half only (not a second bulk correction), and this task’s constraints
+explicitly forbid touching <code>docs/Fixed.md</code> /
+<code>docs/Issues.md</code> / <code>docs/workable_items.db</code>. Per
+§11.4.238’s discovery-channel discipline, this finding is recorded here
+honestly rather than hidden behind a weakened test assertion — the
+reconciled <code>TestValidate_OK_RealDocs</code> (§2e above) asserts the
+EXACT known set by name, so it will fail loudly if any OTHER/NEW
+violation appears, and will silently start passing once these three are
+corrected upstream. <strong>A follow-up tracked item to correct
+BOB-135/BOB-238/BOB-239’s status text in the live tracker is
+owed</strong> (recommended for the conductor to file, since filing it
+would itself require touching <code>docs/workable_items.db</code>, which
+is out of this task’s scope).</p>
+<h2 id="evidence-file-path">8. Evidence file path</h2>
+<p><code>/home/milosvasic/Projects/boba/docs/qa/BOB-240/closure_evidence_20260925.md</code>
+(this file).</p>
+</body>
+</html>

@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260925</h1>
+</header>
+<h1
+id="bob-159-closure-evidence-warm-start-ownership-repair-bounded-repair-then-reverify-until-stable">BOB-159
+closure evidence — warm-start ownership repair: bounded
+repair-then-reverify-until-stable</h1>
+<p><strong>Date:</strong> 2026-09-25 <strong>Item:</strong> BOB-159 —
+warm <code>./start.sh</code> ownership-repair race window (feature
+002-user-owned-downloads) <strong>Operator decision implemented
+(2026-08-26, §11.4.66):</strong> REPAIR, THEN RE-VERIFY UNTIL STABLE —
+options rejected: (a) refuse the warm repair and direct the operator to
+<code>--recreate</code>; (b) quiesce the stack on the warm path too; (c)
+accept the window and merely document it.</p>
+<p>This document records the implementation of the operator’s
+already-recorded decision, the bounded-loop design rationale, and pasted
+RED → GREEN → mutation terminal output from this session.</p>
+<hr />
+<h2 id="what-was-built">1. What was built</h2>
+<p><code>scripts/ownership_repair.sh</code> is
+<strong>unchanged</strong> — the design does not need a new probe mode.
+The existing <code>--force</code> flag (bypasses the completion marker’s
+fast-path) plus the script’s own
+<code>complete: N item(s) repaired</code> line (already printed on every
+successful run) are sufficient to drive a bounded repair-then-reverify
+loop from <code>start.sh</code> without inventing a second “how many
+items changed” channel (§11.4.251).</p>
+<p><code>start.sh</code> gained one new function,
+<code>run_ownership_repair_until_stable()</code>, plus a small constant
+<code>OWNERSHIP_REPAIR_MAX_PASSES=4</code>.
+<code>run_ownership_gate()</code> — the WARM-start entry point (used by
+the normal, no-flag <code>./start.sh</code> boot path only) — now calls
+this new function instead of the single-pass
+<code>run_ownership_repair()</code>. The <code>--recreate</code>
+dispatch is untouched: it calls <code>run_ownership_precondition</code>
+/ <code>stack_down</code> / <code>run_ownership_repair</code> /
+<code>stack_up</code> directly, exactly as before, because
+<code>stack_down()</code> already quiesces every writer before its one
+repair pass runs (FR-004d) — the bounded loop is a WARM-path problem
+only.</p>
+<h3 id="mechanism">Mechanism</h3>
+<pre><code>run_ownership_repair_until_stable():
+    for pass in 1..OWNERSHIP_REPAIR_MAX_PASSES:
+        run `ownership_repair.sh --force`, capture its output and exit code
+        if exit code != 0:            → print the per-item failures already reported, refuse to start (exit 1)
+        parse &quot;complete: N item(s) repaired&quot; from the output
+        if N cannot be parsed:        → refuse to start (exit 1) — an unreadable pass is not evidence of a clean tree
+        if N == 0:                    → STABLE — print success, return 0
+        else:                         → print &quot;repaired N item(s) — re-verifying&quot;, loop again
+    # loop exhausted without N == 0:
+    → print ownership UNPROVEN (names the realistic cause: an active download / a container writing
+      faster than the walk completes), refuse to start (exit 1) — never a silent exit 0</code></pre>
+<p><code>--force</code> is required on every pass:
+<code>ownership_repair.sh</code>’s own marker fast-path
+(<code>marker_is_valid</code>) makes a second call against the same
+scope fingerprint a no-op that walks nothing at all — the mirror problem
+to the one its own <code>--dry-run</code> header already documents as
+unusable here (“would walk the tree twice on every start”). A completed
+marker has the opposite failure mode: it would walk the tree ZERO times
+on every re-verify pass, defeating the whole point of re-verifying.
+<code>--force</code> makes every pass a real walk.</p>
+<h2 id="bounded-loop-design-rationale-why-4-passes">2. Bounded-loop
+design rationale — why 4 passes</h2>
+<p>This is a §11.4.6 judgement call, stated explicitly rather than left
+as an unexplained magic number:</p>
+<ul>
+<li><strong>An unbounded loop is not “re-verifying” against a stack that
+writes faster than the walk completes — it is a hang with extra
+steps.</strong> The loop must terminate and say so honestly. This alone
+forces <em>some</em> finite bound.</li>
+<li><strong>The common case (already-clean tree, or one genuine
+pre-existing straggler) converges in 1–2 passes.</strong> Pass 1 either
+finds nothing (stable immediately) or fixes a real straggler; pass 2
+then confirms nothing new. A bound of 4 gives that case comfortable
+headroom (2×) without materially slowing a normal boot, since each pass
+on an already-repaired scope is a fast walk (the declared tree, not the
+whole filesystem — see <code>ownership_path_fence</code> in
+<code>scripts/ownership_repair.sh</code>).</li>
+<li><strong>A genuinely non-converging stack (an active download
+continuously creating files) is not rescued by a larger N.</strong> If
+every pass finds something new, the correct answer is UNPROVEN
+regardless of whether the bound is 4, 40, or 400 — a bigger number only
+spends more of the operator’s boot time reaching the same honest
+verdict. Tuning the bound upward to “try harder” would be exactly the
+kind of guess §11.4.6 forbids: it does not change the outcome, only the
+latency before reporting it.</li>
+<li><strong>4 was therefore chosen as “enough headroom for the common
+converging case, small enough that the non-converging case fails
+fast.”</strong> It is recorded as consumer DATA (a
+<code>start.sh</code>-local constant,
+<code>OWNERSHIP_REPAIR_MAX_PASSES</code>), not hardcoded inline, so a
+future operator decision to change it is a one-line edit with no logic
+change.</li>
+</ul>
+<h2 id="honest-give-up-behaviour-11.4.2016">3. Honest give-up behaviour
+(§11.4.201(6))</h2>
+<p>On exhausting <code>OWNERSHIP_REPAIR_MAX_PASSES</code> without a pass
+reporting 0 new items, the function:</p>
+<ul>
+<li>exits <strong>non-zero</strong> (refuses to complete the boot) —
+never a silent <code>exit 0</code>;</li>
+<li>prints <code>Ownership UNPROVEN after 4 repair pass(es)</code> —
+explicitly stating this is <strong>not</strong> the same as a clean
+tree, quoting §11.4.201(6) directly in the message: <em>“a bounded loop
+that stops because it ran out of passes must never be reported the same
+as a pass that genuinely found nothing left to fix”</em>;</li>
+<li><strong>names the realistic cause</strong>: “an ACTIVE DOWNLOAD (or
+another container) writing into a declared location FASTER than the
+repair can walk it”;</li>
+<li>gives an actionable remediation: <code>./start.sh --recreate</code>
+(quiesces the stack for the walk) or waiting for write activity to
+settle and re-running <code>./start.sh</code>.</li>
+</ul>
+<p>An unparseable pass result (the repair script exited 0 but its output
+did not contain a readable <code>complete: N item(s)</code> line) is
+treated the same way — refused, not silently trusted — per the same
+§11.4.201(6) reasoning: a result that cannot be read is not evidence of
+anything.</p>
+<h2 id="diff-applied-start.sh">4. Diff applied —
+<code>start.sh</code></h2>
+<p>New function inserted after <code>run_ownership_repair()</code>;
+<code>run_ownership_gate()</code> updated to call it; the stale “NOT
+closed here” honest-boundary comment at the <code>main()</code> call
+site corrected to describe the new bounded behaviour (§11.4.6 — a
+comment that no longer matches the code is a bluff of its own).</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode diff"><code class="sourceCode diff"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">diff --git a/start.sh b/start.sh</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>index 9a22c56..3892b6a 100755</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="dt">--- a/start.sh</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="dt">+++ b/start.sh</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="dt">@@ -1358,13 +1358,139 @@ run_ownership_repair() {</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>     print_success &quot;Ownership repair complete — every in-scope item is operator-owned&quot;</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a> }</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="va">+# ---------------------------------------------------------------------------</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="va">+# run_ownership_repair_until_stable — the WARM-start half of the ownership</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="va">+# gate (BOB-159; operator decision 2026-08-26, §11.4.66: REPAIR, THEN</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="va">+# RE-VERIFY UNTIL STABLE).</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="va">+#</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="va">+# WHY THIS EXISTS, AND WHY run_ownership_repair() ALONE IS NOT ENOUGH HERE:</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="va">+#   run_ownership_repair() walks the declared tree ONCE. On the --recreate</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="va">+#   path that single walk is provably sufficient, because stack_down() has</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="va">+#   ALREADY quiesced every writer before it runs (FR-004d — see the</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="va">+#   &quot;ORDERING&quot; header above run_ownership_precondition()). On the WARM path</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="va">+#   there is no stack_down(): if the stack is already running, a container</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="va">+#   can create a new non-operator-owned file BEHIND a single walk, after</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="va">+#   which that walk&#39;s own completion marker would record &quot;complete&quot; over a</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="va">+#   tree that is not — the exact defect feature 002-user-owned-downloads</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="va">+#   exists to end, re-opened through the warm door instead of the --recreate</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="va">+#   one it was closed on.</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="va">+#</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="va">+# THE OPERATOR&#39;S CHOICE (recorded 2026-08-26; options NOT chosen are named</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="va">+# here so this is never silently re-litigated):</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="va">+#   - refuse the warm repair and direct the operator to --recreate: REJECTED</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="va">+#   - quiesce the stack on the warm path too (correct, but no longer &quot;warm&quot;): REJECTED</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a><span class="va">+#   - accept the window and merely document it: REJECTED</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="va">+#   - CHOSEN: keep repairing the live stack, but WALK, RE-VERIFY, and REPEAT</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="va">+#     until a pass finds NOTHING NEW — bounded — and on giving up REPORT</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="va">+#     HONESTLY that ownership is UNPROVEN rather than exit 0.</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="va">+#</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a><span class="va">+# WHY BOUNDED AT 4 PASSES, NOT UNBOUNDED AND NOT SOME OTHER NUMBER:</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="va">+#   An unbounded loop against a stack that writes faster than the walk</span></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="va">+#   completes never returns — that is a hang with extra steps, not</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="va">+#   re-verification. 4 is a judgement call (§11.4.6 — stated, not hidden):</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a><span class="va">+#   on the common, already-clean case a converging pass costs the operator</span></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a><span class="va">+#   at most a couple of extra fast walks (pass 1 fixes a genuine straggler,</span></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a><span class="va">+#   pass 2 confirms nothing new), so the bound is cheap when the tree really</span></span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a><span class="va">+#   is stabilising. A genuinely non-converging stack (an active download</span></span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a><span class="va">+#   continuously creating files) is not rescued by a LARGER bound — the</span></span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a><span class="va">+#   honest answer there is UNPROVEN regardless of how many passes are tried</span></span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a><span class="va">+#   — so the number is kept small rather than tuned to paper over that case.</span></span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a><span class="va">+#</span></span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a><span class="va">+# WHY --force ON EVERY PASS:</span></span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a><span class="va">+#   ownership_repair.sh&#39;s own marker fast-path (marker_is_valid) makes a</span></span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a><span class="va">+#   SECOND call against the SAME scope fingerprint a no-op that walks</span></span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a><span class="va">+#   nothing at all — which is the same reason its own --dry-run header</span></span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a><span class="va">+#   explains --dry-run cannot serve as a warm-start probe (&quot;would walk the</span></span>
+<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a><span class="va">+#   tree twice on every start&quot;): a completed marker has the opposite</span></span>
+<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a><span class="va">+#   problem, it would walk the tree ZERO times on every re-verify pass.</span></span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a><span class="va">+#   --force bypasses the marker so every pass performs a REAL walk and can</span></span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a><span class="va">+#   see a file that arrived after the previous pass finished.</span></span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a><span class="va">+#</span></span>
+<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a><span class="va">+# CONVERGENCE SIGNAL:</span></span>
+<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a><span class="va">+#   Read from ownership_repair.sh&#39;s OWN &quot;complete: N item(s) repaired&quot; line</span></span>
+<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a><span class="va">+#   (§11.4.251 — one definition of &quot;how many items changed&quot; per run, never a</span></span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a><span class="va">+#   second one re-derived here from the marker JSON or the change record).</span></span>
+<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a><span class="va">+#   N == 0 on a pass means that pass&#39;s walk found nothing left to fix — the</span></span>
+<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a><span class="va">+#   tree was already stable when that walk started. N &gt; 0 means the walk</span></span>
+<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a><span class="va">+#   found (and fixed) something, which could be a genuine pre-existing</span></span>
+<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a><span class="va">+#   straggler OR a file a live container wrote WHILE the walk ran; one pass</span></span>
+<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a><span class="va">+#   alone cannot tell those apart, which is exactly why this loop re-verifies</span></span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a><span class="va">+#   instead of trusting the first &quot;complete&quot;.</span></span>
+<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a><span class="va">+#</span></span>
+<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a><span class="va">+# HONEST BOUNDARY (§11.4.6): a &quot;stable&quot; verdict here means the LAST pass</span></span>
+<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a><span class="va">+# found nothing new — it does not retroactively prove nothing was ever</span></span>
+<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a><span class="va">+# written mid-walk during an EARLIER pass in this same loop; that is why</span></span>
+<span id="cb2-71"><a href="#cb2-71" aria-hidden="true" tabindex="-1"></a><span class="va">+# every pass with items &gt; 0 triggers another full re-walk rather than being</span></span>
+<span id="cb2-72"><a href="#cb2-72" aria-hidden="true" tabindex="-1"></a><span class="va">+# treated as &quot;probably fine&quot;. It also does not prove nothing writes AFTER</span></span>
+<span id="cb2-73"><a href="#cb2-73" aria-hidden="true" tabindex="-1"></a><span class="va">+# this function returns — that is the ordinary, always-present race this</span></span>
+<span id="cb2-74"><a href="#cb2-74" aria-hidden="true" tabindex="-1"></a><span class="va">+# function narrows, not one it claims to eliminate.</span></span>
+<span id="cb2-75"><a href="#cb2-75" aria-hidden="true" tabindex="-1"></a><span class="va">+# ---------------------------------------------------------------------------</span></span>
+<span id="cb2-76"><a href="#cb2-76" aria-hidden="true" tabindex="-1"></a><span class="va">+OWNERSHIP_REPAIR_MAX_PASSES=4</span></span>
+<span id="cb2-77"><a href="#cb2-77" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb2-78"><a href="#cb2-78" aria-hidden="true" tabindex="-1"></a><span class="va">+run_ownership_repair_until_stable() {</span></span>
+<span id="cb2-79"><a href="#cb2-79" aria-hidden="true" tabindex="-1"></a><span class="va">+    local repair=&quot;$SCRIPT_DIR/scripts/ownership_repair.sh&quot;</span></span>
+<span id="cb2-80"><a href="#cb2-80" aria-hidden="true" tabindex="-1"></a><span class="va">+    local pass=0 rc out items</span></span>
+<span id="cb2-81"><a href="#cb2-81" aria-hidden="true" tabindex="-1"></a><span class="va">+    ownership_set_nice_prefix</span></span>
+<span id="cb2-82"><a href="#cb2-82" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb2-83"><a href="#cb2-83" aria-hidden="true" tabindex="-1"></a><span class="va">+    if [[ ! -f &quot;$repair&quot; ]]; then</span></span>
+<span id="cb2-84"><a href="#cb2-84" aria-hidden="true" tabindex="-1"></a><span class="va">+        print_error &quot;Ownership repair script missing: $repair&quot;</span></span>
+<span id="cb2-85"><a href="#cb2-85" aria-hidden="true" tabindex="-1"></a><span class="va">+        print_error &quot;Refusing to start — pre-existing content cannot be brought under the operator (FR-004d).&quot;</span></span>
+<span id="cb2-86"><a href="#cb2-86" aria-hidden="true" tabindex="-1"></a><span class="va">+        exit 1</span></span>
+<span id="cb2-87"><a href="#cb2-87" aria-hidden="true" tabindex="-1"></a><span class="va">+    fi</span></span>
+<span id="cb2-88"><a href="#cb2-88" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb2-89"><a href="#cb2-89" aria-hidden="true" tabindex="-1"></a><span class="va">+    print_info &quot;Ownership repair (warm start): repairing, then re-verifying until stable (bounded, max ${OWNERSHIP_REPAIR_MAX_PASSES} pass(es))...&quot;</span></span>
+<span id="cb2-90"><a href="#cb2-90" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb2-91"><a href="#cb2-91" aria-hidden="true" tabindex="-1"></a><span class="va">+    while (( pass &lt; OWNERSHIP_REPAIR_MAX_PASSES )); do</span></span>
+<span id="cb2-92"><a href="#cb2-92" aria-hidden="true" tabindex="-1"></a><span class="va">+        pass=$((pass + 1))</span></span>
+<span id="cb2-93"><a href="#cb2-93" aria-hidden="true" tabindex="-1"></a><span class="va">+        set +e</span></span>
+<span id="cb2-94"><a href="#cb2-94" aria-hidden="true" tabindex="-1"></a><span class="va">+        out=&quot;$(&quot;${OWNERSHIP_NICE[@]}&quot; bash &quot;$repair&quot; --force 2&gt;&amp;1)&quot;</span></span>
+<span id="cb2-95"><a href="#cb2-95" aria-hidden="true" tabindex="-1"></a><span class="va">+        rc=$?</span></span>
+<span id="cb2-96"><a href="#cb2-96" aria-hidden="true" tabindex="-1"></a><span class="va">+        set -e</span></span>
+<span id="cb2-97"><a href="#cb2-97" aria-hidden="true" tabindex="-1"></a><span class="va">+        printf &#39;%s\n&#39; &quot;$out&quot;</span></span>
+<span id="cb2-98"><a href="#cb2-98" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb2-99"><a href="#cb2-99" aria-hidden="true" tabindex="-1"></a><span class="va">+        if [[ &quot;$rc&quot; -ne 0 ]]; then</span></span>
+<span id="cb2-100"><a href="#cb2-100" aria-hidden="true" tabindex="-1"></a><span class="va">+            print_error &quot;Ownership repair did not complete on pass ${pass}/${OWNERSHIP_REPAIR_MAX_PASSES} (exit $rc) — refusing to start.&quot;</span></span>
+<span id="cb2-101"><a href="#cb2-101" aria-hidden="true" tabindex="-1"></a><span class="va">+            print_error &quot;  Each item it could not repair is named in the report above (FR-006).&quot;</span></span>
+<span id="cb2-102"><a href="#cb2-102" aria-hidden="true" tabindex="-1"></a><span class="va">+            exit 1</span></span>
+<span id="cb2-103"><a href="#cb2-103" aria-hidden="true" tabindex="-1"></a><span class="va">+        fi</span></span>
+<span id="cb2-104"><a href="#cb2-104" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb2-105"><a href="#cb2-105" aria-hidden="true" tabindex="-1"></a><span class="va">+        items=&quot;$(printf &#39;%s\n&#39; &quot;$out&quot; | sed -n &#39;s/.*complete: \([0-9][0-9]*\) item(s) repaired.*/\1/p&#39; | tail -n1)&quot;</span></span>
+<span id="cb2-106"><a href="#cb2-106" aria-hidden="true" tabindex="-1"></a><span class="va">+        if [[ -z &quot;$items&quot; ]]; then</span></span>
+<span id="cb2-107"><a href="#cb2-107" aria-hidden="true" tabindex="-1"></a><span class="va">+            print_error &quot;Ownership repair exited 0 on pass ${pass}/${OWNERSHIP_REPAIR_MAX_PASSES} but did not report how many items it changed.&quot;</span></span>
+<span id="cb2-108"><a href="#cb2-108" aria-hidden="true" tabindex="-1"></a><span class="va">+            print_error &quot;  A pass whose result cannot be read is not evidence of a clean tree (§11.4.201(6)) — refusing to certify ownership as stable.&quot;</span></span>
+<span id="cb2-109"><a href="#cb2-109" aria-hidden="true" tabindex="-1"></a><span class="va">+            exit 1</span></span>
+<span id="cb2-110"><a href="#cb2-110" aria-hidden="true" tabindex="-1"></a><span class="va">+        fi</span></span>
+<span id="cb2-111"><a href="#cb2-111" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb2-112"><a href="#cb2-112" aria-hidden="true" tabindex="-1"></a><span class="va">+        if [[ &quot;$items&quot; -eq 0 ]]; then</span></span>
+<span id="cb2-113"><a href="#cb2-113" aria-hidden="true" tabindex="-1"></a><span class="va">+            print_success &quot;Ownership repair complete and STABLE after ${pass} pass(es) — the last pass found nothing new to repair&quot;</span></span>
+<span id="cb2-114"><a href="#cb2-114" aria-hidden="true" tabindex="-1"></a><span class="va">+            return 0</span></span>
+<span id="cb2-115"><a href="#cb2-115" aria-hidden="true" tabindex="-1"></a><span class="va">+        fi</span></span>
+<span id="cb2-116"><a href="#cb2-116" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb2-117"><a href="#cb2-117" aria-hidden="true" tabindex="-1"></a><span class="va">+        print_info &quot;  pass ${pass}/${OWNERSHIP_REPAIR_MAX_PASSES} repaired ${items} item(s) — re-verifying (a live container may still be writing)&quot;</span></span>
+<span id="cb2-118"><a href="#cb2-118" aria-hidden="true" tabindex="-1"></a><span class="va">+    done</span></span>
+<span id="cb2-119"><a href="#cb2-119" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb2-120"><a href="#cb2-120" aria-hidden="true" tabindex="-1"></a><span class="va">+    print_error &quot;Ownership UNPROVEN after ${OWNERSHIP_REPAIR_MAX_PASSES} repair pass(es) — every pass kept finding NEW non-operator-owned files.&quot;</span></span>
+<span id="cb2-121"><a href="#cb2-121" aria-hidden="true" tabindex="-1"></a><span class="va">+    print_error &quot;  This is NOT the same as a clean tree (§11.4.201(6)): a bounded loop that stops because it ran out of&quot;</span></span>
+<span id="cb2-122"><a href="#cb2-122" aria-hidden="true" tabindex="-1"></a><span class="va">+    print_error &quot;  passes must never be reported the same as a pass that genuinely found nothing left to fix.&quot;</span></span>
+<span id="cb2-123"><a href="#cb2-123" aria-hidden="true" tabindex="-1"></a><span class="va">+    print_error &quot;  The realistic cause is an ACTIVE DOWNLOAD (or another container) writing into a declared location&quot;</span></span>
+<span id="cb2-124"><a href="#cb2-124" aria-hidden="true" tabindex="-1"></a><span class="va">+    print_error &quot;  FASTER than the repair can walk it, so ownership cannot be certified stable on this live stack.&quot;</span></span>
+<span id="cb2-125"><a href="#cb2-125" aria-hidden="true" tabindex="-1"></a><span class="va">+    print_error &quot;  Remediate with: ./start.sh --recreate (quiesces the stack for the walk before bringing it back up),&quot;</span></span>
+<span id="cb2-126"><a href="#cb2-126" aria-hidden="true" tabindex="-1"></a><span class="va">+    print_error &quot;  or wait for the write activity to settle and re-run ./start.sh.&quot;</span></span>
+<span id="cb2-127"><a href="#cb2-127" aria-hidden="true" tabindex="-1"></a><span class="va">+    exit 1</span></span>
+<span id="cb2-128"><a href="#cb2-128" aria-hidden="true" tabindex="-1"></a><span class="va">+}</span></span>
+<span id="cb2-129"><a href="#cb2-129" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb2-130"><a href="#cb2-130" aria-hidden="true" tabindex="-1"></a> # Cold-start / warm-start entry point: the declared locations have just been</span>
+<span id="cb2-131"><a href="#cb2-131" aria-hidden="true" tabindex="-1"></a> # created and no container has been brought up yet by THIS invocation, so both</span>
+<span id="cb2-132"><a href="#cb2-132" aria-hidden="true" tabindex="-1"></a> # halves run back to back. The --recreate path does NOT use this wrapper -- it</span>
+<span id="cb2-133"><a href="#cb2-133" aria-hidden="true" tabindex="-1"></a> # interleaves `down` between the halves; see the dispatch below.</span>
+<span id="cb2-134"><a href="#cb2-134" aria-hidden="true" tabindex="-1"></a><span class="va">+#</span></span>
+<span id="cb2-135"><a href="#cb2-135" aria-hidden="true" tabindex="-1"></a><span class="va">+# BOB-159: the repair half here is run_ownership_repair_until_stable(), NOT</span></span>
+<span id="cb2-136"><a href="#cb2-136" aria-hidden="true" tabindex="-1"></a><span class="va">+# the single-pass run_ownership_repair() the --recreate dispatch below still</span></span>
+<span id="cb2-137"><a href="#cb2-137" aria-hidden="true" tabindex="-1"></a><span class="va">+# calls directly. See that function&#39;s own header comment for why a warm start</span></span>
+<span id="cb2-138"><a href="#cb2-138" aria-hidden="true" tabindex="-1"></a><span class="va">+# needs the bounded re-verify loop and --recreate does not.</span></span>
+<span id="cb2-139"><a href="#cb2-139" aria-hidden="true" tabindex="-1"></a> run_ownership_gate() {</span>
+<span id="cb2-140"><a href="#cb2-140" aria-hidden="true" tabindex="-1"></a>     run_ownership_precondition</span>
+<span id="cb2-141"><a href="#cb2-141" aria-hidden="true" tabindex="-1"></a><span class="st">-    run_ownership_repair</span></span>
+<span id="cb2-142"><a href="#cb2-142" aria-hidden="true" tabindex="-1"></a><span class="va">+    run_ownership_repair_until_stable</span></span>
+<span id="cb2-143"><a href="#cb2-143" aria-hidden="true" tabindex="-1"></a> }</span>
+<span id="cb2-144"><a href="#cb2-144" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb2-145"><a href="#cb2-145" aria-hidden="true" tabindex="-1"></a> # ---------------------------------------------------------------------------</span>
+<span id="cb2-146"><a href="#cb2-146" aria-hidden="true" tabindex="-1"></a><span class="dt">@@ -1608,16 +1734,18 @@ main() {</span></span>
+<span id="cb2-147"><a href="#cb2-147" aria-hidden="true" tabindex="-1"></a>     #</span>
+<span id="cb2-148"><a href="#cb2-148" aria-hidden="true" tabindex="-1"></a>     # HONEST BOUNDARY (§11.4.6), do not read more into this than it says: the</span>
+<span id="cb2-149"><a href="#cb2-149" aria-hidden="true" tabindex="-1"></a>     # claim above is about what THIS invocation starts. If the operator runs a</span>
+<span id="cb2-150"><a href="#cb2-150" aria-hidden="true" tabindex="-1"></a><span class="st">-    # warm `./start.sh` over an ALREADY-RUNNING stack, containers are writing</span></span>
+<span id="cb2-151"><a href="#cb2-151" aria-hidden="true" tabindex="-1"></a><span class="st">-    # while the repair walks, and the FR-004d window the --recreate path closes</span></span>
+<span id="cb2-152"><a href="#cb2-152" aria-hidden="true" tabindex="-1"></a><span class="st">-    # by interleaving `down` is NOT closed here.</span></span>
+<span id="cb2-153"><a href="#cb2-153" aria-hidden="true" tabindex="-1"></a><span class="st">-    #</span></span>
+<span id="cb2-154"><a href="#cb2-154" aria-hidden="true" tabindex="-1"></a><span class="st">-    # Bounded in practice, not by luck: after any successful pass the completion</span></span>
+<span id="cb2-155"><a href="#cb2-155" aria-hidden="true" tabindex="-1"></a><span class="st">-    # marker is valid for the scope fingerprint and the repair short-circuits</span></span>
+<span id="cb2-156"><a href="#cb2-156" aria-hidden="true" tabindex="-1"></a><span class="st">-    # without walking at all (scripts/ownership_repair.sh marker_is_valid), so</span></span>
+<span id="cb2-157"><a href="#cb2-157" aria-hidden="true" tabindex="-1"></a><span class="st">-    # the window needs a STALE-or-absent marker AND a live stack together. That</span></span>
+<span id="cb2-158"><a href="#cb2-158" aria-hidden="true" tabindex="-1"></a><span class="st">-    # is a real combination — a newly declared scope entry re-arms the marker —</span></span>
+<span id="cb2-159"><a href="#cb2-159" aria-hidden="true" tabindex="-1"></a><span class="st">-    # so it is tracked, not dismissed.</span></span>
+<span id="cb2-160"><a href="#cb2-160" aria-hidden="true" tabindex="-1"></a><span class="va">+    # warm `./start.sh` over an ALREADY-RUNNING stack, containers can still be</span></span>
+<span id="cb2-161"><a href="#cb2-161" aria-hidden="true" tabindex="-1"></a><span class="va">+    # writing while a repair pass walks — a single pass cannot, by itself, tell</span></span>
+<span id="cb2-162"><a href="#cb2-162" aria-hidden="true" tabindex="-1"></a><span class="va">+    # &quot;genuinely clean&quot; apart from &quot;a container wrote something behind this</span></span>
+<span id="cb2-163"><a href="#cb2-163" aria-hidden="true" tabindex="-1"></a><span class="va">+    # walk&quot;. run_ownership_gate() no longer trusts one pass on the warm path:</span></span>
+<span id="cb2-164"><a href="#cb2-164" aria-hidden="true" tabindex="-1"></a><span class="va">+    # it calls run_ownership_repair_until_stable() (BOB-159, operator decision</span></span>
+<span id="cb2-165"><a href="#cb2-165" aria-hidden="true" tabindex="-1"></a><span class="va">+    # 2026-08-26), which walks, re-verifies, and repeats until a pass finds</span></span>
+<span id="cb2-166"><a href="#cb2-166" aria-hidden="true" tabindex="-1"></a><span class="va">+    # NOTHING NEW, bounded to OWNERSHIP_REPAIR_MAX_PASSES attempts. That BOUNDS</span></span>
+<span id="cb2-167"><a href="#cb2-167" aria-hidden="true" tabindex="-1"></a><span class="va">+    # the window instead of leaving it open-ended, but does not eliminate it —</span></span>
+<span id="cb2-168"><a href="#cb2-168" aria-hidden="true" tabindex="-1"></a><span class="va">+    # a stack whose writes never stabilise within the bound is reported</span></span>
+<span id="cb2-169"><a href="#cb2-169" aria-hidden="true" tabindex="-1"></a><span class="va">+    # honestly as ownership UNPROVEN (the function refuses to start rather than</span></span>
+<span id="cb2-170"><a href="#cb2-170" aria-hidden="true" tabindex="-1"></a><span class="va">+    # exit 0 over an unverified tree — see its own header for the full</span></span>
+<span id="cb2-171"><a href="#cb2-171" aria-hidden="true" tabindex="-1"></a><span class="va">+    # rationale, including why a larger bound would not change that verdict).</span></span>
+<span id="cb2-172"><a href="#cb2-172" aria-hidden="true" tabindex="-1"></a>     run_ownership_gate</span>
+<span id="cb2-173"><a href="#cb2-173" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb2-174"><a href="#cb2-174" aria-hidden="true" tabindex="-1"></a>     if [[ &quot;$build_frontend_flag&quot; == true ]]; then</span></code></pre></div>
+<p><code>scripts/ownership_repair.sh</code> — <strong>no diff</strong>
+(unchanged; verified with
+<code>git diff --stat scripts/ownership_repair.sh</code> → empty output
+before closing this item).</p>
+<h2 id="diff-applied-testsunittest_start_reload_recreate.sh">5. Diff
+applied — <code>tests/unit/test_start_reload_recreate.sh</code></h2>
+<p>Two new checks, <code>WARM_REVERIFY_UNTIL_STABLE</code> and
+<code>WARM_REVERIFY_UNPROVEN_ON_NONCONVERGENCE</code>, each with a
+paired §1.1 mutation, plus the supporting test double /
+direct-function-call harness helpers they need.
+<code>tests/unit/test_start_reload_harness.sh</code> (the shared
+harness) was <strong>not modified</strong> — the new helpers
+(<code>harness_write_repair_double</code>,
+<code>harness_call_stable</code>) live entirely inside this test file,
+reusing the harness’s existing <code>harness_new_sandbox</code> /
+<code>harness_mutate</code> / <code>harness_cleanup</code>
+primitives.</p>
+<p>Testing approach: <code>harness_run()</code> drives
+<code>main()</code> end-to-end (right for the pre-existing
+<code>--recreate</code> checks), but the warm-path bounded loop is
+reachable from <code>main()</code>’s default no-flag path, which would
+additionally require shimming <code>start_container</code> /
+<code>wait_for_jackett</code> / <code>curl</code> / <code>python3</code>
+/ a container runtime for no added assurance. <code>start.sh</code> is
+deliberately hermetically sourceable (its own trailing
+<code>if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then main "$@"; fi</code>
+guard exists for this purpose), so the two new checks instead
+<strong>source</strong> the sandboxed <code>start.sh</code>
+(<code>main()</code> never runs) and call
+<code>run_ownership_repair_until_stable</code> directly, against a
+purpose-built <code>ownership_repair.sh</code> <strong>double</strong>
+(not the harness’s generic argv-recorder shim) that returns a scripted
+per-call item count via the real
+<code>complete: N item(s) repaired</code> line shape, so both
+convergence and non-convergence are reproducible without performing a
+real filesystem walk.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode diff"><code class="sourceCode diff"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">diff --git a/tests/unit/test_start_reload_recreate.sh b/tests/unit/test_start_reload_recreate.sh</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>index 3c93684..0dd70d1 100644</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="dt">--- a/tests/unit/test_start_reload_recreate.sh</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="dt">+++ b/tests/unit/test_start_reload_recreate.sh</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="dt">@@ -153,10 +153,129 @@ check_REPAIR_BEFORE_UP() {</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>     harness_cleanup &quot;$sb&quot;; return $ok</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a> }</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="va">+# --- BOB-159: warm-start bounded repair-until-stable ------------------------</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="va">+# Operator decision 2026-08-26 (§11.4.66): REPAIR, THEN RE-VERIFY UNTIL</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="va">+# STABLE. The --recreate path above needs no loop -- stack_down() already</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="va">+# quiesces every writer before its single repair pass runs (FR-004d). The</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="va">+# WARM path (plain `./start.sh`, no flags) has no stack_down(): a live</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="va">+# container can write a new non-operator-owned file BEHIND a single walk, so</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="va">+# run_ownership_gate() now calls run_ownership_repair_until_stable(), which</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="va">+# walks, re-verifies, and repeats -- bounded -- until a pass finds NOTHING</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="va">+# NEW, or honestly gives up as UNPROVEN rather than exit 0.</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="va">+#</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="va">+# harness_run() drives main() end to end, which is right for the --recreate</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="va">+# checks above but would drag in start_container/wait_for_jackett/curl/</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="va">+# python3/etc for no added assurance here: the function under test is a</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="va">+# fixed, self-contained unit, and start.sh is deliberately hermetically</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="va">+# sourceable (see its own trailing `if [[ &quot;${BASH_SOURCE[0]}&quot; == &quot;${0}&quot; ]]`</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="va">+# guard) for exactly this reason. These two checks SOURCE the sandboxed</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="va">+# start.sh (main() never runs) and call run_ownership_repair_until_stable</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="va">+# directly, against a purpose-built ownership_repair.sh DOUBLE -- not the</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="va">+# harness&#39;s generic argv-recorder shim -- that reports a SCRIPTED per-call</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="va">+# item count (DOUBLE_ITEMS_SEQUENCE, colon-separated) via ownership_repair.sh&#39;s</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="va">+# own real &quot;complete: N item(s) repaired&quot; line shape, so convergence and</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="va">+# non-convergence are both reproducible without a real filesystem walk.</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="va">+# harness_write_repair_double &lt;sandbox&gt; — overwrite the generic recorder shim</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="va">+# scripts/ownership_repair.sh with the scripted double described above.</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="va">+harness_write_repair_double() {</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="va">+    local sb=&quot;$1&quot;</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="va">+    cat &gt; &quot;$sb/repo/scripts/ownership_repair.sh&quot; &lt;&lt;&#39;DOUBLE&#39;</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="va">+#!/usr/bin/env bash</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="va">+# BOB-159 test double for scripts/ownership_repair.sh — returns a SCRIPTED</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a><span class="va">+# per-call item count (DOUBLE_ITEMS_SEQUENCE, colon-separated) instead of</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a><span class="va">+# performing a real filesystem walk, so run_ownership_repair_until_stable&#39;s</span></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="va">+# convergence / non-convergence behaviour is reproducible without one.</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a><span class="va">+set -euo pipefail</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="va">+state_dir=&quot;${DOUBLE_STATE_DIR:?DOUBLE_STATE_DIR unset}&quot;</span></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="va">+mkdir -p &quot;$state_dir&quot;</span></span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a><span class="va">+count_file=&quot;$state_dir/repair_calls&quot;</span></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a><span class="va">+n=0</span></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a><span class="va">+[[ -f &quot;$count_file&quot; ]] &amp;&amp; n=&quot;$(cat &quot;$count_file&quot;)&quot;</span></span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a><span class="va">+n=$((n + 1))</span></span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a><span class="va">+printf &#39;%s&#39; &quot;$n&quot; &gt; &quot;$count_file&quot;</span></span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a><span class="va">+printf &#39;%s\n&#39; &quot;$*&quot; &gt;&gt; &quot;$state_dir/repair_argv.log&quot;</span></span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a><span class="va">+IFS=&#39;:&#39; read -r -a seq &lt;&lt;&lt; &quot;${DOUBLE_ITEMS_SEQUENCE:?DOUBLE_ITEMS_SEQUENCE unset}&quot;</span></span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a><span class="va">+idx=$((n - 1))</span></span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a><span class="va">+if (( idx &lt; ${#seq[@]} )); then</span></span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a><span class="va">+    items=&quot;${seq[$idx]}&quot;</span></span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a><span class="va">+else</span></span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a><span class="va">+    items=&quot;${seq[${#seq[@]}-1]}&quot;</span></span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a><span class="va">+fi</span></span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a><span class="va">+printf &#39;[ownership-repair] complete: %s item(s) repaired; record x.ndjson; marker repair-marker.json\n&#39; &quot;$items&quot;</span></span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a><span class="va">+exit 0</span></span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a><span class="va">+DOUBLE</span></span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a><span class="va">+    chmod +x &quot;$sb/repo/scripts/ownership_repair.sh&quot;</span></span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a><span class="va">+}</span></span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a><span class="va">+# harness_call_stable &lt;sandbox&gt; &lt;colon-separated-item-sequence&gt; — source the</span></span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a><span class="va">+# sandboxed start.sh (main() never runs, per its own sourcing guard) and call</span></span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a><span class="va">+# run_ownership_repair_until_stable() directly. Sets HARNESS_OUT / HARNESS_RC,</span></span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a><span class="va">+# same contract as harness_run().</span></span>
+<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a><span class="va">+harness_call_stable() {</span></span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a><span class="va">+    local sb=&quot;$1&quot; seq=&quot;$2&quot;</span></span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a><span class="va">+    local out rc=0</span></span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a><span class="va">+    mkdir -p &quot;$sb/state&quot;</span></span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a><span class="va">+    set +e</span></span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a><span class="va">+    out=&quot;$(</span></span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a><span class="va">+        cd &quot;$sb/repo&quot; &amp;&amp; \</span></span>
+<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a><span class="va">+        PATH=&quot;$sb/bin:$sb/sysbin&quot; \</span></span>
+<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a><span class="va">+        HOME=&quot;$sb/home&quot; \</span></span>
+<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a><span class="va">+        DOUBLE_STATE_DIR=&quot;$sb/state&quot; \</span></span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a><span class="va">+        DOUBLE_ITEMS_SEQUENCE=&quot;$seq&quot; \</span></span>
+<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a><span class="va">+        bash -c &#39;source &quot;$1/repo/start.sh&quot;; run_ownership_repair_until_stable&#39; _ &quot;$sb&quot; 2&gt;&amp;1</span></span>
+<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a><span class="va">+    )&quot;</span></span>
+<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a><span class="va">+    rc=$?</span></span>
+<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a><span class="va">+    set -e</span></span>
+<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a><span class="va">+    HARNESS_OUT=&quot;$out&quot;</span></span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a><span class="va">+    HARNESS_RC=&quot;$rc&quot;</span></span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a><span class="va">+}</span></span>
+<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a><span class="va">+check_WARM_REVERIFY_UNTIL_STABLE() {</span></span>
+<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a><span class="va">+    # First pass finds 2 stragglers (repaired), second pass finds 0 (nothing</span></span>
+<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a><span class="va">+    # new) -- the function must STOP re-verifying there: exactly 2 calls,</span></span>
+<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a><span class="va">+    # rc=0, and it must say so as &quot;STABLE after 2 pass(es)&quot;.</span></span>
+<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a><span class="va">+    local sb; sb=&quot;$(harness_new_sandbox)&quot;</span></span>
+<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a><span class="va">+    harness_write_repair_double &quot;$sb&quot;</span></span>
+<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a><span class="va">+    [[ -n &quot;$1&quot; ]] &amp;&amp; harness_mutate &quot;$sb&quot; &quot;$1&quot;</span></span>
+<span id="cb3-96"><a href="#cb3-96" aria-hidden="true" tabindex="-1"></a><span class="va">+    harness_call_stable &quot;$sb&quot; &quot;2:0&quot;</span></span>
+<span id="cb3-97"><a href="#cb3-97" aria-hidden="true" tabindex="-1"></a><span class="va">+    local ok=1 calls</span></span>
+<span id="cb3-98"><a href="#cb3-98" aria-hidden="true" tabindex="-1"></a><span class="va">+    calls=&quot;$(cat &quot;$sb/state/repair_calls&quot; 2&gt;/dev/null || echo 0)&quot;</span></span>
+<span id="cb3-99"><a href="#cb3-99" aria-hidden="true" tabindex="-1"></a><span class="va">+    if [[ &quot;$HARNESS_RC&quot; -eq 0 &amp;&amp; &quot;$HARNESS_OUT&quot; == *&quot;STABLE after 2 pass(es)&quot;* &amp;&amp; &quot;$calls&quot; == &quot;2&quot; ]]; then</span></span>
+<span id="cb3-100"><a href="#cb3-100" aria-hidden="true" tabindex="-1"></a><span class="va">+        ok=0</span></span>
+<span id="cb3-101"><a href="#cb3-101" aria-hidden="true" tabindex="-1"></a><span class="va">+    fi</span></span>
+<span id="cb3-102"><a href="#cb3-102" aria-hidden="true" tabindex="-1"></a><span class="va">+    CHECK_DIAG=&quot;rc=$HARNESS_RC calls=$calls out tail: ${HARNESS_OUT: -200}&quot;</span></span>
+<span id="cb3-103"><a href="#cb3-103" aria-hidden="true" tabindex="-1"></a><span class="va">+    harness_cleanup &quot;$sb&quot;; return $ok</span></span>
+<span id="cb3-104"><a href="#cb3-104" aria-hidden="true" tabindex="-1"></a><span class="va">+}</span></span>
+<span id="cb3-105"><a href="#cb3-105" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb3-106"><a href="#cb3-106" aria-hidden="true" tabindex="-1"></a><span class="va">+check_WARM_REVERIFY_UNPROVEN_ON_NONCONVERGENCE() {</span></span>
+<span id="cb3-107"><a href="#cb3-107" aria-hidden="true" tabindex="-1"></a><span class="va">+    # Every pass reports 3 NEW items -- an active download writing faster</span></span>
+<span id="cb3-108"><a href="#cb3-108" aria-hidden="true" tabindex="-1"></a><span class="va">+    # than the walk completes never lets a pass find nothing. The loop MUST</span></span>
+<span id="cb3-109"><a href="#cb3-109" aria-hidden="true" tabindex="-1"></a><span class="va">+    # be bounded (exactly OWNERSHIP_REPAIR_MAX_PASSES=4 calls, never more),</span></span>
+<span id="cb3-110"><a href="#cb3-110" aria-hidden="true" tabindex="-1"></a><span class="va">+    # MUST exit non-zero, and MUST say UNPROVEN + name the realistic cause --</span></span>
+<span id="cb3-111"><a href="#cb3-111" aria-hidden="true" tabindex="-1"></a><span class="va">+    # never silently exit 0 over an unverified tree (§11.4.201(6)).</span></span>
+<span id="cb3-112"><a href="#cb3-112" aria-hidden="true" tabindex="-1"></a><span class="va">+    local sb; sb=&quot;$(harness_new_sandbox)&quot;</span></span>
+<span id="cb3-113"><a href="#cb3-113" aria-hidden="true" tabindex="-1"></a><span class="va">+    harness_write_repair_double &quot;$sb&quot;</span></span>
+<span id="cb3-114"><a href="#cb3-114" aria-hidden="true" tabindex="-1"></a><span class="va">+    [[ -n &quot;$1&quot; ]] &amp;&amp; harness_mutate &quot;$sb&quot; &quot;$1&quot;</span></span>
+<span id="cb3-115"><a href="#cb3-115" aria-hidden="true" tabindex="-1"></a><span class="va">+    harness_call_stable &quot;$sb&quot; &quot;3:3:3:3:3:3&quot;</span></span>
+<span id="cb3-116"><a href="#cb3-116" aria-hidden="true" tabindex="-1"></a><span class="va">+    local ok=1 calls</span></span>
+<span id="cb3-117"><a href="#cb3-117" aria-hidden="true" tabindex="-1"></a><span class="va">+    calls=&quot;$(cat &quot;$sb/state/repair_calls&quot; 2&gt;/dev/null || echo 0)&quot;</span></span>
+<span id="cb3-118"><a href="#cb3-118" aria-hidden="true" tabindex="-1"></a><span class="va">+    if [[ &quot;$HARNESS_RC&quot; -ne 0 &amp;&amp; &quot;$HARNESS_OUT&quot; == *&quot;UNPROVEN&quot;* \</span></span>
+<span id="cb3-119"><a href="#cb3-119" aria-hidden="true" tabindex="-1"></a><span class="va">+          &amp;&amp; &quot;$HARNESS_OUT&quot; == *&quot;ACTIVE DOWNLOAD&quot;* &amp;&amp; &quot;$calls&quot; == &quot;4&quot; ]]; then</span></span>
+<span id="cb3-120"><a href="#cb3-120" aria-hidden="true" tabindex="-1"></a><span class="va">+        ok=0</span></span>
+<span id="cb3-121"><a href="#cb3-121" aria-hidden="true" tabindex="-1"></a><span class="va">+    fi</span></span>
+<span id="cb3-122"><a href="#cb3-122" aria-hidden="true" tabindex="-1"></a><span class="va">+    CHECK_DIAG=&quot;rc=$HARNESS_RC calls=$calls out tail: ${HARNESS_OUT: -240}&quot;</span></span>
+<span id="cb3-123"><a href="#cb3-123" aria-hidden="true" tabindex="-1"></a><span class="va">+    harness_cleanup &quot;$sb&quot;; return $ok</span></span>
+<span id="cb3-124"><a href="#cb3-124" aria-hidden="true" tabindex="-1"></a><span class="va">+}</span></span>
+<span id="cb3-125"><a href="#cb3-125" aria-hidden="true" tabindex="-1"></a><span class="va">+</span></span>
+<span id="cb3-126"><a href="#cb3-126" aria-hidden="true" tabindex="-1"></a> CHECK_NAMES=(</span>
+<span id="cb3-127"><a href="#cb3-127" aria-hidden="true" tabindex="-1"></a>     PRECONDITION_BEFORE_DOWN</span>
+<span id="cb3-128"><a href="#cb3-128" aria-hidden="true" tabindex="-1"></a>     REPAIR_AFTER_DOWN</span>
+<span id="cb3-129"><a href="#cb3-129" aria-hidden="true" tabindex="-1"></a>     REPAIR_BEFORE_UP</span>
+<span id="cb3-130"><a href="#cb3-130" aria-hidden="true" tabindex="-1"></a><span class="va">+    WARM_REVERIFY_UNTIL_STABLE</span></span>
+<span id="cb3-131"><a href="#cb3-131" aria-hidden="true" tabindex="-1"></a><span class="va">+    WARM_REVERIFY_UNPROVEN_ON_NONCONVERGENCE</span></span>
+<span id="cb3-132"><a href="#cb3-132" aria-hidden="true" tabindex="-1"></a>     BOBACTL_DOWN_AND_UP DOWN_BEFORE_UP UP_IS_DETACHED NO_RAW_RUNTIME_CALLS</span>
+<span id="cb3-133"><a href="#cb3-133" aria-hidden="true" tabindex="-1"></a>     NO_BOBA_CTL_USES_COMPOSE EXIT_ZERO_AND_SUCCESS_MSG</span>
+<span id="cb3-134"><a href="#cb3-134" aria-hidden="true" tabindex="-1"></a>     DOWN_FAILURE_IS_NONFATAL UP_FAILURE_IS_FATAL</span>
+<span id="cb3-135"><a href="#cb3-135" aria-hidden="true" tabindex="-1"></a><span class="dt">@@ -165,6 +284,8 @@ declare -A CHECK_DESC=(</span></span>
+<span id="cb3-136"><a href="#cb3-136" aria-hidden="true" tabindex="-1"></a>     [PRECONDITION_BEFORE_DOWN]=&#39;probes ownership BEFORE tearing the stack down (FR-010)&#39;</span>
+<span id="cb3-137"><a href="#cb3-137" aria-hidden="true" tabindex="-1"></a>     [REPAIR_AFTER_DOWN]=&#39;repairs only after down, so no container writes behind the walk (FR-004d)&#39;</span>
+<span id="cb3-138"><a href="#cb3-138" aria-hidden="true" tabindex="-1"></a>     [REPAIR_BEFORE_UP]=&#39;completes the repair before up -d restores writers (FR-004d)&#39;</span>
+<span id="cb3-139"><a href="#cb3-139" aria-hidden="true" tabindex="-1"></a><span class="va">+    [WARM_REVERIFY_UNTIL_STABLE]=&#39;warm start re-verifies until a pass finds nothing new, then stops (BOB-159)&#39;</span></span>
+<span id="cb3-140"><a href="#cb3-140" aria-hidden="true" tabindex="-1"></a><span class="va">+    [WARM_REVERIFY_UNPROVEN_ON_NONCONVERGENCE]=&#39;bounded give-up reports ownership UNPROVEN, never a silent exit 0 (BOB-159, §11.4.201(6))&#39;</span></span>
+<span id="cb3-141"><a href="#cb3-141" aria-hidden="true" tabindex="-1"></a>     [BOBACTL_DOWN_AND_UP]=&#39;issues down and up -d through the boba-ctl orchestrator&#39;</span>
+<span id="cb3-142"><a href="#cb3-142" aria-hidden="true" tabindex="-1"></a>     [DOWN_BEFORE_UP]=&#39;tears the stack down before bringing it up&#39;</span>
+<span id="cb3-143"><a href="#cb3-143" aria-hidden="true" tabindex="-1"></a>     [UP_IS_DETACHED]=&#39;brings the stack up detached (-d)&#39;</span>
+<span id="cb3-144"><a href="#cb3-144" aria-hidden="true" tabindex="-1"></a><span class="dt">@@ -178,6 +299,8 @@ declare -A CHECK_MUTATION=(</span></span>
+<span id="cb3-145"><a href="#cb3-145" aria-hidden="true" tabindex="-1"></a>     [PRECONDITION_BEFORE_DOWN]=&#39;s/^        run_ownership_precondition$//; /^        stack_down$/a \        run_ownership_precondition&#39;</span>
+<span id="cb3-146"><a href="#cb3-146" aria-hidden="true" tabindex="-1"></a>     [REPAIR_AFTER_DOWN]=&#39;/^        stack_down$/i \        run_ownership_repair&#39;</span>
+<span id="cb3-147"><a href="#cb3-147" aria-hidden="true" tabindex="-1"></a>     [REPAIR_BEFORE_UP]=&#39;s/^        run_ownership_repair$//; /^        stack_up$/a \        run_ownership_repair&#39;</span>
+<span id="cb3-148"><a href="#cb3-148" aria-hidden="true" tabindex="-1"></a><span class="va">+    [WARM_REVERIFY_UNTIL_STABLE]=&#39;s/if \[\[ &quot;\$items&quot; -eq 0 \]\]; then/if [[ &quot;$items&quot; -eq 999999 ]]; then/&#39;</span></span>
+<span id="cb3-149"><a href="#cb3-149" aria-hidden="true" tabindex="-1"></a><span class="va">+    [WARM_REVERIFY_UNPROVEN_ON_NONCONVERGENCE]=&#39;/or wait for the write activity to settle/{n;s/exit 1/:/}&#39;</span></span>
+<span id="cb3-150"><a href="#cb3-150" aria-hidden="true" tabindex="-1"></a>     [BOBACTL_DOWN_AND_UP]=&#39;s/COMPOSE_CMD=&quot;\$SCRIPT_DIR\/scripts\/boba-ctl.sh&quot;/COMPOSE_CMD=&quot;$SCRIPT_DIR\/scripts\/boba-ctl-TYPO.sh&quot;/&#39;</span>
+<span id="cb3-151"><a href="#cb3-151" aria-hidden="true" tabindex="-1"></a>     [DOWN_BEFORE_UP]=&#39;/print_info &quot;Recreating the full stack/a \    $COMPOSE_CMD up -d&#39;</span>
+<span id="cb3-152"><a href="#cb3-152" aria-hidden="true" tabindex="-1"></a>     [UP_IS_DETACHED]=&#39;s/if ! \$COMPOSE_CMD up -d; then/if ! $COMPOSE_CMD up; then/&#39;</span></code></pre></div>
+<h2 id="terminal-evidence">6. Terminal evidence</h2>
+<h3
+id="a.-red-new-checks-fail-against-the-pre-fix-start.sh-11.4.115-red-reproduces-on-the-real">6a.
+RED — new checks fail against the pre-fix <code>start.sh</code>
+(§11.4.115: RED reproduces on the real,</h3>
+<p>broken artifact before any fix exists)</p>
+<p><code>start.sh</code> was reverted to its pre-fix (HEAD) state via
+<code>git stash push -- start.sh</code> (path-scoped, so no other
+in-flight work in the tree was touched), confirmed by
+<code>grep -c run_ownership_repair_until_stable start.sh</code> →
+<code>0</code>, then the full suite was run:</p>
+<pre><code>$ git stash push --keep-index -m &quot;BOB-159 temp: pre-fix start.sh for RED verification&quot; -- start.sh
+Saved working directory and index state On main: BOB-159 temp: pre-fix start.sh for RED verification
+
+$ grep -c &quot;run_ownership_repair_until_stable&quot; start.sh
+0
+
+$ bash tests/unit/test_start_reload_recreate.sh
+== start.sh --recreate (--green) ==
+  PASS: PRECONDITION_BEFORE_DOWN — probes ownership BEFORE tearing the stack down (FR-010)
+  PASS: REPAIR_AFTER_DOWN — repairs only after down, so no container writes behind the walk (FR-004d)
+  PASS: REPAIR_BEFORE_UP — completes the repair before up -d restores writers (FR-004d)
+  FAIL: WARM_REVERIFY_UNTIL_STABLE — warm start re-verifies until a pass finds nothing new, then stops (BOB-159)
+        rc=127 calls=0 out tail:
+  FAIL: WARM_REVERIFY_UNPROVEN_ON_NONCONVERGENCE — bounded give-up reports ownership UNPROVEN, never a silent exit 0 (BOB-159, §11.4.201(6))
+        rc=127 calls=0 out tail:
+  PASS: BOBACTL_DOWN_AND_UP — issues down and up -d through the boba-ctl orchestrator
+  PASS: DOWN_BEFORE_UP — tears the stack down before bringing it up
+  PASS: UP_IS_DETACHED — brings the stack up detached (-d)
+  PASS: NO_RAW_RUNTIME_CALLS — never issues a raw podman/docker verb (Hard Stop #3)
+  PASS: NO_BOBA_CTL_USES_COMPOSE — --no-boba-ctl re-binds to raw podman-compose
+  PASS: EXIT_ZERO_AND_SUCCESS_MSG — exits 0 and reports success
+  PASS: DOWN_FAILURE_IS_NONFATAL — a failing down warns but still brings the stack up
+  PASS: UP_FAILURE_IS_FATAL — exits non-zero when up fails
+RESULT: 11 passed, 2 failed</code></pre>
+<p><code>rc=127</code> (“command not found”) and <code>calls=0</code>
+confirm the failure is genuine:
+<code>run_ownership_repair_until_stable</code> does not exist on the
+pre-fix artifact, so the function call fails before the double is ever
+invoked. This is real RED, not a synthetic one.</p>
+<h3 id="b.-fix-restored-git-stash-pop-syntax-verified">6b. Fix restored
+(<code>git stash pop</code>), syntax verified</h3>
+<pre><code>$ git stash pop
+...
+Dropped refs/stash@{0} (f0c2610b2d2903be0a21f4bf604d825031cf222c)
+
+$ bash -n start.sh &amp;&amp; echo &quot;SYNTAX OK&quot;
+SYNTAX OK
+
+$ grep -c &quot;run_ownership_repair_until_stable&quot; start.sh
+5</code></pre>
+<h3 id="c.-green-full-suite-passes-with-the-fix-applied">6c. GREEN —
+full suite passes with the fix applied</h3>
+<pre><code>$ bash tests/unit/test_start_reload_recreate.sh
+== start.sh --recreate (--green) ==
+  PASS: PRECONDITION_BEFORE_DOWN — probes ownership BEFORE tearing the stack down (FR-010)
+  PASS: REPAIR_AFTER_DOWN — repairs only after down, so no container writes behind the walk (FR-004d)
+  PASS: REPAIR_BEFORE_UP — completes the repair before up -d restores writers (FR-004d)
+  PASS: WARM_REVERIFY_UNTIL_STABLE — warm start re-verifies until a pass finds nothing new, then stops (BOB-159)
+  PASS: WARM_REVERIFY_UNPROVEN_ON_NONCONVERGENCE — bounded give-up reports ownership UNPROVEN, never a silent exit 0 (BOB-159, §11.4.201(6))
+  PASS: BOBACTL_DOWN_AND_UP — issues down and up -d through the boba-ctl orchestrator
+  PASS: DOWN_BEFORE_UP — tears the stack down before bringing it up
+  PASS: UP_IS_DETACHED — brings the stack up detached (-d)
+  PASS: NO_RAW_RUNTIME_CALLS — never issues a raw podman/docker verb (Hard Stop #3)
+  PASS: NO_BOBA_CTL_USES_COMPOSE — --no-boba-ctl re-binds to raw podman-compose
+  PASS: EXIT_ZERO_AND_SUCCESS_MSG — exits 0 and reports success
+  PASS: DOWN_FAILURE_IS_NONFATAL — a failing down warns but still brings the stack up
+  PASS: UP_FAILURE_IS_FATAL — exits non-zero when up fails
+RESULT: 13 passed, 0 failed</code></pre>
+<p>Full suite went from <strong>11/11</strong> (before this item) to
+<strong>13/13</strong> (after) — the two new checks, both green, zero
+regressions among the pre-existing 11.</p>
+<h3
+id="d.-red-mutation-every-check-including-the-two-new-ones-has-a-paired-1.1-mutation-that-kills-it">6d.
+RED (mutation) — every check, including the two new ones, has a paired
+§1.1 mutation that kills it</h3>
+<pre><code>$ bash tests/unit/test_start_reload_recreate.sh --red
+== start.sh --recreate (--red) ==
+  RED-OK: PRECONDITION_BEFORE_DOWN — killed by: s/^        run_ownership_precondition$//; /^        stack_down$/a \        run_ownership_precondition
+  RED-OK: REPAIR_AFTER_DOWN — killed by: /^        stack_down$/i \        run_ownership_repair
+  RED-OK: REPAIR_BEFORE_UP — killed by: s/^        run_ownership_repair$//; /^        stack_up$/a \        run_ownership_repair
+  RED-OK: WARM_REVERIFY_UNTIL_STABLE — killed by: s/if \[\[ &quot;\$items&quot; -eq 0 \]\]; then/if [[ &quot;$items&quot; -eq 999999 ]]; then/
+  RED-OK: WARM_REVERIFY_UNPROVEN_ON_NONCONVERGENCE — killed by: /or wait for the write activity to settle/{n;s/exit 1/:/}
+  RED-OK: BOBACTL_DOWN_AND_UP — killed by: s/COMPOSE_CMD=&quot;\$SCRIPT_DIR\/scripts\/boba-ctl.sh&quot;/COMPOSE_CMD=&quot;$SCRIPT_DIR\/scripts\/boba-ctl-TYPO.sh&quot;/
+  RED-OK: DOWN_BEFORE_UP — killed by: /print_info &quot;Recreating the full stack/a \    $COMPOSE_CMD up -d
+  RED-OK: UP_IS_DETACHED — killed by: s/if ! \$COMPOSE_CMD up -d; then/if ! $COMPOSE_CMD up; then/
+  RED-OK: NO_RAW_RUNTIME_CALLS — killed by: /print_info &quot;Recreating the full stack/a \    $CONTAINER_RUNTIME restart qbittorrent-proxy
+  RED-OK: NO_BOBA_CTL_USES_COMPOSE — killed by: s/COMPOSE_CMD=&quot;podman-compose&quot;/COMPOSE_CMD=&quot;podman-compose-TYPO&quot;/
+  RED-OK: EXIT_ZERO_AND_SUCCESS_MSG — killed by: s/print_success &quot;Stack recreated successfully&quot;/print_success &quot;maybe&quot;/
+  RED-OK: DOWN_FAILURE_IS_NONFATAL — killed by: /Stack may not have been running/a \        exit 1
+  RED-OK: UP_FAILURE_IS_FATAL — killed by: /Failed to bring the stack back up/{n;s/exit 1/:/}
+RESULT: 13 passed, 0 failed</code></pre>
+<p><code>WARM_REVERIFY_UNTIL_STABLE</code>’s mutation
+(<code>-eq 0</code> → <code>-eq 999999</code>) breaks the convergence
+check itself: the “2:0” sequence’s pass-2 result of 0 is no longer
+recognised as stable, so the loop keeps going to the 4-pass bound and
+gives up UNPROVEN instead — the check (which requires <code>rc=0</code>
+and <code>"STABLE after 2 pass(es)"</code>) correctly fails.</p>
+<p><code>WARM_REVERIFY_UNPROVEN_ON_NONCONVERGENCE</code>’s mutation
+neuters the final give-up <code>exit 1</code> (turns it into a no-op
+<code>:</code>) so the function falls off the end returning 0 despite
+never converging — reproducing, under a controlled mutation, exactly the
+silent-exit-0 bug this item exists to prevent. The check (which requires
+<code>rc != 0</code>) correctly fails, proving the <code>exit 1</code>
+is load-bearing and not decorative.</p>
+<h3
+id="e.-regression-sweep-related-ownershipboot-integrity-suites-unaffected">6e.
+Regression sweep — related ownership/boot-integrity suites
+unaffected</h3>
+<p><code>scripts/ownership_repair.sh</code> was not touched
+(<code>git diff --stat scripts/ownership_repair.sh</code> → empty), and
+<code>run_ownership_precondition()</code> /
+<code>run_ownership_repair()</code> / the <code>--recreate</code>
+dispatch are unchanged, so every other ownership-related suite was
+re-run to confirm no regression:</p>
+<pre><code>=== test_ownership_repair.sh ===
+RESULT: 153 passed, 0 failed, 0 skipped
+
+=== test_ownership_precondition.sh ===
+RESULT: 32 passed, 0 failed, 0 skipped
+
+=== test_ownership_gid_agreement.sh ===
+RESULT: 5 passed, 0 failed, 0 skipped
+
+=== test_ownership_repair_scope_tsv.sh ===
+RESULT: 2 passed, 0 failed, 1 skipped   (pre-existing HEAD-moved-past-baseline SKIP, unrelated to this change)
+
+=== test_ownership_repair_setgid_strip.sh ===
+RESULT: 1 passed, 0 failed, 1 skipped   (pre-existing HEAD-moved-past-baseline SKIP, unrelated to this change)
+
+=== test_credential_store_mode.sh ===
+RESULT: 25 passed, 0 failed
+
+=== test_start_sh_boot_integrity.sh ===
+=== summary: PASS=13 FAIL=0 ===</code></pre>
+<p><code>tests/unit/test_start_reload_harness.sh</code>’s own
+control-needle self-test (proving the recorder-shim mechanism this suite
+depends on can genuinely see, and that the repo’s real
+<code>start.sh</code> was never mutated by the harness) was also re-run
+and passed 6/6.</p>
+<h2 id="scope-discipline-honoured">7. Scope discipline honoured</h2>
+<ul>
+<li>Only <code>start.sh</code>,
+<code>tests/unit/test_start_reload_recreate.sh</code>, and this evidence
+file were modified. <code>scripts/ownership_repair.sh</code> was read in
+full but left unchanged (no probe mode was genuinely needed).</li>
+<li><code>scripts/ownership_precondition.sh</code>,
+<code>scripts/lib/ownership.sh</code>,
+<code>scripts/pre_build_verification.sh</code>,
+<code>scripts/commit-push-all.sh</code>, and
+<code>docs/workable_items.db</code> / <code>docs/Issues.md</code> /
+<code>docs/Fixed.md</code> / <code>workable-items</code> CLI were never
+touched.</li>
+<li>No <code>git add</code> / <code>git commit</code> /
+<code>git push</code> was run.</li>
+<li>No real container was started, stopped, or recreated, and no real
+filesystem walk was performed against this host’s live stack during
+testing — all new-check assertions run against an isolated sandbox
+(<code>harness_new_sandbox</code>) with a scripted double standing in
+for <code>ownership_repair.sh</code>, per the existing established
+safe-testing pattern in this test file.</li>
+</ul>
+</body>
+</html>

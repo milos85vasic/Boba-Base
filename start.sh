@@ -1358,13 +1358,139 @@ run_ownership_repair() {
     print_success "Ownership repair complete — every in-scope item is operator-owned"
 }
 
+# ---------------------------------------------------------------------------
+# run_ownership_repair_until_stable — the WARM-start half of the ownership
+# gate (BOB-159; operator decision 2026-08-26, §11.4.66: REPAIR, THEN
+# RE-VERIFY UNTIL STABLE).
+#
+# WHY THIS EXISTS, AND WHY run_ownership_repair() ALONE IS NOT ENOUGH HERE:
+#   run_ownership_repair() walks the declared tree ONCE. On the --recreate
+#   path that single walk is provably sufficient, because stack_down() has
+#   ALREADY quiesced every writer before it runs (FR-004d — see the
+#   "ORDERING" header above run_ownership_precondition()). On the WARM path
+#   there is no stack_down(): if the stack is already running, a container
+#   can create a new non-operator-owned file BEHIND a single walk, after
+#   which that walk's own completion marker would record "complete" over a
+#   tree that is not — the exact defect feature 002-user-owned-downloads
+#   exists to end, re-opened through the warm door instead of the --recreate
+#   one it was closed on.
+#
+# THE OPERATOR'S CHOICE (recorded 2026-08-26; options NOT chosen are named
+# here so this is never silently re-litigated):
+#   - refuse the warm repair and direct the operator to --recreate: REJECTED
+#   - quiesce the stack on the warm path too (correct, but no longer "warm"): REJECTED
+#   - accept the window and merely document it: REJECTED
+#   - CHOSEN: keep repairing the live stack, but WALK, RE-VERIFY, and REPEAT
+#     until a pass finds NOTHING NEW — bounded — and on giving up REPORT
+#     HONESTLY that ownership is UNPROVEN rather than exit 0.
+#
+# WHY BOUNDED AT 4 PASSES, NOT UNBOUNDED AND NOT SOME OTHER NUMBER:
+#   An unbounded loop against a stack that writes faster than the walk
+#   completes never returns — that is a hang with extra steps, not
+#   re-verification. 4 is a judgement call (§11.4.6 — stated, not hidden):
+#   on the common, already-clean case a converging pass costs the operator
+#   at most a couple of extra fast walks (pass 1 fixes a genuine straggler,
+#   pass 2 confirms nothing new), so the bound is cheap when the tree really
+#   is stabilising. A genuinely non-converging stack (an active download
+#   continuously creating files) is not rescued by a LARGER bound — the
+#   honest answer there is UNPROVEN regardless of how many passes are tried
+#   — so the number is kept small rather than tuned to paper over that case.
+#
+# WHY --force ON EVERY PASS:
+#   ownership_repair.sh's own marker fast-path (marker_is_valid) makes a
+#   SECOND call against the SAME scope fingerprint a no-op that walks
+#   nothing at all — which is the same reason its own --dry-run header
+#   explains --dry-run cannot serve as a warm-start probe ("would walk the
+#   tree twice on every start"): a completed marker has the opposite
+#   problem, it would walk the tree ZERO times on every re-verify pass.
+#   --force bypasses the marker so every pass performs a REAL walk and can
+#   see a file that arrived after the previous pass finished.
+#
+# CONVERGENCE SIGNAL:
+#   Read from ownership_repair.sh's OWN "complete: N item(s) repaired" line
+#   (§11.4.251 — one definition of "how many items changed" per run, never a
+#   second one re-derived here from the marker JSON or the change record).
+#   N == 0 on a pass means that pass's walk found nothing left to fix — the
+#   tree was already stable when that walk started. N > 0 means the walk
+#   found (and fixed) something, which could be a genuine pre-existing
+#   straggler OR a file a live container wrote WHILE the walk ran; one pass
+#   alone cannot tell those apart, which is exactly why this loop re-verifies
+#   instead of trusting the first "complete".
+#
+# HONEST BOUNDARY (§11.4.6): a "stable" verdict here means the LAST pass
+# found nothing new — it does not retroactively prove nothing was ever
+# written mid-walk during an EARLIER pass in this same loop; that is why
+# every pass with items > 0 triggers another full re-walk rather than being
+# treated as "probably fine". It also does not prove nothing writes AFTER
+# this function returns — that is the ordinary, always-present race this
+# function narrows, not one it claims to eliminate.
+# ---------------------------------------------------------------------------
+OWNERSHIP_REPAIR_MAX_PASSES=4
+
+run_ownership_repair_until_stable() {
+    local repair="$SCRIPT_DIR/scripts/ownership_repair.sh"
+    local pass=0 rc out items
+    ownership_set_nice_prefix
+
+    if [[ ! -f "$repair" ]]; then
+        print_error "Ownership repair script missing: $repair"
+        print_error "Refusing to start — pre-existing content cannot be brought under the operator (FR-004d)."
+        exit 1
+    fi
+
+    print_info "Ownership repair (warm start): repairing, then re-verifying until stable (bounded, max ${OWNERSHIP_REPAIR_MAX_PASSES} pass(es))..."
+
+    while (( pass < OWNERSHIP_REPAIR_MAX_PASSES )); do
+        pass=$((pass + 1))
+        set +e
+        out="$("${OWNERSHIP_NICE[@]}" bash "$repair" --force 2>&1)"
+        rc=$?
+        set -e
+        printf '%s\n' "$out"
+
+        if [[ "$rc" -ne 0 ]]; then
+            print_error "Ownership repair did not complete on pass ${pass}/${OWNERSHIP_REPAIR_MAX_PASSES} (exit $rc) — refusing to start."
+            print_error "  Each item it could not repair is named in the report above (FR-006)."
+            exit 1
+        fi
+
+        items="$(printf '%s\n' "$out" | sed -n 's/.*complete: \([0-9][0-9]*\) item(s) repaired.*/\1/p' | tail -n1)"
+        if [[ -z "$items" ]]; then
+            print_error "Ownership repair exited 0 on pass ${pass}/${OWNERSHIP_REPAIR_MAX_PASSES} but did not report how many items it changed."
+            print_error "  A pass whose result cannot be read is not evidence of a clean tree (§11.4.201(6)) — refusing to certify ownership as stable."
+            exit 1
+        fi
+
+        if [[ "$items" -eq 0 ]]; then
+            print_success "Ownership repair complete and STABLE after ${pass} pass(es) — the last pass found nothing new to repair"
+            return 0
+        fi
+
+        print_info "  pass ${pass}/${OWNERSHIP_REPAIR_MAX_PASSES} repaired ${items} item(s) — re-verifying (a live container may still be writing)"
+    done
+
+    print_error "Ownership UNPROVEN after ${OWNERSHIP_REPAIR_MAX_PASSES} repair pass(es) — every pass kept finding NEW non-operator-owned files."
+    print_error "  This is NOT the same as a clean tree (§11.4.201(6)): a bounded loop that stops because it ran out of"
+    print_error "  passes must never be reported the same as a pass that genuinely found nothing left to fix."
+    print_error "  The realistic cause is an ACTIVE DOWNLOAD (or another container) writing into a declared location"
+    print_error "  FASTER than the repair can walk it, so ownership cannot be certified stable on this live stack."
+    print_error "  Remediate with: ./start.sh --recreate (quiesces the stack for the walk before bringing it back up),"
+    print_error "  or wait for the write activity to settle and re-run ./start.sh."
+    exit 1
+}
+
 # Cold-start / warm-start entry point: the declared locations have just been
 # created and no container has been brought up yet by THIS invocation, so both
 # halves run back to back. The --recreate path does NOT use this wrapper -- it
 # interleaves `down` between the halves; see the dispatch below.
+#
+# BOB-159: the repair half here is run_ownership_repair_until_stable(), NOT
+# the single-pass run_ownership_repair() the --recreate dispatch below still
+# calls directly. See that function's own header comment for why a warm start
+# needs the bounded re-verify loop and --recreate does not.
 run_ownership_gate() {
     run_ownership_precondition
-    run_ownership_repair
+    run_ownership_repair_until_stable
 }
 
 # ---------------------------------------------------------------------------
@@ -1608,16 +1734,18 @@ main() {
     #
     # HONEST BOUNDARY (§11.4.6), do not read more into this than it says: the
     # claim above is about what THIS invocation starts. If the operator runs a
-    # warm `./start.sh` over an ALREADY-RUNNING stack, containers are writing
-    # while the repair walks, and the FR-004d window the --recreate path closes
-    # by interleaving `down` is NOT closed here.
-    #
-    # Bounded in practice, not by luck: after any successful pass the completion
-    # marker is valid for the scope fingerprint and the repair short-circuits
-    # without walking at all (scripts/ownership_repair.sh marker_is_valid), so
-    # the window needs a STALE-or-absent marker AND a live stack together. That
-    # is a real combination — a newly declared scope entry re-arms the marker —
-    # so it is tracked, not dismissed.
+    # warm `./start.sh` over an ALREADY-RUNNING stack, containers can still be
+    # writing while a repair pass walks — a single pass cannot, by itself, tell
+    # "genuinely clean" apart from "a container wrote something behind this
+    # walk". run_ownership_gate() no longer trusts one pass on the warm path:
+    # it calls run_ownership_repair_until_stable() (BOB-159, operator decision
+    # 2026-08-26), which walks, re-verifies, and repeats until a pass finds
+    # NOTHING NEW, bounded to OWNERSHIP_REPAIR_MAX_PASSES attempts. That BOUNDS
+    # the window instead of leaving it open-ended, but does not eliminate it —
+    # a stack whose writes never stabilise within the bound is reported
+    # honestly as ownership UNPROVEN (the function refuses to start rather than
+    # exit 0 over an unverified tree — see its own header for the full
+    # rationale, including why a larger bound would not change that verdict).
     run_ownership_gate
 
     if [[ "$build_frontend_flag" == true ]]; then

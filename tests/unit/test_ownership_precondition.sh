@@ -591,4 +591,113 @@ else
     done
 fi
 
+# ---- 6e: PAIRED §1.1 MUTATION — the fence call is load-bearing ------------
+# Case 6c proves the shipped precondition refuses the '..' escape; case 6d
+# proves the same fence does not refuse the six live shipped entries. Neither,
+# on its own, proves the ASSERTION is load-bearing — a refusal reached by some
+# unrelated cause, or a fence that happened to never actually fire, would pass
+# 6c identically. §1.1: mutate the ONE call site in main() that wires
+# ownership_path_fence() into scripts/ownership_precondition.sh so it can never
+# refuse, and confirm the SAME escape that 6c blocks now succeeds. If it does
+# not, 6c's PASS was decoration, not proof — and this is exactly the coverage
+# gap the item text (BOB-187 acceptance) names: "ships a paired §1.1 mutation
+# proving the refusal fires PLUS a negative control proving the six live
+# shipped entries still ACCEPT so the fix is not a §11.4.201(1) false-positive
+# refusal." 6d already delivers the negative-control half; this delivers the
+# mutation half.
+#
+# Driven against a SANDBOXED COPY of the real artifact — the TRACKED file on
+# disk is never touched, so there is no restore step: the mutation dies with
+# the sandbox. This is the sb_new() pattern tests/unit/test_ownership_repair.sh
+# already established for the sibling script's own fence-wiring proof
+# (scripts/lib/ownership.sh, ownership_resolve_symlinks()'s header cites the
+# same class of guarantee). sha256-verified byte-identical to the tracked
+# source BEFORE mutation, so the sandbox is proven to be testing THIS artifact,
+# not a stale or hand-typed stand-in (§11.4.6 / §11.4.201(11)).
+#
+# THE ESCAPE-TARGET DIRECTORY MUST BE OUTSIDE THE SANDBOX'S OWN PROJECT ROOT.
+# scripts/ownership_precondition.sh derives PROJECT_ROOT from its OWN location
+# (`dirname "${BASH_SOURCE[0]}"`/..), so once the script is copied into a
+# sandbox, PROJECT_ROOT becomes the SANDBOX root, not the real one — nesting
+# the escape target INSIDE the sandbox would make it a location the fence
+# correctly ACCEPTS (it is genuinely inside the project root), silently
+# defeating the whole case. The escape target is therefore a SIBLING of the
+# sandbox directory (both live directly under $FIX), exactly mirroring how the
+# real 6c fixture (${FIX}/escape_target, PROJECT_ROOT = the real repository)
+# is never nested one inside the other.
+MUT_SB="$(mktemp -d "${FIX}/mut_sb.XXXXXXXX")"
+mkdir -p "${MUT_SB}/scripts/lib"
+cp -p "${SCRIPT}" "${MUT_SB}/scripts/ownership_precondition.sh"
+cp -p "${PROJECT_ROOT}/scripts/lib/ownership.sh" "${MUT_SB}/scripts/lib/ownership.sh"
+chmod +x "${MUT_SB}/scripts/ownership_precondition.sh"
+
+MUT_SUM_ORIG="$(sha256sum "${SCRIPT}" | cut -d' ' -f1)"
+MUT_SUM_SB="$(sha256sum "${MUT_SB}/scripts/ownership_precondition.sh" | cut -d' ' -f1)"
+if [ "${MUT_SUM_ORIG}" != "${MUT_SUM_SB}" ]; then
+    fail "mutation harness: sandbox copy is NOT byte-identical to scripts/ownership_precondition.sh — not testing the real artifact"
+else
+    MUT_CLIMB=""
+    for _ in $(seq 1 24); do MUT_CLIMB="${MUT_CLIMB}../"; done
+
+    # ---- (i) GREEN on the UNMUTATED sandbox copy: the sandbox reproduces
+    # 6c's real-artifact refusal BEFORE any mutation is applied. This rules out
+    # a sandbox-setup artifact (wrong PROJECT_ROOT resolution, a stale lib
+    # copy) being mistaken for fence behaviour in step (iii) below.
+    MUT_ESCAPE_GREEN="${FIX}/escape_target_mutation_green"
+    mkdir -p "${MUT_ESCAPE_GREEN}"
+    MUT_SCOPE_GREEN="${MUT_SB}/scope_mutation_green.yaml"
+    fence_scope "${MUT_SCOPE_GREEN}" "${MUT_CLIMB}${MUT_ESCAPE_GREEN#/}"
+    MUT_G_BEFORE="$(stat -c %y "${MUT_ESCAPE_GREEN}")"
+    MUT_G_OUT="${FIX}/mut_out_green.$(date +%s%N).$RANDOM"
+    CONTAINER_RUNTIME="" timeout 60 bash "${MUT_SB}/scripts/ownership_precondition.sh" \
+        --scope "${MUT_SCOPE_GREEN}" >"${MUT_G_OUT}" 2>&1
+    MUT_G_RC=$?
+    MUT_G_AFTER="$(stat -c %y "${MUT_ESCAPE_GREEN}")"
+    if [ "${MUT_G_RC}" -eq 2 ] && [ "${MUT_G_BEFORE}" = "${MUT_G_AFTER}" ]; then
+        pass "mutation harness pre-flight: unmutated sandbox copy refuses the '..' escape exactly like the real artifact (exit 2, mtime unchanged) — the sandbox is a faithful stand-in"
+    else
+        fail "mutation harness pre-flight: unmutated sandbox copy did NOT refuse the '..' escape (rc=${MUT_G_RC}) — the sandbox does not faithfully reproduce Case 6c, so a RED result below would not be trustworthy"
+        sed -n '1,20p' "${MUT_G_OUT}" >&2
+    fi
+
+    # ---- (ii) the sed target must be the ONE call site, verified rather than
+    # assumed — a future refactor that changes the call shape must fail LOUDLY
+    # here instead of silently mutating nothing and reporting a false PASS.
+    MUT_HITS="$(grep -c 'f_reason="\$(ownership_path_fence' "${MUT_SB}/scripts/ownership_precondition.sh" || true)"
+    if [ "${MUT_HITS}" != "1" ]; then
+        fail "mutation harness: expected exactly 1 fence call site in main(), found ${MUT_HITS} — the sed target is no longer unique, mutation would be ambiguous"
+    else
+        sed -i 's/f_reason="\$(ownership_path_fence /f_reason="$(true /' \
+            "${MUT_SB}/scripts/ownership_precondition.sh"
+        if grep -q 'f_reason="\$(ownership_path_fence' "${MUT_SB}/scripts/ownership_precondition.sh"; then
+            fail "mutation harness: sed did not remove the fence call — mutation did not take effect"
+        else
+            pass "mutation harness: the fence call site was neutered (ownership_path_fence -> true) in the sandbox copy"
+
+            # ---- (iii) RED on the MUTATED sandbox copy, a FRESH escape target
+            # so this evidence can never be confused with (i)'s.
+            MUT_ESCAPE_RED="${FIX}/escape_target_mutation_red"
+            mkdir -p "${MUT_ESCAPE_RED}"
+            MUT_SCOPE_RED="${MUT_SB}/scope_mutation_red.yaml"
+            fence_scope "${MUT_SCOPE_RED}" "${MUT_CLIMB}${MUT_ESCAPE_RED#/}"
+            MUT_R_BEFORE="$(stat -c %y "${MUT_ESCAPE_RED}")"
+            MUT_R_OUT="${FIX}/mut_out_red.$(date +%s%N).$RANDOM"
+            CONTAINER_RUNTIME="" timeout 60 bash "${MUT_SB}/scripts/ownership_precondition.sh" \
+                --scope "${MUT_SCOPE_RED}" >"${MUT_R_OUT}" 2>&1
+            MUT_R_RC=$?
+            MUT_R_AFTER="$(stat -c %y "${MUT_ESCAPE_RED}")"
+
+            if [ "${MUT_R_BEFORE}" != "${MUT_R_AFTER}" ]; then
+                pass "mutation: fence call neutered -> the SAME '..' escape now creates (and removes) a probe file OUTSIDE the sandbox project root (mtime changed, rc=${MUT_R_RC}) — Case 6c's PASS is proven load-bearing, not decoration"
+            else
+                fail "mutation: fence call neutered but the escape STILL did not create a probe file (rc=${MUT_R_RC}, mtime unchanged) — either the mutation did not take effect, or something else independently blocks the escape; Case 6c's PASS is NOT proven load-bearing by this evidence"
+                sed -n '1,40p' "${MUT_R_OUT}" >&2
+            fi
+        fi
+    fi
+fi
+# No restore step: only the sandboxed copy under $FIX was ever mutated. $FIX is
+# reaped by the EXIT trap declared at the top of this file, and the tracked
+# scripts/ownership_precondition.sh on disk was never written to.
+
 finish

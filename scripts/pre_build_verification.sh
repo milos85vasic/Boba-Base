@@ -502,7 +502,37 @@ echo "[16/58] CM-MARKDOWN-EXPORT-SYNC: all-Markdown export freshness (§11.4.65)
 source "${PROJECT_ROOT}/scripts/lib/export_staleness.sh"
 
 export_sync_violations=()
+export_sync_new_doc_warnings=()
 export_docx_warnings=()
+
+# --- BOB-223 fix: the new-doc-creation-moment false positive -------------
+# §11.4.65's staleness premise ("mtime >= .md mtime") presupposes a sibling
+# that ALREADY EXISTED and might have rotted. A .md that has NO committed
+# history at all cannot have "gone stale" in that sense — it simply has not
+# been through the export step yet. Hard-blocking that exact moment punished
+# §11.4.18 compliance (writing the mandated companion doc immediately trips
+# THIS gate) while §11.4.18 itself remains unenforced (CM-SCRIPT-DOCS-SYNC —
+# see the GATE-DEBT REGISTER near the end of this file) — the author who
+# never writes the doc at all sails through for free. That is the exact
+# incentive inversion BOB-223 investigated.
+#
+# Fix: a missing twin for a .md that is NOT YET IN HEAD (no committed prior
+# state to have regressed from) is downgraded to a WARN with an actionable
+# remediation command — never silent, never a hard block. A missing OR
+# stale twin for a .md that IS already in HEAD (a previously-published,
+# tracked doc) is UNCHANGED — still a hard BLOCKING fail, exactly as before
+# (proven unweakened by the pre-existing paired-mutation test
+# tests/unit/test_export_sync_gate.sh, which backdates a TRACKED doc's
+# sibling and asserts the gate still fails). New-doc coverage:
+# tests/pre_build/test_cm_markdown_export_sync_new_doc.sh.
+#
+# "In HEAD" is resolved ONCE via a single `git ls-tree` pass (never a
+# per-file subprocess) — the same one-git-pass-then-map convention
+# scripts/lib/export_staleness.sh already uses for its own history lookups.
+declare -A _bob223_head_md_paths=()
+while IFS= read -r _bob223_hp; do
+    [[ -n "${_bob223_hp}" ]] && _bob223_head_md_paths["${_bob223_hp}"]=1
+done < <(git -C "${PROJECT_ROOT}" ls-tree -r --name-only HEAD 2>/dev/null | grep -E '\.md$' || true)
 
 while IFS= read -r -d '' md; do
     rel="${md#"${PROJECT_ROOT}/"}"
@@ -513,10 +543,20 @@ while IFS= read -r -d '' md; do
     esac
 
     [[ -f "${md}" ]] || continue
+
+    # A doc absent from HEAD has no committed prior state to have regressed
+    # from — a missing twin for it is "not yet regenerated", not staleness.
+    doc_new_to_git=0
+    [[ -z "${_bob223_head_md_paths[${rel}]:-}" ]] && doc_new_to_git=1
+
     for ext in html pdf; do
         sib="${md%.md}.${ext}"
         if [[ ! -f "${sib}" ]]; then
-            export_sync_violations+=("${rel%.md}.${ext} missing")
+            if [[ "${doc_new_to_git}" -eq 1 ]]; then
+                export_sync_new_doc_warnings+=("${rel%.md}.${ext} missing (doc not yet in git history — not yet export-regenerated)")
+            else
+                export_sync_violations+=("${rel%.md}.${ext} missing")
+            fi
         elif export_is_stale "${md}" "${sib}" "${PROJECT_ROOT}"; then
             export_sync_violations+=("${rel%.md}.${ext} stale (source changed after export)")
         fi
@@ -537,6 +577,14 @@ if [[ "${#export_docx_warnings[@]}" -gt 0 ]]; then
     for w in "${export_docx_warnings[@]}"; do
         echo "        - ${w}"
     done
+fi
+
+if [[ "${#export_sync_new_doc_warnings[@]}" -gt 0 ]]; then
+    echo "  WARN: ${#export_sync_new_doc_warnings[@]} newly-introduced doc(s) not yet export-regenerated (§11.4.65, non-blocking per BOB-223):"
+    for w in "${export_sync_new_doc_warnings[@]}"; do
+        echo "        - ${w}"
+    done
+    echo "        Remediation: bash scripts/generate_markdown_exports.sh <path-to-md>"
 fi
 
 if [[ "${#export_sync_violations[@]}" -eq 0 ]]; then
@@ -1151,6 +1199,15 @@ BASH_TEST_SELF_RECURSIVE=(
     "test_export_sync_gate.sh"                    # bash "$GATE_SCRIPT" x3, ~299s
     "test_pre_build_workable_items_invariant.sh"  # bash "$SCRIPT", timed out at 300s
     "test_constitution_inheritance.sh"             # runs pre_build_verification.sh x3, full sweep each time
+    "test_cm_markdown_export_sync_new_doc.sh"     # BOB-223: bash "$GATE_SCRIPT" x2 (ARM 1 + ARM 2) —
+                                                   # same self-recursive shape as test_export_sync_gate.sh
+                                                   # above; observed live 2026-09-25 racing itself under
+                                                   # this round's heavy concurrent full-sweep load (FAIL
+                                                   # [2] CM-BASH-UNIT-TESTS-EXECUTED, exit!=0 on the
+                                                   # shared __bob223_fixture_new_doc__ fixture) before
+                                                   # this entry existed. Still runs standalone (unaffected
+                                                   # by this exclusion, per its own EXIT trap + BOB-223's
+                                                   # fixture-uniqueness hardening).
 )
 # QUARANTINE — real debt, MUST only shrink. Removing a name without fixing its
 # suite is a §11.4.227 metric-gaming move.
@@ -2508,6 +2565,45 @@ else
     rm -f "${TWINS_LOG}"
 fi
 
+
+# ---------------------------------------------------------------------------
+# GATE-DEBT REGISTER (§11.4.227(A) named-gate ledger — registered deferrals)
+#
+# BOB-223: two constitutionally-NAMED gates have no implementation anywhere
+# in this pre-build sweep (control-needle-verified: `grep -c` against this
+# file returns 0 hits for both, against a non-zero control needle for a
+# neighboring, genuinely-implemented gate — the instrument can see, the
+# absence is real, §11.4.201(6)). Per §11.4.227(A) a named gate MUST be
+# either IMPLEMENTED or covered by a REGISTERED DEFERRAL pointing at a
+# tracked workable item — silent absence is exactly what §11.4.227
+# forbids. This block IS that registration: purely INFORMATIONAL, it NEVER
+# calls fail() and NEVER contributes to FAIL_COUNT (exit-0-contributing,
+# per §11.4.234 — a gate-debt disclosure must never itself become a reason
+# a build cannot proceed). Covered by its own paired-mutation test:
+# tests/pre_build/test_gate_debt_register_markers.sh (corrupt/remove either
+# DEFERRED line below -> that test fails, proving the register has teeth).
+#
+#   - CM-SCRIPT-DOCS-SYNC (named in constitution §11.4.18 — Script
+#     documentation mandate: every *.sh/*.bash under a script directory
+#     MUST have a companion docs/scripts/<name>.md doc, kept in sync with
+#     the script). DEFERRED — no invariant in this sweep walks scripts/
+#     for a missing companion doc. Originating investigation: BOB-223.
+#
+#   - CM-DOC-REVISION-HEADER-PRESENT (named in constitution §11.4.44 —
+#     Document revision header mandate: every tracked doc MUST carry a
+#     **Revision:**/**Last modified:** header). DEFERRED — only
+#     docs/QA_DISCOVERY_LEDGER.md's own header is checked (invariant 19);
+#     no GENERAL per-companion-doc header gate exists. Originating
+#     investigation: BOB-223.
+#
+# Implementation for BOTH is tracked as a single follow-up workable item;
+# see docs/qa/BOB-223/closure_evidence_20260925.md for the recommended
+# title/description (the conductor files the item; this dispatch does not
+# touch the workable-items DB per its own operating constraints).
+echo
+echo "[GATE-DEBT REGISTER] §11.4.227(A) registered deferrals (informational, non-blocking, exit-0-contributing):"
+echo "  DEFERRED: CM-SCRIPT-DOCS-SYNC (§11.4.18) — see BOB-223"
+echo "  DEFERRED: CM-DOC-REVISION-HEADER-PRESENT (§11.4.44) — see BOB-223"
 
 echo
 echo "=== Result: ${PASS_COUNT} passed, ${FAIL_COUNT} failed ==="

@@ -9,8 +9,8 @@ Open workable items (current_location = Issues), regenerated from the SQLite sin
 | Bug | In progress | 4 |
 | Bug | Operator-blocked | 3 |
 | Bug | Queued | 5 |
-| Task | In progress | 12 |
-| Task | Queued | 11 |
+| Task | In progress | 13 |
+| Task | Queued | 10 |
 | Task | Ready for testing | 2 |
 | **TOTAL** | | **37** |
 
@@ -31,7 +31,7 @@ Open workable items (current_location = Issues), regenerated from the SQLite sin
 | BOB-093 | Task | In progress | High | RD2-28: Live compose bring-up + verify rutracker ReDoS regex bounds deployed to container (closes runtime half of GA-12) |
 | BOB-094 | Task | In progress | Medium | RD2-29: Author tests/stress/test_tracker_fetch_stress_chaos.py with §11.4.85 fault injection |
 | BOB-095 | Task | In progress | Medium | RD2-30: Author tests/stress/test_scheduler_hooks_sse_stress_chaos.py for Go-side triangle |
-| BOB-097 | Task | Queued | Low | RD2-32: Author DDoS-class coverage for exposed download-proxy/merge endpoints (canonical impl of RD2-07) |
+| BOB-097 | Task | In progress | Low | RD2-32: Author DDoS-class coverage for exposed download-proxy/merge endpoints (canonical impl of RD2-07) |
 | BOB-101 | Task | Queued | High | **OPERATOR DECISION (2026-08-26, §11.4.66 interactive clarification): DEFER PAST v1.0.0**  Go `--profile go` parity remains a goal but is NO LONGER a v1.0.0 release blocker. RW-10..13 move to a post-1.0 milestone and stop gating the tag. Nothing advertised is removed, so §11.4.122 stays clean and no §11.4.90 Obsolete closure is warranted. The BOB-141 measured fact stands unchanged: the Go container's Dockerfile runs ONE binary binding only :7187; nothing binds :7186 or :7188 despite compose setting PROXY_PORT/BRIDGE_PORT. CLAUDE.md's port map already describes what the container ACTUALLY does and needs no amendment under this decision.  This answer is recorded as consumer DATA per §11.4.35 — it is the operator's stated choice, not an agent inference, and supersedes any prior agent-chosen default on this question. Options not chosen are named above so a future reader does not re-litigate a settled call (§11.4.112(5) bounded-verdict discipline applied to decisions).  --- prior item text follows ---  GA-19/RW-09: Is --profile go parity still a release goal? (gates RW-10..13) — OPERATOR-DECISION |
 | BOB-102 | Task | In progress | Medium | **OPERATOR DECISION (2026-08-26, §11.4.66 interactive clarification): KEEP 0.0.0.0 + MANDATORY AUTH GUARD**  The tunnel STAYS LAN-reachable — no bind address changes to 127.0.0.1. The operator explicitly chose to preserve access from other devices on the network. THE DECISION CARRIES A BINDING OBLIGATION: a permanent §11.4.135 regression guard MUST land that FAILS THE BUILD if any LAN-reachable route ever stops demanding authentication. The operator accepted 0.0.0.0 ON THE CONDITION that guard exists — without it this decision is unprotected and the item is NOT closeable. Guard requirements: enumerate routes from the authoritative source (FastAPI app, Go handlers, boba-jackett) never a hand-maintained list; resolve real auth coverage not a grep for the string 'auth' (§11.4.201 real-condition); deliberately-public routes exempt ONLY via a checked-in list with per-entry justification, enumerated as honest gaps never silent; golden-TRUE + golden-FALSE fixtures per §11.4.107(10).  This answer is recorded as consumer DATA per §11.4.35 — it is the operator's stated choice, not an agent inference, and supersedes any prior agent-chosen default on this question. Options not chosen are named above so a future reader does not re-litigate a settled call (§11.4.112(5) bounded-verdict discipline applied to decisions).  --- prior item text follows ---  RW-05: LAN-exposure threat model — bind tunnel 127.0.0.1 or keep 0.0.0.0? — OPERATOR-DECISION |
 | BOB-104 | Task | In progress | Medium | §11.4.238 followup: CodeGraph 1.5.0 nested-.gitignore regression challenge |

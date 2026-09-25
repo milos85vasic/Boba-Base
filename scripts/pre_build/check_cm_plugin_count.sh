@@ -275,6 +275,21 @@ for doc in $GOVERNED_DOCS; do
     [[ -f "$path" ]] || continue
 
     # --- marker-based claims -------------------------------------------------
+    # BOB-196: pre-filter to the lines that could possibly carry a marker
+    # BEFORE entering the loop, instead of spawning ~6 processes for EVERY
+    # line of the document. Safe by construction: every line the loop body
+    # below can act on MUST contain the literal substring "CM-PLUGIN-COUNT:"
+    # (a strict superset of the anchored `<!--[[:space:]]*CM-PLUGIN-COUNT:`
+    # pattern the loop body itself tests two lines down), so this fixed-string
+    # pre-filter cannot skip a line the unfiltered loop would have processed.
+    # A non-matching line was ALWAYS a silent no-op `continue` in the original
+    # (nmark comes back 0, then `metric` comes back empty from `sed`, so
+    # `[[ -n "$metric" ]] || continue` fires with zero side effects) — cutting
+    # it before the loop changes NO output, only how many times the per-line
+    # pipeline runs (measured ~1853 iterations -> ~8 on this repo, 2026-09-25).
+    # The per-line parsing logic itself — INCLUDING the `-oE | wc -l`
+    # footgun-avoidance below, which is the actual correctness property this
+    # gate depends on (§11.4.201(12)) — is UNTOUCHED, byte-for-byte.
     while IFS= read -r line; do
         # Occurrence count, NOT `grep -c`. MEASURED on this host (ugrep 7.8.4,
         # 2026-08-21): `grep -coE` on this exact input returns 3 at top level
@@ -304,7 +319,7 @@ for doc in $GOVERNED_DOCS; do
         elif [[ $VERBOSE -eq 1 ]]; then
             echo "    ok  $doc: $metric = $stated"
         fi
-    done < "$path"
+    done < <(grep -F 'CM-PLUGIN-COUNT:' "$path" || true)
 
     # --- legacy unmarked wording (the pre-fix BOB-149 shape) -----------------
     while IFS= read -r line; do

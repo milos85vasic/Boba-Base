@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260925</h1>
+</header>
+<h1 id="bob-187-closure-evidence-2026-09-25">BOB-187 closure evidence —
+2026-09-25</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-09-25T11:31:05Z</p>
+<h2 id="the-defect-verbatim-from-the-tracker">The defect (verbatim, from
+the tracker)</h2>
+<blockquote>
+<p><code>scripts/ownership_precondition.sh</code> consumes the SAME
+unreviewed <code>.env</code>-driven scope as
+<code>ownership_repair.sh</code> and creates probe files inside it, but
+it is NOT fenced. T028 remediation added
+<code>ownership_path_fence()</code> to
+<code>scripts/lib/ownership.sh</code> and wired it into
+<code>ownership_repair.sh</code>, closing the path-escape class there;
+the precondition was outside that agent’s file scope and still accepts
+whatever <code>config/owned_paths.yaml</code> expands to. Blast radius
+is lower than a recursive chown (it writes probe files rather than
+mutating ownership of an existing tree) but the INPUT is identical and
+equally unreviewed, so the same <code>QBITTORRENT_DATA_DIR</code> value
+that would have driven a filesystem-wide chown will drive probe-file
+creation at an arbitrary location.</p>
+</blockquote>
+<p>Acceptance: <code>ownership_precondition.sh</code> calls the SAME
+<code>ownership_path_fence()</code> predicate from
+<code>scripts/lib/ownership.sh</code> (never a second dialect,
+§11.4.251), refuses fail-closed on a rejected entry, and ships a paired
+§1.1 mutation proving the refusal fires PLUS a negative control proving
+the six live shipped entries still ACCEPT so the fix is not a
+§11.4.201(1) false-positive refusal.</p>
+<h2 id="investigation-finding-the-fix-was-already-landed">Investigation
+finding — the fix was ALREADY LANDED</h2>
+<p><code>git log --oneline -- scripts/ownership_precondition.sh</code>
+shows the fence was wired in by commit <code>af48019</code>
+(“feat(BOB-183,BOB-187): a freshness gate for the served bundle, and a
+fence for the precondition’s scope”, 2026-08-25), BEFORE this session
+began. <code>scripts/ownership_precondition.sh</code> main() (lines
+1082–1138) already calls <code>ownership_path_fence()</code> — the exact
+same function <code>scripts/ownership_repair.sh</code> calls — before
+any probe file is created, and
+<code>tests/unit/test_ownership_precondition.sh</code> Case 6 (6a–6d,
+lines 416–592) already covers:</p>
+<ul>
+<li>6a: an absolute entry naming a system tree (<code>/etc</code>) →
+exit 2, refused</li>
+<li>6b: the filesystem root (<code>/</code>) → exit 2, refused, reason
+named</li>
+<li>6c: a repo-relative <code>..</code> escape (the exact class the item
+text describes) → exit 2, refused, <strong>and a real state-delta
+assertion</strong> — the escaped directory’s mtime is proven UNCHANGED,
+i.e. <code>probe_location()</code> never ran there</li>
+<li>6d: the mandatory §11.4.201(1) negative control — the six entries
+actually shipped in <code>config/owned_paths.yaml</code> all ACCEPT
+through the fence, checked across three real
+<code>QBITTORRENT_DATA_DIR</code> values (unset/shipped-default, a deep
+<code>/run/media/...</code> shape, and this host’s real
+<code>.env</code> value)</li>
+</ul>
+<p>Running the suite unmodified, before any change in this session:</p>
+<pre><code>$ timeout 300 bash tests/unit/test_ownership_precondition.sh 2&gt;&amp;1 | tail -8
+  PASS: negative control: all 6 shipped entries ACCEPT with QBITTORRENT_DATA_DIR=&lt;unset, shipped default /mnt/DATA&gt;
+  PASS: negative control: all 6 shipped entries ACCEPT with QBITTORRENT_DATA_DIR=/run/media/operator/DISK4TB/Downloads
+  PASS: negative control: all 6 shipped entries ACCEPT with QBITTORRENT_DATA_DIR=/home/milosvasic/Share/Misc
+RESULT: 29 passed, 0 failed, 0 skipped</code></pre>
+<p><strong>The gap</strong> was exactly the item text’s second
+acceptance clause: a “paired §1.1 mutation proving the refusal fires”
+was performed manually during T028/af48019’s development (commit
+message: “M1 (fence call disabled) -&gt; 6 fence assertions fail again.
+M2 (fence refuses everything) -&gt; 14 failed”) but was <strong>never
+landed as a permanent, re-runnable regression test</strong> — only the
+negative control (6d) and the RED-reproduction-by-construction (6c) were
+committed. Without a standing mutation case, a future edit that silently
+detached the fence call from <code>main()</code> (e.g. an accidental
+revert of the <code>if ! f_reason="$(ownership_path_fence ...)"</code>
+line) would leave Case 6a/6b/6c passing for the WRONG reason (any other
+bug that happens to also <code>cannot_run</code> the scope) and 6d
+passing trivially, with nothing in the suite to catch the detachment
+itself. This is the coverage escape the item text names (§11.4.238): the
+fix existed, its confirming mutation did not, out-of-band.</p>
+<h2 id="the-work-performed-this-session">The work performed this
+session</h2>
+<p>Added <strong>Case 6e</strong> to
+<code>tests/unit/test_ownership_precondition.sh</code> (lines 593–692):
+a permanent, hermetic, paired §1.1 mutation test that:</p>
+<ol type="1">
+<li>Builds a <strong>sandboxed copy</strong> of
+<code>scripts/ownership_precondition.sh</code> +
+<code>scripts/lib/ownership.sh</code> under <code>$FIX</code> (mirroring
+the <code>sb_new()</code> pattern already established in
+<code>tests/unit/test_ownership_repair.sh</code>), sha256- verified
+byte-identical to the tracked source before mutation.</li>
+<li><strong>(i) Pre-flight GREEN</strong>: runs the SAME
+<code>..</code>-escape scenario as Case 6c against the UNMUTATED sandbox
+copy, confirming it reproduces 6c’s exit-2 refusal and unchanged mtime —
+proving the sandbox is a faithful stand-in for the real artifact before
+any mutation is applied.</li>
+<li><strong>(ii)</strong> Verifies the sed target
+(<code>f_reason="$(ownership_path_fence</code>) is the exactly-one call
+site in <code>main()</code>, refusing an ambiguous mutation if a future
+refactor changes the call shape.</li>
+<li><strong>(iii) The mutation</strong>: <code>sed</code>-replaces
+<code>ownership_path_fence</code> with <code>true</code> at that one
+call site (never touching the tracked file — only the sandboxed copy),
+then re-runs the identical <code>..</code>-escape scenario against a
+FRESH escape-target directory. Asserts the escape now SUCCEEDS (exit 0,
+<code>OWNERSHIP-PRECONDITION: OK</code>, and — the load-bearing check —
+the escaped directory’s mtime CHANGES, proving
+<code>probe_location()</code> really created and removed a file outside
+the sandbox’s own project root).</li>
+<li>No restore step is needed: only the sandboxed copy is ever mutated;
+the tracked <code>scripts/ownership_precondition.sh</code> is never
+written to. <code>$FIX</code> (and everything under it, including the
+sandbox) is reaped by the suite’s own <code>trap ... EXIT</code>.</li>
+</ol>
+<h2 id="red-mutation-proves-the-test-is-load-bearing">RED (mutation
+proves the test is load-bearing)</h2>
+<p>Scratch verification (before landing the test), reproducing the
+escape on a scoped, safe fixture directory — never against a real system
+path — using a sandboxed copy of the artifact with the fence call
+neutered:</p>
+<pre><code>=== red (mutate=yes) ===
+RC=0
+mtime CHANGED -&gt; escape SUCCEEDED (probe file was created)
+OWNERSHIP-PRECONDITION: OK</code></pre>
+<p>Compare against the same scenario on the unmutated sandbox copy:</p>
+<pre><code>=== green (mutate=no) ===
+RC=2
+mtime UNCHANGED -&gt; escape refused
+OWNERSHIP-PRECONDITION: CANNOT-RUN
+  - the declared scope names 1 path(s) this check must never probe: ...
+  - REFUSED ...escape_target_green — &#39;...&#39; was declared as a repo-relative
+    path but resolves OUTSIDE the project root &#39;...&#39; — a relative entry may
+    not climb out with &#39;..&#39;
+  - nothing was probed, and no probe file was created anywhere
+This check asserted NOTHING. It is not a pass — fix the cause above and re-run.</code></pre>
+<h2
+id="suite-level-mutation-proof-the-real-artifact-in-place-then-restored">Suite-level
+mutation proof (the real artifact, in-place, then restored)</h2>
+<p>To close the loop with a literal in-place mutation of the tracked
+file (not only the sandboxed copy the permanent test uses), the fence
+call was temporarily neutered on disk and the FULL suite re-run:</p>
+<pre><code>$ sha256sum scripts/ownership_precondition.sh
+f7e48c2394d5b2d7790497b8a47ca909bc2272774c082a4b80d3abb2ce6a72d7  scripts/ownership_precondition.sh
+
+$ sed -i &#39;s/f_reason=&quot;\$(ownership_path_fence /f_reason=&quot;$(true /&#39; scripts/ownership_precondition.sh
+
+$ timeout 300 bash tests/unit/test_ownership_precondition.sh 2&gt;&amp;1 | tail -12
+  FAIL: mutation harness pre-flight: unmutated sandbox copy did NOT refuse the
+        &#39;..&#39; escape (rc=0) — the sandbox does not faithfully reproduce Case 6c,
+        so a RED result below would not be trustworthy
+  FAIL: mutation harness: expected exactly 1 fence call site in main(), found
+        0 — the sed target is no longer unique, mutation would be ambiguous
+RESULT: 23 passed, 8 failed, 0 skipped</code></pre>
+<p>(8 failures: Cases 6a/6b/6c themselves plus their sub-assertions, and
+the new Case 6e’s own pre-flight/uniqueness guards — since the mutation
+harness copies the ALREADY-mutated real script into its own sandbox, it
+correctly detects the double-mutated, already-broken state as well.)</p>
+<p>Restored and re-verified:</p>
+<pre><code>$ cp -p &lt;backup&gt; scripts/ownership_precondition.sh
+$ sha256sum scripts/ownership_precondition.sh
+f7e48c2394d5b2d7790497b8a47ca909bc2272774c082a4b80d3abb2ce6a72d7  scripts/ownership_precondition.sh   # byte-identical to before
+
+$ git diff --stat scripts/ownership_precondition.sh
+(empty — no diff; file returned to its committed state)
+
+$ timeout 300 bash tests/unit/test_ownership_precondition.sh 2&gt;&amp;1 | tail -6
+  PASS: mutation harness pre-flight: unmutated sandbox copy refuses the &#39;..&#39;
+        escape exactly like the real artifact (exit 2, mtime unchanged) — the
+        sandbox is a faithful stand-in
+  PASS: mutation harness: the fence call site was neutered
+        (ownership_path_fence -&gt; true) in the sandbox copy
+  PASS: mutation: fence call neutered -&gt; the SAME &#39;..&#39; escape now creates
+        (and removes) a probe file OUTSIDE the sandbox project root (mtime
+        changed, rc=0) — Case 6c&#39;s PASS is proven load-bearing, not decoration
+RESULT: 32 passed, 0 failed, 0 skipped</code></pre>
+<h2
+id="negative-control-already-present-re-confirmed-unmodified-case-6d">Negative
+control (already present, re-confirmed unmodified — Case 6d)</h2>
+<pre><code>PASS: negative control: all 6 shipped entries ACCEPT with QBITTORRENT_DATA_DIR=&lt;unset, shipped default /mnt/DATA&gt;
+PASS: negative control: all 6 shipped entries ACCEPT with QBITTORRENT_DATA_DIR=/run/media/operator/DISK4TB/Downloads
+PASS: negative control: all 6 shipped entries ACCEPT with QBITTORRENT_DATA_DIR=/home/milosvasic/Share/Misc</code></pre>
+<p>Unchanged by this session’s work — reused, not re-implemented,
+confirming the fence still accepts the live shipped configuration after
+Case 6e landed.</p>
+<h2 id="full-regression-sweep-zero-regressions">Full regression sweep
+(zero regressions)</h2>
+<pre><code>tests/unit/test_ownership_precondition.sh          32 passed, 0 failed, 0 skipped
+tests/unit/test_ownership_repair.sh                153 passed, 0 failed, 0 skipped
+tests/unit/test_ownership_probe_location.sh         10 passed, 0 failed, 0 skipped
+tests/unit/test_ownership_gid_agreement.sh           5 passed, 0 failed, 0 skipped
+tests/unit/test_ownership_rootless_detection.sh     19 passed, 0 failed
+tests/unit/test_ownership_precondition_docker_premise.sh  4 passed, 0 failed, 0 skipped
+tests/unit/test_ownership_repair_scope_tsv.sh        2 passed, 0 failed, 1 skipped (pre-existing, unrelated: HEAD moved past a captured pre-fix baseline)
+tests/unit/test_ownership_repair_setgid_strip.sh     1 passed, 0 failed, 1 skipped (pre-existing, unrelated: same class)
+scripts/pre_build/check_cm_ownership_invariants.sh   PASS: CM-OWNERSHIP-INVARIANTS</code></pre>
+<p><code>bash -n tests/unit/test_ownership_precondition.sh</code> — OK.
+<code>shellcheck</code> is not installed on this host (probed, absent);
+the syntax check and the full hermetic test run are the available
+evidence.</p>
+<h2 id="files-touched">Files touched</h2>
+<ul>
+<li><code>tests/unit/test_ownership_precondition.sh</code> — added Case
+6e (paired §1.1 mutation), 109 lines. Nothing else in this file was
+modified.</li>
+<li><code>scripts/ownership_precondition.sh</code> —
+<strong>unmodified</strong>. The fence (BOB-187’s source-level fix) was
+already landed in commit <code>af48019</code> prior to this session;
+confirmed byte-identical before and after (sha256
+<code>f7e48c2394d5b2d7790497b8a47ca909bc2272774c082a4b80d3abb2ce6a72d7</code>).</li>
+<li><code>scripts/lib/ownership.sh</code> — <strong>unmodified</strong>.
+<code>ownership_path_fence()</code> already exists and is called by BOTH
+<code>ownership_repair.sh</code> and
+<code>ownership_precondition.sh</code> (§11.4.251 — one predicate, never
+a second dialect); no change was needed or made.</li>
+</ul>
+<h2 id="conclusion">Conclusion</h2>
+<p>BOB-187’s source-level defect (the precondition creating probe files
+at an unfenced, <code>.env</code>-driven path) was already fixed prior
+to this session. The acceptance criterion this session closes is the
+previously-missing permanent paired §1.1 mutation regression test,
+landed as Case 6e. The suite now mechanically proves, on every run, that
+the fence call is genuinely wired into <code>main()</code> and
+load-bearing — not merely that a scope shaped like the escape happens to
+be refused for some other reason. Full negative control (6d) and
+RED-reproduction (6c) remain in force, unmodified.</p>
+</body>
+</html>

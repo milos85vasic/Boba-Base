@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260925</h1>
+</header>
+<h1
+id="bob-196-closure-evidence-cm-plugin-count-gate-runtime-fix">BOB-196
+closure evidence — CM-PLUGIN-COUNT gate runtime fix</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-09-25T00:00:00Z</p>
+<h2 id="summary">Summary</h2>
+<p>BOB-196 reported the <code>CM-PLUGIN-COUNT</code> pre-build gate
+(<code>scripts/pre_build/check_cm_plugin_count.sh</code>) took ~189s
+(measured 2026-08-25) because its marker-scanning loop iterates EVERY
+line of every governed document and spawns a subprocess pipeline per
+line — the classic per-line-subprocess shell trap. The item’s own
+candidate fix (stated as <em>unverified</em>) was to pre-filter the
+governed documents with one <code>grep</code> for lines carrying the
+<code>CM-PLUGIN-COUNT:</code> marker BEFORE entering the per-line loop,
+leaving the per-line parsing pipeline — including the
+<code>-oE | wc -l</code> footgun-avoidance the in-code comment documents
+— completely unchanged. This evidence file verifies that candidate
+fix.</p>
+<h2 id="honest-note-on-the-historical-timing">§11.4.6 honest note on the
+historical timing</h2>
+<p>The item’s own measurement (2026-08-25) was
+<code>rc=0 wall=189s</code>. On THIS host, TODAY, the BEFORE measurement
+(below) was <strong>~34–38s</strong>, not ~189s. This is reported as
+measured, not assumed — the exact wall-clock figure clearly depends on
+host/CPU/subprocess-spawn characteristics that differ between the
+2026-08-25 measurement environment and this session’s host. The root
+cause (per-line subprocess spawning against ~1853–1883 lines) and the
+fix are identical regardless of the absolute number; only the absolute
+seconds differ. The <strong>speedup ratio</strong> (~3.2–3.4x) is the
+load-bearing evidence, not the absolute second count.</p>
+<p>Governed document line counts, measured independently today (§11.4.6,
+not assumed from the item’s 2026-08-25 figures):</p>
+<pre><code>CLAUDE.md: 515 lines
+AGENTS.md: 697 lines
+docs/features/Status.md: 671 lines</code></pre>
+<p>(item’s 2026-08-25 figures: AGENTS.md 689 + CLAUDE.md 494 + Status.md
+670 = 1853; today’s total = 1883 — the documents drifted slightly in the
+intervening month, as expected for governed docs under active
+development.)</p>
+<h2 id="fix-applied-exact-diff">Fix applied — exact diff</h2>
+<p>File touched: <code>scripts/pre_build/check_cm_plugin_count.sh</code>
+(only file changed;
+<code>tests/pre_build/test_check_cm_plugin_count.sh</code> was read but
+NOT modified — see the honest note in the closing section).</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode diff"><code class="sourceCode diff"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">diff --git a/scripts/pre_build/check_cm_plugin_count.sh b/scripts/pre_build/check_cm_plugin_count.sh</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>index bfd24f6..5503ad5 100755</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="dt">--- a/scripts/pre_build/check_cm_plugin_count.sh</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="dt">+++ b/scripts/pre_build/check_cm_plugin_count.sh</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="dt">@@ -275,6 +275,21 @@ for doc in $GOVERNED_DOCS; do</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>     [[ -f &quot;$path&quot; ]] || continue</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>     # --- marker-based claims -------------------------------------------------</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="va">+    # BOB-196: pre-filter to the lines that could possibly carry a marker</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="va">+    # BEFORE entering the loop, instead of spawning ~6 processes for EVERY</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="va">+    # line of the document. Safe by construction: every line the loop body</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="va">+    # below can act on MUST contain the literal substring &quot;CM-PLUGIN-COUNT:&quot;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="va">+    # (a strict superset of the anchored `&lt;!--[[:space:]]*CM-PLUGIN-COUNT:`</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="va">+    # pattern the loop body itself tests two lines down), so this fixed-string</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="va">+    # pre-filter cannot skip a line the unfiltered loop would have processed.</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="va">+    # A non-matching line was ALWAYS a silent no-op `continue` in the original</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="va">+    # (nmark comes back 0, then `metric` comes back empty from `sed`, so</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="va">+    # `[[ -n &quot;$metric&quot; ]] || continue` fires with zero side effects) — cutting</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="va">+    # it before the loop changes NO output, only how many times the per-line</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="va">+    # pipeline runs (measured ~1853 iterations -&gt; ~8 on this repo, 2026-09-25).</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="va">+    # The per-line parsing logic itself — INCLUDING the `-oE | wc -l`</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="va">+    # footgun-avoidance below, which is the actual correctness property this</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="va">+    # gate depends on (§11.4.201(12)) — is UNTOUCHED, byte-for-byte.</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>     while IFS= read -r line; do</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>         # Occurrence count, NOT `grep -c`. MEASURED on this host (ugrep 7.8.4,</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>         # 2026-08-21): `grep -coE` on this exact input returns 3 at top level</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="dt">@@ -304,7 +319,7 @@ for doc in $GOVERNED_DOCS; do</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>         elif [[ $VERBOSE -eq 1 ]]; then</span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>             echo &quot;    ok  $doc: $metric = $stated&quot;</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>         fi</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="st">-    done &lt; &quot;$path&quot;</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="va">+    done &lt; &lt;(grep -F &#39;CM-PLUGIN-COUNT:&#39; &quot;$path&quot; || true)</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>     # --- legacy unmarked wording (the pre-fix BOB-149 shape) -----------------</span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>     while IFS= read -r line; do</span></code></pre></div>
+<p><strong>Scope note:</strong> the fix touches ONLY the outer iteration
+source of the first (“marker-based claims”) loop, exactly as the item
+specifies. The second, “legacy unmarked wording” loop (which scans for
+the deprecated <code>**N managed plugins**</code> prose form) is
+untouched — the item’s own measured process-count math
+(<code>~1853 lines × ~6 procs = ~11,118 spawns</code>) accounts only for
+the marker loop’s 6-process-per-line pipeline
+(<code>printf | grep -oE | wc -l | tr -d</code> = 4, plus
+<code>printf | sed -n</code> = 2), so that loop is the one identified as
+the dominant cost and the one the item’s candidate fix targets. Every
+per-line command inside the marker loop body (the <code>nmark</code>
+computation via <code>grep -oE | wc -l | tr -d</code>, the
+<code>metric</code> extraction via <code>sed -n</code>, and the
+<code>stated</code> extraction via <code>grep -oE</code>) is
+byte-for-byte unchanged.</p>
+<p><strong>Safety argument for the pre-filter (independently verified,
+not merely asserted):</strong> every line the loop body can act on must
+contain the literal substring <code>CM-PLUGIN-COUNT:</code> — this is a
+strict superset of the anchored regex
+<code>&lt;!--[[:space:]]*CM-PLUGIN-COUNT:</code> the loop body itself
+tests, so a fixed-string pre-filter on that substring cannot exclude any
+line the unfiltered loop would have processed. A non-matching line was
+always a silent no-op in the original (the <code>nmark</code>
+computation on such a line returns 0, <code>metric</code> extraction
+returns empty, and <code>[[ -n "$metric" ]] || continue</code> discards
+it with zero side effects) — so skipping it before the loop changes no
+output, only how many times the per-line pipeline runs.</p>
+<p>Also independently verified:
+<code>grep -F '...' "$path" || true</code> feeding a
+<code>while ... done &lt; &lt;(...)</code> process substitution does NOT
+trip <code>set -euo pipefail</code> when the grep finds zero matches
+(tested with a synthetic zero-match fixture under an identical
+<code>set -euo pipefail</code> shell — script survived and printed its
+post-loop line).</p>
+<h2
+id="before-after-wall-clock-pasted-time-output-same-host-back-to-back">Before
+/ after wall-clock (pasted <code>time</code> output, same host,
+back-to-back)</h2>
+<h3 id="before-pre-fix-two-consecutive-runs-for-stability">BEFORE
+(pre-fix, two consecutive runs for stability)</h3>
+<pre><code>$ time bash scripts/pre_build/check_cm_plugin_count.sh
+...
+PASS: CM-PLUGIN-COUNT — 8 documented count(s) match their derivation
+
+real    0m38.046s
+user    0m12.718s
+sys 0m45.502s</code></pre>
+<pre><code>$ time bash scripts/pre_build/check_cm_plugin_count.sh &gt; /dev/null
+real    0m34.779s
+user    0m12.702s
+sys 0m42.565s</code></pre>
+<h3 id="after-post-fix-two-consecutive-runs-for-stability">AFTER
+(post-fix, two consecutive runs for stability)</h3>
+<pre><code>$ time bash scripts/pre_build/check_cm_plugin_count.sh
+...
+PASS: CM-PLUGIN-COUNT — 8 documented count(s) match their derivation
+
+real    0m11.241s
+user    0m3.064s
+sys 0m10.372s</code></pre>
+<pre><code>$ time bash scripts/pre_build/check_cm_plugin_count.sh &gt; /dev/null
+real    0m11.210s
+user    0m2.909s
+sys 0m10.392s</code></pre>
+<p><strong>Result:</strong> wall-clock dropped from ~34–38s to ~11.2s —
+a <strong>~3.2–3.4x speedup</strong>, achieved purely by cutting the
+marker loop’s ~1883 total-line iterations down to the handful of lines
+that actually carry a <code>CM-PLUGIN-COUNT:</code> marker (8 in this
+repository today), while leaving every other cost centre (the
+legacy-wording loop, <code>array_count</code>/<code>needle_proven</code>
+control-needle proofs, the <code>find</code> traversal for
+<code>recursive</code>/<code>toplevel</code>) untouched. The remaining
+~11s is legitimate residual cost outside this item’s stated scope (the
+untouched legacy loop still walks all ~1883 lines at 2 processes/line,
+plus the control-needle proofs and <code>find</code> walk).</p>
+<h2 id="mutation-still-bites-proof">Mutation-still-bites proof</h2>
+<p>Two independent proofs, both showing the correctness-critical
+<code>-oE | wc -l</code> footgun-avoidance is genuinely exercised and
+untouched:</p>
+<h3
+id="proof-1-the-existing-paired-mutation-fixture-suite-run-against-the-fixed-gate">Proof
+1 — the existing paired-mutation fixture suite, run against the fixed
+gate</h3>
+<pre><code>$ time bash tests/pre_build/test_check_cm_plugin_count.sh
+PASS: golden-good (all documented counts match derivation) (rc=0 as expected)
+PASS: golden-bad-curated (doc says 7, array holds 3 — must FAIL) (rc=1 as expected)
+PASS: golden-bad-legacy (unmarked &#39;**42 managed plugins**&#39; — must FAIL) (rc=1 as expected)
+PASS: golden-bad-missing (mandatory curated marker absent — must FAIL) (rc=1 as expected)
+PASS: golden-bad-engines (4th engine on disk, doc says 3 — must FAIL) (rc=1 as expected)
+PASS: golden-good-utility (utility module must not move engine count) (rc=0 as expected)
+PASS: golden-good-carrier (unmarked numbers are carriers, not counts) (rc=0 as expected)
+PASS: golden-bad-multimarker (3 markers on one line, all counts correct — must still FAIL) (rc=1 as expected)
+PASS: real-tree (boba checkout after the BOB-149 fix) (rc=0 as expected)
+
+test_check_cm_plugin_count: PASS — CM-PLUGIN-COUNT honest across 8 fixtures + real tree (§11.4.107(10))
+
+real    0m12.873s
+user    0m3.511s
+sys 0m12.060s
+EXIT_CODE=0</code></pre>
+<p><code>golden-bad-multimarker</code> is the fixture engineered
+specifically to trip the footgun-avoidance: three
+<code>CM-PLUGIN-COUNT</code> markers crammed onto one line, all with
+individually-correct numbers, so the ONLY thing that can make it FAIL is
+the multi-marker-per-line detection (the <code>nmark -gt 1</code> check
+backed by <code>-oE | wc -l</code>). It still correctly FAILs (rc=1)
+after the fix.</p>
+<h3
+id="proof-2-extra-rigor-beyond-the-stated-bar-deliberately-mutating-the-inner-pipeline-back-to-the-naive-form">Proof
+2 (extra rigor, beyond the stated bar) — deliberately mutating the inner
+pipeline back to the naive form</h3>
+<p>To independently confirm the footgun-avoidance is load-bearing and
+that the outer pre-filter did not accidentally neuter it, the single
+correctness line was mutated in a throwaway copy back to the naive
+<code>grep -coE</code> form the in-code comment documents as broken on
+this host inside a <code>set -euo pipefail</code> subshell:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode diff"><code class="sourceCode diff"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="st">-        nmark=&quot;$(printf &#39;%s&#39; &quot;$line&quot; | grep -oE &#39;&lt;!--[[:space:]]*CM-PLUGIN-COUNT:&#39; | wc -l | tr -d &#39; &#39; || true)&quot;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="va">+        nmark=&quot;$(printf &#39;%s&#39; &quot;$line&quot; | grep -coE &#39;&lt;!--[[:space:]]*CM-PLUGIN-COUNT:&#39; || true)&quot;</span></span></code></pre></div>
+<p>Both variants run against a fresh copy of the
+<code>golden-bad-multimarker</code> fixture (3 markers on one line, all
+correct numbers):</p>
+<p><strong>Mutated gate (naive <code>grep -coE</code>)</strong> — the
+mutation causes <code>nmark=1</code> inside the
+<code>set -euo pipefail</code> subshell (matching the exact
+context-dependent misreading the in-code comment documents), so the
+multi-marker-per-line check never fires; the gate silently falls through
+to a single greedy <code>sed</code> extraction (which happens to land on
+the last marker, <code>toplevel</code>), accepts it as correct, and the
+<code>curated</code> marker is never recorded as seen — masking the REAL
+defect and surfacing only an unrelated “mandatory curated marker absent”
+finding:</p>
+<pre><code>=== FINDINGS ===
+  CLAUDE.md: mandatory &#39;&lt;!-- CM-PLUGIN-COUNT: curated --&gt;&#39; marker is absent — the managed-roster count must be stated and guarded, not omitted
+
+FAIL: 1 plugin-count divergence(s) (CM-PLUGIN-COUNT, BOB-149)
+MUTATED_RC=1</code></pre>
+<p><strong>Fixed gate (BOB-196 change, <code>-oE | wc -l</code>
+preserved)</strong> — correctly detects <code>nmark=3</code>, reports
+the REAL defect by name, and also reports the secondary “mandatory
+marker absent” consequence:</p>
+<pre><code>=== FINDINGS ===
+  CLAUDE.md: 3 CM-PLUGIN-COUNT markers on one line — put each on its own line; this parser checks one per line and would leave the rest silently unchecked
+  CLAUDE.md: mandatory &#39;&lt;!-- CM-PLUGIN-COUNT: curated --&gt;&#39; marker is absent — the managed-roster count must be stated and guarded, not omitted
+
+FAIL: 2 plugin-count divergence(s) (CM-PLUGIN-COUNT, BOB-149)
+FIXED_RC=1</code></pre>
+<p>This proves the mutation genuinely changes gate behaviour (it is not
+a no-op) and that the BOB-196 fix preserves the exact correctness
+property the item required — the footgun-avoidance still catches and
+correctly diagnoses the multi-marker-per-line defect that the naive form
+would have masked.</p>
+<h2
+id="identical-8-counts-and-verdict-proof">Identical-8-counts-and-verdict
+proof</h2>
+<pre><code>$ diff /tmp/before_stdout.log /tmp/after_stdout.log
+(no output — files identical)</code></pre>
+<p>Both BEFORE and AFTER runs against the real repository produced
+byte-for-byte identical stdout:</p>
+<pre><code>check_cm_plugin_count — CM-PLUGIN-COUNT static pre-build gate (BOB-149)
+  root: /home/milosvasic/Projects/boba
+  derived (control-needle proven):
+    curated    43   (install-plugin.sh PLUGINS=() — the canonical managed roster)
+    bootstrap  12   (setup.sh PLUGINS=() — one-time-setup subset)
+    engines    43   (distinct engine modules on disk)
+    toplevel   35   (plugins/*.py — engines PLUS utility modules)
+    recursive  68   (plugins/**/*.py — also counts per-dir variants)
+
+PASS: CM-PLUGIN-COUNT — 8 documented count(s) match their derivation</code></pre>
+<p>Same 8 documented counts checked, same PASS verdict, same 5 derived
+metric values (curated=43, bootstrap=12, engines=43, toplevel=35,
+recursive=68), exit code 0 in both cases.</p>
+<h2 id="invocation-path-verified">Invocation path verified</h2>
+<p><code>scripts/pre_build_verification.sh</code> (read-only, NOT
+modified per this item’s constraints) invokes the gate at its invariant
+46 as:</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="va">PLUGINCNT_GATE</span><span class="op">=</span><span class="st">&quot;</span><span class="va">${PROJECT_ROOT}</span><span class="st">/scripts/pre_build/check_cm_plugin_count.sh&quot;</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> <span class="st">&quot;</span><span class="va">${PLUGINCNT_GATE}</span><span class="st">&quot;</span> <span class="op">&gt;</span><span class="st">&quot;</span><span class="va">${PLUGINCNT_LOG}</span><span class="st">&quot;</span> <span class="dv">2</span><span class="op">&gt;&amp;</span><span class="dv">1</span> <span class="kw">||</span> <span class="va">PLUGINCNT_EXIT</span><span class="op">=</span><span class="va">$?</span></span></code></pre></div>
+<p>i.e. <code>bash scripts/pre_build/check_cm_plugin_count.sh</code>
+with no arguments from the project root — exactly the invocation timed
+above.</p>
+<h2
+id="honest-note-on-the-paired-1.1-mutation-test-task-acceptance-bullet">Honest
+note on the paired §1.1 mutation test (task acceptance bullet)</h2>
+<p>A genuine, PRE-EXISTING paired-mutation / golden-good / golden-bad
+test file for this gate ALREADY EXISTED at
+<code>tests/pre_build/test_check_cm_plugin_count.sh</code> (314 lines, 8
+fixtures + a real-tree smoke check, cross-referencing
+§11.4.1/§11.4.4/§11.4.6/§11.4.43/
+§11.4.69/§11.4.86/§11.4.107(10)/§11.4.108/§11.4.115/§11.4.135/§11.4.201/
+§11.4.224/§11.4.227). It was NOT fabricated for this closure — it was
+located, read in full, and run unmodified both before and after the fix
+(see “Mutation-still-bites proof” above, Proof 1). It is fixture-based
+(golden-good/golden-bad document content driving the real gate) rather
+than a script-source mutation harness, but its
+<code>golden-bad-multimarker</code> fixture is precisely engineered to
+be a no-op unless the <code>-oE | wc -l</code> footgun-avoidance
+genuinely fires — functionally equivalent to a §1.1 paired mutation for
+THAT correctness property. This file was read-only for this item; it was
+not edited.</p>
+<h2 id="constraints-honoured">Constraints honoured</h2>
+<ul>
+<li>No <code>git add</code> / <code>git commit</code> /
+<code>git push</code> executed.</li>
+<li><code>docs/workable_items.db</code>, <code>docs/Issues.md</code>,
+<code>docs/Fixed.md</code>, and the <code>workable-items</code> CLI were
+not touched.</li>
+<li><code>scripts/pre_build_verification.sh</code> and
+<code>scripts/commit-push-all.sh</code> were read-only (referenced for
+invocation-path confirmation, never edited).</li>
+<li>No file under <code>scripts/ownership_*.sh</code>,
+<code>scripts/lib/ownership.sh</code>, or <code>start.sh</code> was
+touched.</li>
+<li>Only <code>scripts/pre_build/check_cm_plugin_count.sh</code> and
+this new evidence file were written;
+<code>tests/pre_build/test_check_cm_plugin_count.sh</code> was
+read-only.</li>
+</ul>
+</body>
+</html>

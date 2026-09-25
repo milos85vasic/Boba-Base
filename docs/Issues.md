@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 125
-**Last modified:** 2026-09-25T14:35:27Z
+**Revision:** 126
+**Last modified:** 2026-09-25T14:54:44Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -148,7 +148,7 @@ RD2-30: Author tests/stress/test_scheduler_hooks_sse_stress_chaos.py for Go-side
 
 ## BOB-097 — RD2-32: Author DDoS-class coverage for exposed download-proxy/merge endpoints (canonical impl of RD2-07)
 
-**Status:** Queued
+**Status:** In progress
 **Type:** Task
 **Severity:** Low
 

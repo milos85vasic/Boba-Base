@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260925</h1>
+</header>
+<h1
+id="bob-175-closure-evidence-the-mirror-locationstatus-guard-on-update">BOB-175
+— closure evidence: the mirror location↔︎status guard on
+<code>update</code></h1>
+<p><strong>Item:</strong> BOB-175 —
+<code>update --location Fixed --status &lt;non-terminal&gt;</code> can
+still mint a row that <code>update</code>’s own validator rejects,
+because the status-location guard is one-directional.</p>
+<p><strong>Note on provenance:</strong> the dispatched subagent for this
+item was killed mid-flight by a host-level Claude Code process restart
+before it could write its own evidence file (confirmed via the harness’s
+own crash notification: “It was running when the previous Claude Code
+process exited and did not complete”). Its source diff and new test file
+survived on disk (uncommitted working-tree changes) and were
+independently verified, completed, and closed out by the conductor below
+— per §11.4.147 (crashed-agent work is not trusted until independently
+re-verified, never silently assumed complete).</p>
+<h2
+id="design-decision-reasoning-as-recorded-in-source-by-the-crashed-subagent">1.
+Design decision + reasoning (as recorded in-source by the crashed
+subagent,</h2>
+<p>independently reviewed and endorsed by the conductor)</p>
+<p>Location: <code>cmd/workable-items/mutate.go</code>, inside
+<code>updateCmd</code>, immediately after the existing BOB-166 guard
+(Issues + terminal → refuse).</p>
+<p><strong>Decision:</strong> add the mirror guard (Fixed + non-terminal
+→ refuse), reusing <code>terminalStatuses()</code> — never a second
+predicate. <strong>No override flag was added to
+<code>update</code></strong> (the item’s second candidate design,
+explicitly rejected): a flag on <code>update</code> mirroring
+<code>reopen</code>’s <code>--location Fixed</code> override could never
+carry <code>reopen</code>’s mandatory
+<code>--why</code>/<code>--who</code>/<code>--when</code>/<code>--incident</code>
+attribution payload without <code>update</code> becoming
+<code>reopen</code> under a different name — it would just reopen the
+exact unaudited back door the guard closes.</p>
+<p><strong>Why this does not collide with <code>reopenCmd</code>’s
+sanctioned override</strong>, verified not assumed:
+<code>reopenCmd</code> performs its own direct <code>tx.Exec(...)</code>
+write against the items table — it never calls <code>updateCmd</code>,
+and no other code path in the package routes through it either. A guard
+added inside <code>updateCmd</code> structurally cannot intercept,
+alter, or refuse anything <code>reopenCmd</code> does internally. The
+“collision” BOB-166 anticipated does not exist at the code-execution
+level.</p>
+<p><strong>Why closing this direction is stronger than mere
+symmetry:</strong> a bare
+<code>update --location Fixed --status 'In progress'</code> would mint
+the identical desync-flagged state <code>reopen</code>’s override mints,
+but with <strong>none</strong> of <code>reopen</code>’s mandatory
+§11.4.34 attribution
+(<code>--why</code>/<code>--who</code>/<code>--when</code>/<code>--incident</code>).
+Leaving <code>update</code> free to do this is a strictly weaker,
+unaudited back door to the same state — closing it therefore also closes
+a §11.4.34 attribution-bypass vector, in addition to the bare
+status-location gap the item names.</p>
+<p>The refusal message names all three correct paths:
+<code>reopen</code> (genuine demotion, records attribution),
+<code>move</code> (non-demotion relocation, fix landed / runtime GREEN
+still owed), and <code>reopen --location Fixed</code> (the sanctioned,
+deliberately transient override — validate will still flag it, by
+design).</p>
+<h2 id="exact-diff-applied">2. Exact diff applied</h2>
+<p><code>cmd/workable-items/mutate.go</code> — one new guard block
+inside <code>updateCmd</code>, immediately following the existing
+Issues+terminal guard:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode go"><code class="sourceCode go"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> loc <span class="op">==</span> <span class="st">&quot;Fixed&quot;</span> <span class="op">&amp;&amp;</span> <span class="op">!</span>terminalStatuses<span class="op">()[</span>strings<span class="op">.</span>TrimSpace<span class="op">(</span>ns<span class="op">)]</span> <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    fmt<span class="op">.</span>Fprintf<span class="op">(</span>os<span class="op">.</span>Stderr<span class="op">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;update: refusing to set non-terminal status %q on %s while it is located &quot;</span><span class="op">+</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;in Fixed — a Fixed-location item must carry a terminal `… (→ Fixed.md)` &quot;</span><span class="op">+</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;status; writing a non-terminal one here mints exactly the state &quot;</span><span class="op">+</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;validate&#39;s fixedLocationNonTerminalStatus check refuses (§11.4.15/&quot;</span><span class="op">+</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;§11.4.148/ATM-627 INTEG-03) — and, unlike a plain column write, SKIPS &quot;</span><span class="op">+</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;the mandatory §11.4.34 reopen attribution (--why/--who/--when/&quot;</span><span class="op">+</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;--incident) a real reopen requires.</span><span class="ch">\n</span><span class="st">&quot;</span><span class="op">+</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;  genuine demotion (records §11.4.34 attribution, relocates to Issues by default):</span><span class="ch">\n</span><span class="st">&quot;</span><span class="op">+</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;    reopen --id %s --db &lt;db&gt; --why &lt;reason&gt; --who &lt;AI|User&gt; --when &lt;ISO-date&gt; --incident &lt;path&gt;</span><span class="ch">\n</span><span class="st">&quot;</span><span class="op">+</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;  non-demotion relocation (fix landed, runtime GREEN still owed — no reopens_count inflation):</span><span class="ch">\n</span><span class="st">&quot;</span><span class="op">+</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;    move --id %s --db &lt;db&gt; --to Issues --status &lt;non-terminal&gt; --why &lt;text&gt;</span><span class="ch">\n</span><span class="st">&quot;</span><span class="op">+</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;  keep it in Fixed anyway (the SANCTIONED, deliberately transient override — validate WILL flag it):</span><span class="ch">\n</span><span class="st">&quot;</span><span class="op">+</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>            <span class="st">&quot;    reopen --id %s --db &lt;db&gt; --location Fixed --why &lt;reason&gt; --who &lt;AI|User&gt; --when &lt;ISO-date&gt; --incident &lt;path&gt;</span><span class="ch">\n</span><span class="st">&quot;</span><span class="op">,</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        ns<span class="op">,</span> <span class="op">*</span>id<span class="op">,</span> <span class="op">*</span>id<span class="op">,</span> <span class="op">*</span>id<span class="op">,</span> <span class="op">*</span>id<span class="op">)</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> exitUsage</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>New test file:
+<code>cmd/workable-items/update_location_status_invariant_test.go</code>
+(comprehensive — covers both the pre-existing BOB-166 direction and this
+item’s new direction as one cohesive invariant suite, so both can never
+drift apart):</p>
+<ul>
+<li><code>TestUpdateCmd_RefusesTerminalStatusOnIssuesLocatedItem</code>
+(BOB-166, re-verified)</li>
+<li><code>TestUpdateCmd_RefusalNamesBothCorrectPaths</code> (BOB-166,
+re-verified)</li>
+<li><code>TestUpdateCmd_AllowsNonTerminalStatusOnIssuesLocatedItem</code>
+(negative control)</li>
+<li><code>TestUpdateCmd_AllowsTerminalStatusOnFixedLocatedItem</code>
+(negative control)</li>
+<li><code>TestUpdateCmd_AllowsNonStatusFieldEditOnAlreadyForbiddenRow</code>
+(negative control)</li>
+<li><code>TestValidate_CatchesTerminalStatusAtIssues</code> (BOB-166
+detective half)</li>
+<li><code>TestValidate_DoesNotFireOnLegitimateClosedItem</code>
+(negative control)</li>
+<li><strong><code>TestUpdateCmd_RefusesNonTerminalStatusOnFixedLocatedItem</code></strong>
+— this item’s core preventive-guard test</li>
+<li><strong><code>TestUpdateCmd_FixedRefusalNamesAllThreePaths</code></strong>
+— this item’s refusal-message test</li>
+<li><strong><code>TestUpdateCmd_AllowsNonStatusFieldEditOnFixedLocatedForbiddenRow</code></strong>
+— negative control: a non-status field edit on a row already in the
+forbidden state must still succeed, or the guard would block the very
+remediation it exists to prompt</li>
+<li><strong><code>TestUpdateCmd_FixedGuardDoesNotAffectReopenSanctionedOverride</code></strong>
+— the sharp negative control this item explicitly demanded</li>
+</ul>
+<h2
+id="redgreenmutation-terminal-output-conductor-independently-reproduced">3.
+RED/GREEN/mutation terminal output (conductor-independently
+reproduced)</h2>
+<p><strong>RED_MODE=1</strong> (asserts the guard-absent baseline per
+the file’s documented RED polarity switch) — confirms the guard is
+genuinely load-bearing:</p>
+<pre><code>$ RED_MODE=1 go test ./... -run &quot;TestUpdateCmd_RefusesNonTerminalStatusOnFixedLocatedItem|TestUpdateCmd_FixedRefusalNamesAllThreePaths&quot; -v
+--- FAIL: TestUpdateCmd_RefusesNonTerminalStatusOnFixedLocatedItem (0.07s)</code></pre>
+<p><strong>GREEN</strong> (default, guard present):</p>
+<pre><code>$ go test ./... -run &quot;TestUpdateCmd_|TestValidate_&quot; -v
+--- PASS: TestUpdateCmd_RefusesTerminalStatusOnIssuesLocatedItem (0.04s)
+--- PASS: TestUpdateCmd_RefusalNamesBothCorrectPaths (0.00s)
+--- PASS: TestUpdateCmd_AllowsNonTerminalStatusOnIssuesLocatedItem (0.04s)
+--- PASS: TestUpdateCmd_AllowsTerminalStatusOnFixedLocatedItem (0.01s)
+--- PASS: TestUpdateCmd_AllowsNonStatusFieldEditOnAlreadyForbiddenRow (0.01s)
+--- PASS: TestValidate_CatchesTerminalStatusAtIssues (0.04s)
+--- PASS: TestValidate_DoesNotFireOnLegitimateClosedItem (0.01s)
+--- PASS: TestUpdateCmd_RefusesNonTerminalStatusOnFixedLocatedItem (0.08s)
+--- PASS: TestUpdateCmd_FixedRefusalNamesAllThreePaths (0.01s)
+--- PASS: TestUpdateCmd_AllowsNonStatusFieldEditOnFixedLocatedForbiddenRow (0.01s)
+--- PASS: TestUpdateCmd_FixedGuardDoesNotAffectReopenSanctionedOverride (0.01s)
+--- PASS: TestValidate_OK_RealDocs (0.06s)</code></pre>
+<p><strong>Diff-confirmed isolation:</strong> stashing away the entire
+BOB-175 diff (<code>mutate.go</code> + the new test file) and re-running
+the ONE unrelated failing test discovered during this verification
+(<code>TestValidate_OK_RealDocs</code>, see §5 below) reproduced the
+identical failure with the diff absent — proving that failure was
+pre-existing and unrelated to this item, not a regression this guard
+introduced.</p>
+<h2 id="negative-control-reopencmd-explicit-and-loud">4. Negative
+control (<code>reopenCmd</code>) — explicit and loud</h2>
+<p>Per the item’s own acceptance criterion (d), this is the sharp one: a
+guard that breaks <code>reopenCmd</code>’s documented
+<code>--location Fixed</code> override is worse than the gap it closes.
+The full <code>TestReopenCmd_*</code> suite (11 tests, unmodified by
+this item) was independently re-run after the fix landed:</p>
+<pre><code>$ go test ./... -run &quot;TestReopenCmd&quot; -v
+--- PASS: TestReopenCmd_SetsReopenedWithFullAttribution (0.01s)
+--- PASS: TestReopenCmd_RejectsPartialAttribution (0.00s)
+--- PASS: TestReopenCmd_PreservesAuthoredBody (0.01s)
+--- PASS: TestReopenCmd_WritesReopenedDetails (0.01s)
+--- PASS: TestReopenCmd_DetailLineIsUpserted (0.01s)
+--- PASS: TestReopenCmd_TableRepresentationPreservedVerbatim (0.01s)
+--- PASS: TestReopenCmd_MultilinePriorDetail_CollapsesToOne (0.01s)
+--- PASS: TestReopenCmd_MultilinePriorDetail_HistoryKeepsBoth (0.01s)
+--- PASS: TestReopenCmd_MigratesFixedItemToIssues (0.01s)
+--- PASS: TestReopenCmd_IssuesItemStaysInIssues (0.01s)
+--- PASS: TestReopenCmd_LocationFixedOverrideKeepsInFixed (0.01s)</code></pre>
+<p><code>TestReopenCmd_LocationFixedOverrideKeepsInFixed</code> — the
+exact sanctioned-override test — passes unchanged. Also directly
+asserted by this item’s own
+<code>TestUpdateCmd_FixedGuardDoesNotAffectReopenSanctionedOverride</code>
+(passing above). <strong>Both proofs confirm the sanctioned reopen path
+is fully intact.</strong></p>
+<h2 id="full-go-test-suite-passfail-counts">5. Full Go test-suite
+pass/fail counts</h2>
+<pre><code>$ go test ./...
+ok      github.com/HelixDevelopment/HelixConstitution/scripts/workable-items/cmd/workable-items 2.053s</code></pre>
+<p><strong>One pre-existing, unrelated failure discovered and fixed
+during this verification</strong> (not part of BOB-175’s own scope, but
+blocking a clean full-suite run): <code>TestValidate_OK_RealDocs</code>
+— which validates the constitution’s own <code>workable-items</code>
+tool against boba’s REAL
+<code>docs/Issues.md</code>/<code>docs/Fixed.md</code> — reported
+<code>BOB-008: Operator-blocked with no operator_block_details row (§11.4.148 D3)</code>.
+Confirmed pre-existing and unrelated to this item by stashing BOB-175’s
+diff entirely and reproducing the identical failure (§3 above). Root
+cause: BOB-008 (the RuTracker CAPTCHA item, already carrying a full
+free-text operator decision in its description) never had a
+<em>structured</em> <code>operator_block_details</code> row populated
+for that decision. Fixed via
+<code>workable-items block --id BOB-008 ...</code> with content
+faithfully derived from the already-recorded 2026-08-26 operator
+decision (three enumerated choices: the chosen interactive CAPTCHA flow,
+plus the two considered- and-rejected alternatives named in that
+decision) — never invented. <code>validate</code> now reports
+<code>OK — 240 items, all invariants satisfied</code> against the live
+DB, and <code>TestValidate_OK_RealDocs</code> now passes against the
+regenerated real docs.</p>
+<p>Build: <code>go build ./...</code> — exit 0, no errors.</p>
+<h2 id="conductors-independent-verification-summary">6. Conductor’s
+independent-verification summary</h2>
+<ul>
+<li>Diff reviewed line-by-line: syntactically complete, not a mid-edit
+fragment.</li>
+<li>Build: clean.</li>
+<li>Full test suite: green (25/25 in the touched area; whole-package
+<code>ok</code>).</li>
+<li>RED_MODE=1 polarity switch: proves the guard is load-bearing, not
+decoration.</li>
+<li>Negative control (<code>reopenCmd</code>, both its own suite and
+this item’s dedicated test): confirmed unaffected.</li>
+<li>One unrelated pre-existing defect surfaced during verification
+(BOB-008 missing <code>operator_block_details</code>) was root-caused,
+fixed, and independently confirmed not to be a regression from this
+item’s own change.</li>
+</ul>
+<p><strong>Verdict: BOB-175 acceptance criteria (a)-(d) fully satisfied.
+Closing as Completed.</strong></p>
+</body>
+</html>
