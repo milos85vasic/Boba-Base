@@ -1350,11 +1350,17 @@ EOF
 echo 'main "$@"' >> scripts/zero_shortcomings_audit.sh
 ```
 
-Then wire it into every write path that reaches a tracked log: in `cmd_verify_closure`
-(Task 5), wrap `fresh_summary` and `recorded_summary` in `audit_redact_before_write`
-before they ever appear in a `print_error`/`print_success` line; in `cmd_standing_check`
-(Task 7), wrap `counts` in `audit_redact_before_write` before it is appended to the
-run-log file.
+Then wire it into `cmd_verify_closure` (Task 5, which already exists at this point): wrap
+`fresh_summary` and `recorded_summary` in `audit_redact_before_write` before they ever
+appear in a `print_error`/`print_success` line.
+
+**Forward-reference correction (pre-flight fix, 2026-09-25)**: this brief originally also
+instructed wiring `audit_redact_before_write` into `cmd_standing_check` here — but
+`cmd_standing_check` does not exist yet at Task 5C's point in the plan (Task 7 creates it,
+after Task 6/6B/6C). That wiring is correctly deferred to Task 7's own Step 3 below,
+which creates `cmd_standing_check` calling `audit_redact_before_write` (already present
+from THIS task) on its own log-line write from the start — never written unredacted even
+transiently.
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -1824,12 +1830,18 @@ cat >> scripts/zero_shortcomings_audit.sh <<'EOF'
 
 cmd_standing_check() {
     mkdir -p "$REPO_ROOT/docs/qa/zero_shortcomings_audit"
-    local run_id counts
+    local run_id counts redacted_counts
     run_id="$(audit_run_id)"
     counts="$(cmd_enumerate --json)"
-    printf '%s mode=standing-check %s\n' "$run_id" "$counts" \
+    # Constitution Principle III / Task 5C: redact before this line EVER
+    # touches the tracked log file -- never write unredacted output first
+    # and redact after (a transient unredacted write is the exact leak
+    # Task 5C's own gate exists to prevent). audit_redact_before_write is
+    # available from Task 5C, landed before this task.
+    redacted_counts="$(audit_redact_before_write "$counts")"
+    printf '%s mode=standing-check %s\n' "$run_id" "$redacted_counts" \
         >> "$REPO_ROOT/docs/qa/zero_shortcomings_audit/${run_id}.log"
-    print_info "standing-check ($run_id): $counts"
+    print_info "standing-check ($run_id): $redacted_counts"
     return 0
 }
 EOF
