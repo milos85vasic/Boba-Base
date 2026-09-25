@@ -111,13 +111,21 @@ EXCLUDED_DIR_NAMES=(
 # explicitly-documented DUPLICATE source tree; config/qBittorrent/ and
 # config/jackett/ are runtime deployment/config targets, not authored
 # source — the real first-party sources are download-proxy/src/, plugins/,
-# and the jackett submodule respectively).
+# and the jackett submodule respectively; .specify/extensions/superspec/ is
+# ANOTHER explicitly-documented duplicate tree per this project's own
+# .gitignore comment — a vendored nested checkout of the SAME upstream,
+# WangX0111/superspec, the root `superspec` submodule already tracks.
+# BOB-244 (2026-09-25) verified this byte-for-byte: every file this
+# exclusion newly covers was confirmed identical to its counterpart under
+# the tracked superspec/ submodule via `diff -q` before this line was
+# added — never assumed, per §11.4.6).
 EXCLUDED_PATH_PREFIXES=(
   "constitution/"
   "superspec/"
   "config/qBittorrent/"
   "config/download-proxy/src/"
   "config/jackett/"
+  ".specify/extensions/superspec/"
 )
 
 # ----------------------------------------------- recognised source extensions

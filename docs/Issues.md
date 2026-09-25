@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 128
-**Last modified:** 2026-09-25T17:07:01Z
+**Revision:** 129
+**Last modified:** 2026-09-25T17:12:26Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -543,16 +543,6 @@ BOB-223 closed the incentive inversion where writing a §11.4.18-mandated docs/s
 **Assigned-To:** Claude
 
 Discovered by a full 58-invariant pre_build_verification.sh sweep (2026-09-25) run during BOB-223 closure verification: invariant 56 (CM-GITIGNORE-SWALLOW-GUARD, §11.4.201(6), BOB-212) reports 4 first-party source files silently ignored: .specify/extensions/superspec/scripts/e2e-agent-claude.sh, .specify/extensions/superspec/scripts/e2e-smoke.sh, .specify/extensions/superspec/scripts/validate-extension-metadata.py, .specify/extensions/superspec/scripts/validate-release-archive.py -- all blocked by the broad .gitignore:218 rule '.specify/extensions/superspec/'. Unrelated to BOB-223's own scope; a genuinely new finding, not previously tracked. Remedy per the gate's own remediation text: either rename/relocate the files so no .gitignore rule matches them, or add an explicit ! negation for them in .gitignore, then re-run the guard. Investigate first per §11.4.6/§11.4.124 whether the broad .specify/extensions/superspec/ ignore rule was intentional (e.g. to exclude a vendored/generated subtree) before narrowing it, since a careless negation could re-expose something the rule was deliberately protecting.
-
-## BOB-244 — CM-GITIGNORE-SWALLOW-GUARD: 4 first-party superspec scripts silently swallowed by .gitignore:218
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** Critical
-**Created-By:** AI
-**Assigned-To:** AI
-
-Discovered 2026-09-25 by the pre-build sweep's own CM-GITIGNORE-SWALLOW-GUARD gate (§11.4.201(6), BOB-212 pattern), during the 003-zero-shortcomings-audit feature's setup phase. What: 4 genuine first-party files under .specify/extensions/superspec/scripts/ — e2e-agent-claude.sh (19458 bytes), e2e-smoke.sh (8757 bytes), validate-extension-metadata.py (5888 bytes), validate-release-archive.py (7053 bytes), all dated Aug 31 2026 — are untracked by git (confirmed via 'git ls-files --error-unmatch': did not match any file(s) known to git) and are BLOCKED from ever being staged by the broad directory-level ignore rule at .gitignore:218 (.specify/extensions/superspec/). Root cause investigation needed: .gitignore:218's own comment states the WHOLE directory is ignored because it is 'the vendored superspec extension checkout' that 'carries its OWN .git (gitdir pointer)... and DUPLICATES the root superspec submodule' — but these 4 specific files look like genuine first-party CI/e2e/validation tooling, not vendored upstream content, and predate today's session (Aug 31 mtime). Per §11.4.124 (investigate-before-remove) and §11.4.122 (no silent removal without operator decision), this needs git-history investigation (was there ever a commit touching these paths? are they meant to ship with this project or are they truly part of the vendored nested checkout and should stay ignored?) before either (a) carving a negation exception into .gitignore for exactly these 4 files, or (b) confirming they are genuinely disposable vendored artifacts and documenting that explicitly. Acceptance: CM-GITIGNORE-SWALLOW-GUARD passes clean (0 findings) OR the 4 files are explicitly, evidence-backed classified as vendored-and-correctly-ignored with that classification recorded in the .gitignore comment itself.
 
 ## BOB-246 — commit-push-all.sh: --scope flags placed after the commit message are silently ignored, falls back to git add -A
 

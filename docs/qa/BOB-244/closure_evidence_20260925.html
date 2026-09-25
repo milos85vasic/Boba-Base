@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260925</h1>
+</header>
+<h1 id="bob-244-closure-evidence">BOB-244 closure evidence</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-09-25T17:30:00Z</p>
+<h2 id="what-was-reported">What was reported</h2>
+<p>The pre-build sweep’s <code>CM-GITIGNORE-SWALLOW-GUARD</code> gate
+(§11.4.201(6), BOB-212) refused, citing 4 untracked files under
+<code>.specify/extensions/superspec/scripts/</code> that looked
+first-party (<code>e2e-agent-claude.sh</code>,
+<code>e2e-smoke.sh</code>, <code>validate-extension-metadata.py</code>,
+<code>validate-release-archive.py</code>), silently swallowed by the
+directory-level <code>.gitignore:218</code> rule for
+<code>.specify/extensions/superspec/</code>.</p>
+<h2 id="investigation">Investigation</h2>
+<p>Per §11.4.124 (investigate before removing/silently-ignoring) and
+§11.4.6 (no guessing), read all 4 files in full. All four are clearly
+the upstream <code>WangX0111/superspec</code> project’s OWN
+end-to-end/CI/validation tooling for testing the superspec extension
+itself (e.g. <code>e2e-smoke.sh</code>’s own header: “End-to-end smoke
+test for the superspec extension”).</p>
+<p>The project already vendors this exact upstream via a proper git
+submodule at <code>superspec/</code> (<code>.gitmodules</code>:
+<code>url = git@github.com:WangX0111/superspec.git</code>). Compared the
+4 flagged files against their counterparts in that submodule:</p>
+<pre><code>$ diff -q superspec/scripts/e2e-agent-claude.sh .specify/extensions/superspec/scripts/e2e-agent-claude.sh
+$ diff -q superspec/scripts/e2e-smoke.sh .specify/extensions/superspec/scripts/e2e-smoke.sh
+$ diff -q superspec/scripts/validate-extension-metadata.py .specify/extensions/superspec/scripts/validate-extension-metadata.py
+$ diff -q superspec/scripts/validate-release-archive.py .specify/extensions/superspec/scripts/validate-release-archive.py</code></pre>
+<p>All four <code>diff -q</code> invocations produced <strong>no
+output</strong> (byte-identical, exit 0 for all four). Conclusion: these
+are genuine, confirmed vendored duplicates of already-properly-tracked
+content — not first-party, undiscovered work. The
+<code>.gitignore:218</code> rule excluding the whole
+<code>.specify/extensions/superspec/</code> directory (a nested vendored
+checkout of the same upstream, carrying its own <code>.git</code> gitdir
+pointer) is correct.</p>
+<h2 id="root-cause-of-the-false-positive">Root cause of the
+false-positive</h2>
+<p><code>scripts/pre_build/check_gitignore_swallow.sh</code>’s
+<code>EXCLUDED_PATH_PREFIXES</code> array already has a precedent
+mechanism for exactly this class (root- relative prefixes a bare
+directory-name denylist can’t express — the array already excluded
+<code>constitution/</code>, <code>superspec/</code>, and
+<code>config/download-proxy/src/</code>, the last one explicitly
+documented as “a DUPLICATE source tree”).
+<code>.specify/extensions/superspec/</code> was simply missing from that
+list — a gap, not a design flaw.</p>
+<h2 id="fix">Fix</h2>
+<p>RED confirmed:</p>
+<pre><code>$ bash scripts/pre_build/check_gitignore_swallow.sh .
+BOB-212 swallow-guard: REFUSED — 4 first-party source file(s) are silently swallowed by .gitignore.
+[... 4 findings printed ...]
+EXIT=1</code></pre>
+<p>Added <code>.specify/extensions/superspec/</code> to
+<code>EXCLUDED_PATH_PREFIXES</code> in
+<code>scripts/pre_build/check_gitignore_swallow.sh</code>, with an
+in-source comment citing this exact investigation (never a silent
+exclusion). Also recorded the classification directly in the
+<code>.gitignore</code> comment block for that rule (per BOB-244’s own
+stated acceptance criteria), and wrote the previously-missing companion
+doc <code>docs/scripts/check_gitignore_swallow.md</code> (§11.4.18 — the
+script’s own header names this doc; it never existed).</p>
+<p>GREEN confirmed:</p>
+<pre><code>$ bash scripts/pre_build/check_gitignore_swallow.sh .
+BOB-212 swallow-guard: OK — no first-party source files are silently swallowed by .gitignore.
+EXIT=0</code></pre>
+<h2
+id="regression-verification-no-weakening-of-real-detection">Regression
+verification (no weakening of real detection)</h2>
+<p>Both existing test suites for this gate re-run clean, unmodified,
+proving the new exclusion does not weaken detection of a genuine swallow
+elsewhere:</p>
+<pre><code>$ bash tests/pre_build/test_check_gitignore_swallow.sh
+-- case 1: golden-GOOD (swallowed first-party source file) --
+PASS: case 1: guard exited non-zero (1) and named the file + gitignore:&lt;N&gt; rule
+-- case 2: golden-BAD / false-positive guard (only secret-shaped files) --
+PASS: case 2: guard exited zero on a tree whose ONLY ignored+untracked files are secret-shaped
+-- case 3: genuinely clean tree (nothing ignored+untracked) --
+PASS: case 3: guard exited zero on a clean tree with no ignored+untracked files
+-- case 4: swallowed file under an excluded root (not first-party) --
+PASS: case 4: guard exited zero -- excluded-root swallows are correctly NOT first-party
+-- case 5: fail-closed on unresolvable input (§11.4.252) --
+PASS: case 5a: guard exited 2 on a nonexistent repo root
+PASS: case 5b: guard exited 2 on a directory that is not a git repo
+-- case 6: paired §1.1 mutation (guard broken -&gt; this test detects it) --
+PASS: case 6a: mutated (always-pass) guard exits 0 on the swallowed-file tree -- mutation confirmed live
+PASS: case 6b: mutated guard correctly FAILS the golden-good assertion (this test would catch a broken guard)
+PASS: case 6c: restored (real, unmutated) guard passes the golden-good assertion again
+RESULT: PASS -- all cases behaved as specified (0 failures).
+
+$ bash tests/security/test_gitignore_swallow_is_loud.sh
+-- A2: does a swallow-guard exist and refuse loudly, naming rule + file? --
+  [ok]     guard refused (exit 1) and named both the file and the .gitignore rule
+-- A3: does ANY signal distinguish &#39;swallowed&#39; from &#39;never authored&#39;? --
+  [ok]     a signal reaches the author
+-- GOLDEN-FALSE (§11.4.201(1)/§11.4.10): real secrets MUST stay ignored --
+  [ok]     all 15 secret-bearing shapes remain ignored
+RESULT: PASS (exit 0) -- the swallow is LOUD (or the file commits normally).</code></pre>
+<p><code>bash -n scripts/pre_build/check_gitignore_swallow.sh</code> →
+clean parse.</p>
+<h2 id="test-type-declared">Test type declared</h2>
+<p>Bash unit/regression test (existing suite, unmodified, re-run against
+the fix) + a real repo-state investigation (<code>diff -q</code> against
+the tracked submodule) as the oracle proving the exclusion is
+evidence-backed rather than assumed.</p>
+<h2 id="closure">Closure</h2>
+<p>Fixed. Acceptance criterion satisfied: “CM-GITIGNORE-SWALLOW-GUARD
+passes clean (0 findings) OR the 4 files are explicitly, evidence-backed
+classified as vendored-and-correctly-ignored with that classification
+recorded in the .gitignore comment itself” — the gate now passes clean
+AND the classification is recorded in <code>.gitignore</code>.</p>
+</body>
+</html>

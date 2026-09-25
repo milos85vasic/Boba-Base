@@ -215,6 +215,17 @@ tmp/*
 # file, and it DUPLICATES the root `superspec` submodule (same upstream,
 # WangX0111/superspec). Committing it would create a phantom gitlink that is
 # not registered in .gitmodules. Stays ignored.
+#
+# BOB-244 (2026-09-25): CM-GITIGNORE-SWALLOW-GUARD flagged 4 untracked files
+# under .specify/extensions/superspec/scripts/ (e2e-agent-claude.sh,
+# e2e-smoke.sh, validate-extension-metadata.py, validate-release-archive.py)
+# as looking first-party. Investigated: all 4 are BYTE-IDENTICAL (verified
+# via `diff -q`) to their counterparts already tracked under the real
+# `superspec/` submodule — confirmed vendored duplicates, not first-party
+# content. Classified vendored-and-correctly-ignored; `scripts/pre_build/
+# check_gitignore_swallow.sh`'s EXCLUDED_PATH_PREFIXES now explicitly
+# excludes this whole directory (never guess at a per-file negation here —
+# the WHOLE checkout is the duplicate, per the paragraph above).
 .specify/extensions/superspec/
 # .specify/memory/ holds the TRACKED project constitution — authoritative
 # governance source data, never a build artifact. Per §11.4.30 (tracked

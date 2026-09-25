@@ -190,7 +190,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td>Bug</td>
 <td>Fixed (→ Fixed.md)</td>
-<td>115</td>
+<td>116</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -215,7 +215,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>207</strong></td>
+<td><strong>208</strong></td>
 </tr>
 </tbody>
 </table>
@@ -3812,6 +3812,40 @@ evidence.</td>
 </tr>
 <tr>
 <td>207</td>
+<td>Critical</td>
+<td>Fixed (→ Fixed.md)</td>
+<td>Bug</td>
+<td>—</td>
+<td>BOB-244 — Discovered 2026-09-25 by the pre-build sweep’s own
+CM-GITIGNORE-SWALLOW-GUARD gate (§11.4.201(6), BOB-212 pattern), during
+the 003-zero-shortcomings-audit feature’s setup phase. What: 4 genuine
+first-party files under .specify/extensions/superspec/scripts/ —
+e2e-agent-claude.sh (19458 bytes), e2e-smoke.sh (8757 bytes),
+validate-extension-metadata.py (5888 bytes), validate-release-archive.py
+(7053 bytes), all dated Aug 31 2026 — are untracked by git (confirmed
+via ‘git ls-files –error-unmatch’: did not match any file(s) known to
+git) and are BLOCKED from ever being staged by the broad directory-level
+ignore rule at .gitignore:218 (.specify/extensions/superspec/). Root
+cause investigation needed: .gitignore:218’s own comment states the
+WHOLE directory is ignored because it is ‘the vendored superspec
+extension checkout’ that ‘carries its OWN .git (gitdir pointer)… and
+DUPLICATES the root superspec submodule’ — but these 4 specific files
+look like genuine first-party CI/e2e/validation tooling, not vendored
+upstream content, and predate today’s session (Aug 31 mtime). Per
+§11.4.124 (investigate-before-remove) and §11.4.122 (no silent removal
+without operator decision), this needs git-history investigation (was
+there ever a commit touching these paths? are they meant to ship with
+this project or are they truly part of the vendored nested checkout and
+should stay ignored?) before either (a) carving a negation exception
+into .gitignore for exactly these 4 files, or (b) confirming they are
+genuinely disposable vendored artifacts and documenting that explicitly.
+Acceptance: CM-GITIGNORE-SWALLOW-GUARD passes clean (0 findings) OR the
+4 files are explicitly, evidence-backed classified as
+vendored-and-correctly-ignored with that classification recorded in the
+.gitignore comment itself.</td>
+</tr>
+<tr>
+<td>208</td>
 <td>Medium</td>
 <td>Fixed (→ Fixed.md)</td>
 <td>Bug</td>
