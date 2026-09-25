@@ -198,7 +198,13 @@ def test_download_magnet_fails_when_qbit_refuses_add(merge_api_mod, serve):
     )
     t = merge_api_mod.TestDownloadEndpoint()
     _must_fail_not_skip(
-        lambda: t.test_download_magnet_added_to_real_qbittorrent(srv.url, srv.url, requests.Session())
+        # This call bypasses pytest fixture injection (plain method call, not a
+        # collected test), so the real `api_token` fixture never runs. The
+        # value below is a placeholder: the stubbed `/api/v2/torrents/delete`
+        # route above does zero token validation, so any string is behaviorally
+        # correct here (BOB-234 added `api_token` for the real service's auth,
+        # not for this mock).
+        lambda: t.test_download_magnet_added_to_real_qbittorrent(srv.url, srv.url, requests.Session(), "test-token")
     )
 
 

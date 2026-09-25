@@ -73,6 +73,16 @@ _RESPONSE_RETURNING_EXEMPTIONS = {
     # (a StreamingResponse); every other exit raises HTTPException, which
     # propagates before slowapi's header injection runs.
     "api.routes.search_stream",
+    # BOB-129 reopen (2026-09-25): BOB-167 (commit 1ef4246) added `@_rl(...)`
+    # to this endpoint without adding it here. `stream_theme`'s single
+    # `return` (its ONLY exit path) is `StreamingResponse(gen(), ...)`
+    # directly — verified by reading the full function body, no
+    # `raise HTTPException` anywhere in it. The `return` inside its nested
+    # `gen()` async generator belongs to that inner generator's own scope,
+    # not to `stream_theme` itself, and does not change the outer
+    # function's single-return-path shape. Same exemption reasoning as
+    # `search_stream` above.
+    "api.routes.stream_theme",
 }
 
 

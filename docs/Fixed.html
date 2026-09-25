@@ -175,8 +175,8 @@
 </head>
 <body>
 <h1 id="fixed-closed-workable-items">Fixed — Closed Workable Items</h1>
-<p><strong>Revision:</strong> 60 <strong>Last modified:</strong>
-2026-09-25T10:45:47Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 61 <strong>Last modified:</strong>
+2026-09-25T11:05:53Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Closed items
 only. Open items live in <a
 href="Issues.md"><code>Issues.md</code></a>.</p>
@@ -2139,27 +2139,6 @@ implementation (§11.4.227). NOT DONE this round: that file sits outside
 the working brief’s declared file scope, so the gap is named and the
 item stays open rather than the scope being exceeded (§11.4.6).
 EVIDENCE. docs/qa/BOB-087/seam-coverage-measurement.md.</p>
-<h2
-id="bob-129-potential-production-slowapistarlette-defect-flagged-by-task-105-subagent">BOB-129
-— Potential production slowapi/starlette defect flagged by Task 105
-subagent</h2>
-<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
-Bug <strong>Severity:</strong> Medium</p>
-<p>Task #105 subagent (fixing 9 slowapi test failures) reported honestly
-that the same slowapi/starlette incompatibility likely hits the
-production /search and /search/stream endpoints under real HTTP traffic
-— evidence: the FastAPI TestClient (which goes through the full ASGI
-middleware stack like real requests do) reproduces the same isinstance()
-failure pattern the 9 test failures exhibited. Not yet reproduced
-against the running boba stack because the qbittorrent-proxy container
-currently exposes no host ports (running on gluetun network stack).
-Recommended investigation: (1) confirm defect by triggering /search
-kickoff through gluetun network stack, (2) if reproduced, determine
-whether the fix belongs in production code (adding response: Response
-params) or a version pin (slowapi vs starlette compat) or a middleware
-refactor. §11.4.238 discovery-channel escape prevention: manual QA must
-NOT be the discoverer. §11.4.108 Layer 3 verification: needed on a clean
-deployment before any release.</p>
 <h2
 id="bob-131-qbittorrent-proxy-podman-conmon-crash-pre-existing-surfaced-during-bob-129-investigation">BOB-131
 — qbittorrent-proxy podman conmon crash — pre-existing, surfaced during
@@ -6791,5 +6770,46 @@ regression suite surfaced the stale-tracker file), not by any automated
 gate — itself worth noting as a coverage-escape class: no mechanical
 check currently catches “a large remediation commit’s own message
 references an item-id that never gets tracker-reconciled.”</p>
+<h2
+id="bob-129-potential-production-slowapistarlette-defect-flagged-by-task-105-subagent">BOB-129
+— Potential production slowapi/starlette defect flagged by Task 105
+subagent</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong> docs/qa/BOB-129/reopen_20260925.md
+<strong>Severity:</strong> Medium</p>
+<p>Potential production slowapi/starlette defect flagged by Task 105
+subagent</p>
+<h2
+id="bob-241-test-wiring-drift-bob-234s-api_token-param-broke-a-direct-plain-call-site-in-test_bob192_fail_open_skip_remediation.py">BOB-241
+— Test-wiring drift: BOB-234’s api_token param broke a direct plain-call
+site in test_bob192_fail_open_skip_remediation.py</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Evidence:</strong>
+docs/qa/BOB-192/test_wiring_fix_20260925.md <strong>Created-By:</strong>
+Claude <strong>Assigned-To:</strong> Claude</p>
+<p>BOB-234 added a mandatory api_token pytest-fixture parameter to
+TestDownloadEndpoint.test_download_magnet_added_to_real_qbittorrent in
+tests/integration/test_merge_api.py (for authenticated cleanup-delete).
+A separate unit test file, test_bob192_fail_open_skip_remediation.py,
+reuses that method’s body via a direct plain-function call (bypassing
+pytest fixture injection) and was never updated for the new positional
+arg, causing a TypeError discovered via a full bulk pytest run (5033
+tests, seed 12345) plus isolated reproduction. Not the same defect as
+BOB-192 (fail-open-skip remediation) despite living in a file named
+after it – distinct root cause, distinct fix. Fixed this session by
+passing a placeholder token string at the call site (the mock server
+performs zero token validation) – see
+docs/qa/BOB-192/test_wiring_fix_20260925.md for full RED/GREEN
+evidence.</p>
+<h2
+id="bob-135-test-isolation-test_list_hooks_after_create-fails-in-bulk-suite-permission-denied-config">BOB-135
+— Test isolation: test_list_hooks_after_create fails in bulk suite
+(Permission denied /config)</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Bug <strong>Evidence:</strong>
+docs/qa/BOB-135/closure_evidence_20260925.md <strong>Severity:</strong>
+Low</p>
+<p>Test isolation: test_list_hooks_after_create fails in bulk suite
+(Permission denied /config)</p>
 </body>
 </html>

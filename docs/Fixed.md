@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 60
-**Last modified:** 2026-09-25T10:45:47Z
+**Revision:** 61
+**Last modified:** 2026-09-25T11:05:53Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -1393,14 +1393,6 @@ Closure seam does not bind: 4 tracker rows found stale in one sweep, and workabl
 
 **Progress 2026-08-21:** MEASURED against all three seams §11.4.106(F) names, not one. COMMIT seam: COVERED — scripts/hooks/docs-sync-commit-seam.sh is invoked from scripts/commit-push-all.sh at BOTH commit call sites (the --scope branch and the git add -A branch) via _docs_sync_seam_check, after staging and before git commit, exiting 1 on refusal; there is no third path to git commit in that script. Proven in BOTH directions on temp copies with the real DB sha256 unchanged: an MD-side body edit is detected and named (self-test golden-bad, victim BOB-008), and a real engine DB write with the Markdown deliberately left stale is detected and named (golden-bad, BOB-084) — that second direction is the one the item's own text claims — while a clean tree stays silent (negative control, no §11.4.201(1) false positive). BUILD seam: COVERED — pre_build_verification.sh invariant 17 runs validate AND diff with --issues/--fixed passed explicitly (never the flagless form BOB-155 fixed), invariants 18/22 cover the export leg with a real-invocation assertion, invariant 24 runs the real docs_chain engine verify --all; RESIDUAL: no CHECK 3 equivalent there, so the build seam inherits diff's blindness to the body_md class (the BOB-136 class). CONSTITUTION-PULL seam: NOT COVERED — a grep for workable-items|docs-sync|docs_chain|11.4.106 returns 0 in BOTH constitution/scripts/post_update_hook.sh and scripts/verify-all-constitution-rules.sh, control-needled so the zeros are sight not blindness (needle 'skill' 38 hits, 'covenant_propagation_suite' 7 hits, negative control 0); of the 172 gates under constitution/scripts/gates/ only two mention the engines and both are anchor-literal presence gates that compare no DB against any Markdown, and config/constitution-sweep.conf adds no such check. So a constitution pull can be treated as canonical with the tracker never re-compared. REMAINS: wire the already-existing seam into scripts/verify-all-constitution-rules.sh BY REFERENCE (bash scripts/hooks/docs-sync-commit-seam.sh --files docs/Issues.md docs/Fixed.md docs/workable_items.db), reporting PASS/FAIL/SKIP-with-reason in the sweep's own vocabulary and never a silent pass on an absent tool — a wiring change, not a second implementation (§11.4.227). NOT DONE this round: that file sits outside the working brief's declared file scope, so the gap is named and the item stays open rather than the scope being exceeded (§11.4.6). EVIDENCE. docs/qa/BOB-087/seam-coverage-measurement.md.
 
-
-## BOB-129 — Potential production slowapi/starlette defect flagged by Task 105 subagent
-
-**Status:** Fixed (→ Fixed.md)
-**Type:** Bug
-**Severity:** Medium
-
-Task #105 subagent (fixing 9 slowapi test failures) reported honestly that the same slowapi/starlette incompatibility likely hits the production /search and /search/stream endpoints under real HTTP traffic — evidence: the FastAPI TestClient (which goes through the full ASGI middleware stack like real requests do) reproduces the same isinstance() failure pattern the 9 test failures exhibited. Not yet reproduced against the running boba stack because the qbittorrent-proxy container currently exposes no host ports (running on gluetun network stack). Recommended investigation: (1) confirm defect by triggering /search kickoff through gluetun network stack, (2) if reproduced, determine whether the fix belongs in production code (adding response: Response params) or a version pin (slowapi vs starlette compat) or a middleware refactor. §11.4.238 discovery-channel escape prevention: manual QA must NOT be the discoverer. §11.4.108 Layer 3 verification: needed on a clean deployment before any release.
 
 ## BOB-131 — qbittorrent-proxy podman conmon crash — pre-existing, surfaced during BOB-129 investigation
 
@@ -3514,4 +3506,32 @@ HONEST BOUNDARY (§11.4.6): a bare mention of an item-ID in a large remediation-
 ACCEPTANCE: for each of BOB-088, BOB-106, BOB-110, BOB-159, BOB-162: read `7b45113`'s full diff for the file(s)/section relevant to that item's own acceptance criteria (not just the commit MESSAGE's mention of the ID), and CONFIRM whichever of these three outcomes actually applies — (a) the commit already closes it — close it with a corrected evidence citation to 7b45113, mirroring BOB-107/BOB-114's corrected closure pattern exactly; (b) the commit partially addresses it — update its description with the partial-progress split, same pattern as this session's BOB-191/BOB-219; (c) the commit's mention is unrelated/contextual only — leave it open, note the mention was investigated and ruled out so nobody re-checks it.
 
 DISCOVERY CHANNEL (§11.4.238): found by the conductor's own independent-verification discipline (re-running a sibling subagent's regression suite surfaced the stale-tracker file), not by any automated gate — itself worth noting as a coverage-escape class: no mechanical check currently catches "a large remediation commit's own message references an item-id that never gets tracker-reconciled."
+
+## BOB-129 — Potential production slowapi/starlette defect flagged by Task 105 subagent
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-129/reopen_20260925.md
+**Severity:** Medium
+
+Potential production slowapi/starlette defect flagged by Task 105 subagent
+
+## BOB-241 — Test-wiring drift: BOB-234's api_token param broke a direct plain-call site in test_bob192_fail_open_skip_remediation.py
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-192/test_wiring_fix_20260925.md
+**Created-By:** Claude
+**Assigned-To:** Claude
+
+BOB-234 added a mandatory api_token pytest-fixture parameter to TestDownloadEndpoint.test_download_magnet_added_to_real_qbittorrent in tests/integration/test_merge_api.py (for authenticated cleanup-delete). A separate unit test file, test_bob192_fail_open_skip_remediation.py, reuses that method's body via a direct plain-function call (bypassing pytest fixture injection) and was never updated for the new positional arg, causing a TypeError discovered via a full bulk pytest run (5033 tests, seed 12345) plus isolated reproduction. Not the same defect as BOB-192 (fail-open-skip remediation) despite living in a file named after it -- distinct root cause, distinct fix. Fixed this session by passing a placeholder token string at the call site (the mock server performs zero token validation) -- see docs/qa/BOB-192/test_wiring_fix_20260925.md for full RED/GREEN evidence.
+
+## BOB-135 — Test isolation: test_list_hooks_after_create fails in bulk suite (Permission denied /config)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-135/closure_evidence_20260925.md
+**Severity:** Low
+
+Test isolation: test_list_hooks_after_create fails in bulk suite (Permission denied /config)
 

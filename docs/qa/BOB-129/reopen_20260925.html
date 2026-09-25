@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>reopen_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">reopen_20260925</h1>
+</header>
+<h1 id="bob-129-reopen-2026-09-25">BOB-129 reopen — 2026-09-25</h1>
+<p><strong>Item:</strong> BOB-129 — permanent slowapi rate-limit
+<code>response: Response</code> header-injection contract regression
+guard (<code>tests/unit/test_bob129_slowapi_response_contract.py</code>)
+<strong>Type:</strong> Bug · <strong>Reopen reason:</strong> regression
+re-discovered by a full bulk pytest run (5033 tests, random seed 12345)
+plus isolated re-run confirmation, order-independent, reproduced every
+time. <strong>Fixed again:</strong> 2026-09-25 · <strong>Verified
+by:</strong> independent subagent re-verification of the conductor’s
+git-history root cause, before applying the fix (§11.4.6 /
+§11.4.102).</p>
+<h2 id="the-regression">The regression</h2>
+<p><code>download-proxy/src/api/routes.py</code>’s
+<code>stream_theme</code> endpoint (<code>GET /theme/stream</code>) was
+decorated with <code>@_rl("sse_stream")</code> in commit
+<code>1ef4246</code> (BOB-167), which added the SSE route to slowapi’s
+rate-limit registry without adding it to BOB-129’s hand-curated
+<code>_RESPONSE_RETURNING_EXEMPTIONS</code> allowlist in
+<code>tests/unit/test_bob129_slowapi_response_contract.py</code>.</p>
+<p>BOB-129’s contract test
+(<code>TestDecoratedEndpointContract::test_every_decorated_endpoint_declares_response_or_is_exempt</code>)
+asserts that every slowapi-decorated endpoint either declares a
+<code>response: Response</code> parameter, or is a reviewed exemption
+proven to have exactly one <code>return</code>, always yielding a
+<code>Response</code> subclass, with every other exit path raising
+<code>HTTPException</code> (which propagates before slowapi’s
+<code>headers_enabled=True</code> header-injection code ever runs).
+<code>stream_theme</code> satisfies that shape but was never added to
+the exemption set, so the test failed.</p>
+<h2
+id="independent-root-cause-re-verification-before-applying-any-fix">Independent
+root-cause re-verification (before applying any fix)</h2>
+<p>I independently re-read <code>stream_theme</code>’s full body in
+<code>download-proxy/src/api/routes.py</code> (lines 162–260) rather
+than trusting the conductor’s claim on its own, per this project’s
+§11.4.6/§11.4.102 investigate-before-fix mandate.</p>
+<p>Confirmed by direct inspection + a structural grep over the
+function’s line range:</p>
+<pre><code>$ awk &#39;NR==162,NR==260 {print NR&quot;: &quot;$0}&#39; download-proxy/src/api/routes.py | grep -nE &quot;return|raise|HTTPException&quot;
+50:211:     re-raised by the helper, so structured cancellation still propagates.
+80:241:                     return
+89:250:             # probe-failure return above.
+92:253:     return StreamingResponse(</code></pre>
+<p>Two things had to be checked carefully, not assumed:</p>
+<ol type="1">
+<li><strong>The <code>raise</code> hit at line 211 is prose inside a
+docstring</strong> (“re-raised by the helper”), not executable code —
+confirmed by reading the surrounding lines. There is no
+<code>raise</code> anywhere in <code>stream_theme</code>’s actual
+body.</li>
+<li><strong>The <code>return</code> at line 241 belongs to the nested
+<code>async def gen():</code> generator function</strong>, not to the
+outer <code>stream_theme</code> route-handler function. Python scopes a
+<code>return</code> to its own enclosing function; <code>gen()</code> is
+a separate function object whose <code>return</code> just stops that
+generator’s async iteration — it does not touch
+<code>stream_theme</code>’s control flow, and it is not the value
+FastAPI/slowapi wrap as the route’s response. The route handler
+<code>stream_theme</code> itself has exactly ONE <code>return</code>
+statement — line 253,
+<code>return StreamingResponse(gen(), media_type=..., headers={...})</code>
+— and it is unconditional (no branch, no <code>raise</code> precedes or
+competes with it at the outer-function level).</li>
+</ol>
+<p>This is genuinely the same shape as the already-exempted
+<code>search_stream</code>
+(<code>download-proxy/src/api/routes.py:1046</code>), whose body has
+multiple <code>raise HTTPException(...)</code> early-exit paths (404 not
+found, 403 invalid token, etc.) and exactly one terminal
+<code>return SSEHandler.create_streaming_response(...)</code> — a
+<code>StreamingResponse</code> subclass returned directly, same as
+<code>stream_theme</code>.</p>
+<p><strong>Verdict: independent root-cause verification agrees with the
+conductor’s claim in full.</strong> No discrepancy found.</p>
+<h2 id="fix-applied">Fix applied</h2>
+<p>Added <code>"api.routes.stream_theme"</code> to
+<code>_RESPONSE_RETURNING_EXEMPTIONS</code> in
+<code>tests/unit/test_bob129_slowapi_response_contract.py</code>, with
+an inline comment (modeled on the existing <code>search_stream</code>
+comment) stating precisely why the endpoint is exempt.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode diff"><code class="sourceCode diff"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>     &quot;api.routes.search_stream&quot;,</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="va">+    # BOB-129 reopen (2026-09-25): BOB-167 (commit 1ef4246) added `@_rl(...)`</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="va">+    # to this endpoint without adding it here. `stream_theme`&#39;s single</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="va">+    # `return` (its ONLY exit path) is `StreamingResponse(gen(), ...)`</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="va">+    # directly — verified by reading the full function body, no</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="va">+    # `raise HTTPException` anywhere in it. The `return` inside its nested</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="va">+    # `gen()` async generator belongs to that inner generator&#39;s own scope,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="va">+    # not to `stream_theme` itself, and does not change the outer</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="va">+    # function&#39;s single-return-path shape. Same exemption reasoning as</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="va">+    # `search_stream` above.</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="va">+    &quot;api.routes.stream_theme&quot;,</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a> }</span></code></pre></div>
+<p>No changes were needed in
+<code>download-proxy/src/api/routes.py</code> —
+<code>stream_theme</code>’s implementation is correct as-is; the fix is
+entirely in the test file’s exemption set.</p>
+<h2 id="red-green-red-green-proof-11.4.43-11.4.115">RED → GREEN → RED →
+GREEN proof (§11.4.43 / §11.4.115)</h2>
+<h3
+id="step-1-red-baseline-before-any-fix-confirming-the-regression-genuinely-reproduces">Step
+1 — RED baseline (before any fix), confirming the regression genuinely
+reproduces</h3>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/test_bob129_slowapi_response_contract.py::TestDecoratedEndpointContract::test_every_decorated_endpoint_declares_response_or_is_exempt -v
+...
+&gt;       assert not offenders, (
+            &quot;slowapi-decorated endpoint(s) declare no `response: Response` parameter and &quot;
+            &quot;are not a reviewed always-returns-Response exemption. With &quot;
+            &quot;`headers_enabled=True` these raise &quot;
+            f&quot;{_SLOWAPI_CONTRACT_ERROR!r} on every request whose handler returns a &quot;
+            f&quot;non-Response (BOB-129): {offenders}&quot;
+        )
+E       AssertionError: slowapi-decorated endpoint(s) declare no `response: Response` parameter and are not a reviewed always-returns-Response exemption. With `headers_enabled=True` these raise &#39;parameter `response` must be an instance of starlette.responses.Response&#39; on every request whose handler returns a non-Response (BOB-129): [&quot;api.routes.stream_theme (params: [&#39;request&#39;])&quot;]
+E       assert not [&quot;api.routes.stream_theme (params: [&#39;request&#39;])&quot;]
+
+tests/unit/test_bob129_slowapi_response_contract.py:392: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /home/milosvasic/Projects/boba/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/unit/test_bob129_slowapi_response_contract.py::TestDecoratedEndpointContract::test_every_decorated_endpoint_declares_response_or_is_exempt
+========================= 1 failed, 1 warning in 0.69s =========================</code></pre>
+<h3 id="step-2-fix-applied-green-confirmed">Step 2 — Fix applied, GREEN
+confirmed</h3>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/test_bob129_slowapi_response_contract.py::TestDecoratedEndpointContract::test_every_decorated_endpoint_declares_response_or_is_exempt -v
+...
+tests/unit/test_bob129_slowapi_response_contract.py::TestDecoratedEndpointContract::test_every_decorated_endpoint_declares_response_or_is_exempt PASSED [100%]
+...
+========================= 1 passed, 1 warning in 0.57s =========================</code></pre>
+<h3
+id="step-3-fix-temporarily-reverted-the-api.routes.stream_theme-line-commented">Step
+3 — Fix temporarily reverted (the <code>"api.routes.stream_theme"</code>
+line commented</h3>
+<p>out under a marker), confirming RED again — proving it is genuinely
+this specific exemption entry that makes the test pass, not something
+else</p>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/test_bob129_slowapi_response_contract.py::TestDecoratedEndpointContract::test_every_decorated_endpoint_declares_response_or_is_exempt -v
+...
+&gt;       assert not offenders, (
+...
+        )
+E       AssertionError: slowapi-decorated endpoint(s) declare no `response: Response` parameter and are not a reviewed always-returns-Response exemption. With `headers_enabled=True` these raise &#39;parameter `response` must be an instance of starlette.responses.Response&#39; on every request whose handler returns a non-Response (BOB-129): [&quot;api.routes.stream_theme (params: [&#39;request&#39;])&quot;]
+E       assert not [&quot;api.routes.stream_theme (params: [&#39;request&#39;])&quot;]
+
+tests/unit/test_bob129_slowapi_response_contract.py:393: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /home/milosvasic/Projects/boba/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/unit/test_bob129_slowapi_response_contract.py::TestDecoratedEndpointContract::test_every_decorated_endpoint_declares_response_or_is_exempt
+========================= 1 failed, 1 warning in 0.60s =========================</code></pre>
+<h3
+id="step-4-fix-restored-exemption-entry-with-its-full-comment-re-added-green">Step
+4 — Fix restored (exemption entry with its full comment re-added),
+GREEN</h3>
+<p>confirmed again — final state</p>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/test_bob129_slowapi_response_contract.py::TestDecoratedEndpointContract::test_every_decorated_endpoint_declares_response_or_is_exempt -v
+...
+tests/unit/test_bob129_slowapi_response_contract.py::TestDecoratedEndpointContract::test_every_decorated_endpoint_declares_response_or_is_exempt PASSED [100%]
+...
+========================= 1 passed, 1 warning in 0.57s =========================</code></pre>
+<p>RED→GREEN→RED→GREEN: the test unambiguously catches the regression
+(fails when the <code>stream_theme</code> exemption is absent) and
+unambiguously passes once, and only once, that specific exemption entry
+is present — not a coincidental side effect of anything else.</p>
+<h2 id="full-file-regression-check-zero-other-regressions">Full-file
+regression check — zero other regressions</h2>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/test_bob129_slowapi_response_contract.py -v
+...
+collected 7 items
+
+tests/unit/test_bob129_slowapi_response_contract.py::TestProductionDashboardDictFallback::test_dict_fallback_serves_200_with_rate_limit_headers[/] PASSED [ 14%]
+tests/unit/test_bob129_slowapi_response_contract.py::TestProductionDashboardDictFallback::test_dict_fallback_serves_200_with_rate_limit_headers[/dashboard] PASSED [ 28%]
+tests/unit/test_bob129_slowapi_response_contract.py::TestDecoratedEndpointContract::test_exemptions_are_still_decorated PASSED [ 42%]
+tests/unit/test_bob129_slowapi_response_contract.py::TestDecoratedEndpointContract::test_every_decorated_endpoint_declares_response_or_is_exempt PASSED [ 57%]
+tests/unit/test_bob129_slowapi_response_contract.py::TestGuardCannotSilentlySkip::test_unrepairable_latch_fails_rather_than_skipping PASSED [ 71%]
+tests/unit/test_bob129_slowapi_response_contract.py::TestControlNeedle::test_undeclared_response_param_still_raises_on_installed_slowapi PASSED [ 85%]
+tests/unit/test_bob129_slowapi_response_contract.py::TestControlNeedle::test_declared_response_param_satisfies_the_contract PASSED [100%]
+
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /home/milosvasic/Projects/boba/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+========================= 7 passed, 1 warning in 1.36s =========================</code></pre>
+<p>7/7 passed, 0 failed, 0 skipped.</p>
+<h2 id="files-touched">Files touched</h2>
+<ul>
+<li><code>tests/unit/test_bob129_slowapi_response_contract.py</code> —
+added <code>"api.routes.stream_theme"</code> to
+<code>_RESPONSE_RETURNING_EXEMPTIONS</code> with an inline justification
+comment.</li>
+<li><code>download-proxy/src/api/routes.py</code> — <strong>not
+modified.</strong> <code>stream_theme</code>’s implementation is
+correct; no source change was required.</li>
+<li><code>docs/qa/BOB-129/reopen_20260925.md</code> — this evidence file
+(new).</li>
+</ul>
+<p>Out of scope, not touched by this fix (per task constraints):
+<code>docs/workable_items.db</code>, <code>docs/Issues.md</code>,
+<code>docs/Fixed.md</code>, any <code>workable-items</code> CLI command,
+<code>scripts/pre_build_verification.sh</code>,
+<code>scripts/commit-push-all.sh</code>. Tracker/DB reconciliation for
+this reopen is the conductor’s responsibility per this project’s
+§11.4.214 recurrence-links-not-mints rule.</p>
+</body>
+</html>

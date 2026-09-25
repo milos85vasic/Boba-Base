@@ -175,8 +175,8 @@
 </head>
 <body>
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 119 <strong>Last modified:</strong>
-2026-09-25T10:45:47Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 120 <strong>Last modified:</strong>
+2026-09-25T11:05:53Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -645,24 +645,8 @@ reversible via uninstall.sh), and the root system.slice watchdog which
 is written but needs one <code>su</code>. UNTESTED AGAINST A REAL FORCED
 LOGOUT: survival is inferred from cgroup topology, not observed, and it
 does NOT hold against a whole-slice sweep or KillUserProcesses=yes. ##
-BOB-135 — Test isolation: test_list_hooks_after_create fails in bulk
-suite (Permission denied /config)</p>
-<p><strong>Status:</strong> Ready for testing <strong>Type:</strong> Bug
-<strong>Severity:</strong> Low</p>
-<p>Task #109 subagent found:
-tests/unit/test_merge_api_route_contracts.py::TestHooksEndpoint::test_list_hooks_after_create
-fails when run in bulk suite order with ‘ERROR api.hooks:hooks.py:102
-Failed to save hooks: [Errno 13] Permission denied: /config’. Passes in
-isolation (2.02s clean). Root cause: full-suite ordering pollution —
-some earlier test leaves state that makes hooks try to write to /config
-(which the test env doesn’t own). Pre-existing, unrelated to
-BOB-126/BOB-129 chain. Fix strategy: identify the polluting test, add
-teardown or use a proper tempdir fixture for hooks storage in the
-offending test.</p>
-<h2
-id="bob-151-cm-script-docs-sync-is-a-named-gate-with-no-implementation-and-24-of-36-scripts-have-no-companion-doc">BOB-151
-— CM-SCRIPT-DOCS-SYNC is a named gate with no implementation, and 24 of
-36 scripts have no companion doc</h2>
+BOB-151 — CM-SCRIPT-DOCS-SYNC is a named gate with no implementation,
+and 24 of 36 scripts have no companion doc</p>
 <p><strong>Status:</strong> Queued <strong>Type:</strong> Task
 <strong>Severity:</strong> Medium <strong>Created-By:</strong> AI</p>
 <p><strong>Reported-Via:</strong> §11.4.202 reporting directive

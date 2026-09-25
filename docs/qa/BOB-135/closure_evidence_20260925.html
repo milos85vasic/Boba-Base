@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260925</h1>
+</header>
+<h1
+id="bob-135-closure-evidence-full-bulk-suite-verification-2026-09-25">BOB-135
+— closure evidence: full bulk-suite verification (2026-09-25)</h1>
+<p><strong>Item:</strong> BOB-135 — Test isolation:
+<code>test_list_hooks_after_create</code> fails in bulk suite
+(Permission denied <code>/config</code>).</p>
+<p><strong>Fix (already landed, prior session):</strong> commit
+<code>dc85a9a25d772bd95037428b71ee7fcfb38ef42e</code> —
+<code>fix(BOB-135): the permanent guard for a defect that hid behind a swallowed exception</code>.
+Root cause: importing <code>api.hooks</code> sets both
+<code>sys.modules["api.hooks"]</code> and
+<code>sys.modules["api"].hooks</code>; a test that purges and re-imports
+(<code>api_layer/test_hooks_coverage.py</code>) repoints both at a fresh
+module, and under pytest 9.1.1’s <code>monkeypatch.resolve()</code> this
+silently desynced the two references for the rest of the session,
+causing a later test’s write to hit a stale module whose fixture-patched
+<code>/config</code> path had already been torn down — surfacing as a
+misleading <code>PermissionError: /config</code> (the swallowed
+exception’s side effect, not its cause). Guard added:
+<code>tests/unit/test_module_attr_isolation_guard.py</code>.</p>
+<p><strong>This round’s verification task:</strong> confirm the fix
+holds under the actual adversarial condition it targets — bulk-suite
+execution with randomized test order (<code>pytest-randomly</code>)
+across the FULL unit suite, not just the guard file in isolation.</p>
+<h2 id="command">Command</h2>
+<pre><code>timeout 2700 .venv/bin/python3 -m pytest tests/unit --import-mode=importlib -q \
+  --timeout=60 -p randomly --randomly-seed=12345 -rf</code></pre>
+<h2 id="result">Result</h2>
+<pre><code>FAILED tests/unit/test_bob129_slowapi_response_contract.py::TestDecoratedEndpointContract::test_every_decorated_endpoint_declares_response_or_is_exempt
+FAILED tests/unit/test_bob192_fail_open_skip_remediation.py::test_download_magnet_fails_when_qbit_refuses_add
+2 failed, 5027 passed, 4 skipped, 5 warnings in 1645.72s (0:27:25)</code></pre>
+<p><strong>BOB-135’s own tests are NOT in the failure list</strong> —
+<code>test_list_hooks_after_create</code>
+(<code>tests/unit/api_layer/test_hooks_endpoints.py</code>) and
+<code>test_module_attr_isolation_guard.py</code> (the new permanent
+guard) both ran and passed among the 5027 passed, under this exact
+adversarial random-seed bulk-suite ordering that originally exposed the
+defect. <code>pytest -q</code> prints only <code>.</code> for a pass and
+an explicit <code>FAILED</code> line per failure — their absence from
+the FAILED list is the positive evidence, cross-checked against the
+<code>-rf</code> (re-list-failures) summary which enumerates every
+failure by name.</p>
+<h2 id="the-2-unrelated-failures-investigated-not-waved-past-11.4.4">The
+2 unrelated failures — investigated, not waved past (§11.4.4)</h2>
+<p>Both failures reproduce in isolation (order-independent, not a
+bulk-suite artifact) and are genuine, pre-existing regressions on
+already-closed items, unrelated to BOB-135’s defect class:</p>
+<ol type="1">
+<li><p><strong>BOB-129 regression</strong> (reopened + refixed this
+session, see <code>docs/qa/BOB-129/reopen_20260925.md</code>): commit
+<code>1ef4246</code> (BOB-167) decorated <code>stream_theme</code> with
+<code>@_rl("sse_stream")</code> without adding it to BOB-129’s
+<code>_RESPONSE_RETURNING_EXEMPTIONS</code> set. Fixed by adding the
+exemption entry (the endpoint’s single return path is a
+<code>StreamingResponse</code>, same shape as the already-exempted
+<code>search_stream</code>). RED→GREEN→RED→GREEN proof in the linked
+evidence file.</p></li>
+<li><p><strong>BOB-241 test-wiring drift</strong> (new item, filed +
+closed this session, see
+<code>docs/qa/BOB-192/test_wiring_fix_20260925.md</code>): BOB-234 added
+a mandatory <code>api_token</code> fixture parameter to
+<code>TestDownloadEndpoint.test_download_magnet_added_to_real_qbittorrent</code>;
+a direct plain-call site in
+<code>test_bob192_fail_open_skip_remediation.py</code> (bypassing pytest
+fixture injection) was never updated. Fixed by passing a placeholder
+token (the mock server performs zero token validation).</p></li>
+</ol>
+<p>Both fixes independently re-verified by the conductor: combined run
+of both touched files —</p>
+<pre><code>27 passed, 1 warning in 12.06s</code></pre>
+<h2 id="verdict">Verdict</h2>
+<p>BOB-135’s fix holds under the exact adversarial condition
+(bulk-suite, randomized order, full unit tree) that originally exposed
+the defect. The two other failures surfaced by the same run were
+unrelated pre-existing regressions, independently root-caused, fixed,
+and verified this session.</p>
+<p>Closing BOB-135 as Completed.</p>
+</body>
+</html>
