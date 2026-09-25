@@ -147,10 +147,12 @@ AUDIT_QA_ROOT="${AUDIT_QA_ROOT:-$REPO_ROOT/docs/qa}"
 cmd_verify_closure() {
     local item_id="${1:-}"
     local reopen_on_mismatch=false
+    local require_layer="runtime"
     shift || true
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --reopen-on-mismatch) reopen_on_mismatch=true; shift ;;
+            --require-layer) require_layer="$2"; shift 2 ;;
             *) print_error "verify-closure: unknown option: $1"; return 1 ;;
         esac
     done
@@ -170,6 +172,37 @@ cmd_verify_closure() {
     evidence_file="$(find "$AUDIT_QA_ROOT/$item_id" -maxdepth 1 -name 'closure_evidence_*.md' 2>/dev/null | head -1)" || true
     if [[ -z "$evidence_file" ]]; then
         print_error "verify-closure: no recorded evidence for $item_id under $AUDIT_QA_ROOT/$item_id"
+        return 2
+    fi
+
+    # audit_layer_rank <layer> — a plain case statement, not a bash-4.3+
+    # nameref (`local -n`), so this runs on any bash this project already
+    # requires (§11.4.analyze finding C1: no other script here was confirmed
+    # to depend on namerefs, and plan.md's Technical Context states no bash
+    # version floor — a case statement has zero version dependency).
+    audit_layer_rank() {
+        case "$1" in
+            source)   printf '0\n' ;;
+            artifact) printf '1\n' ;;
+            runtime)  printf '2\n' ;;
+            *)        printf '0\n' ;;  # an unrecognized label is treated as weakest
+        esac
+    }
+
+    # `|| true` guards against the same set -e/pipefail footgun fixed above
+    # for `evidence_file`: `grep -oP` exits non-zero when an evidence file
+    # carries no **Evidence Layer:** field at all (the documented "treat as
+    # declaring source" case this clause exists to handle) -- an unguarded
+    # pipeline here would abort the function BEFORE the `:-source` default
+    # ever applies, silently skipping the FR-005 rank check entirely.
+    local declared_layer
+    declared_layer="$(grep -oP '(?<=\*\*Evidence Layer:\*\* ).*' "$evidence_file" | head -1)" || true
+    declared_layer="${declared_layer:-source}"
+    local declared_rank required_rank
+    declared_rank="$(audit_layer_rank "$declared_layer")"
+    required_rank="$(audit_layer_rank "$require_layer")"
+    if [[ "$declared_rank" -lt "$required_rank" ]]; then
+        print_error "verify-closure: $item_id declares evidence layer '$declared_layer' but '$require_layer' is required — a lower-rigor substitute is not accepted (FR-005)"
         return 2
     fi
 
