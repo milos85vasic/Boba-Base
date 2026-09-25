@@ -1001,15 +1001,29 @@ cmd_verify_closure() {
     fi
 
     local evidence_file
-    evidence_file="$(find "$AUDIT_QA_ROOT/$item_id" -maxdepth 1 -name 'closure_evidence_*.md' 2>/dev/null | head -1)"
+    # `|| true` guards against §11.4.201(12)'s set -e/pipefail footgun: when
+    # the item's evidence directory does not exist, `find` exits nonzero even
+    # with 2>/dev/null suppressing only its stderr, not its exit code; under
+    # pipefail the pipeline's exit status is find's, and since this
+    # assignment is on its own line (not the local var=$(cmd) masking idiom),
+    # set -e would otherwise abort BEFORE the -z check below ever runs.
+    # CONFIRMED LIVE by this plan's own Task 5 implementer, 2026-09-25.
+    evidence_file="$(find "$AUDIT_QA_ROOT/$item_id" -maxdepth 1 -name 'closure_evidence_*.md' 2>/dev/null | head -1)" || true
     if [[ -z "$evidence_file" ]]; then
         print_error "verify-closure: no recorded evidence for $item_id under $AUDIT_QA_ROOT/$item_id"
         return 2
     fi
 
     local recorded_command recorded_summary
-    recorded_command="$(grep -oP '(?<=\*\*Command:\*\* `).*(?=`)' "$evidence_file" | head -1)"
-    recorded_summary="$(grep -oP '(?<=\*\*Result Summary:\*\* ).*' "$evidence_file" | head -1)"
+    # Same footgun class, same guard -- confirmed as a LIVE, UNEXERCISED gap
+    # by Task 5's own implementer (2026-09-25): no fixture in this plan
+    # currently omits **Command:**/**Result Summary:**, so this path has
+    # never been RED-tested. Fixed here defensively per that finding, but
+    # per this project's own TDD discipline a real fixture exercising the
+    # missing-field case should still be added when this code is touched
+    # again (tracked, not urgent — see the ledger).
+    recorded_command="$(grep -oP '(?<=\*\*Command:\*\* `).*(?=`)' "$evidence_file" | head -1)" || true
+    recorded_summary="$(grep -oP '(?<=\*\*Result Summary:\*\* ).*' "$evidence_file" | head -1)" || true
 
     if [[ -z "$recorded_command" ]]; then
         print_error "verify-closure: $evidence_file has no **Command:** field to re-run"
@@ -1182,7 +1196,12 @@ And, immediately after `evidence_file` is confirmed to exist (before the
     }
 
     local declared_layer
-    declared_layer="$(grep -oP '(?<=\*\*Evidence Layer:\*\* ).*' "$evidence_file" | head -1)"
+    # `|| true` guards against §11.4.201(12)'s set -e/pipefail footgun (same
+    # class as evidence_file above): a missing **Evidence Layer:** field is
+    # the EXPECTED case the very next line's :-source default handles -- but
+    # without the guard, set -e aborts here before that default ever applies.
+    # CONFIRMED LIVE by this plan's own Task 5B implementer, 2026-09-25.
+    declared_layer="$(grep -oP '(?<=\*\*Evidence Layer:\*\* ).*' "$evidence_file" | head -1)" || true
     declared_layer="${declared_layer:-source}"
     local declared_rank required_rank
     declared_rank="$(audit_layer_rank "$declared_layer")"
@@ -1680,7 +1699,15 @@ Modify `cmd_verify_closure`, immediately after the Task 5B evidence-layer check,
 
 ```bash
     local declared_test_type
-    declared_test_type="$(grep -oP '(?<=\*\*Test Type:\*\* ).*' "$evidence_file" | head -1)"
+    # `|| true` guards against the same set -e/pipefail footgun already found
+    # and fixed twice in Tasks 5/5B (§11.4.201(12)): when the evidence file
+    # has no **Test Type:** field, grep -oP exits 1 with no match; under
+    # pipefail the pipeline's exit status is 1 even though head -1 exits 0,
+    # and since this assignment is on its own line (not the local var=$(cmd)
+    # masking idiom), set -e would abort the function HERE, before the
+    # deliberate -z check below ever runs -- silently degrading the
+    # documented exit-2 contract into an unexplained bare exit 1.
+    declared_test_type="$(grep -oP '(?<=\*\*Test Type:\*\* ).*' "$evidence_file" | head -1)" || true
     if [[ -z "$declared_test_type" ]]; then
         print_error "verify-closure: $item_id declares no **Test Type:** — FR-010 requires every closure to name which test type its evidence exercises"
         return 2
@@ -1760,10 +1787,16 @@ check() {
     fi
 }
 
-before_count="$(find docs/qa/zero_shortcomings_audit -name '*.log' 2>/dev/null | wc -l)"
+# `|| true` guards against the same set -e/pipefail footgun already found
+# and fixed in Tasks 5/5B (§11.4.201(12)): on a genuinely first-ever run,
+# docs/qa/zero_shortcomings_audit/ does not exist yet, so `find` exits
+# nonzero even with 2>/dev/null suppressing only its stderr message, not
+# its exit code -- under pipefail the pipeline's exit status is find's,
+# even though `wc -l` (which always exits 0) correctly prints 0.
+before_count="$(find docs/qa/zero_shortcomings_audit -name '*.log' 2>/dev/null | wc -l)" || true
 bash scripts/zero_shortcomings_audit.sh standing-check
 rc=$?
-after_count="$(find docs/qa/zero_shortcomings_audit -name '*.log' 2>/dev/null | wc -l)"
+after_count="$(find docs/qa/zero_shortcomings_audit -name '*.log' 2>/dev/null | wc -l)" || true
 
 check "standing-check always exits 0 (advisory, never blocks — Review Focus item 4)" \
     '[[ "$rc" -eq 0 ]]'

@@ -207,8 +207,17 @@ cmd_verify_closure() {
     fi
 
     local recorded_command recorded_summary
-    recorded_command="$(grep -oP '(?<=\*\*Command:\*\* `).*(?=`)' "$evidence_file" | head -1)"
-    recorded_summary="$(grep -oP '(?<=\*\*Result Summary:\*\* ).*' "$evidence_file" | head -1)"
+    # `|| true` guards against the same set -e/pipefail footgun already
+    # fixed twice above for evidence_file/declared_layer (§11.4.201(12)):
+    # a missing **Command:**/**Result Summary:** field makes grep -oP exit 1
+    # with no match, and under pipefail (with head -1 exiting 0) the
+    # pipeline's exit status is 1 -- set -e would abort HERE, before the
+    # deliberate -z check below ever runs, silently degrading the documented
+    # exit-2 contract into an unexplained bare exit 1. Previously flagged as
+    # a latent, unexercised instance of this class; closed here with a
+    # dedicated regression fixture (BOB-FIXTURE-NO-COMMAND).
+    recorded_command="$(grep -oP '(?<=\*\*Command:\*\* `).*(?=`)' "$evidence_file" | head -1)" || true
+    recorded_summary="$(grep -oP '(?<=\*\*Result Summary:\*\* ).*' "$evidence_file" | head -1)" || true
 
     if [[ -z "$recorded_command" ]]; then
         print_error "verify-closure: $evidence_file has no **Command:** field to re-run"
