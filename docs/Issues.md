@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 126
-**Last modified:** 2026-09-25T14:54:44Z
+**Revision:** 128
+**Last modified:** 2026-09-25T17:07:01Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -553,4 +553,14 @@ Discovered by a full 58-invariant pre_build_verification.sh sweep (2026-09-25) r
 **Assigned-To:** AI
 
 Discovered 2026-09-25 by the pre-build sweep's own CM-GITIGNORE-SWALLOW-GUARD gate (§11.4.201(6), BOB-212 pattern), during the 003-zero-shortcomings-audit feature's setup phase. What: 4 genuine first-party files under .specify/extensions/superspec/scripts/ — e2e-agent-claude.sh (19458 bytes), e2e-smoke.sh (8757 bytes), validate-extension-metadata.py (5888 bytes), validate-release-archive.py (7053 bytes), all dated Aug 31 2026 — are untracked by git (confirmed via 'git ls-files --error-unmatch': did not match any file(s) known to git) and are BLOCKED from ever being staged by the broad directory-level ignore rule at .gitignore:218 (.specify/extensions/superspec/). Root cause investigation needed: .gitignore:218's own comment states the WHOLE directory is ignored because it is 'the vendored superspec extension checkout' that 'carries its OWN .git (gitdir pointer)... and DUPLICATES the root superspec submodule' — but these 4 specific files look like genuine first-party CI/e2e/validation tooling, not vendored upstream content, and predate today's session (Aug 31 mtime). Per §11.4.124 (investigate-before-remove) and §11.4.122 (no silent removal without operator decision), this needs git-history investigation (was there ever a commit touching these paths? are they meant to ship with this project or are they truly part of the vendored nested checkout and should stay ignored?) before either (a) carving a negation exception into .gitignore for exactly these 4 files, or (b) confirming they are genuinely disposable vendored artifacts and documenting that explicitly. Acceptance: CM-GITIGNORE-SWALLOW-GUARD passes clean (0 findings) OR the 4 files are explicitly, evidence-backed classified as vendored-and-correctly-ignored with that classification recorded in the .gitignore comment itself.
+
+## BOB-246 — commit-push-all.sh: --scope flags placed after the commit message are silently ignored, falls back to git add -A
+
+**Status:** In progress
+**Type:** Bug
+**Severity:** Critical
+**Created-By:** AI
+**Assigned-To:** AI
+
+Discovered 2026-09-25 by a subagent implementing 003-zero-shortcomings-audit Task 1, independently reproduced in isolation. scripts/commit-push-all.sh's argument parser stops reading flags at the first non-flag token; when --scope <path> flags are placed AFTER the commit-message positional argument (exactly as tasks.md's own Step 5 template shows for every task in the 003-zero-shortcomings-audit plan, e.g. "bash scripts/commit-push-all.sh \"<message>\" --scope <path>"), the --scope flags are silently swallowed as if they were part of the message, no error or warning is emitted, and the script falls through to its unconditional/unscoped git add -A path. Real-world consequence (2026-09-25): following that exact template ordering caused a scoped Task-1 commit to instead sweep in 5 files -- the intended 2, a sibling task's 2 legitimate-but-not-yet-reviewed files, and a DELIBERATELY-uncommitted, known-broken/hanging test file (tests/ddos/test_sse_stream_stress_chaos.py, see BOB-097 diary entry_id=16) -- and PUSH all of it to two remote git hosts before the mistake was caught. No data was lost, nothing was force-pushed, but a silent full-tree-sweep on a routine commit is a serious safety gap in a script this project's own constitution names as the ONLY sanctioned commit path. Root cause: the parser's flag/positional-arg interleaving logic assumes flags always precede the message and never validates that assumption or warns when scope flags appear post-message. Remediation: (1) make the parser accept --scope flags in ANY position relative to the message (getopts-style two-pass parsing, or explicit flag-then-positional-then-more-flags handling), OR (2) at minimum, detect scope-flag-shaped tokens appearing after the first positional argument and REFUSE with a loud error rather than silently falling back to git add -A -- a parser that cannot tell 'no --scope given, unscoped commit intended' apart from '--scope given but in the wrong position' is itself a §11.4.201(1) false-negative-class defect. (3) Audit and fix tasks.md's own Step 5 example ordering across every task (flags before the message, matching the working pattern used successfully elsewhere this session) so the plan itself does not keep tripping this bug for every future task implementer.
 

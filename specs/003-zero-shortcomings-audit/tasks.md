@@ -162,8 +162,8 @@ Expected: `test_audit_run_id: 2 passed, 0 failed`
 - [ ] **Step 5: Commit**
 
 ```bash
-bash scripts/commit-push-all.sh "feat(audit): shared run-id helper for zero-shortcomings audit artifacts" \
-    --scope scripts/lib/audit_run_id.sh --scope tests/audit/test_audit_run_id.sh
+bash scripts/commit-push-all.sh --scope scripts/lib/audit_run_id.sh --scope tests/audit/test_audit_run_id.sh \
+    "feat(audit): shared run-id helper for zero-shortcomings audit artifacts"
 ```
 
 (Per constitution Principle VI "Before Every Commit" step 9: `scripts/commit-push-all.sh` is
@@ -278,8 +278,8 @@ Expected: `test_audit_execution_policy: 5 passed, 0 failed`
 - [ ] **Step 5: Commit**
 
 ```bash
-bash scripts/commit-push-all.sh "feat(audit): ExecutionPolicy constants + bounded-dispatch helper (Principle XIII)" \
-    --scope scripts/lib/audit_execution_policy.sh --scope tests/audit/test_audit_execution_policy.sh
+bash scripts/commit-push-all.sh --scope scripts/lib/audit_execution_policy.sh --scope tests/audit/test_audit_execution_policy.sh \
+    "feat(audit): ExecutionPolicy constants + bounded-dispatch helper (Principle XIII)"
 ```
 
 ### Task 3: `[TDD]` Coverage-escape ledger parser
@@ -521,15 +521,15 @@ Record this mutation's output in the task's commit message per this project's ow
 - [ ] **Step 6: Commit**
 
 ```bash
-bash scripts/commit-push-all.sh "$(cat <<'MSG'
+bash scripts/commit-push-all.sh --scope scripts/lib/audit_ledger_parser.sh --scope tests/audit/test_audit_ledger_parser.sh --scope tests/audit/fixtures/ \
+   "$(cat <<'MSG'
 feat(audit): coverage-escape ledger parser (FR-003)
 
 Paired §1.1 mutation confirmed load-bearing: neutering the counter's
 increment made the golden-bad fixture (one entry with no new-check)
 report 0 instead of 1.
 MSG
-)" --scope scripts/lib/audit_ledger_parser.sh --scope tests/audit/test_audit_ledger_parser.sh \
-   --scope tests/audit/fixtures/
+)"
 ```
 
 **Checkpoint**: Foundational phase complete — `ExecutionPolicy` and the ledger parser
@@ -765,13 +765,8 @@ bash scripts/workable-items-export.sh
 - [ ] **Step 6: Commit**
 
 ```bash
-bash scripts/commit-push-all.sh "feat(audit): enumerate mode across all three tracked surfaces (US1, FR-001/002/003)" \
-    --scope scripts/zero_shortcomings_audit.sh \
-    --scope docs/scripts/zero_shortcomings_audit.md \
-    --scope docs/scripts/zero_shortcomings_audit.html \
-    --scope docs/scripts/zero_shortcomings_audit.pdf \
-    --scope docs/scripts/zero_shortcomings_audit.docx \
-    --scope tests/audit/test_zero_shortcomings_audit_enumerate.sh
+bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --scope docs/scripts/zero_shortcomings_audit.md --scope docs/scripts/zero_shortcomings_audit.html --scope docs/scripts/zero_shortcomings_audit.pdf --scope docs/scripts/zero_shortcomings_audit.docx --scope tests/audit/test_zero_shortcomings_audit_enumerate.sh \
+    "feat(audit): enumerate mode across all three tracked surfaces (US1, FR-001/002/003)"
 ```
 
 **Checkpoint**: User Story 1 is fully functional and independently testable — run
@@ -868,9 +863,8 @@ Expected: `test_zero_shortcomings_audit_enumerate: 4 passed, 0 failed` (unchange
 - [ ] **Step 6: Commit**
 
 ```bash
-bash scripts/commit-push-all.sh "feat(audit): honest blocked-item reporting with unblock conditions (FR-007)" \
-    --scope scripts/zero_shortcomings_audit.sh \
-    --scope tests/audit/test_zero_shortcomings_audit_blocked_surface.sh
+bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --scope tests/audit/test_zero_shortcomings_audit_blocked_surface.sh \
+    "feat(audit): honest blocked-item reporting with unblock conditions (FR-007)"
 ```
 
 ---
@@ -1065,10 +1059,8 @@ Expected: `test_zero_shortcomings_audit_enumerate: 4 passed, 0 failed` (unchange
 - [ ] **Step 6: Commit**
 
 ```bash
-bash scripts/commit-push-all.sh "feat(audit): verify-closure independent re-verification harness (US2, FR-004/006/013)" \
-    --scope scripts/zero_shortcomings_audit.sh \
-    --scope tests/audit/test_zero_shortcomings_audit_verify_closure.sh \
-    --scope tests/audit/fixtures/docs_qa_fixture/
+bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --scope tests/audit/test_zero_shortcomings_audit_verify_closure.sh --scope tests/audit/fixtures/docs_qa_fixture/ \
+    "feat(audit): verify-closure independent re-verification harness (US2, FR-004/006/013)"
 ```
 
 ### Task 5B: `[TDD]` Evidence-layer matching (FR-005)
@@ -1225,10 +1217,8 @@ step's re-run exists to catch.)
 - [ ] **Step 6: Commit**
 
 ```bash
-bash scripts/commit-push-all.sh "feat(audit): evidence-layer matching, refuse a lower-rigor substitute (FR-005)" \
-    --scope scripts/zero_shortcomings_audit.sh \
-    --scope tests/audit/test_zero_shortcomings_audit_evidence_layer.sh \
-    --scope tests/audit/fixtures/docs_qa_fixture/
+bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --scope tests/audit/test_zero_shortcomings_audit_evidence_layer.sh --scope tests/audit/fixtures/docs_qa_fixture/ \
+    "feat(audit): evidence-layer matching, refuse a lower-rigor substitute (FR-005)"
 ```
 
 ---
@@ -1362,9 +1352,8 @@ every later task's own test also exercises.
 - [ ] **Step 6: Commit**
 
 ```bash
-bash scripts/commit-push-all.sh "fix(audit): redact credential-shaped values before any evidence/log write (Constitution Principle III, /speckit-analyze finding D2)" \
-    --scope scripts/zero_shortcomings_audit.sh \
-    --scope tests/audit/test_zero_shortcomings_audit_redaction.sh
+bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --scope tests/audit/test_zero_shortcomings_audit_redaction.sh \
+    "fix(audit): redact credential-shaped values before any evidence/log write (Constitution Principle III, /speckit-analyze finding D2)"
 ```
 
 ---
@@ -1508,9 +1497,8 @@ future closure, so a defect here could itself corrupt evidence.
 - [ ] **Step 6: Commit**
 
 ```bash
-bash scripts/commit-push-all.sh "feat(audit): evidence-corruption guard reproducing the real BOB-109 incident (FR-008)" \
-    --scope scripts/zero_shortcomings_audit.sh \
-    --scope tests/audit/test_zero_shortcomings_audit_corruption_guard.sh
+bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --scope tests/audit/test_zero_shortcomings_audit_corruption_guard.sh \
+    "feat(audit): evidence-corruption guard reproducing the real BOB-109 incident (FR-008)"
 ```
 
 **Checkpoint**: User Stories 1 and 2 both work independently — run `quickstart.md`
@@ -1604,9 +1592,8 @@ Expected: `test_zero_shortcomings_audit_risk_order: 1 passed, 0 failed`
 - [ ] **Step 5: Commit**
 
 ```bash
-bash scripts/commit-push-all.sh "feat(audit): risk-ordered backlog listing (FR-012, /speckit-analyze finding E2)" \
-    --scope scripts/zero_shortcomings_audit.sh \
-    --scope tests/audit/test_zero_shortcomings_audit_risk_order.sh
+bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --scope tests/audit/test_zero_shortcomings_audit_risk_order.sh \
+    "feat(audit): risk-ordered backlog listing (FR-012, /speckit-analyze finding E2)"
 ```
 
 ### Task 6C: `[TDD]` Test-type-matrix applicability check (FR-010)
@@ -1726,10 +1713,8 @@ systematically, not accidentally.
 - [ ] **Step 6: Commit**
 
 ```bash
-bash scripts/commit-push-all.sh "feat(audit): require a declared test type on every closure evidence artifact (FR-010, /speckit-analyze finding E1)" \
-    --scope scripts/zero_shortcomings_audit.sh \
-    --scope tests/audit/test_zero_shortcomings_audit_test_type_declared.sh \
-    --scope tests/audit/fixtures/docs_qa_fixture/
+bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --scope tests/audit/test_zero_shortcomings_audit_test_type_declared.sh --scope tests/audit/fixtures/docs_qa_fixture/ \
+    "feat(audit): require a declared test type on every closure evidence artifact (FR-010, /speckit-analyze finding E1)"
 ```
 
 ---
@@ -1830,9 +1815,8 @@ Expected: `test_zero_shortcomings_audit_standing_check: 2 passed, 0 failed`
 - [ ] **Step 5: Commit**
 
 ```bash
-bash scripts/commit-push-all.sh "feat(audit): standing-check mode + append-only run log (US3, FR-009)" \
-    --scope scripts/zero_shortcomings_audit.sh \
-    --scope tests/audit/test_zero_shortcomings_audit_standing_check.sh
+bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --scope tests/audit/test_zero_shortcomings_audit_standing_check.sh \
+    "feat(audit): standing-check mode + append-only run log (US3, FR-009)"
 ```
 
 ### Task 8: `[REVIEW]` Wire `standing-check` into `scripts/pre_build_verification.sh`
@@ -1949,9 +1933,8 @@ Checkpoint 4 (never promote to blocking without a burn-in period first).
 - [ ] **Step 6: Commit**
 
 ```bash
-bash scripts/commit-push-all.sh "feat(audit): wire standing-check into pre_build_verification.sh (US3, advisory, invariant count re-derived not hardcoded)" \
-    --scope scripts/pre_build_verification.sh \
-    --scope tests/pre_build/test_check_cm_zero_shortcomings_standing.sh
+bash scripts/commit-push-all.sh --scope scripts/pre_build_verification.sh --scope tests/pre_build/test_check_cm_zero_shortcomings_standing.sh \
+    "feat(audit): wire standing-check into pre_build_verification.sh (US3, advisory, invariant count re-derived not hardcoded)"
 ```
 
 **Checkpoint**: All three user stories are independently functional. Run `quickstart.md`
