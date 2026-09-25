@@ -175,8 +175,8 @@
 </head>
 <body>
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 120 <strong>Last modified:</strong>
-2026-09-25T11:05:53Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 125 <strong>Last modified:</strong>
+2026-09-25T14:35:27Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -189,8 +189,20 @@ authoritative for open work. The SQLite single-source-of-truth +
 <hr />
 <h2 id="bob-008-rutracker-automated-login-blocked-by-captcha">BOB-008 —
 RuTracker automated login blocked by CAPTCHA</h2>
-<p><strong>Status:</strong> Operator-blocked <strong>Type:</strong>
-Bug</p>
+<p><strong>Status:</strong> Operator-blocked <strong>Type:</strong> Bug
+<strong>Operator-Block-Details:</strong> WHAT: Operator must physically
+drive the interactive CAPTCHA flow at /api/v1/auth/rutracker/captcha
+then /login once; no agent can solve a CAPTCHA (§11.4.52 honest
+operator_attended boundary). WHY: Cookie-paste path and cookies-file
+autoload path were both offered and NOT chosen (operator decision
+2026-08-26, §11.4.66); the interactive one-time CAPTCHA flow was
+selected instead, narrowing but not lifting the block. UNBLOCK: [A]
+Operator drives the interactive CAPTCHA+login flow once; resulting
+bb_session verified PERSISTED and verified USED by a subsequent search –
+CHOSEN path (recurs periodically as the session expires, cost accepted).
+[B] Operator provides a pre-obtained cookie via paste – considered, NOT
+chosen. [C] Operator maintains a per-tracker cookies-file for autoload –
+considered, NOT chosen. WHO: Operator (milosvasic)</p>
 <p><strong>OPERATOR DECISION (2026-08-26, §11.4.66 interactive
 clarification): COMPLETE THE CAPTCHA FLOW ONCE</strong></p>
 <p>Session establishment path is DECIDED: the operator drives the
@@ -645,127 +657,8 @@ reversible via uninstall.sh), and the root system.slice watchdog which
 is written but needs one <code>su</code>. UNTESTED AGAINST A REAL FORCED
 LOGOUT: survival is inferred from cgroup topology, not observed, and it
 does NOT hold against a whole-slice sweep or KillUserProcesses=yes. ##
-BOB-151 — CM-SCRIPT-DOCS-SYNC is a named gate with no implementation,
-and 24 of 36 scripts have no companion doc</p>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
-<strong>Severity:</strong> Medium <strong>Created-By:</strong> AI</p>
-<p><strong>Reported-Via:</strong> §11.4.202 reporting directive
-<code>task</code> on 2026-08-21T15:05:33Z <strong>Reported-By:</strong>
-AI</p>
-<p><strong>What (the report, verbatim):</strong> The §11.4.18
-script-documentation rule names a gate CM-SCRIPT-DOCS-SYNC, but no
-executable file in this repository implements it. Because nothing
-measures the obligation, 24 of 36 scripts under scripts/ have no
-docs/scripts/<name>.md companion - two thirds of them. This is the
-named-gate ledger gap the constitution itself warns about: a gate that
-is named but never implemented reads as coverage while providing none,
-and the corpus grows words instead of enforcement. Surfaced while
-writing the two ownership companions, which were themselves only written
-because the feature plan asked for them explicitly - not because any
-gate demanded it. Filing rather than absorbing: an unstated finding
-reads as no finding, and a 67% documentation gap that nothing reports
-will not shrink on its own.</p>
-<p><strong>Affected scope / file-scope manifest:</strong>
-scripts/<em>.sh, docs/scripts/</em>.md,
-scripts/pre_build_verification.sh</p>
-<p><strong>Reproduction / context:</strong> grep -rl CM-SCRIPT-DOCS-SYNC
-–include=‘<em>.sh’ –include=’</em>.py’ . (excluding submodules) -&gt; 0
-files. Control needle in the same command shape: CM-OWNERSHIP-INVARIANTS
--&gt; 3 files, CM-KILLPG-PGID-GUARD -&gt; 7 files, so the search is not
-blind. Then: for s in scripts/*.sh; do [ -f docs/scripts/$(basename $s
-.sh).md ] || echo missing; done -&gt; 24 of 36 missing.</p>
-<p><strong>Acceptance criteria:</strong> Either the gate is implemented
-and the 24 missing companions are written (the count becoming a
-monotone-decreasing ratchet so it cannot grow), or the obligation is
-explicitly scoped down to a defined subset with the reason recorded.
-What is NOT acceptable is the current state, where the rule is stated
-and nothing measures it.</p>
-<h2
-id="bob-159-warm-.start.sh-over-an-already-running-stack-leaves-the-fr-004d-repair-window-open">BOB-159
-— Warm ./start.sh over an already-running stack leaves the FR-004d
-repair window open</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
-<strong>Severity:</strong> Medium <strong>Created-By:</strong> T041
-independent review (IMPORTANT-2), partially remediated</p>
-<p><strong>OPERATOR DECISION (2026-08-26, §11.4.66): REPAIR, THEN
-RE-VERIFY UNTIL STABLE</strong></p>
-<p>The warm ./start.sh path keeps running the ownership repair against a
-live stack, but walks, re-verifies, and repeats until a pass finds
-nothing new. Options not chosen: refuse the repair while the stack is up
-and direct the operator to –recreate; stop the stack on the warm path
-too (correct but ends ‘warm’); accept and document the window. WHY THIS
-MATTERS MORE THAN A NORMAL ITEM: this is the exact defect the whole
-002-user-owned-downloads feature exists to end. The –recreate path was
-already fixed to order precondition -&gt; down -&gt; repair -&gt; up so
-the walk sees a tree no container can write. The warm path was not, so a
-container can create a new non-owned file AFTER the repair has passed
-that directory — the ownership problem leaking back in through the other
-door. REQUIRED BY THE CHOSEN OPTION, and it is the hard part: the loop
-MUST be BOUNDED, and on giving up it MUST report honestly that ownership
-is UNPROVEN rather than silently exiting 0 (§11.4.201(6) — a loop that
-stops finding new files because it ran out of iterations returns the
-same quiet zero as a genuinely clean tree). An active download creating
-files faster than the walk completes is the realistic non-converging
-case and must be named in the give-up message.</p>
-<p>Recorded as consumer DATA per §11.4.35 — the operator’s stated
-choice, not an agent inference. Options not chosen are named so a future
-reader does not re-litigate a settled call.</p>
-<p>— prior item text follows —</p>
-<p><strong>Reported-Via:</strong> §11.4.202 reporting directive
-<code>bug</code> on 2026-08-21T19:01:17Z <strong>Reported-By:</strong>
-T041 independent review (IMPORTANT-2), partially remediated</p>
-<p><strong>What (the report, verbatim):</strong> The –recreate path was
-fixed this round: run_ownership_precondition -&gt; stack_down -&gt;
-run_ownership_repair -&gt; stack_up, so the repair walks a tree no
-container can write to. That ordering is now asserted behaviourally by
-three new checks in tests/unit/test_start_reload_recreate.sh, each
-killed by its paired 1.1 mutation (11/11 RED-OK).</p>
-<p>The WARM path is NOT covered by that fix and this item tracks the
-remainder. On a warm ./start.sh the gate runs before THIS invocation
-brings anything up, but if the stack is ALREADY running, containers
-write while the repair walks. A container can then create a new
-non-operator-owned file BEHIND the walk, after which the completion
-marker records complete over a tree that is not, and those stragglers
-are never repaired without a manual –force.</p>
-<p>BOUNDED, not dismissed: after any successful pass the marker is valid
-for the scope fingerprint and the repair short-circuits without walking
-(marker_is_valid), so the window requires a stale-or-absent marker AND a
-live stack together. Declaring a new scope entry re-arms the marker,
-which is exactly how that combination arises in practice.</p>
-<p>NOT DONE THIS ROUND, with the reason stated rather than hidden: the
-clean guard is a cheap marker-only probe mode on
-scripts/ownership_repair.sh that answers has-this-scope-been-repaired
-without walking the tree. The existing –dry-run cannot serve: it
-deliberately SKIPS the marker fast-path (FORCE=0 &amp;&amp; DRY_RUN=0
-guard) and always walks, so using it as a warm-start probe would walk
-the tree twice on every start. Adding that mode requires editing
-ownership_repair.sh, which another stream was actively editing during
-this round; duplicating marker_is_valid into start.sh instead would be a
-near-identical fork (11.4.251). Deferred to this item rather than done
-unilaterally or silently.</p>
-<p>The misleading comment at the warm-start call site (which claimed the
-gate runs before any container writes) has been corrected to state this
-boundary honestly.</p>
-<p><strong>Affected scope / file-scope manifest:</strong> start.sh
-(warm-start dispatch, run_ownership_gate call site);
-scripts/ownership_repair.sh (marker fast-path)</p>
-<p><strong>Reproduction / context:</strong> 1. Ensure the stack is UP.
-2. Change config/owned_paths.yaml so the scope fingerprint changes (this
-re-arms the marker by design, data-model E2). 3. Run a warm ./start.sh
-(no –recreate). 4. The ownership repair walks and chowns the declared
-tree while containers are still running and able to write into it.</p>
-<p><strong>Acceptance criteria:</strong> A warm ./start.sh cannot
-complete an ownership repair while a container that writes to a declared
-location is running. Either the repair is deferred with an actionable
-refusal naming –recreate, or the stack is quiesced for the walk.
-Asserted behaviourally in tests/unit/test_start_reload_recreate.sh
-alongside the existing PRECONDITION_BEFORE_DOWN / REPAIR_AFTER_DOWN /
-REPAIR_BEFORE_UP checks, each with a paired 1.1 mutation that kills
-it.</p>
-<h2
-id="bob-162-two-new-guards-exist-but-no-seam-invokes-them-plus-the-brownfield-adoption-decision-the-commit-guard-needs">BOB-162
-— Two new guards exist but no seam invokes them — plus the brownfield
-adoption decision the commit guard needs</h2>
+BOB-162 — Two new guards exist but no seam invokes them — plus the
+brownfield adoption decision the commit guard needs</p>
 <p><strong>Status:</strong> Queued <strong>Type:</strong> Task
 <strong>Severity:</strong> Medium <strong>Created-By:</strong>
 BOB-106/BOB-107 remediation, residual</p>
@@ -988,67 +881,6 @@ NOT tested and must not be assumed either way. The finding is that the
 current code path gets a 403; it is not a claim about what every client
 would get.</p>
 <h2
-id="bob-175-update-location-fixed-status-can-still-mint-a-row-that-updates-own-validator-rejects-because-the-status-location-guard-is-one-directional">BOB-175
-— update –location Fixed –status <non-terminal> can still mint a row
-that update’s own validator rejects, because the status-location guard
-is one-directional</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
-<strong>Severity:</strong> Low <strong>Created-By:</strong> Claude
-<strong>Assigned-To:</strong> Claude</p>
-<p>WHAT. The workable-items <code>update</code> seam guards the
-status-location invariant in one direction only. After BOB-166,
-<code>update --status &lt;terminal&gt;</code> on an Issues-located row
-is refused. The mirror is still open:
-<code>update --location Fixed --status &lt;non-terminal&gt;</code> exits
-0 and creates a row that <code>update</code>’s own validator immediately
-rejects.</p>
-<p>Verified empirically by the independent reviewer of BOB-166:</p>
-<pre><code>update --location Fixed --status &#39;In progress&#39;   -&gt; exit 0
-validate                                          -&gt; FAILS, naming the row (check (f), fixedLocationNonTerminalStatus)</code></pre>
-<p>So the command can still mint a state its own validate call refuses.
-That is the §11.4.196(F) shape at the seam layer: the invariant is
-CONFIGURED in validate but not ENFORCED at every write path that can
-violate it.</p>
-<p>WHY IT WAS DELIBERATELY LEFT OPEN IN BOB-166, and why that was right.
-Three reasons, all checked rather than asserted: (1) the real corpus has
-ZERO instances of this direction against TEN of the direction BOB-166
-closed — the asymmetry in the data matched the asymmetry in the code;
-(2) detective coverage ALREADY existed and demonstrably fires, so unlike
-BOB-166’s direction this cannot rot silently; (3) and the load-bearing
-one — <code>reopenCmd</code> documents and SANCTIONS a transient
-Fixed-plus-non-terminal state via its <code>--location Fixed</code>
-operator override. A naive preventive guard at the update seam would
-collide with that override’s semantics. Closing this therefore requires
-a design decision about how the two interact, which is a different
-question from the one BOB-166 was scoped to answer, and expanding that
-item would have meant shipping the decision unexamined.</p>
-<p>ACCEPTANCE. (a) Decide and RECORD how a preventive guard on this
-direction coexists with reopenCmd’s sanctioned override — this is the
-actual work, and the answer should be written down rather than inferred
-from whatever the patch does. Candidates worth weighing: exempt the
-reopen path explicitly, require an override flag on <code>update</code>
-mirroring reopen’s, or leave the direction detective-only with the
-rationale recorded so the asymmetry is a decision rather than an
-oversight. (b) If a guard lands, it reuses
-<code>terminalStatuses()</code> — BOB-166 established one predicate
-source specifically so the two directions cannot drift. (c) Paired §1.1
-mutation. (d) NEGATIVE CONTROL (§11.4.201(1)), and it is the sharp one
-here: the sanctioned reopen path MUST still work. A guard that breaks
-reopenCmd’s documented override is a false-positive refusal, and worse
-than the gap it closes, because it breaks a workflow operators are told
-to use.</p>
-<p>HONEST BOUNDARY. This is not a live data defect. Zero corpus
-instances, and the detective gate catches it at the next validate. It is
-filed so a scoped, deliberate omission stays visible as a tracked
-decision instead of living only in a code comment where the next reader
-will mistake it for an oversight (§11.4.197: a started thread reaches a
-documented terminal state, never quiet abandonment).</p>
-<p>PROVENANCE. Raised by the implementing agent of BOB-166 as a known
-asymmetry it deliberately did not close, independently verified and
-endorsed as an acceptable scope boundary by that item’s reviewer, on the
-condition that it become a tracked item rather than a comment. This is
-that item.</p>
-<h2
 id="bob-184-icon-glyph-controls-are-unverified-for-non-text-contrast-because-neither-contrast-oracle-can-measure-them">BOB-184
 — Icon-glyph controls are unverified for non-text contrast because
 neither contrast oracle can measure them</h2>
@@ -1098,36 +930,6 @@ or an injected component harness) so the badge and status nodes are
 present in the DOM, axe measures them directly, and a control needle
 proves the rendered oracle sees a seeded sub-floor badge before any
 clean result from it is believed.</p>
-<h2
-id="bob-187-ownership_precondition.sh-is-unfenced-same-unreviewed-.env-driven-scope-as-the-now-fenced-repair-still-writes-probe-files-at-any-declared-path">BOB-187
-— ownership_precondition.sh is unfenced: same unreviewed .env-driven
-scope as the now-fenced repair, still writes probe files at any declared
-path</h2>
-<p><strong>Status:</strong> In progress <strong>Type:</strong> Bug</p>
-<p>scripts/ownership_precondition.sh consumes the SAME unreviewed
-.env-driven scope as ownership_repair.sh and creates probe files inside
-it, but it is NOT fenced. T028 remediation added ownership_path_fence()
-to scripts/lib/ownership.sh and wired it into ownership_repair.sh,
-closing the path-escape class there; the precondition was outside that
-agents file scope and still accepts whatever config/owned_paths.yaml
-expands to. Blast radius is lower than a recursive chown (it writes
-probe files rather than mutating ownership of an existing tree) but the
-INPUT is identical and equally unreviewed, so the same
-QBITTORRENT_DATA_DIR value that would have driven a filesystem-wide
-chown will drive probe-file creation at an arbitrary location. Note the
-escape is empirically confirmed for the repair path, not merely
-reasoned: during T028 remediation a probe declaring the verbatim shipped
-entry with QBITTORRENT_DATA_DIR=/ hung the suite, and ps showed the real
-artifact executing “find / ( ! -uid 1000 -o ! -gid 1000 ) -printf …”
-before it was killed by verified pid. Acceptance:
-ownership_precondition.sh calls the SAME ownership_path_fence()
-predicate from scripts/lib/ownership.sh (never a second dialect,
-11.4.251), refuses fail-closed on a rejected entry, and ships a paired
-1.1 mutation proving the refusal fires PLUS a negative control proving
-the six live shipped entries still ACCEPT so the fix is not a
-11.4.201(1) false-positive refusal. Discovered out-of-band during T028
-remediation and reported by the agent as needing tracking, so it is also
-a 11.4.238 coverage escape.</p>
 <h2
 id="bob-188-gate-invariant-17-runs-a-stale-tracked-binary-that-structurally-cannot-see-the-violations-it-exists-to-catch">BOB-188
 — Gate invariant 17 runs a STALE TRACKED binary that structurally cannot
@@ -1415,44 +1217,6 @@ only ADD findings to a security-relevant scan (killpg,
 mutation-residue), never remove them - so the exposure is false refusal
 and eroded trust, not a missed defect.</p>
 <h2
-id="bob-196-check_cm_plugin_count-runs-for-over-a-minute-on-69-files-cause-unidentified-and-it-is-not-worktree-traversal">BOB-196
-— check_cm_plugin_count runs for over a minute on ~69 files — cause
-unidentified, and it is not worktree traversal</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Task</p>
-<p>WHAT: the CM-PLUGIN-COUNT pre-build gate takes 189 SECONDS to verify
-8 documented counts. Measured 2026-08-25: exceeded a 90s probe budget
-(rc=124), then a bounded re-run completed at ‘rc=0 wall=189s’ - it
-PASSES, it is simply slow. CAUSE, MEASURED NOT GUESSED: the marker loop
-at check_cm_plugin_count.sh:273-290 iterates EVERY LINE of every
-governed document and spawns a pipeline per line. Per iteration: ‘printf
-| grep -oE | wc -l | tr -d’ (4 processes) plus ‘printf | sed -n’ (2) =
-~6. Governed docs are AGENTS.md 689 + CLAUDE.md 494 +
-docs/features/Status.md 670 = 1853 lines, so ~11,118 process spawns,
-measuring ~102 ms/line. Classic per-line-subprocess shell trap. THE
-IRONY WORTH PRESERVING, because it explains why nobody simplified it:
-the in-code comment shows ‘-oE | wc -l’ was chosen DELIBERATELY over
-‘grep -c’ after measuring the §11.4.201(12) footgun - on this host
-(ugrep 7.8.4) ‘grep -coE’ returned 3 at top level but 1 inside a ‘set
--euo pipefail’ subshell, a context-dependent reading. The correctness
-fix is right and must be kept; it is the PER-LINE application of it that
-costs the three minutes. HYPOTHESIS REFUTED, recorded so nobody re-walks
-it: this is NOT worktree traversal. The gate’s find is scoped to
-$PLUGINS_DIR (:224), so the five agent worktrees are outside its walk.
-That guess was raised on BOB-194 and is dead. LIKELY FIX (unverified,
-stated as a candidate not a conclusion): pre-filter with ONE grep for
-lines containing ‘CM-PLUGIN-COUNT:’ before entering the loop, reducing
-~1853 iterations to the ~8 lines that carry a marker, while leaving the
-per-line parsing logic - and its footgun-avoiding form - completely
-unchanged. WHY IT MATTERS beyond impatience: this gate is on the
-pre-build critical path, and CLAUDE.md leans on it as the mechanical
-authority for the three distinct plugin rosters (43 curated / 43 engines
-/ 12 bootstrap) whose conflation was BOB-149. A gate slow enough to
-tempt anyone into skipping it protects nothing. ACCEPTANCE: runtime
-reduced with the counts and the footgun-avoiding parse preserved
-byte-for-byte in behaviour, proven by the existing paired mutation still
-biting plus a before/after wall-clock recorded. §11.4.6: nothing here
-questions the gate’s VERDICTS - only its runtime.</p>
-<h2
 id="bob-211-latent-operator-gated-on-a-uid-flattening-mount-whose-uid-is-not-the-operator-chown-fails-eperm-with-no-fstype-aware-diagnosis-and-fmaskdmask-silently-defeat-the-preserve_mode-600-contract">BOB-211
 — LATENT + OPERATOR-GATED: on a uid-flattening mount whose uid is not
 the operator, chown fails EPERM with no fstype-aware diagnosis, and
@@ -1610,50 +1374,6 @@ transcripts: before/after git check-ignore, the .txt-wide-rescue safety
 experiment, 7-arm test output, standalone gate invocation against the
 real repo).</p>
 <h2
-id="bob-223-11.4.18-script-documentation-and-11.4.44-revision-headers-are-ungated-and-the-perverse-consequence-is-that-writing-the-mandated-companion-doc-is-what-breaks-the-build">BOB-223
-— §11.4.18 script-documentation and §11.4.44 revision headers are
-ungated — and the perverse consequence is that WRITING the mandated
-companion doc is what breaks the build</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
-<strong>Severity:</strong> major</p>
-<p>WHAT, both conductor-verified with control needles:
-CM-SCRIPT-DOCS-SYNC occurrences in scripts/pre_build_verification.sh = 0
-(control needle CM-MARKDOWN-EXPORT-SYNC = 6, so the instrument sees).
-§11.4.44 revision-header enforcement likewise 0 hits (control needle 3).
-Neither §11.4.18’s companion-doc mandate nor §11.4.44’s revision header
-is enforced by any invariant.</p>
-<p>THE PERVERSE CONSEQUENCE, MEASURED: a new script with NO companion
-doc passes the gate. Writing the companion doc that §11.4.18 MANDATES
-creates docs/scripts/<name>.md, which invariant 16
-(CM-MARKDOWN-EXPORT-SYNC) then requires to have .html and .pdf twins —
-and their absence is a BLOCKING failure. This session hit it exactly:
-docs/scripts/test_gitignore_swallow_is_loud.{html,pdf} are missing and
-are two of invariant 16’s six violations. So the gate’s incentive
-gradient points AWAY from the constitution: complying with §11.4.18 is
-punished, ignoring it is free. That is worse than an ungated rule — it
-is a rule the machinery actively discourages.</p>
-<p>§11.4.227 IS THE GOVERNING ANCHOR: a named gate that exists only in
-prose is gate debt, and the ledger of unimplemented CM-* names must be
-monotone-decreasing. CM-SCRIPT-DOCS-SYNC is named in §11.4.18’s own text
-and implemented nowhere — one concrete row of exactly the
-58%-unimplemented population §11.4.227 was minted to shrink.</p>
-<p>ACCEPTANCE: (1) either CM-SCRIPT-DOCS-SYNC is implemented, or it is
-registered as a deferral pointing at a tracked §11.4.197 item — silent
-absence is what §11.4.227 forbids; (2) same for §11.4.44’s header check;
-(3) whichever is chosen, the incentive inversion is closed: it must
-never be cheaper to skip a mandated doc than to write one — if invariant
-16 will demand twins, the doc-creation path must produce them, or
-invariant 16 must scope out docs/scripts until it can; (4) a paired §1.1
-mutation per gate implemented.</p>
-<p>HONEST NOTE ON SCOPE: this item does not argue §11.4.18 should be
-enforced immediately — that is an operator call about gate debt priority
-(§11.4.66). It argues the CURRENT state is incoherent: an unenforced
-mandate whose observance triggers a different gate’s failure. Either
-enforce both ends or neither.</p>
-<p>DISCOVERY CHANNEL (§11.4.238): found by the T042 readiness preflight
-while explaining why a new file broke invariant 16. Not by the automated
-QA regime.</p>
-<h2
 id="bob-231-a-gate-asserting-every-executable-a-pre-build-invariant-invokes-is-itself-tracked-bob-227-criterion-2-follow-up">BOB-231
 — A gate asserting every executable a pre-build invariant invokes is
 itself tracked (BOB-227 criterion 2 follow-up)</h2>
@@ -1802,54 +1522,93 @@ universal-corpus debt mid-session.</p>
 session commit — the automated gate itself is the discoverer, exactly as
 §11.4.238 requires.</p>
 <h2
-id="bob-240-workable-items-closeupdate-do-not-validate-the-status-word-against-the-items-type-11.4.33-extend-cli-validate-invariant-bob-239-mechanical-fix-half">BOB-240
-— workable-items close/update do not validate the status word against
-the item’s Type (§11.4.33) — extend CLI + validate invariant (BOB-239
-mechanical-fix half)</h2>
+id="bob-242-implement-cm-script-docs-sync-11.4.18-and-cm-doc-revision-header-present-11.4.44-the-two-gates-bob-223-found-named-but-unimplemented-and-registered-as-deferrals">BOB-242
+— Implement CM-SCRIPT-DOCS-SYNC (§11.4.18) and
+CM-DOC-REVISION-HEADER-PRESENT (§11.4.44) – the two gates BOB-223 found
+named-but-unimplemented and registered as deferrals</h2>
 <p><strong>Status:</strong> Queued <strong>Type:</strong> Task
-<strong>Severity:</strong> medium <strong>Created-By:</strong> AI
+<strong>Created-By:</strong> Claude <strong>Assigned-To:</strong>
+Claude</p>
+<p>BOB-223 closed the incentive inversion where writing a
+§11.4.18-mandated docs/scripts/<name>.md companion doc tripped invariant
+16 while the mandate requiring the doc to exist (CM-SCRIPT-DOCS-SYNC)
+has zero implementation, and the doc’s required §11.4.44 revision header
+(CM-DOC-REVISION-HEADER-PRESENT) is likewise unenforced outside one
+unrelated ledger file. Both are now registered as explicit GATE-DEBT
+REGISTER deferrals in scripts/pre_build_verification.sh, satisfying
+§11.4.227(A)’s bar for now, but the underlying mandates remain
+unenforced. This item implements BOTH: (1) walk every <em>.sh/</em>.bash
+under scripts/, require a docs/scripts/<name>.md companion (24 of 36
+currently lack one per BOB-151’s own count), verify same-commit-or-newer
+mtime per §11.4.18’s literal text; (2) require every in-scope companion
+doc to carry <strong>Revision:</strong>/<strong>Last modified:</strong>
+per §11.4.44. Both need an operator brownfield-adoption decision
+(§11.4.224(E)/§11.4.66 – immediate hard floor vs. monotone-decrease
+ratchet vs. changed-files-only), a paired §1.1 mutation each, and – once
+landed – removal of both DEFERRED: lines from the GATE-DEBT REGISTER in
+scripts/pre_build_verification.sh. Duplicate-of/originating-from:
+BOB-223, BOB-151. Also recommend adding two rows to
+constitution/scripts/gates/gate_ledger_deferrals.tsv (the constitution
+submodule’s own canonical §11.4.227(A) deferral ledger) once this new
+item’s ID is known.</p>
+<h2
+id="bob-243-cm-gitignore-swallow-guard-4-first-party-source-files-under-.specifyextensionssuperspec-silently-swallowed-by-.gitignore">BOB-243
+— CM-GITIGNORE-SWALLOW-GUARD: 4 first-party source files under
+.specify/extensions/superspec/ silently swallowed by .gitignore</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
+<strong>Created-By:</strong> Claude <strong>Assigned-To:</strong>
+Claude</p>
+<p>Discovered by a full 58-invariant pre_build_verification.sh sweep
+(2026-09-25) run during BOB-223 closure verification: invariant 56
+(CM-GITIGNORE-SWALLOW-GUARD, §11.4.201(6), BOB-212) reports 4
+first-party source files silently ignored:
+.specify/extensions/superspec/scripts/e2e-agent-claude.sh,
+.specify/extensions/superspec/scripts/e2e-smoke.sh,
+.specify/extensions/superspec/scripts/validate-extension-metadata.py,
+.specify/extensions/superspec/scripts/validate-release-archive.py – all
+blocked by the broad .gitignore:218 rule
+‘.specify/extensions/superspec/’. Unrelated to BOB-223’s own scope; a
+genuinely new finding, not previously tracked. Remedy per the gate’s own
+remediation text: either rename/relocate the files so no .gitignore rule
+matches them, or add an explicit ! negation for them in .gitignore, then
+re-run the guard. Investigate first per §11.4.6/§11.4.124 whether the
+broad .specify/extensions/superspec/ ignore rule was intentional
+(e.g. to exclude a vendored/generated subtree) before narrowing it,
+since a careless negation could re-expose something the rule was
+deliberately protecting.</p>
+<h2
+id="bob-244-cm-gitignore-swallow-guard-4-first-party-superspec-scripts-silently-swallowed-by-.gitignore218">BOB-244
+— CM-GITIGNORE-SWALLOW-GUARD: 4 first-party superspec scripts silently
+swallowed by .gitignore:218</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
+<strong>Severity:</strong> Critical <strong>Created-By:</strong> AI
 <strong>Assigned-To:</strong> AI</p>
-<p>WHAT: split from BOB-239 (closed 2026-09-25 after bulk-correcting 30
-pre-existing §11.4.33 closure-vocabulary violations). This item is the
-remaining MECHANICAL-PREVENTION half: extend
-constitution/scripts/workable-items’ <code>close</code> and
-<code>update</code> subcommands to VALIDATE the chosen status word
-against the item’s own Type (Bug-&gt;Fixed, Feature-&gt;Implemented,
-Task-&gt;Completed, any type-&gt;Obsolete) and REFUSE a mismatched call
-rather than silently accepting it. Also extend the <code>validate</code>
-subcommand’s existing invariant set to catch this class for
-defense-in-depth — confirmed this session that <code>validate: OK</code>
-ran repeatedly against a DB simultaneously holding 30+ live violations
-of this exact class, so the current invariant set does not check it.</p>
-<p>EVIDENCE THIS IS A REAL, RECURRING MISTAKE, NOT A HYPOTHETICAL: this
-session’s own conductor made the identical error 4 times in a row
-(BOB-077/100/179/226, all Type=Task closed with
-<code>--status fixed</code>) before an unrelated self-audit caught it —
-on a DB that ALREADY held 30 historical instances of the same mistake
-from earlier sessions. A CLI-level guard would have refused every one of
-those 34 calls at the moment they were made, instead of requiring a
-human/agent to remember to audit for it afterward.</p>
-<p>SCOPE: constitution/scripts/workable-items/ (Go source) — a
-UNIVERSAL, constitution-submodule-owned tool, per §11.4.17. Landing a
-real fix here needs the §11.4.26 fetch/merge/push-to-all-upstreams
-workflow, same as BOB-191’s gate fix this session, NOT boba’s own
-commit-push-all.sh.</p>
-<p>ACCEPTANCE: (1)
-<code>workable-items close --status &lt;word&gt;</code> refuses when
-<word>’s implied Type-mapping does not match the target item’s actual
-Type, printing the correct word to use; (2) same for
-<code>update --status</code>; (3) <code>validate</code> gains a new
-invariant scanning every Fixed-location item for a Type/Status mismatch
-per the closed §11.4.33 mapping, FAILing (not silently passing) on any
-hit; (4) each of (1)-(3) ships a paired §1.1 mutation proving the check
-is load-bearing (a neutered version of the check must let a known-bad
-Type/Status pair through); (5) the Obsolete status is correctly treated
-as valid for ANY Type (it is not part of the type-specific mapping) so
-the new check does not false-positive on legitimately Obsolete-closed
-items.</p>
-<p>DISCOVERY CHANNEL (§11.4.238): found by the conductor’s own repeated,
-self-caught instances of the mistake this session, generalised into
-BOB-239 (the bulk-correction), now split into this item (the mechanical
-prevention) per BOB-239’s own acceptance criterion 2/3.</p>
+<p>Discovered 2026-09-25 by the pre-build sweep’s own
+CM-GITIGNORE-SWALLOW-GUARD gate (§11.4.201(6), BOB-212 pattern), during
+the 003-zero-shortcomings-audit feature’s setup phase. What: 4 genuine
+first-party files under .specify/extensions/superspec/scripts/ —
+e2e-agent-claude.sh (19458 bytes), e2e-smoke.sh (8757 bytes),
+validate-extension-metadata.py (5888 bytes), validate-release-archive.py
+(7053 bytes), all dated Aug 31 2026 — are untracked by git (confirmed
+via ‘git ls-files –error-unmatch’: did not match any file(s) known to
+git) and are BLOCKED from ever being staged by the broad directory-level
+ignore rule at .gitignore:218 (.specify/extensions/superspec/). Root
+cause investigation needed: .gitignore:218’s own comment states the
+WHOLE directory is ignored because it is ‘the vendored superspec
+extension checkout’ that ‘carries its OWN .git (gitdir pointer)… and
+DUPLICATES the root superspec submodule’ — but these 4 specific files
+look like genuine first-party CI/e2e/validation tooling, not vendored
+upstream content, and predate today’s session (Aug 31 mtime). Per
+§11.4.124 (investigate-before-remove) and §11.4.122 (no silent removal
+without operator decision), this needs git-history investigation (was
+there ever a commit touching these paths? are they meant to ship with
+this project or are they truly part of the vendored nested checkout and
+should stay ignored?) before either (a) carving a negation exception
+into .gitignore for exactly these 4 files, or (b) confirming they are
+genuinely disposable vendored artifacts and documenting that explicitly.
+Acceptance: CM-GITIGNORE-SWALLOW-GUARD passes clean (0 findings) OR the
+4 files are explicitly, evidence-backed classified as
+vendored-and-correctly-ignored with that classification recorded in the
+.gitignore comment itself.</p>
 </body>
 </html>

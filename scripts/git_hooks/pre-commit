@@ -12,6 +12,86 @@ MUTATION_PATTERNS=(
   "$M3"
 )
 
+# ── Scope: first-party PRODUCTION sources ONLY (BOB-245 false-positive
+#    remediation, §11.4.201(7)(a) match-structure-not-substring) ──────────
+# The prior version of this hook grepped EVERY staged file, completely
+# unscoped, and false-positive-BLOCKED otherwise-clean commits whose only
+# "hit" was legitimate PROSE in docs/QA-evidence files, or legitimate
+# COMMENTS in test sources, correctly and intentionally describing this
+# project's own MANDATORY §1.1 paired-mutation-testing methodology — e.g.
+# "GREEN on the pre-mutation sandbox copy, RED on the post-mutation sandbox
+# copy" is the STANDARD, REQUIRED way this project documents a paired
+# mutation test (see the two confirmed real false-positive instances just
+# below — their exact wording is deliberately NOT reproduced here, per the
+# same self-avoidance discipline the pattern-building lines above use, so
+# this very comment cannot become a sixth false positive against itself).
+# Confirmed real false-positive instances that this scope fix resolves:
+#   docs/qa/BOB-187/closure_evidence_20260925.md (+ .html twin)
+#   docs/qa/BOB-196/closure_evidence_20260925.md (+ .html twin)
+#   tests/unit/test_ownership_precondition.sh
+#
+# This hook adopts the SAME scope-restriction technique as the sibling
+# gate scripts/pre_build/check_cm_no_production_mutation_residue.sh (read
+# its own header for the full BOB-070 forensic history of this exact
+# false-positive class): only files under first-party PRODUCTION source
+# roots, of a scannable source-file type, are grepped. Docs/tests/QA-
+# evidence prose describing the mutation-testing methodology is explicitly
+# OUT of scope for this hook, while a real residue leftover accidentally
+# committed into shipped code is STILL caught (this is a genuine scope
+# NARROWING, not a disable — see the paired test's negative-control case).
+#
+# No fenced waiver escape (unlike the sibling gate's `guard""rails:allow`
+# mechanism) is added here: the scope restriction alone eliminates every
+# currently-known false-positive class for THIS hook, and production
+# sources have no legitimate reason to inline-document the mutation-
+# testing methodology (that documentation correctly lives in tests/docs,
+# both already out of scope) — adding waiver-parsing logic to a hook that
+# runs on every single commit would add complexity with no corresponding
+# benefit today. If a genuine future need for an in-production-source
+# waiver arises, extend this hook with the same fenced `guard""rails:allow
+# <reason>` mechanism the sibling gate uses (comment-only, reason
+# mandatory, always printed/counted — never silent).
+_pc_is_excluded_path() {
+  case "$1" in
+    tests/*|*/tests/*) return 0 ;;
+    docs/*|*/docs/*) return 0 ;;
+    qa-results/*|*/qa-results/*) return 0 ;;
+    scratchpad/*|*/scratchpad/*) return 0 ;;
+    constitution/*|*/constitution/*) return 0 ;;
+    submodules/*|*/submodules/*) return 0 ;;
+    challenges/*|*/challenges/*) return 0 ;;
+    mutants/*|*/mutants/*) return 0 ;;
+    */.git/*) return 0 ;;
+    */node_modules/*) return 0 ;;
+    */.venv/*|*/venv/*|*/site-packages/*) return 0 ;;
+    */__pycache__/*) return 0 ;;
+    */out/*|*/build/*|*/dist/*) return 0 ;;
+  esac
+  return 1
+}
+
+_pc_is_scannable_type() {
+  case "$1" in
+    *.sh|*.bash|*.py|*.go) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+_pc_is_production_path() {
+  local p="$1"
+  case "$p" in
+    download-proxy/*) ;;
+    qBitTorrent-go/*) ;;
+    scripts/*) ;;
+    plugins/*) ;;
+    webui-bridge.py) ;;
+    *) return 1 ;;
+  esac
+  _pc_is_excluded_path "$p" && return 1
+  _pc_is_scannable_type "$p" || return 1
+  return 0
+}
+
 STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
 
 if [ -z "$STAGED" ]; then
@@ -22,6 +102,7 @@ violations=0
 
 while IFS= read -r file; do
   [ -f "$file" ] || continue
+  _pc_is_production_path "$file" || continue
   for pattern in "${MUTATION_PATTERNS[@]}"; do
     if grep -n "$pattern" "$file" >/dev/null 2>&1; then
       echo "CONSTITUTION-§11.4.75: mutation marker '$pattern' found in $file"

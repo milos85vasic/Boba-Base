@@ -175,8 +175,8 @@
 </head>
 <body>
 <h1 id="fixed-closed-workable-items">Fixed — Closed Workable Items</h1>
-<p><strong>Revision:</strong> 61 <strong>Last modified:</strong>
-2026-09-25T11:05:53Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 66 <strong>Last modified:</strong>
+2026-09-25T14:49:42Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Closed items
 only. Open items live in <a
 href="Issues.md"><code>Issues.md</code></a>.</p>
@@ -6606,8 +6606,8 @@ id="bob-239-30-pre-existing-fixed-location-items-violate-11.4.33-type-status-clo
 Type&lt;-&gt;Status closure-vocabulary mapping (Task closed as
 Fixed/Implemented, not Completed) — workable-items validate does not
 catch this class</h2>
-<p><strong>Status:</strong> Completed (→ Fixed.md)
-<strong>Type:</strong> Bug <strong>Evidence:</strong>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong>
 docs/qa/BOB-239/closure_evidence_20260925.md <strong>Severity:</strong>
 low <strong>Created-By:</strong> AI <strong>Assigned-To:</strong> AI</p>
 <p>WHAT: §11.4.33’s closed vocabulary mapping is Bug-&gt;Fixed,
@@ -6715,8 +6715,8 @@ id="bob-238-commit-7b45113-2026-08-21-t041-remediation-may-close-bob-08810611015
 — Commit 7b45113 (2026-08-21 T041 remediation) may close
 BOB-088/106/110/159/162 — unverified stale-tracker pattern, confirmed
 for BOB-107/114</h2>
-<p><strong>Status:</strong> Completed (→ Fixed.md)
-<strong>Type:</strong> Bug <strong>Evidence:</strong>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong>
 docs/qa/BOB-238/closure_evidence_20260925.md <strong>Severity:</strong>
 medium <strong>Created-By:</strong> AI <strong>Assigned-To:</strong>
 AI</p>
@@ -6805,11 +6805,401 @@ evidence.</p>
 id="bob-135-test-isolation-test_list_hooks_after_create-fails-in-bulk-suite-permission-denied-config">BOB-135
 — Test isolation: test_list_hooks_after_create fails in bulk suite
 (Permission denied /config)</h2>
-<p><strong>Status:</strong> Completed (→ Fixed.md)
-<strong>Type:</strong> Bug <strong>Evidence:</strong>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong>
 docs/qa/BOB-135/closure_evidence_20260925.md <strong>Severity:</strong>
 Low</p>
 <p>Test isolation: test_list_hooks_after_create fails in bulk suite
 (Permission denied /config)</p>
+<h2
+id="bob-196-check_cm_plugin_count-runs-for-over-a-minute-on-69-files-cause-unidentified-and-it-is-not-worktree-traversal">BOB-196
+— check_cm_plugin_count runs for over a minute on ~69 files — cause
+unidentified, and it is not worktree traversal</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Evidence:</strong>
+docs/qa/BOB-196/closure_evidence_20260925.md</p>
+<p>WHAT: the CM-PLUGIN-COUNT pre-build gate takes 189 SECONDS to verify
+8 documented counts. Measured 2026-08-25: exceeded a 90s probe budget
+(rc=124), then a bounded re-run completed at ‘rc=0 wall=189s’ - it
+PASSES, it is simply slow. CAUSE, MEASURED NOT GUESSED: the marker loop
+at check_cm_plugin_count.sh:273-290 iterates EVERY LINE of every
+governed document and spawns a pipeline per line. Per iteration: ‘printf
+| grep -oE | wc -l | tr -d’ (4 processes) plus ‘printf | sed -n’ (2) =
+~6. Governed docs are AGENTS.md 689 + CLAUDE.md 494 +
+docs/features/Status.md 670 = 1853 lines, so ~11,118 process spawns,
+measuring ~102 ms/line. Classic per-line-subprocess shell trap. THE
+IRONY WORTH PRESERVING, because it explains why nobody simplified it:
+the in-code comment shows ‘-oE | wc -l’ was chosen DELIBERATELY over
+‘grep -c’ after measuring the §11.4.201(12) footgun - on this host
+(ugrep 7.8.4) ‘grep -coE’ returned 3 at top level but 1 inside a ‘set
+-euo pipefail’ subshell, a context-dependent reading. The correctness
+fix is right and must be kept; it is the PER-LINE application of it that
+costs the three minutes. HYPOTHESIS REFUTED, recorded so nobody re-walks
+it: this is NOT worktree traversal. The gate’s find is scoped to
+$PLUGINS_DIR (:224), so the five agent worktrees are outside its walk.
+That guess was raised on BOB-194 and is dead. LIKELY FIX (unverified,
+stated as a candidate not a conclusion): pre-filter with ONE grep for
+lines containing ‘CM-PLUGIN-COUNT:’ before entering the loop, reducing
+~1853 iterations to the ~8 lines that carry a marker, while leaving the
+per-line parsing logic - and its footgun-avoiding form - completely
+unchanged. WHY IT MATTERS beyond impatience: this gate is on the
+pre-build critical path, and CLAUDE.md leans on it as the mechanical
+authority for the three distinct plugin rosters (43 curated / 43 engines
+/ 12 bootstrap) whose conflation was BOB-149. A gate slow enough to
+tempt anyone into skipping it protects nothing. ACCEPTANCE: runtime
+reduced with the counts and the footgun-avoiding parse preserved
+byte-for-byte in behaviour, proven by the existing paired mutation still
+biting plus a before/after wall-clock recorded. §11.4.6: nothing here
+questions the gate’s VERDICTS - only its runtime.</p>
+<h2
+id="bob-187-ownership_precondition.sh-is-unfenced-same-unreviewed-.env-driven-scope-as-the-now-fenced-repair-still-writes-probe-files-at-any-declared-path">BOB-187
+— ownership_precondition.sh is unfenced: same unreviewed .env-driven
+scope as the now-fenced repair, still writes probe files at any declared
+path</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong>
+docs/qa/BOB-187/closure_evidence_20260925.md</p>
+<p>scripts/ownership_precondition.sh consumes the SAME unreviewed
+.env-driven scope as ownership_repair.sh and creates probe files inside
+it, but it is NOT fenced. T028 remediation added ownership_path_fence()
+to scripts/lib/ownership.sh and wired it into ownership_repair.sh,
+closing the path-escape class there; the precondition was outside that
+agents file scope and still accepts whatever config/owned_paths.yaml
+expands to. Blast radius is lower than a recursive chown (it writes
+probe files rather than mutating ownership of an existing tree) but the
+INPUT is identical and equally unreviewed, so the same
+QBITTORRENT_DATA_DIR value that would have driven a filesystem-wide
+chown will drive probe-file creation at an arbitrary location. Note the
+escape is empirically confirmed for the repair path, not merely
+reasoned: during T028 remediation a probe declaring the verbatim shipped
+entry with QBITTORRENT_DATA_DIR=/ hung the suite, and ps showed the real
+artifact executing “find / ( ! -uid 1000 -o ! -gid 1000 ) -printf …”
+before it was killed by verified pid. Acceptance:
+ownership_precondition.sh calls the SAME ownership_path_fence()
+predicate from scripts/lib/ownership.sh (never a second dialect,
+11.4.251), refuses fail-closed on a rejected entry, and ships a paired
+1.1 mutation proving the refusal fires PLUS a negative control proving
+the six live shipped entries still ACCEPT so the fix is not a
+11.4.201(1) false-positive refusal. Discovered out-of-band during T028
+remediation and reported by the agent as needing tracking, so it is also
+a 11.4.238 coverage escape.</p>
+<h2
+id="bob-159-warm-.start.sh-over-an-already-running-stack-leaves-the-fr-004d-repair-window-open">BOB-159
+— Warm ./start.sh over an already-running stack leaves the FR-004d
+repair window open</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong>
+docs/qa/BOB-159/closure_evidence_20260925.md <strong>Severity:</strong>
+Medium <strong>Created-By:</strong> T041 independent review
+(IMPORTANT-2), partially remediated</p>
+<p><strong>OPERATOR DECISION (2026-08-26, §11.4.66): REPAIR, THEN
+RE-VERIFY UNTIL STABLE</strong></p>
+<p>The warm ./start.sh path keeps running the ownership repair against a
+live stack, but walks, re-verifies, and repeats until a pass finds
+nothing new. Options not chosen: refuse the repair while the stack is up
+and direct the operator to –recreate; stop the stack on the warm path
+too (correct but ends ‘warm’); accept and document the window. WHY THIS
+MATTERS MORE THAN A NORMAL ITEM: this is the exact defect the whole
+002-user-owned-downloads feature exists to end. The –recreate path was
+already fixed to order precondition -&gt; down -&gt; repair -&gt; up so
+the walk sees a tree no container can write. The warm path was not, so a
+container can create a new non-owned file AFTER the repair has passed
+that directory — the ownership problem leaking back in through the other
+door. REQUIRED BY THE CHOSEN OPTION, and it is the hard part: the loop
+MUST be BOUNDED, and on giving up it MUST report honestly that ownership
+is UNPROVEN rather than silently exiting 0 (§11.4.201(6) — a loop that
+stops finding new files because it ran out of iterations returns the
+same quiet zero as a genuinely clean tree). An active download creating
+files faster than the walk completes is the realistic non-converging
+case and must be named in the give-up message.</p>
+<p>Recorded as consumer DATA per §11.4.35 — the operator’s stated
+choice, not an agent inference. Options not chosen are named so a future
+reader does not re-litigate a settled call.</p>
+<p>— prior item text follows —</p>
+<p><strong>Reported-Via:</strong> §11.4.202 reporting directive
+<code>bug</code> on 2026-08-21T19:01:17Z <strong>Reported-By:</strong>
+T041 independent review (IMPORTANT-2), partially remediated</p>
+<p><strong>What (the report, verbatim):</strong> The –recreate path was
+fixed this round: run_ownership_precondition -&gt; stack_down -&gt;
+run_ownership_repair -&gt; stack_up, so the repair walks a tree no
+container can write to. That ordering is now asserted behaviourally by
+three new checks in tests/unit/test_start_reload_recreate.sh, each
+killed by its paired 1.1 mutation (11/11 RED-OK).</p>
+<p>The WARM path is NOT covered by that fix and this item tracks the
+remainder. On a warm ./start.sh the gate runs before THIS invocation
+brings anything up, but if the stack is ALREADY running, containers
+write while the repair walks. A container can then create a new
+non-operator-owned file BEHIND the walk, after which the completion
+marker records complete over a tree that is not, and those stragglers
+are never repaired without a manual –force.</p>
+<p>BOUNDED, not dismissed: after any successful pass the marker is valid
+for the scope fingerprint and the repair short-circuits without walking
+(marker_is_valid), so the window requires a stale-or-absent marker AND a
+live stack together. Declaring a new scope entry re-arms the marker,
+which is exactly how that combination arises in practice.</p>
+<p>NOT DONE THIS ROUND, with the reason stated rather than hidden: the
+clean guard is a cheap marker-only probe mode on
+scripts/ownership_repair.sh that answers has-this-scope-been-repaired
+without walking the tree. The existing –dry-run cannot serve: it
+deliberately SKIPS the marker fast-path (FORCE=0 &amp;&amp; DRY_RUN=0
+guard) and always walks, so using it as a warm-start probe would walk
+the tree twice on every start. Adding that mode requires editing
+ownership_repair.sh, which another stream was actively editing during
+this round; duplicating marker_is_valid into start.sh instead would be a
+near-identical fork (11.4.251). Deferred to this item rather than done
+unilaterally or silently.</p>
+<p>The misleading comment at the warm-start call site (which claimed the
+gate runs before any container writes) has been corrected to state this
+boundary honestly.</p>
+<p><strong>Affected scope / file-scope manifest:</strong> start.sh
+(warm-start dispatch, run_ownership_gate call site);
+scripts/ownership_repair.sh (marker fast-path)</p>
+<p><strong>Reproduction / context:</strong> 1. Ensure the stack is UP.
+2. Change config/owned_paths.yaml so the scope fingerprint changes (this
+re-arms the marker by design, data-model E2). 3. Run a warm ./start.sh
+(no –recreate). 4. The ownership repair walks and chowns the declared
+tree while containers are still running and able to write into it.</p>
+<p><strong>Acceptance criteria:</strong> A warm ./start.sh cannot
+complete an ownership repair while a container that writes to a declared
+location is running. Either the repair is deferred with an actionable
+refusal naming –recreate, or the stack is quiesced for the walk.
+Asserted behaviourally in tests/unit/test_start_reload_recreate.sh
+alongside the existing PRECONDITION_BEFORE_DOWN / REPAIR_AFTER_DOWN /
+REPAIR_BEFORE_UP checks, each with a paired 1.1 mutation that kills
+it.</p>
+<h2
+id="bob-175-update-location-fixed-status-can-still-mint-a-row-that-updates-own-validator-rejects-because-the-status-location-guard-is-one-directional">BOB-175
+— update –location Fixed –status <non-terminal> can still mint a row
+that update’s own validator rejects, because the status-location guard
+is one-directional</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Evidence:</strong>
+docs/qa/BOB-175/closure_evidence_20260925.md <strong>Severity:</strong>
+Low <strong>Created-By:</strong> Claude <strong>Assigned-To:</strong>
+Claude</p>
+<p>WHAT. The workable-items <code>update</code> seam guards the
+status-location invariant in one direction only. After BOB-166,
+<code>update --status &lt;terminal&gt;</code> on an Issues-located row
+is refused. The mirror is still open:
+<code>update --location Fixed --status &lt;non-terminal&gt;</code> exits
+0 and creates a row that <code>update</code>’s own validator immediately
+rejects.</p>
+<p>Verified empirically by the independent reviewer of BOB-166:</p>
+<pre><code>update --location Fixed --status &#39;In progress&#39;   -&gt; exit 0
+validate                                          -&gt; FAILS, naming the row (check (f), fixedLocationNonTerminalStatus)</code></pre>
+<p>So the command can still mint a state its own validate call refuses.
+That is the §11.4.196(F) shape at the seam layer: the invariant is
+CONFIGURED in validate but not ENFORCED at every write path that can
+violate it.</p>
+<p>WHY IT WAS DELIBERATELY LEFT OPEN IN BOB-166, and why that was right.
+Three reasons, all checked rather than asserted: (1) the real corpus has
+ZERO instances of this direction against TEN of the direction BOB-166
+closed — the asymmetry in the data matched the asymmetry in the code;
+(2) detective coverage ALREADY existed and demonstrably fires, so unlike
+BOB-166’s direction this cannot rot silently; (3) and the load-bearing
+one — <code>reopenCmd</code> documents and SANCTIONS a transient
+Fixed-plus-non-terminal state via its <code>--location Fixed</code>
+operator override. A naive preventive guard at the update seam would
+collide with that override’s semantics. Closing this therefore requires
+a design decision about how the two interact, which is a different
+question from the one BOB-166 was scoped to answer, and expanding that
+item would have meant shipping the decision unexamined.</p>
+<p>ACCEPTANCE. (a) Decide and RECORD how a preventive guard on this
+direction coexists with reopenCmd’s sanctioned override — this is the
+actual work, and the answer should be written down rather than inferred
+from whatever the patch does. Candidates worth weighing: exempt the
+reopen path explicitly, require an override flag on <code>update</code>
+mirroring reopen’s, or leave the direction detective-only with the
+rationale recorded so the asymmetry is a decision rather than an
+oversight. (b) If a guard lands, it reuses
+<code>terminalStatuses()</code> — BOB-166 established one predicate
+source specifically so the two directions cannot drift. (c) Paired §1.1
+mutation. (d) NEGATIVE CONTROL (§11.4.201(1)), and it is the sharp one
+here: the sanctioned reopen path MUST still work. A guard that breaks
+reopenCmd’s documented override is a false-positive refusal, and worse
+than the gap it closes, because it breaks a workflow operators are told
+to use.</p>
+<p>HONEST BOUNDARY. This is not a live data defect. Zero corpus
+instances, and the detective gate catches it at the next validate. It is
+filed so a scoped, deliberate omission stays visible as a tracked
+decision instead of living only in a code comment where the next reader
+will mistake it for an oversight (§11.4.197: a started thread reaches a
+documented terminal state, never quiet abandonment).</p>
+<p>PROVENANCE. Raised by the implementing agent of BOB-166 as a known
+asymmetry it deliberately did not close, independently verified and
+endorsed as an acceptable scope boundary by that item’s reviewer, on the
+condition that it become a tracked item rather than a comment. This is
+that item.</p>
+<h2
+id="bob-223-11.4.18-script-documentation-and-11.4.44-revision-headers-are-ungated-and-the-perverse-consequence-is-that-writing-the-mandated-companion-doc-is-what-breaks-the-build">BOB-223
+— §11.4.18 script-documentation and §11.4.44 revision headers are
+ungated — and the perverse consequence is that WRITING the mandated
+companion doc is what breaks the build</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong>
+docs/qa/BOB-223/closure_evidence_20260925.md <strong>Severity:</strong>
+major</p>
+<p>WHAT, both conductor-verified with control needles:
+CM-SCRIPT-DOCS-SYNC occurrences in scripts/pre_build_verification.sh = 0
+(control needle CM-MARKDOWN-EXPORT-SYNC = 6, so the instrument sees).
+§11.4.44 revision-header enforcement likewise 0 hits (control needle 3).
+Neither §11.4.18’s companion-doc mandate nor §11.4.44’s revision header
+is enforced by any invariant.</p>
+<p>THE PERVERSE CONSEQUENCE, MEASURED: a new script with NO companion
+doc passes the gate. Writing the companion doc that §11.4.18 MANDATES
+creates docs/scripts/<name>.md, which invariant 16
+(CM-MARKDOWN-EXPORT-SYNC) then requires to have .html and .pdf twins —
+and their absence is a BLOCKING failure. This session hit it exactly:
+docs/scripts/test_gitignore_swallow_is_loud.{html,pdf} are missing and
+are two of invariant 16’s six violations. So the gate’s incentive
+gradient points AWAY from the constitution: complying with §11.4.18 is
+punished, ignoring it is free. That is worse than an ungated rule — it
+is a rule the machinery actively discourages.</p>
+<p>§11.4.227 IS THE GOVERNING ANCHOR: a named gate that exists only in
+prose is gate debt, and the ledger of unimplemented CM-* names must be
+monotone-decreasing. CM-SCRIPT-DOCS-SYNC is named in §11.4.18’s own text
+and implemented nowhere — one concrete row of exactly the
+58%-unimplemented population §11.4.227 was minted to shrink.</p>
+<p>ACCEPTANCE: (1) either CM-SCRIPT-DOCS-SYNC is implemented, or it is
+registered as a deferral pointing at a tracked §11.4.197 item — silent
+absence is what §11.4.227 forbids; (2) same for §11.4.44’s header check;
+(3) whichever is chosen, the incentive inversion is closed: it must
+never be cheaper to skip a mandated doc than to write one — if invariant
+16 will demand twins, the doc-creation path must produce them, or
+invariant 16 must scope out docs/scripts until it can; (4) a paired §1.1
+mutation per gate implemented.</p>
+<p>HONEST NOTE ON SCOPE: this item does not argue §11.4.18 should be
+enforced immediately — that is an operator call about gate debt priority
+(§11.4.66). It argues the CURRENT state is incoherent: an unenforced
+mandate whose observance triggers a different gate’s failure. Either
+enforce both ends or neither.</p>
+<p>DISCOVERY CHANNEL (§11.4.238): found by the T042 readiness preflight
+while explaining why a new file broke invariant 16. Not by the automated
+QA regime.</p>
+<h2
+id="bob-151-cm-script-docs-sync-is-a-named-gate-with-no-implementation-and-24-of-36-scripts-have-no-companion-doc">BOB-151
+— CM-SCRIPT-DOCS-SYNC is a named gate with no implementation, and 24 of
+36 scripts have no companion doc</h2>
+<p><strong>Status:</strong> Obsolete (→ Fixed.md) <strong>Type:</strong>
+Task <strong>Evidence:</strong>
+docs/qa/BOB-223/closure_evidence_20260925.md <strong>Severity:</strong>
+Medium <strong>Created-By:</strong> AI
+<strong>Obsolete-Details:</strong> Since: 2026-09-25; Reason:
+duplicate-of; Superseding-item: BOB-223; Triple-check evidence:
+docs/qa/BOB-223/closure_evidence_20260925.md</p>
+<p>CM-SCRIPT-DOCS-SYNC is a named gate with no implementation, and 24 of
+36 scripts have no companion doc</p>
+<h2
+id="bob-240-workable-items-closeupdate-do-not-validate-the-status-word-against-the-items-type-11.4.33-extend-cli-validate-invariant-bob-239-mechanical-fix-half">BOB-240
+— workable-items close/update do not validate the status word against
+the item’s Type (§11.4.33) — extend CLI + validate invariant (BOB-239
+mechanical-fix half)</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Evidence:</strong>
+docs/qa/BOB-240/closure_evidence_20260925.md <strong>Severity:</strong>
+medium <strong>Created-By:</strong> AI <strong>Assigned-To:</strong>
+AI</p>
+<p>WHAT: split from BOB-239 (closed 2026-09-25 after bulk-correcting 30
+pre-existing §11.4.33 closure-vocabulary violations). This item is the
+remaining MECHANICAL-PREVENTION half: extend
+constitution/scripts/workable-items’ <code>close</code> and
+<code>update</code> subcommands to VALIDATE the chosen status word
+against the item’s own Type (Bug-&gt;Fixed, Feature-&gt;Implemented,
+Task-&gt;Completed, any type-&gt;Obsolete) and REFUSE a mismatched call
+rather than silently accepting it. Also extend the <code>validate</code>
+subcommand’s existing invariant set to catch this class for
+defense-in-depth — confirmed this session that <code>validate: OK</code>
+ran repeatedly against a DB simultaneously holding 30+ live violations
+of this exact class, so the current invariant set does not check it.</p>
+<p>EVIDENCE THIS IS A REAL, RECURRING MISTAKE, NOT A HYPOTHETICAL: this
+session’s own conductor made the identical error 4 times in a row
+(BOB-077/100/179/226, all Type=Task closed with
+<code>--status fixed</code>) before an unrelated self-audit caught it —
+on a DB that ALREADY held 30 historical instances of the same mistake
+from earlier sessions. A CLI-level guard would have refused every one of
+those 34 calls at the moment they were made, instead of requiring a
+human/agent to remember to audit for it afterward.</p>
+<p>SCOPE: constitution/scripts/workable-items/ (Go source) — a
+UNIVERSAL, constitution-submodule-owned tool, per §11.4.17. Landing a
+real fix here needs the §11.4.26 fetch/merge/push-to-all-upstreams
+workflow, same as BOB-191’s gate fix this session, NOT boba’s own
+commit-push-all.sh.</p>
+<p>ACCEPTANCE: (1)
+<code>workable-items close --status &lt;word&gt;</code> refuses when
+<word>’s implied Type-mapping does not match the target item’s actual
+Type, printing the correct word to use; (2) same for
+<code>update --status</code>; (3) <code>validate</code> gains a new
+invariant scanning every Fixed-location item for a Type/Status mismatch
+per the closed §11.4.33 mapping, FAILing (not silently passing) on any
+hit; (4) each of (1)-(3) ships a paired §1.1 mutation proving the check
+is load-bearing (a neutered version of the check must let a known-bad
+Type/Status pair through); (5) the Obsolete status is correctly treated
+as valid for ANY Type (it is not part of the type-specific mapping) so
+the new check does not false-positive on legitimately Obsolete-closed
+items.</p>
+<p>DISCOVERY CHANNEL (§11.4.238): found by the conductor’s own repeated,
+self-caught instances of the mistake this session, generalised into
+BOB-239 (the bulk-correction), now split into this item (the mechanical
+prevention) per BOB-239’s own acceptance criterion 2/3.</p>
+<h2
+id="bob-245-git-pre-commit-mutation-marker-guard-false-positive-blocks-legitimate-docstest-prose-describing-the-1.1-methodology">BOB-245
+— git pre-commit mutation-marker guard false-positive-blocks legitimate
+docs/test prose describing the §1.1 methodology</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong>
+docs/qa/BOB-245/closure_evidence_20260925.md <strong>Severity:</strong>
+Medium <strong>Created-By:</strong> AI <strong>Assigned-To:</strong>
+AI</p>
+<p>scripts/git_hooks/pre-commit (tracked source; installed to
+.git/hooks/pre-commit by scripts/install_git_hooks.sh) did a naive,
+unscoped grep for the literal string MUTATED (and two sibling markers)
+across EVERY staged file, with zero ability to distinguish a genuine
+leftover mutation-test artifact in shipped production code from
+legitimate prose in docs/QA-evidence files or legitimate comments in
+test sources that correctly and intentionally describe this project’s
+own MANDATORY paired §1.1 mutation-testing methodology (e.g. the
+standard phrasing GREEN on the UNMUTATED sandbox copy, RED on the
+MUTATED sandbox copy). Confirmed real false-positive instances that
+blocked an otherwise-clean commit this session:
+docs/qa/BOB-187/closure_evidence_20260925.md line 83 (+ .html twin line
+271) - prose describing an UNMUTATED sandbox reproduction;
+docs/qa/BOB-196/closure_evidence_20260925.md line 232 (+ .html twin line
+461) - a documented shell variable name MUTATED_RC=1 inside a code-fence
+describing a reproduction script;
+tests/unit/test_ownership_precondition.sh lines 642 and 677 - comments
+GREEN on the UNMUTATED sandbox copy / RED on the MUTATED sandbox copy, a
+FRESH escape target. FIX: adopted the same scope-restriction technique
+already proven in the sibling gate
+scripts/pre_build/check_cm_no_production_mutation_residue.sh - the hook
+now filters the staged-file list to only first-party PRODUCTION source
+roots (download-proxy, qBitTorrent-go, scripts, plugins,
+webui-bridge.py) of a scannable type (.sh/.bash/.py/.go), explicitly
+excluding tests/, docs/, qa-results/, scratchpad/, constitution/,
+submodules/, challenges/, mutants/, and vendored/build-output
+directories, via new _pc_is_excluded_path / _pc_is_scannable_type /
+_pc_is_production_path helper functions. Self-avoidance
+(string-concatenated marker tokens, and this hook’s own new comments
+avoiding literal marker spelling) preserved. No fenced waiver escape was
+added (judged unnecessary for this simpler hook; documented in-source
+why, with a pointer to the sibling gate’s guardrails:allow mechanism as
+the extension point if ever needed). TESTS: new hermetic test
+tests/hooks/test_pre_commit_mutation_scope.sh drives the real invocation
+path against a throwaway mktemp -d git repo (never the real project
+repo) - Test 1/1b prove the RED-then-GREEN fix (legitimate
+marker-containing prose under docs/ and tests/ now exits 0), Test 2 is a
+negative control proving a genuine residue-shaped marker staged under
+scripts/ (a production root) still exits 1 and names the offending file,
+Test 3 proves a clean file still exits 0. All 7 assertions PASS. A
+paired §1.1 mutation (commenting out the _pc_is_production_path
+scope-gate call, restoring pre-fix unscoped behaviour) was manually
+applied and confirmed to flip Tests 1 and 1b to FAIL (5 passed, 2
+failed), then the mutation was reverted and GREEN (7/7) was re-confirmed
+- proving the test genuinely catches a regression to the pre-fix
+behaviour. VERIFICATION: reinstalled the fixed hook via
+scripts/install_git_hooks.sh, staged the original 5 flagged files, ran
+the installed .git/hooks/pre-commit directly, confirmed exit 0 with no
+false-positive output, then git restore –staged those 5 files (they
+belong to separate, already-in-flight work and were not committed by
+this fix).</p>
 </body>
 </html>

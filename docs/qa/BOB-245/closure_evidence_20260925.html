@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260925</h1>
+</header>
+<h1 id="bob-245-closure-evidence-2026-09-25">BOB-245 closure evidence —
+2026-09-25</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-09-25T00:00:00Z</p>
+<p>Item: BOB-245 — “git pre-commit mutation-marker guard
+false-positive-blocks legitimate docs/test prose describing the §1.1
+methodology”.</p>
+<h2
+id="root-cause-confirmation-independent-re-check-never-trusted-on-faith">1.
+Root-cause confirmation (independent re-check, never trusted on
+faith)</h2>
+<p><code>scripts/git_hooks/pre-commit</code> (tracked source; installed
+verbatim into <code>.git/hooks/pre-commit</code> by
+<code>scripts/install_git_hooks.sh</code>) did a naive, completely
+UNSCOPED <code>grep</code> for the literal string <code>MUTATED</code>
+(assembled via string concatenation as <code>M1="MUT""ATED"</code>, plus
+two sibling markers) across <strong>every single staged file</strong>,
+with zero ability to distinguish:</p>
+<ul>
+<li>a genuine leftover mutation-test artifact accidentally left in
+shipped production code (a real defect this hook is supposed to catch),
+from</li>
+<li>legitimate PROSE in documentation/QA-evidence files, or legitimate
+COMMENTS in test source files, correctly and intentionally describing
+this project’s own MANDATORY §1.1 paired-mutation-testing
+methodology.</li>
+</ul>
+<p>Confirmed real false-positive instances that blocked an
+otherwise-clean commit this session (each verified directly by reading
+the flagged line, not re-derived from a prior claim):</p>
+<pre><code>$ grep -n &quot;UNMUTATED\|MUTATED&quot; docs/qa/BOB-187/closure_evidence_20260925.md
+83:against the UNMUTATED sandbox copy, confirming it reproduces 6c&#39;s exit-2
+
+$ grep -n &quot;MUTATED&quot; docs/qa/BOB-196/closure_evidence_20260925.md
+232:MUTATED_RC=1
+
+$ grep -n &quot;UNMUTATED\|MUTATED&quot; tests/unit/test_ownership_precondition.sh
+642:    # ---- (i) GREEN on the UNMUTATED sandbox copy: the sandbox reproduces
+677:            # ---- (iii) RED on the MUTATED sandbox copy, a FRESH escape target</code></pre>
+<p>All five confirmed as real false positives — none is a genuine
+mutation residue leftover; every one is either documentation prose
+describing a reproduction, a documented shell variable name inside a
+code fence, or a comment in a test file describing the standard
+GREEN-on-unmutated / RED-on-mutated paired-test pattern this project’s
+constitution mandates (§1.1). The <code>.html</code> twins of the two
+<code>.md</code> files carry the same text (confirmed at lines 271 and
+461 respectively).</p>
+<h2 id="sibling-gate-investigated-the-correct-pattern-learned-from">2.
+Sibling gate investigated (the correct pattern learned from)</h2>
+<p><code>scripts/pre_build/check_cm_no_production_mutation_residue.sh</code>
+already solves this exact problem correctly, and its own header
+documents two PRIOR false-positive/false-negative iterations it learned
+from (BOB-070). Key techniques adopted for this fix:</p>
+<ol type="1">
+<li><strong>Scope restriction</strong> to first-party PRODUCTION source
+roots (<code>download-proxy</code>, <code>qBitTorrent-go</code>,
+<code>scripts</code>, <code>plugins</code>,
+<code>webui-bridge.py</code>), explicitly excluding <code>tests/</code>,
+<code>docs/</code>, <code>qa-results/</code>, <code>scratchpad/</code>,
+<code>constitution/</code>, <code>submodules/</code>,
+<code>challenges/</code>, <code>mutants/</code>, <code>.git/</code>,
+vendored (<code>node_modules/</code>, <code>.venv/</code>,
+<code>site-packages/</code>), and build-output directories.</li>
+<li>A fenced <code>guard""rails:allow &lt;reason&gt;</code> waiver
+mechanism (comment-only, reason mandatory, always printed/counted).</li>
+<li>Structural parsing (masking string-literal interiors, tracking
+docstring/heredoc regions) to distinguish a comment from a string
+literal from real code.</li>
+</ol>
+<h2 id="fix-applied">3. Fix applied</h2>
+<p><code>scripts/git_hooks/pre-commit</code> was extended with three new
+scope-check helper functions — <code>_pc_is_excluded_path</code>,
+<code>_pc_is_scannable_type</code>, <code>_pc_is_production_path</code>
+— applied to each staged file BEFORE the existing marker grep runs:</p>
+<ul>
+<li><code>_pc_is_production_path</code> requires the staged path to
+start with one of <code>download-proxy/</code>,
+<code>qBitTorrent-go/</code>, <code>scripts/</code>,
+<code>plugins/</code>, or be exactly <code>webui-bridge.py</code>.</li>
+<li><code>_pc_is_excluded_path</code> (checked inside
+<code>_pc_is_production_path</code>) vetoes <code>tests/</code>,
+<code>docs/</code>, <code>qa-results/</code>, <code>scratchpad/</code>,
+<code>constitution/</code>, <code>submodules/</code>,
+<code>challenges/</code>, <code>mutants/</code>, <code>.git/</code>,
+<code>node_modules/</code>,
+<code>.venv/</code>/<code>venv/</code>/<code>site-packages/</code>,
+<code>__pycache__/</code>, and
+<code>out/</code>/<code>build/</code>/<code>dist/</code> — mirroring the
+sibling gate’s exclusion set.</li>
+<li><code>_pc_is_scannable_type</code> further restricts to
+<code>*.sh</code>/<code>*.bash</code>/<code>*.py</code>/
+<code>*.go</code> (matching the sibling gate’s own file-type filter), so
+a documentation file that happens to sit inside a production root
+(e.g. a README under <code>scripts/</code>) is still out of scope.</li>
+</ul>
+<p>A staged file is grepped for the mutation markers
+<strong>only</strong> if it passes <code>_pc_is_production_path</code>.
+The existing self-avoidance technique (marker tokens built via string
+concatenation) is preserved unchanged, and the new in-source comments
+explaining the fix were deliberately worded to never literally spell the
+marker string themselves (verified below).</p>
+<p><strong>No fenced waiver escape was added</strong> to this hook
+(unlike the sibling gate). Judgment call, documented in-source: the
+scope restriction alone eliminates every currently-known false-positive
+class for this commit-time hook, and production sources have no
+legitimate reason to inline-document the mutation-testing methodology
+(that documentation correctly lives in tests/docs, both already out of
+scope). Adding waiver-parsing logic to a hook that runs on every single
+commit would add complexity with no corresponding benefit today. The
+in-source comment points at the sibling gate’s
+<code>guard""rails:allow &lt;reason&gt;</code> mechanism as the
+extension point if a genuine future need arises.</p>
+<h2 id="self-avoidance-re-verification-the-fixs-own-source">4.
+Self-avoidance re-verification (the fix’s own source)</h2>
+<pre><code>$ grep -n &quot;MUTATED&quot; scripts/git_hooks/pre-commit
+(no output — exit 1)
+$ bash -n scripts/git_hooks/pre-commit
+(clean — exit 0)</code></pre>
+<p>The fixed hook’s own added prose describes the false-positive class
+without literally spelling the all-caps marker (using “pre-mutation” /
+“post-mutation” phrasing instead), so the fix’s own source cannot become
+a sixth false positive against itself when this commit stages it.</p>
+<h2 id="new-test-testshookstest_pre_commit_mutation_scope.sh">5. New
+test: <code>tests/hooks/test_pre_commit_mutation_scope.sh</code></h2>
+<p>A new hermetic executing test (following the established
+<code>tests/hooks/test_unattributed_commit_guard.sh</code> pattern — a
+throwaway <code>mktemp -d</code> git repository, never the real project
+repo) drives the REAL <code>scripts/git_hooks/pre-commit</code>
+invocation path. Seven assertions:</p>
+<ol type="1">
+<li><code>bash -n</code> parse sanity.</li>
+<li>Fixture-genuinely-contains-the-marker sanity check (proves the test
+below is non-vacuous).</li>
+<li><strong>RED-then-GREEN (the fix under test):</strong> a file staged
+under <code>docs/</code> containing the literal marker in legitimate
+prose — the hook now exits 0.</li>
+<li>The same false-positive class under <code>tests/</code> (comments
+describing the paired-mutation methodology) also exits 0.</li>
+<li><strong>Negative control (proves the fix is a genuine narrowing, not
+a disable):</strong> a file staged under <code>scripts/</code> (a
+production root) containing a genuine residue-shaped marker still exits
+1.</li>
+<li>The refusal output names the offending production file.</li>
+<li>A clean file with no markers anywhere still exits 0.</li>
+</ol>
+<h3 id="real-run-green-current-fixed-source">Real run (GREEN, current
+fixed source)</h3>
+<pre><code>$ bash tests/hooks/test_pre_commit_mutation_scope.sh
+  PASS: hook source is syntactically valid bash
+  PASS: fixture doc genuinely contains the literal marker (test is non-trivial)
+  PASS: staged docs/ file containing the literal marker in legitimate prose: hook now exits 0 (RED-then-GREEN: this is the fix)
+  PASS: staged tests/ file with legitimate mutation-methodology comments: hook exits 0
+  PASS: staged scripts/ file with a genuine residue-shaped marker: hook STILL exits 1 (negative control — real detection preserved)
+  PASS: refusal output names the offending production file
+  PASS: staged clean file with no markers: hook exits 0
+
+=== Result: 7 passed, 0 failed ===</code></pre>
+<h3
+id="paired-1.1-mutation-manually-applied-confirmed-red-then-reverted">Paired
+§1.1 mutation (manually applied, confirmed RED, then reverted)</h3>
+<p>The scope-gate call site was neutered in a scratch copy of the fixed
+hook (<code>_pc_is_production_path "$file" || continue</code> →
+commented out, restoring the pre-fix unscoped behaviour):</p>
+<pre><code>$ sed -i &#39;s/  _pc_is_production_path &quot;\$file&quot; || continue/  # MUTATED-FOR-TEST: .../&#39; scripts/git_hooks/pre-commit
+$ bash -n scripts/git_hooks/pre-commit
+mutant syntax OK
+$ bash tests/hooks/test_pre_commit_mutation_scope.sh
+  PASS: hook source is syntactically valid bash
+  PASS: fixture doc genuinely contains the literal marker (test is non-trivial)
+  FAIL: staged docs/ file containing the literal marker in legitimate prose: hook exited 1 (expected 0) — ...
+  FAIL: staged tests/ file with legitimate mutation-methodology comments: hook exited 1 (expected 0) — ...
+  PASS: staged scripts/ file with a genuine residue-shaped marker: hook STILL exits 1 (negative control — real detection preserved)
+  PASS: refusal output names the offending production file
+  PASS: staged clean file with no markers: hook exits 0
+
+=== Result: 5 passed, 2 failed ===</code></pre>
+<p>RED confirmed: removing the scope-gate reproduces exactly the
+reported false-positive behaviour (Tests 3/4 flip to FAIL), proving the
+test genuinely catches a regression to the pre-fix behaviour and is not
+a bluff. The mutation was then reverted (restored from a pre-mutation
+backup) and diffed byte-identical to the pre-mutation source, and the
+7/7 GREEN result was re-confirmed:</p>
+<pre><code>$ diff /tmp/pre-commit.orig.bak scripts/git_hooks/pre-commit
+(empty — RESTORED_IDENTICAL)
+$ bash -n scripts/git_hooks/pre-commit
+syntax OK
+$ bash tests/hooks/test_pre_commit_mutation_scope.sh
+=== Result: 7 passed, 0 failed ===</code></pre>
+<h2 id="verification-against-the-original-5-flagged-files">6.
+Verification against the original 5 flagged files</h2>
+<p>The fixed hook was reinstalled from tracked source via the sanctioned
+install script, confirmed byte-identical to the installed copy, then the
+original 5 flagged files were staged and the INSTALLED hook was invoked
+directly:</p>
+<pre><code>$ bash scripts/install_git_hooks.sh
+Installing git hooks from .../scripts/git_hooks to .../.git/hooks ...
+  Installed: pre-commit
+  Installed: pre-push
+  Installed: commit-msg
+  Installed: post-commit
+Done — 4 hook(s) installed. Constitution §11.4.75 enforcement active.
+$ diff scripts/git_hooks/pre-commit .git/hooks/pre-commit
+(empty — INSTALLED_MATCHES_SOURCE)
+
+$ git add docs/qa/BOB-187/closure_evidence_20260925.md docs/qa/BOB-187/closure_evidence_20260925.html \
+          docs/qa/BOB-196/closure_evidence_20260925.md docs/qa/BOB-196/closure_evidence_20260925.html \
+          tests/unit/test_ownership_precondition.sh
+$ bash .git/hooks/pre-commit
+$ echo &quot;HOOK_EXIT=$?&quot;
+HOOK_EXIT=0</code></pre>
+<p>No false-positive output, exit 0 — the fix resolves all 5 originally
+reported false positives. The 5 files were then immediately unstaged
+(<code>git restore --staged ...</code>) — they belong to separate,
+already-in-flight work landing independently and were NOT committed as
+part of this fix:</p>
+<pre><code>$ git restore --staged docs/qa/BOB-187/closure_evidence_20260925.md docs/qa/BOB-187/closure_evidence_20260925.html \
+          docs/qa/BOB-196/closure_evidence_20260925.md docs/qa/BOB-196/closure_evidence_20260925.html \
+          tests/unit/test_ownership_precondition.sh
+(files return to their prior on-disk / untracked / unstaged-modified state)</code></pre>
+<h2 id="toothiness-preserved-the-negative-control-explained">7.
+Toothiness preserved — the negative control, explained</h2>
+<p>The most important property of this fix is that it is a genuine
+NARROWING of scope, never a disable. Test 5 above proves this
+concretely: a file staged under <code>scripts/</code> (one of the five
+production roots) that contains an actual mutation-residue-shaped marker
+still trips the hook and blocks the commit with the offending file named
+in the output — the hook is exactly as strict as before for real
+production code, and only stopped grepping docs/tests/QA-evidence prose
+that was never the intended target in the first place.</p>
+<h2 id="verdict">8. Verdict</h2>
+<p><strong>BOB-245 acceptance satisfied.</strong> Root cause confirmed
+independently, fix adopts the proven sibling-gate scope-restriction
+technique, self-avoidance preserved (including in the fix’s own new
+prose), new hermetic test proves both the fix (RED→GREEN) and preserved
+detection (negative control) with a manually-applied and reverted paired
+§1.1 mutation, the fixed hook was reinstalled and directly verified
+against all 5 originally reported false positives with zero
+false-positive output, and the verification files were left
+untouched/unstaged afterward. Closing as Fixed.</p>
+</body>
+</html>
