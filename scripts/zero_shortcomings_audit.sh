@@ -17,7 +17,10 @@ source "$SCRIPT_DIR/lib/audit_run_id.sh"
 
 WORKABLE_ITEMS_BIN="$REPO_ROOT/constitution/scripts/workable-items/workable-items"
 WORKABLE_ITEMS_DB="$REPO_ROOT/docs/workable_items.db"
-GATE_LEDGER_SCRIPT="$REPO_ROOT/constitution/scripts/gates/cm_gate_ledger_ratchet.sh"
+# Overridable for testability (Task 4+4B review, 2026-09-25): the false-null
+# regression test points this at a genuinely non-existent script to prove
+# count_gates_unimplemented fails loud rather than silently reporting 0.
+GATE_LEDGER_SCRIPT="${GATE_LEDGER_SCRIPT_OVERRIDE:-$REPO_ROOT/constitution/scripts/gates/cm_gate_ledger_ratchet.sh}"
 COVERAGE_ESCAPE_LEDGER="$REPO_ROOT/docs/QA_DISCOVERY_LEDGER.md"
 
 usage() {
@@ -44,14 +47,24 @@ count_backlog_open() {
 }
 
 count_gates_unimplemented() {
-    # cm_gate_ledger_ratchet.sh prints a summary line this project's own
-    # tooling already produces (confirmed live, per research.md §2) —
-    # reused verbatim rather than re-parsed independently (§11.4.251).
-    bash "$GATE_LEDGER_SCRIPT" 2>&1 \
-        | grep -oE 'unimplemented=[0-9]+' \
-        | head -1 \
-        | grep -oE '[0-9]+' \
-        || printf '0\n'
+    # cm_gate_ledger_ratchet.sh's underlying engine (gate_ledger.sh) prints
+    # its "LEDGER: unimplemented=N ..." summary line on BOTH its pass and
+    # fail paths -- so a genuinely missing line means the script itself
+    # failed before reaching that point, NEVER "genuinely zero unimplemented
+    # gates" (Task 4+4B combined review, Critical finding, 2026-09-25: the
+    # original `|| printf '0\n'` fallback conflated the two, exactly the
+    # §11.4.201(6) false-null class this audit tool exists to catch).
+    local output
+    output="$(bash "$GATE_LEDGER_SCRIPT" 2>&1)"
+    local count
+    count="$(printf '%s\n' "$output" | grep -oE 'unimplemented=[0-9]+' | head -1 | grep -oE '[0-9]+')"
+    if [[ -n "$count" ]]; then
+        printf '%s\n' "$count"
+        return 0
+    fi
+    print_error "count_gates_unimplemented: ${GATE_LEDGER_SCRIPT} produced no parseable 'unimplemented=N' line — cannot distinguish a genuine zero from a broken gate script"
+    printf '%s\n' "$output" >&2
+    return 1
 }
 
 count_escapes_open() {
@@ -76,6 +89,17 @@ cmd_enumerate() {
             print_info "Operator-blocked items (id|unblock_condition):"
             count_blocked_with_conditions
             return 0
+            ;;
+        all|backlog|gates|escapes)
+            ;;
+        *)
+            # Task 4+4B combined review, Important finding, 2026-09-25: an
+            # unrecognized --surface value previously fell through the
+            # if-chain below with no match, and the resulting `false` exit
+            # of the chain's final statement propagated silently through
+            # set -e with zero explanatory output. Fail loud, by name.
+            print_error "enumerate: unrecognized --surface value: '$surface' (expected all|backlog|gates|escapes|blocked)"
+            return 1
             ;;
     esac
 
