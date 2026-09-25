@@ -235,7 +235,16 @@ cmd_verify_closure() {
         return 0
     fi
 
-    print_error "verify-closure: $item_id MISMATCH — recorded '$recorded_summary', got '$fresh_summary'"
+    # Constitution Principle III / /speckit-analyze finding D2: redact any
+    # credential-shaped VALUE before either summary ever reaches a print
+    # line -- a credential-adjacent item's result_summary could otherwise
+    # leak a secret value into the tracked run log. Comparison above uses
+    # the RAW (unredacted) values so a real, non-credential mismatch is
+    # still detected correctly; only what gets PRINTED is redacted.
+    local recorded_summary_safe fresh_summary_safe
+    recorded_summary_safe="$(audit_redact_before_write "$recorded_summary")"
+    fresh_summary_safe="$(audit_redact_before_write "$fresh_summary")"
+    print_error "verify-closure: $item_id MISMATCH — recorded '$recorded_summary_safe', got '$fresh_summary_safe'"
     if [[ "$reopen_on_mismatch" == "true" ]]; then
         print_warning "verify-closure: reopening $item_id (--reopen-on-mismatch)"
         "$WORKABLE_ITEMS_BIN" reopen --id "$item_id" --db "$WORKABLE_ITEMS_DB" \
@@ -243,5 +252,44 @@ cmd_verify_closure() {
             --incident "$evidence_file" || true
     fi
     return 1
+}
+
+# audit_redact_before_write <text> -- reuses this project's own established
+# §11.4.10.A credential-shape detection -- the keyword alternation this
+# project's credential_scan_lib.sh (the shared §11.4.10/§11.4.10.A leak-audit
+# library at constitution/scripts/hooks/credential_scan_lib.sh, exported as
+# HELIX_CRED_VALUE_PATTERN) already defines and uses to DETECT a credential --
+# to REDACT the VALUE half of a keyword=value credential-shaped pair while
+# preserving the keyword/variable NAME, per constitution Principle III
+# ("No secret values MAY appear in log output ... "; names stay loggable, only
+# values are secret). This function's keyword set is a CITATION of that
+# library's own detector-1 keyword alternation
+# (password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token|
+# client[_-]?secret), never a second, independently-invented pattern set
+# (§11.4.251 byte-identical-fork-prohibition / role-as-data-pack applied to
+# detection logic: one detection vocabulary, cited by reference, not forked).
+#
+# The library itself (helix_cred_scan_file / HELIX_CRED_VALUE_PATTERN) is a
+# whole-file/whole-stream binary DETECTOR (grep-shaped: "does this file
+# contain a credential?"), consumed elsewhere in this project (e.g.
+# constitution/scripts/gates/lib/execution_record.sh's `_xr_redact`) by
+# blanking the ENTIRE captured stream on a hit -- correct for an opaque
+# captured stream, but it would erase the variable NAME too, which Principle
+# III requires to remain loggable. This function performs the narrower,
+# name-preserving redaction the brief for this task requires, using the SAME
+# cited keyword vocabulary rather than the whole-file blank-out strategy.
+#
+# Prints <text> to stdout with the VALUE half of every
+# `<keyword><sep><value>` credential-shaped match replaced with
+# `<redacted-per-§11.4.10>`; ordinary text with no such match passes through
+# byte-identical. The `I` sed flag (GNU sed case-insensitive substitution) is
+# required so RUTRACKER_PASSWORD / KINOZAL_PASSWORD / etc. match the
+# lowercase `password` alternation -- CLAUDE.md's own credential variable
+# list is exactly this shape (RUTRACKER_*, KINOZAL_*, NNMCLUB_*, IPTORRENTS_*,
+# BOBA_MASTER_KEY, BOBA_API_TOKEN -- every one of those names CONTAINS one of
+# the cited keywords).
+audit_redact_before_write() {
+    local text="$1"
+    printf '%s' "$text" | sed -E 's/(password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret)([[:space:]]*[:=][[:space:]]*)[^[:space:]]+/\1\2<redacted-per-§11.4.10>/Ig'
 }
 main "$@"
