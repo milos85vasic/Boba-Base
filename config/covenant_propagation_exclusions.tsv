@@ -1,0 +1,48 @@
+# covenant_propagation_exclusions.tsv — consumer-declared carrier exclusions
+# for the constitution's covenant-propagation gate family
+# (cm_covenant_114_N_propagation.sh), read by
+# constitution/scripts/gates/lib/covenant_propagation_engine.sh.
+#
+# Format (tab-separated):
+#   <find -path glob>	<class>	<justification>
+# The class MUST come from the engine's closed set
+#   {vendored-third-party | generated-code | non-shipping-fixtures | filename-collision};
+# a row without a justification, or with any other class, makes every gate
+# in the family return 2 (BLIND) — fail closed, per §11.4.224(E). Every
+# applied row is PRINTED by every gate on every run ("⊘ EXCLUDED"), so this
+# file narrows the audited set VISIBLY, never silently (§11.4.135 honest
+# gaps). Globs are matched against the ABSOLUTE path `find` prints, hence
+# the leading `*/`.
+#
+# BOB-143 (filed 2026-08-20, this row landed to close it): `.worktrees/`
+# holds ORPHANED `git worktree` scratch checkouts (e.g. the originally-
+# measured ci-split-workflows/ and completion-initiative-phase-0/, 46M
+# total) whose `.git` pointer file targets a gitdir that no longer exists —
+# `git worktree list` does not know about them and git cannot resolve their
+# HEAD/branch/status. Because provenance cannot be resolved, §11.4.122/
+# §11.4.124/§11.4.101 forbid deleting them autonomously (deleting
+# unprovable-provenance work is the irreversible, operator-owned decision
+# those anchors reserve) — so exclusion, not deletion, is this project's
+# chosen mitigation (BOB-143 option (b)). Each orphaned checkout is a full
+# historical clone of THIS repository and therefore carries its own
+# CLAUDE.md/AGENTS.md/QWEN.md/GEMINI.md at whatever commit it was pinned
+# to — files that share the EXACT FILENAME the propagation family globs
+# for (`-name 'CLAUDE.md' -o -name 'AGENTS.md' -o ...`) without being this
+# project's real, current, owned carriers: the discovery mechanism cannot
+# distinguish "this IS the project's carrier" from "this HAS THE SAME NAME
+# as the project's carrier but belongs to a disconnected, unresolvable-HEAD
+# snapshot" — the textbook `filename-collision` case the engine's closed
+# set names for exactly this shape. Measured 2026-08-20 (cited in BOB-143):
+# with `.worktrees/` unexcluded, `cm_test_mock_pid_explicit_int` reported 2
+# violations sourced entirely from stale copies inside these trees while
+# the main tree's own copy of the same file was already hardened and
+# passed cleanly, and 6 of 57 "missing anchor carrier" propagation-gate
+# findings were likewise `.worktrees/**` — both the exact
+# §11.4.201(1) false-positive-refusal shape: a dead, unreachable, never-
+# built tree manufacturing findings against a healthy live tree. Excluding
+# it removes ONLY those dead-tree findings — a violation planted under a
+# first-party path outside `.worktrees/` (e.g. `worktrees/` with no
+# leading dot, or `tests/`) is still caught and still fails the gate; see
+# tests/pre_build/test_bob143_worktrees_exclude_scope.sh for the paired
+# proof in both directions.
+*/.worktrees	filename-collision	Orphaned `git worktree` scratch checkouts (BOB-143): `git worktree list` does not register them and their `.git` pointer targets a gitdir that no longer exists, so HEAD/branch/status cannot be resolved and provenance cannot be proven merged into main (§11.4.122/§11.4.124 forbid autonomous deletion of unprovable-provenance work). Each is a full historical clone of this repository, so its CLAUDE.md/AGENTS.md/QWEN.md/GEMINI.md share the exact filename the propagation family globs for without being this project's real, current, owned carriers — a filename collision, not a second governed extension consumer. Measured 2026-08-20: unexcluded, these trees manufactured 2 CM-TEST-MOCK-PID-EXPLICIT-INT violations and 6 of 57 "missing anchor carrier" propagation findings against an otherwise-healthy live tree (§11.4.201(1) false-positive refusal). git worktree add always creates a NEW directory under this prefix (never reuses one), so a stale .git pointer inside it can never collide with a live, resolvable worktree.

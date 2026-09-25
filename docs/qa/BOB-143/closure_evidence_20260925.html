@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260925</h1>
+</header>
+<h1 id="bob-143-closure-evidence-2026-09-25">BOB-143 closure evidence —
+2026-09-25</h1>
+<p><strong>Item:</strong> BOB-143 — Orphaned <code>.worktrees/</code>
+dirs (46M, unresolvable gitdir) pollute gate scan scope and manufacture
+false BOB-126-class findings.</p>
+<p><strong>Fix implemented:</strong> option (b) from the item’s own text
+— add <code>.worktrees/</code> to the gate scan-scope exclusion list as
+a §11.4.224(E)-fenced, checked-in, justified entry. <strong>Deletion was
+NOT performed</strong> (and, as established below, was not even
+applicable in this checkout — see “Pre-fix investigation”). Nothing
+inside <code>.worktrees/</code> was touched.</p>
+<hr />
+<h2
+id="pre-fix-investigation-root-cause-first-per-systematic-debugging">0.
+Pre-fix investigation (root cause first, per systematic-debugging)</h2>
+<p>Before writing anything, I verified the item’s premise against the
+live checkout, per the constitution’s “reproduce first” / “no guessing”
+discipline.</p>
+<pre><code>$ test -d .worktrees &amp;&amp; echo &quot;EXISTS: .worktrees&quot; || echo &quot;MISSING: .worktrees&quot;
+MISSING: .worktrees
+
+$ find . -maxdepth 4 -iname &quot;*worktree*&quot; -not -path &quot;./submodules/*&quot; -not -path &quot;./.git/*&quot;
+./docs/proposals/subagent-worktree-isolation.md
+./docs/proposals/subagent-worktree-isolation.html
+./docs/proposals/subagent-worktree-isolation.docx
+./docs/proposals/subagent-worktree-isolation.pdf
+./constitution/scripts/multitrack/multitrack_resolve_worktree.sh</code></pre>
+<p><strong>Finding:</strong> <code>.worktrees/ci-split-workflows/</code>
+and <code>.worktrees/completion-initiative-phase-0/</code> do
+<strong>not exist</strong> in this checkout today. They were local,
+gitignored, host-side scratch directories at the time BOB-143 was filed
+(2026-08-20); by 2026-09-25 they are simply absent from disk (this
+session’s checkout never had them, or they were cleaned up by unrelated
+host activity in the interim — either way, git carries no record of
+their removal since they were never tracked). This does not change the
+task: the item’s own acceptance criterion explicitly names exclusion as
+a valid, sufficient close path <em>independent of whether the
+directories currently exist</em> (“or <code>.worktrees/</code> is added
+to a checked-in … exclusion list”), and the constitution’s own §11.4.6
+boundary applies — I did not invent or assume their presence, I measured
+it and proceeded on what the checkout actually shows. A synthetic,
+deterministic fixture (mirroring the precedent
+<code>tests/pre_build/test_check_cm_go_toolchain_matches_builder.sh</code>
+/ BOB-194 pattern, whose own comment states “does not depend on a
+worktree happening to exist on disk, which is how the real-tree case
+caught it only by luck”) is therefore the correct RED/GREEN vehicle
+here, not a live <code>.worktrees/</code> tree.</p>
+<h2 id="investigation-of-the-two-measured-findings">1. Investigation of
+the two measured findings</h2>
+<h3
+id="a.-cm_test_mock_pid_explicit_int-cm-test-mock-pid-explicit-int">1a.
+<code>cm_test_mock_pid_explicit_int</code>
+(CM-TEST-MOCK-PID-EXPLICIT-INT)</h3>
+<p>Traced the two invocation paths of this gate in the repository:</p>
+<ul>
+<li><code>scripts/pre_build/check_cm_test_mock_pid_explicit_int.sh</code>
+— the thin wrapper <code>pre_build_verification.sh</code> invariant 28
+uses. Its <code>DEFAULT_SCAN_ROOTS=("tests")</code> — it only ever walks
+<code>$REPO_ROOT/tests</code>, so a top-level <code>.worktrees/</code>
+directory is structurally outside its scan and was never the source of
+the BOB-143 finding.</li>
+<li><code>constitution/scripts/gates/cm_test_mock_pid_explicit_int.sh</code>
+(the shared engine) invoked <strong>directly</strong> by
+<code>scripts/verify-all-constitution-rules.sh</code> (boba’s §11.4.32
+sweep — the exact instrument BOB-143 cites: “Measured 2026-08-20 by the
+§11.4.32 sweep”) with <code>--root @ROOT@</code> (the whole repository)
+via <code>config/constitution-sweep.conf</code>’s <code>DEFAULT</code>
+row. <strong>This</strong> is where the false findings were
+sourced.</li>
+</ul>
+<p>Reading <code>scripts/verify-all-constitution-rules.sh</code>, this
+half is <strong>already fixed</strong> — by commit <code>c0ea01c</code>
+(title unrelated to BOB-143, but its body lands the fix), which
+added:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">_BOB143_SWEEP_EXCLUDE</span><span class="op">=</span><span class="st">&quot;.git node_modules vendor .venv __pycache__ scripts/gates out build dist .worktrees&quot;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">DANGEROUS_COMBO_EXCLUDE</span><span class="op">=</span><span class="st">&quot;</span><span class="va">${DANGEROUS_COMBO_EXCLUDE</span><span class="op">:-</span><span class="va">$_BOB143_SWEEP_EXCLUDE}</span><span class="st">&quot;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="va">_BOB152_VENDORED_EXCLUDE</span><span class="op">=</span><span class="st">&quot;</span><span class="va">${_BOB143_SWEEP_EXCLUDE}</span><span class="st"> submodules&quot;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">MOCK_PID_GUARD_EXCLUDE</span><span class="op">=</span><span class="st">&quot;</span><span class="va">${MOCK_PID_GUARD_EXCLUDE</span><span class="op">:-</span><span class="va">$_BOB152_VENDORED_EXCLUDE}</span><span class="st">&quot;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">ORACLE_GUARD_EXCLUDE</span><span class="op">=</span><span class="st">&quot;</span><span class="va">${ORACLE_GUARD_EXCLUDE</span><span class="op">:-</span><span class="va">$_BOB152_VENDORED_EXCLUDE}</span><span class="st">&quot;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">KILLPG_GUARD_EXCLUDE</span><span class="op">=</span><span class="st">&quot;</span><span class="va">${KILLPG_GUARD_EXCLUDE</span><span class="op">:-</span><span class="va">$_BOB152_VENDORED_EXCLUDE}</span><span class="st">&quot;</span></span></code></pre></div>
+<p><code>.worktrees</code> is present in
+<code>_BOB143_SWEEP_EXCLUDE</code>, which every one of these four
+env-var exports inherits. Item BOB-143 was never closed to reflect this,
+so I treated this as an <strong>already-fixed half needing a regression
+guard</strong>, not something to re-implement. Confirmed my mutation
+test above
+(<code>_BOB143_SWEEP_EXCLUDE no longer names .worktrees</code> abort)
+catches a future regression of exactly this wiring.</p>
+<h3 id="b.-6-of-57-missing-anchor-carrier-propagation-gate-findings">1b.
+“6 of 57 missing anchor carrier” propagation-gate findings</h3>
+<p>Traced to <code>scripts/verify-all-constitution-rules.sh</code>’s
+delegation of the whole
+<code>CM-COVENANT-114-&lt;N&gt;-PROPAGATION</code> family to
+<code>constitution/scripts/gates/covenant_propagation_suite.sh gates --root "$root"</code>
+(boba’s own root). The suite pre-computes a carrier list with its own
+<code>find</code>, and the shared engine
+(<code>constitution/scripts/gates/lib/covenant_propagation_engine.sh</code>)
+does its own carrier discovery too when not given a precomputed list —
+<strong>neither pruned <code>.worktrees</code></strong>, and
+<strong>neither may hardcode a project path</strong> (both are upstream,
+inherited by reference per §11.4.28/§11.4.177 — a boba-specific literal
+must never be injected into them). Both already read a
+<strong>consumer-owned, checked-in exclusion file</strong>:</p>
+<pre><code>default: &lt;root&gt;/config/covenant_propagation_exclusions.tsv
+override: $COVENANT_PROPAGATION_EXCLUSIONS</code></pre>
+<p>documented in the engine’s own header as “the §11.4.224(E) exclusion
+fence + the §11.4.135 checked-in-exemption-map pattern”, with a
+<strong>closed class set</strong>
+<code>{vendored-third-party | generated-code | non-shipping-fixtures | filename-collision}</code>
+the engine validates and fails closed (exit 2 / BLIND) on any row
+outside it or with no justification. <strong>This file did not exist in
+boba</strong> (<code>config/covenant_propagation_exclusions.tsv</code>
+was absent). This is the genuinely unaddressed half of BOB-143, and is
+the actual fix delivered here.</p>
+<p>I found a real-world precedent of this exact mechanism already in
+production use in a sibling project
+(<code>/home/milosvasic/Projects/vasic/config/ covenant_propagation_exclusions.tsv</code>,
+read-only, for format reference only — not part of this repository) —
+confirming the schema and that this is the established, intended
+consumer-side mechanism rather than something invented for this fix.</p>
+<h2 id="files-found-and-modified">2. Files found and modified</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Action</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>config/covenant_propagation_exclusions.tsv</code></td>
+<td><strong>Created</strong></td>
+<td>The checked-in, §11.4.224(E)-fenced exclusion-list entry BOB-143
+option (b) asks for. Read by default by both
+<code>constitution/scripts/gates/lib/covenant_propagation_engine.sh</code>
+(single-gate carrier discovery) and
+<code>constitution/scripts/gates/covenant_propagation_suite.sh</code>
+(the batch runner’s own carrier precompute) — no wiring change needed
+anywhere else, since both already default to
+<code>${root}/config/covenant_propagation_exclusions.tsv</code> and
+<code>--root</code> for boba’s own §11.4.32 sweep is always boba’s repo
+root.</td>
+</tr>
+<tr>
+<td><code>tests/pre_build/test_bob143_worktrees_exclude_scope.sh</code></td>
+<td><strong>Created</strong></td>
+<td>§1.1 paired-mutation proof, mirroring the proven shape of
+<code>tests/pre_build/test_bob152_vendored_exclude_scope.sh</code> (the
+closest precedent — same exclude-scope class, same sweep script). Proves
+the new exclusion row is well-formed, load-bearing on BOTH the
+direct-engine invocation path and the production
+<code>covenant_propagation_suite.sh</code> invocation path, and
+regression-guards the already-fixed
+MOCK_PID/ORACLE/KILLPG/DANGEROUS_COMBO wiring in
+<code>scripts/verify-all-constitution-rules.sh</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Files explicitly NOT touched</strong> (per scope):
+<code>scripts/pre_build_verification.sh</code> (a concurrent, unrelated
+135-line diff was already present in the working tree when I started —
+not made by me, confirmed by <code>git diff --stat</code> showing
+changes I never authored), <code>.gitignore</code>, anything under
+<code>.worktrees/</code> (doesn’t exist), <code>download-proxy/</code>,
+<code>plugins/</code>, <code>docs/guides/</code>,
+<code>tests/ownership/</code>,
+<code>tests/integration/test_container*</code>,
+<code>docs/workable_items.db</code>, the <code>workable-items</code>
+CLI.</p>
+<p><strong>Why <code>scripts/pre_build_verification.sh</code> was NOT
+the fix location:</strong> the constitution submodule’s engine and suite
+explicitly forbid a project literal being hardcoded into them
+(§11.4.28/§11.4.177 — inherited by reference, never copied, never given
+project-specific context), and both already implement a documented,
+purpose-built, checked-in consumer-DATA exclusion mechanism reading
+<code>config/covenant_propagation_exclusions.tsv</code> by default.
+Adding the row there is the mechanism these files were designed for;
+editing <code>pre_build_verification.sh</code> was neither necessary
+(its own <code>CM-COVENANT-PROPAGATION-SUITE</code> invocation at
+“Invariant 32” passes <code>--root "${PROJECT_ROOT}/constitution"</code>
+— the constitution <strong>submodule’s</strong> root, not boba’s — so it
+was never the source of the <code>.worktrees</code>-sourced findings the
+item measured and needs no change here) nor in scope (it is explicitly
+excluded by the task).</p>
+<h2 id="red-before-the-fix">3. RED — before the fix</h2>
+<p>Manual reproduction against a synthetic fixture (since the real
+<code>.worktrees/</code> directories no longer exist — see §0), run
+BEFORE <code>config/ covenant_propagation_exclusions.tsv</code>
+existed:</p>
+<pre><code>$ mkdir -p &quot;$WORK/.worktrees/probe&quot; &quot;$WORK/worktrees/control&quot;
+$ printf &#39;This is a stale orphaned worktree copy. No anchor block here.\n&#39; &gt; &quot;$WORK/.worktrees/probe/CLAUDE.md&quot;
+$ printf &#39;This is a stale sibling non-dot worktrees dir. No anchor block here.\n&#39; &gt; &quot;$WORK/worktrees/control/CLAUDE.md&quot;
+$ printf &#39;**§11.4.230 — Parallelized-pipeline methodology.** Real correct anchor block text so at least one carrier passes.\n&#39; &gt; &quot;$WORK/CLAUDE.md&quot;
+
+$ bash constitution/scripts/gates/cm_covenant_114_230_propagation.sh --root &quot;$WORK&quot; --quiet
+❌ MISSING     worktrees/control/CLAUDE.md  — zero 11.4.230 block-starts (bare-literal citations elsewhere do not count, §11.4.201(7)(a))
+❌ MISSING     .worktrees/probe/CLAUDE.md  — zero 11.4.230 block-starts (bare-literal citations elsewhere do not count, §11.4.201(7)(a))
+----------------------------------------------------------------------
+CM-COVENANT-114-230-PROPAGATION: 1 single-block-PRESENT, 0 POINTER-INHERITANCE-SKIP, 2 MISSING/DUPLICATED, 0 DIVERGENT (anchor 11.4.230) under $WORK
+❌ CM-COVENANT-114-230-PROPAGATION: FAIL — anchor-block integrity violated for §11.4.230
+rc=1</code></pre>
+<p>This reproduces the item’s exact measured shape: a
+<code>.worktrees/**</code> carrier manufacturing a false MISSING finding
+indistinguishable from a real one (§11.4.201(1) false-positive
+refusal).</p>
+<p>Formal paired-mutation proof, run with the fix FILE ABSENT
+(<code>config/covenant_propagation_exclusions.tsv</code> moved
+aside):</p>
+<pre><code>$ mv config/covenant_propagation_exclusions.tsv /tmp/...bak
+$ bash tests/pre_build/test_bob143_worktrees_exclude_scope.sh
+== BOB-143 .worktrees/ exclude scope proof ==
+gates dir: /home/milosvasic/Projects/boba/constitution/scripts/gates
+exclusions file: /home/milosvasic/Projects/boba/config/covenant_propagation_exclusions.tsv
+ABORT: the fix (config/covenant_propagation_exclusions.tsv) is absent — nothing to prove
+EXIT=3
+$ mv /tmp/...bak config/covenant_propagation_exclusions.tsv   # restored</code></pre>
+<p>Second mutation — file present but the load-bearing row dropped (the
+more realistic “someone edited the file and lost the row”
+regression):</p>
+<pre><code>$ cp config/covenant_propagation_exclusions.tsv /tmp/...real
+$ printf &#39;# mutated: .worktrees row dropped\n*/some-other-dir\tgenerated-code\tunrelated placeholder row\n&#39; &gt; config/covenant_propagation_exclusions.tsv
+$ bash tests/pre_build/test_bob143_worktrees_exclude_scope.sh
+== BOB-143 .worktrees/ exclude scope proof ==
+...
+ABORT: expected exactly 1 &#39;*/.worktrees&#39; row in .../config/covenant_propagation_exclusions.tsv, found 0
+EXIT=3
+$ cp /tmp/...real config/covenant_propagation_exclusions.tsv   # restored, byte-identical (diff -q confirmed)</code></pre>
+<p>Third mutation — regression-guard for the <em>already-fixed</em> half
+(BOB-143’s CM-TEST-MOCK-PID-EXPLICIT-INT wiring in the sweep script
+itself):</p>
+<pre><code>$ sed -i &#39;s/... dist .worktrees&quot;/... dist&quot;/&#39; scripts/verify-all-constitution-rules.sh
+$ bash tests/pre_build/test_bob143_worktrees_exclude_scope.sh
+== BOB-143 .worktrees/ exclude scope proof ==
+row confirmed: */.worktrees filename-collision  &lt;justification, 1019 chars&gt;
+ABORT: _BOB143_SWEEP_EXCLUDE no longer names .worktrees (got: .git node_modules vendor .venv __pycache__ scripts/gates out build dist) — the already-measured-fixed half of BOB-143 regressed
+EXIT=3
+$ cp /tmp/...bak scripts/verify-all-constitution-rules.sh   # restored, diff -q confirmed identical to HEAD</code></pre>
+<p>All three mutations correctly fail the test (exit 3 — an honest ABORT
+that refuses to certify a verdict when the fix’s own precondition is
+absent, matching the same convention
+<code>tests/pre_build/test_bob152_vendored_exclude_ scope.sh</code>
+already uses for its own missing-precondition case).</p>
+<h2 id="green-after-the-fix">4. GREEN — after the fix</h2>
+<pre><code>$ bash tests/pre_build/test_bob143_worktrees_exclude_scope.sh
+== BOB-143 .worktrees/ exclude scope proof ==
+gates dir: /home/milosvasic/Projects/boba/constitution/scripts/gates
+exclusions file: /home/milosvasic/Projects/boba/config/covenant_propagation_exclusions.tsv
+row confirmed: */.worktrees filename-collision  &lt;justification, 1019 chars&gt;
+sweep wiring confirmed: _BOB143_SWEEP_EXCLUDE still names .worktrees (feeds MOCK_PID/ORACLE/KILLPG/DANGEROUS_COMBO_EXCLUDE)
+
+---- direct-engine: cm_covenant_114_230_propagation.sh ----
+baseline (empty exclusions file): probe seen (1 hit(s)), control seen (1 hit(s)) — instrument PROVEN seeing both locations
+PASS: with the real BOB-143 exclusion active, .worktrees/-rooted probe EXCLUDED (0 hits, and the ⊘ EXCLUDED line was printed), worktrees/-rooted control STILL CAUGHT (1 hit(s)).
+
+---- suite-path: covenant_propagation_suite.sh gates (production invocation shape) ----
+baseline (empty exclusions file): anchor 230 row reports 2 MISSING/DUPLICATED (probe + control) — instrument PROVEN seeing both locations
+PASS: via the suite path, with the real BOB-143 exclusion active anchor 230&#39;s row reports exactly 1 MISSING/DUPLICATED (the worktrees/ control only — the .worktrees/ probe&#39;s MISSING dropped out, i.e. was excluded from discovery).
+
+VERDICT: PASS — BOB-143&#39;s .worktrees/ exclusion is load-bearing (excluded) while worktrees/ (no dot) is still caught, on both the direct-engine and the production suite invocation paths; the already-fixed MOCK_PID/ORACLE/KILLPG/DANGEROUS_COMBO wiring still names .worktrees.
+EXIT=0</code></pre>
+<p><strong>Manual confirmation against the real boba root</strong>
+(proves the fix is actually wired for real use, not just the hermetic
+fixture):</p>
+<pre><code>$ bash constitution/scripts/gates/cm_covenant_114_230_propagation.sh --root . --quiet | head -3
+CM-COVENANT-114-230-PROPAGATION: consumer exclusions applied (1) from /home/milosvasic/Projects/boba/config/covenant_propagation_exclusions.tsv:
+    ⊘ EXCLUDED  */.worktrees  [filename-collision]
+❌ MISSING     AGENTS.md  — zero 11.4.230 block-starts ...</code></pre>
+<p>(The <code>AGENTS.md</code> /
+<code>challenges/fixtures/anchor_block_integrity/**</code> MISSING lines
+that follow are <strong>pre-existing, unrelated</strong> findings —
+AGENTS.md genuinely lacks the §11.4.230 block today, and
+<code>challenges/fixtures/ anchor_block_integrity/**</code> are the
+propagation engine’s OWN golden-bad/ golden-good meta-test fixtures,
+deliberately missing blocks by design. Both are out of BOB-143’s scope
+and untouched by this fix — confirming the exclusion did not widen to
+swallow anything beyond <code>.worktrees</code>.)</p>
+<h2 id="proof-the-fix-does-not-create-a-blind-spot-11.4.2016">5. Proof
+the fix does NOT create a blind spot (§11.4.201(6))</h2>
+<p>This is built into the test itself (<code>worktrees/</code> non-dot
+control, always proven still-caught in every scenario above) rather than
+a separate step: every PASS in §4 explicitly asserts the sibling
+<code>worktrees/bob143_control/ CLAUDE.md</code> (no leading dot — same
+word, deliberately similar name, genuinely different path) is
+<strong>still flagged MISSING</strong> with the exclusion active. The
+exclusion glob is <code>*/.worktrees</code> (an exact directory-name
+match via <code>find -path</code>), which cannot match a directory named
+<code>worktrees</code> (no leading dot) — proven empirically, not merely
+asserted, in both the direct-engine and the suite invocation paths.</p>
+<h2 id="no-regression-existing-tests-re-run-clean">6. No regression —
+existing tests re-run clean</h2>
+<pre><code>$ bash -n tests/pre_build/*.sh   # every file in the directory
+syntax sweep done   (0 failures)
+
+$ timeout 120 bash constitution/scripts/gates/cm_covenant_114_230_propagation_mutation_test.sh
+...
+✅ META PASS: CM-COVENANT-114-230-PROPAGATION is a genuine (non-bluff) gate
+EXIT=0
+
+$ bash scripts/pre_build/check_cm_test_mock_pid_explicit_int.sh
+  scope: default (tests), repo-root: /home/milosvasic/Projects/boba
+  files scanned: 357
+PASS: CM-TEST-MOCK-PID-EXPLICIT-INT clean across 357 file(s)
+EXIT=0
+
+$ timeout 60 bash tests/pre_build/test_bob152_vendored_exclude_scope.sh
+...
+VERDICT: PASS — BOB-152 exclude is load-bearing (submodules/ excluded, tests/ still caught) for all 3 affected gates.
+EXIT=0</code></pre>
+<p><code>git diff --stat scripts/verify-all-constitution-rules.sh</code>
+after all mutation/restore cycles above: <strong>empty</strong>
+(confirmed byte-identical to HEAD; no residual mutation left in the
+working tree, per §11.4.84 quiescence).</p>
+<h2 id="honest-observation-out-of-scope-not-fixed-here">7. Honest
+observation (out of scope, NOT fixed here)</h2>
+<p>Running <code>covenant_propagation_suite.sh gates --root .</code>
+against boba’s real, fully-populated tree (submodules initialised)
+surfaces a large number of <code>BLIND</code> verdicts unrelated to
+<code>.worktrees</code> — e.g.
+<code>CM-COVENANT-114-208-PROPAGATION: BLIND — carrier-discovery control needle FAILED: 3 of 3 root governance files present on disk were NOT returned by discovery</code>.
+<strong>I confirmed this is pre-existing and NOT caused by this
+fix</strong>: it reproduces identically with
+<code>config/covenant_propagation_exclusions.tsv</code> present or
+temporarily moved aside. It also does not affect the item’s acceptance
+criterion — the hermetic fixture proof (§3/§4) isolates the
+<code>.worktrees</code> behaviour from this unrelated, larger-scale
+instability, so the mutation proof is not confounded by it. This looks
+like a distinct, tracked- worthy defect (possibly related to the
+engine’s own documented SIGPIPE-class carrier-discovery footgun at
+scale, or a resource/timing effect under a large real fleet) but is
+squarely out of BOB-143’s scope and was not touched, investigated
+further, or fixed here.</p>
+<h2 id="pre_build_verification.sh-wiring-left-for-the-conductor">8.
+<code>pre_build_verification.sh</code> wiring — left for the
+conductor</h2>
+<p>Not needed. <code>pre_build_verification.sh</code>’s own
+<code>CM-COVENANT-PROPAGATION-SUITE</code> invocation (its “Invariant
+32”, ADVISORY per its own comment) passes
+<code>--root "${PROJECT_ROOT}/constitution"</code> — the constitution
+<strong>submodule’s</strong> root — not boba’s repository root, so it
+was never the source of the <code>.worktrees</code>-sourced findings
+BOB-143 measured and requires no change for this fix. The actual
+production path that reads
+<code>config/covenant_propagation_exclusions.tsv</code> by default
+(<code>scripts/verify-all-constitution-rules.sh</code>, boba’s own
+§11.4.32 sweep) needed <strong>no wiring change</strong> either — both
+the engine and the suite already default to
+<code>${root}/config/covenant_propagation_exclusions.tsv</code>, and
+that sweep already invokes the suite with <code>--root "$root"</code> =
+boba’s repository root, so simply creating the file was sufficient.</p>
+<h2 id="assumptions-the-item-text-did-not-fully-specify">9. Assumptions
+the item text did not fully specify</h2>
+<ol type="1">
+<li><strong>Closed exclusion class.</strong> BOB-143’s text does not
+name which of the engine’s four closed classes
+(<code>vendored-third-party | generated-code | non-shipping-fixtures | filename-collision</code>)
+applies. I chose <code>filename-collision</code>: each orphaned worktree
+is a full historical clone of this repository, so its
+<code>CLAUDE.md</code>/<code>AGENTS.md</code>/etc. share the exact
+filename the carrier-discovery globs for without being this project’s
+real, current, owned carriers — the discovery mechanism collides on
+filename, not on any legitimate governance relationship. This reading is
+consistent with the class’s own doc comment (“the filename-collision
+extension”) and with the real-world precedent file I read for format
+reference
+(<code>/home/milosvasic/Projects/vasic/config/ covenant_propagation_exclusions.tsv</code>,
+outside this repository).</li>
+<li><strong>Item still shows “Queued”.</strong> Per scope, I did not
+touch <code>docs/workable_items.db</code> or run the
+<code>workable-items</code> CLI, so BOB-143’s status in the tracker is
+unchanged by this session; closing/reclassifying it is left to the
+conductor.</li>
+<li>The item’s second, already-addressed measurement
+(<code>cm_test_mock_pid_ explicit_int</code>, §1a above) was fixed by an
+EARLIER, differently-titled commit (<code>c0ea01c</code>) that never
+updated BOB-143’s own tracker text to say so. I treated this as a
+pre-existing partial fix to be regression-guarded, not re-done.</li>
+</ol>
+</body>
+</html>

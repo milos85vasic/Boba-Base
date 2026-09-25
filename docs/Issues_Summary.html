@@ -190,7 +190,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>In progress</td>
-<td>4</td>
+<td>5</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -200,7 +200,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>7</td>
+<td>5</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -215,7 +215,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Task</td>
 <td>Queued</td>
-<td>22</td>
+<td>21</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -225,7 +225,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>49</strong></td>
+<td><strong>47</strong></td>
 </tr>
 </tbody>
 </table>
@@ -546,14 +546,6 @@ incident #3)</td>
 <td>Low</td>
 <td>Test isolation: test_list_hooks_after_create fails in bulk suite
 (Permission denied /config)</td>
-</tr>
-<tr>
-<td>BOB-143</td>
-<td>Bug</td>
-<td>Queued</td>
-<td>Medium</td>
-<td>Orphaned .worktrees/ dirs (46M, unresolvable gitdir) pollute gate
-scan scope and manufacture false BOB-126-class findings</td>
 </tr>
 <tr>
 <td>BOB-151</td>
@@ -1249,7 +1241,7 @@ retained residual from the BOB-206 verification stream.</td>
 <tr>
 <td>BOB-219</td>
 <td>Bug</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>major</td>
 <td>WHAT, conductor-verified: docs/guides/tracker-credentials.md is
 TRACKED. Its §11.4.65-mandated export twins
@@ -1289,7 +1281,67 @@ omitted .pdf, which hid this finding entirely; the agent re-ran with no
 extension filter over all 420 non-artifact paths and recorded the blind
 spot rather than shipping the first number. Worth keeping: an extension
 allowlist is itself a false-null generator, which is the same shape as
-the defect being investigated.</td>
+the defect being investigated. === ROUND-2 PARTIAL CLOSURE, MEASURED
+2026-09-25 — criterion 1 already done, criterion 2 unsatisfiable,
+criteria 3+4 done ONLY for the .md-export-twin class === Independently
+re-verified via <code>git check-ignore -v</code> on all three named
+artifacts: CRITERION 1 (tracker-credentials.{html,pdf} twins
+committable) — ALREADY DONE, pre-dating this round: commit 9f6f517
+already added <code>!docs/guides/tracker-credentials.{html,pdf}</code>
+rescue lines (.gitignore:49-54); both are tracked and clean. Nothing to
+do. CRITERION 2 (BOB-124 loginctl_user_state.txt trackable) — CLOSED AS
+UNSATISFIABLE. The file does not exist on disk, has ZERO trace in
+<code>git log --all --diff-filter=A -- "*loginctl_user_state*"</code>,
+and is absent from the entire working tree. Its .log siblings in the
+same directory ARE tracked (rescued by the existing
+<code>!docs/qa/**/*.log</code> negation), confirming the file was lost
+purely by having a .txt extension, exactly as the original report
+claimed — but there is no recovery path and no legitimate way to “make
+it trackable” without fabricating QA evidence, which is itself an
+anti-bluff violation. This criterion is permanently closed, not
+deferred. CRITERION 3 (general mechanism preventing recurrence) —
+PARTIALLY closed. A new guard (see criterion 4) closes the class
+criterion 1 exemplified: a TRACKED .md file whose §11.4.65 export twin
+is gitignore-swallowed. It does NOT close the class criterion 2
+exemplified: a NON-.md QA-evidence file (any extension) swallowed by an
+unrelated gitignore pattern. Extending the existing
+<code>!docs/qa/**/*.log</code> negation to also cover <code>.txt</code>
+was concretely measured this round and PROVEN UNSAFE for this project:
+<code>.gitignore</code> documents <code>cookies_*.txt</code> as this
+repo’s own secret-file naming convention, and a scratch-tree experiment
+confirmed a <code>.txt</code>-wide rescue would also un-ignore
+<code>cookies_rutracker.txt</code> / <code>RUTRACKER_session.txt</code>
+/ <code>my_password.txt</code> — real credential-shaped files already
+relying on that exact pattern staying broad. This candidate fix is now
+closed off with evidence rather than left for a future session to
+re-attempt and re-measure. THE REMAINING GAP: a general mechanism for “a
+QA-evidence file legitimately meant to be tracked gets silently
+swallowed by a broad secret-shaped-filename gitignore pattern,
+distinguished from an actual secret file” remains genuinely open — it
+needs a smarter signal than file extension (e.g. content-sniffing, or an
+explicit per-file allowlist-on-creation discipline) that this round did
+not attempt to design, since inventing one hastily risked exactly the
+credential-leak class the constraint exists to prevent. CRITERION 4 (a
+check exists) — DONE for the .md-export-twin class. New gate
+<code>scripts/pre_build/check_md_export_twins_committable.sh</code> +
+self-validated test
+<code>tests/pre_build/test_check_md_export_twins_committable.sh</code>
+(7 arms: RED, GREEN, 2 golden-FALSE, fail-closed x3, real-repo run, §1.1
+paired mutation — all independently re-run and confirmed passing by the
+conductor). Wired into scripts/pre_build_verification.sh as invariant
+58/58 (CM-MD-EXPORT-TWINS-COMMITTABLE), mirroring the sibling
+CM-GITIGNORE-SWALLOW-GUARD (BOB-212) pattern exactly — BLOCKING, not
+advisory, since it is a pure tree-scan needing no live stack. REMAINING
+WORK TO FULLY CLOSE THIS ITEM: design and implement the criterion-3
+residual — a mechanism distinguishing “a legitimate QA-evidence file
+lost to a secret-shaped gitignore pattern” from “an actual secret
+correctly caught by that pattern” — without narrowing the existing
+credential-protecting globs. Until then this item stays Queued; criteria
+1/2/4 are genuinely done, criterion 3 is genuinely partial. EVIDENCE:
+docs/qa/BOB-219/closure_evidence_20260925.md (full command transcripts:
+before/after git check-ignore, the .txt-wide-rescue safety experiment,
+7-arm test output, standalone gate invocation against the real
+repo).</td>
 </tr>
 <tr>
 <td>BOB-223</td>
@@ -1330,30 +1382,6 @@ unenforced mandate whose observance triggers a different gate’s failure.
 Either enforce both ends or neither. DISCOVERY CHANNEL (§11.4.238):
 found by the T042 readiness preflight while explaining why a new file
 broke invariant 16. Not by the automated QA regime.</td>
-</tr>
-<tr>
-<td>BOB-226</td>
-<td>Task</td>
-<td>Queued</td>
-<td>major</td>
-<td>WHAT: ownership_repair walks a declared root and repairs items whose
-uid is not the operator. The unit suite seeds a foreign uid only onto
-FILES and SYMLINKS; interior DIRECTORIES stay operator-owned (case 22
-seeds only a foreign declared ROOT, on the failure path). Production
-first-start repairs exactly the untested shape. MANIFEST:
-tests/unit/test_ownership_repair.sh seed_tree/seed_wrong;
-scripts/ownership_repair.sh walk at :994. REPRO: seed a tree whose
-interior directories carry uid 100000 via podman unshare, run the
-repair, observe no automated assertion covers the outcome. WHY UNTESTED:
-the unprivileged harness cannot create symlinks inside a directory it no
-longer owns, which cases 8/9/18 require. The DECLARED GAPS note
-cross-references tests/ownership/test_container_writes_owned_files.py,
-but that covers the CREATION side (FR-002), not the repair-side walk.
-ACCEPTANCE: an integration-layer test (where the unprivileged-harness
-constraint does not bind) that seeds foreign-owned interior directories,
-runs the repair, and asserts post-state ownership plus mode
-preservation. Surfaced by the BOB-207 independent review
-2026-08-27.</td>
 </tr>
 <tr>
 <td>BOB-231</td>

@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 112
-**Last modified:** 2026-09-25T08:49:56Z
+**Revision:** 114
+**Last modified:** 2026-09-25T09:25:54Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -289,71 +289,6 @@ Phase 1 design-only proposal: the BOB-116/task-77 resource-pressure preventive s
 **Severity:** Low
 
 Task #109 subagent found: tests/unit/test_merge_api_route_contracts.py::TestHooksEndpoint::test_list_hooks_after_create fails when run in bulk suite order with 'ERROR api.hooks:hooks.py:102 Failed to save hooks: [Errno 13] Permission denied: /config'. Passes in isolation (2.02s clean). Root cause: full-suite ordering pollution — some earlier test leaves state that makes hooks try to write to /config (which the test env doesn't own). Pre-existing, unrelated to BOB-126/BOB-129 chain. Fix strategy: identify the polluting test, add teardown or use a proper tempdir fixture for hooks storage in the offending test.
-
-## BOB-143 — Orphaned .worktrees/ dirs (46M, unresolvable gitdir) pollute gate scan scope and manufacture false BOB-126-class findings
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** Medium
-**Created-By:** Claude
-
-**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-08-20T15:08:18Z
-**Reported-By:** Claude
-
-**What (the report, verbatim):**
-`.worktrees/ci-split-workflows/` (13M) and `.worktrees/completion-initiative-phase-0/`
-(33M) are ORPHANED: `git worktree list` reports only the main checkout, so neither is
-a registered worktree. Each contains a `.git` POINTER FILE whose target gitdir no
-longer exists, so git cannot resolve HEAD, branch, or status inside them -- every
-query returns empty.
-
-They are gitignored (.gitignore:122), so nothing tracks them and nothing will ever
-notice them drifting.
-
-WHY THIS IS NOT COSMETIC: they pollute the scan scope of whole-tree gates and
-manufacture false findings. Measured 2026-08-20 by the §11.4.32 sweep:
-
-  - `cm_test_mock_pid_explicit_int` reported 2 violations at
-    tests/unit/merge_service/test_deadline_tunable.py:44 -- BOTH inside these
-    orphaned trees. The MAIN tree's copy of that file is already hardened (it sets
-    `mock.pid = 12345` and patches os.killpg/os.getpgid) and passes the gate
-    cleanly. The finding read as a live §11.4.263 / BOB-126-class defect and was
-    not one.
-  - 6 of the 57 "missing anchor carrier" files flagged by the propagation gates
-    were likewise `.worktrees/**`.
-
-That is the §11.4.201(1) false-positive shape sourced from scan scope, and it costs
-real investigation time: a reader triaging "2 live BOB-126 violations" reasonably
-treats it as a host-safety emergency.
-
-CLARIFICATION (established during triage, so the record is not alarming):
-these trees are NOT a kill(-1) vector. Their `download-proxy/src/merge_service/
-search.py` contains ZERO `os.killpg` calls -- they predate that cleanup code
-entirely -- so there is no unguarded signal call to reach. Additionally
-`pyproject.toml` sets `testpaths = ["tests"]`, so a plain `pytest` run does not
-collect from `.worktrees/`. No host-safety risk was found. The defect is
-scan-scope noise plus 46M of unreferenced disk.
-
-WHY REMOVAL IS NOT DONE AUTONOMOUSLY (§11.4.122 / §11.4.124 / §11.4.101): because
-git cannot resolve their HEAD, it is NOT possible to prove their contents are
-merged into main. Deleting unprovable-provenance work is exactly the irreversible,
-operator-owned decision §11.4.122 reserves. Two options for the operator:
-  (a) confirm removal (they are stale dev scratch dirs) -- reversible only from
-      backup, so a §9.2 pre-op backup should precede it; or
-  (b) keep them and add `.worktrees/` to the gate scan-scope exclusion list as a
-      §11.4.224(E)-fenced, checked-in, justified entry.
-
-Either way the exclusion list is the cheaper immediate mitigation and does not
-destroy anything.
-
-**Affected scope / file-scope manifest:**
-.worktrees/ci-split-workflows/, .worktrees/completion-initiative-phase-0/, gate scan-scope config
-
-**Reproduction / context:**
-git worktree list shows only the main checkout; git -C .worktrees/<dir> log -1 returns empty (gitdir target missing). Run the §11.4.32 sweep and observe cm_test_mock_pid_explicit_int report 2 violations, both under .worktrees/, while the main-tree file passes the same gate.
-
-**Acceptance criteria:**
-Whole-tree gates no longer report findings sourced from orphaned worktrees: either the dirs are removed after operator confirmation with a §9.2 pre-op backup, or .worktrees/ is added to a checked-in §11.4.224(E)-fenced exclusion list with justification. Verify by re-running the sweep and confirming zero .worktrees-sourced findings.
 
 ## BOB-151 — CM-SCRIPT-DOCS-SYNC is a named gate with no implementation, and 24 of 36 scripts have no companion doc
 
@@ -666,7 +601,7 @@ DISCOVERY CHANNEL (§11.4.238): retained residual from the BOB-206 verification 
 
 ## BOB-219 — LIVE §11.4.65 sync violation: docs/guides/tracker-credentials.{html,pdf} exist on disk but are untracked and ignored, while their .md source IS tracked
 
-**Status:** Queued
+**Status:** In progress
 **Type:** Bug
 **Severity:** major
 
@@ -681,6 +616,21 @@ ANOTHER INSTANCE OF THE SAME MECHANISM, filed here rather than separately becaus
 ACCEPTANCE: (1) both twins become trackable and are committed alongside their .md; (2) the BOB-124 .txt evidence likewise; (3) whichever BOB-212 fix direction is chosen, it MUST cover these — a fix that closes the future-swallow while leaving these three artifacts permanently uncommittable has addressed the mechanism and not the damage; (4) a check that a tracked .md in §11.4.65 scope has COMMITTABLE twins, so this class cannot recur silently.
 
 DISCOVERY CHANNEL (§11.4.238): found by the BOB-212 blast-radius sweep — and only on its SECOND pass. The first pass filtered by a source-extension set that omitted .pdf, which hid this finding entirely; the agent re-ran with no extension filter over all 420 non-artifact paths and recorded the blind spot rather than shipping the first number. Worth keeping: an extension allowlist is itself a false-null generator, which is the same shape as the defect being investigated.
+
+=== ROUND-2 PARTIAL CLOSURE, MEASURED 2026-09-25 — criterion 1 already done, criterion 2 unsatisfiable, criteria 3+4 done ONLY for the .md-export-twin class ===
+
+Independently re-verified via `git check-ignore -v` on all three named artifacts:
+CRITERION 1 (tracker-credentials.{html,pdf} twins committable) — ALREADY DONE, pre-dating this round: commit 9f6f517 already added `!docs/guides/tracker-credentials.{html,pdf}` rescue lines (.gitignore:49-54); both are tracked and clean. Nothing to do.
+
+CRITERION 2 (BOB-124 loginctl_user_state.txt trackable) — CLOSED AS UNSATISFIABLE. The file does not exist on disk, has ZERO trace in `git log --all --diff-filter=A -- "*loginctl_user_state*"`, and is absent from the entire working tree. Its .log siblings in the same directory ARE tracked (rescued by the existing `!docs/qa/**/*.log` negation), confirming the file was lost purely by having a .txt extension, exactly as the original report claimed — but there is no recovery path and no legitimate way to "make it trackable" without fabricating QA evidence, which is itself an anti-bluff violation. This criterion is permanently closed, not deferred.
+
+CRITERION 3 (general mechanism preventing recurrence) — PARTIALLY closed. A new guard (see criterion 4) closes the class criterion 1 exemplified: a TRACKED .md file whose §11.4.65 export twin is gitignore-swallowed. It does NOT close the class criterion 2 exemplified: a NON-.md QA-evidence file (any extension) swallowed by an unrelated gitignore pattern. Extending the existing `!docs/qa/**/*.log` negation to also cover `.txt` was concretely measured this round and PROVEN UNSAFE for this project: `.gitignore` documents `cookies_*.txt` as this repo's own secret-file naming convention, and a scratch-tree experiment confirmed a `.txt`-wide rescue would also un-ignore `cookies_rutracker.txt` / `RUTRACKER_session.txt` / `my_password.txt` — real credential-shaped files already relying on that exact pattern staying broad. This candidate fix is now closed off with evidence rather than left for a future session to re-attempt and re-measure. THE REMAINING GAP: a general mechanism for "a QA-evidence file legitimately meant to be tracked gets silently swallowed by a broad secret-shaped-filename gitignore pattern, distinguished from an actual secret file" remains genuinely open — it needs a smarter signal than file extension (e.g. content-sniffing, or an explicit per-file allowlist-on-creation discipline) that this round did not attempt to design, since inventing one hastily risked exactly the credential-leak class the constraint exists to prevent.
+
+CRITERION 4 (a check exists) — DONE for the .md-export-twin class. New gate `scripts/pre_build/check_md_export_twins_committable.sh` + self-validated test `tests/pre_build/test_check_md_export_twins_committable.sh` (7 arms: RED, GREEN, 2 golden-FALSE, fail-closed x3, real-repo run, §1.1 paired mutation — all independently re-run and confirmed passing by the conductor). Wired into scripts/pre_build_verification.sh as invariant 58/58 (CM-MD-EXPORT-TWINS-COMMITTABLE), mirroring the sibling CM-GITIGNORE-SWALLOW-GUARD (BOB-212) pattern exactly — BLOCKING, not advisory, since it is a pure tree-scan needing no live stack.
+
+REMAINING WORK TO FULLY CLOSE THIS ITEM: design and implement the criterion-3 residual — a mechanism distinguishing "a legitimate QA-evidence file lost to a secret-shaped gitignore pattern" from "an actual secret correctly caught by that pattern" — without narrowing the existing credential-protecting globs. Until then this item stays Queued; criteria 1/2/4 are genuinely done, criterion 3 is genuinely partial.
+
+EVIDENCE: docs/qa/BOB-219/closure_evidence_20260925.md (full command transcripts: before/after git check-ignore, the .txt-wide-rescue safety experiment, 7-arm test output, standalone gate invocation against the real repo).
 
 ## BOB-223 — §11.4.18 script-documentation and §11.4.44 revision headers are ungated — and the perverse consequence is that WRITING the mandated companion doc is what breaks the build
 
@@ -700,16 +650,6 @@ ACCEPTANCE: (1) either CM-SCRIPT-DOCS-SYNC is implemented, or it is registered a
 HONEST NOTE ON SCOPE: this item does not argue §11.4.18 should be enforced immediately — that is an operator call about gate debt priority (§11.4.66). It argues the CURRENT state is incoherent: an unenforced mandate whose observance triggers a different gate's failure. Either enforce both ends or neither.
 
 DISCOVERY CHANNEL (§11.4.238): found by the T042 readiness preflight while explaining why a new file broke invariant 16. Not by the automated QA regime.
-
-## BOB-226 — Repair-side walk over foreign-owned INTERIOR directories is untested by any automated path
-
-**Status:** Queued
-**Type:** Task
-**Severity:** major
-**Created-By:** Claude
-**Assigned-To:** Claude
-
-WHAT: ownership_repair walks a declared root and repairs items whose uid is not the operator. The unit suite seeds a foreign uid only onto FILES and SYMLINKS; interior DIRECTORIES stay operator-owned (case 22 seeds only a foreign declared ROOT, on the failure path). Production first-start repairs exactly the untested shape. MANIFEST: tests/unit/test_ownership_repair.sh seed_tree/seed_wrong; scripts/ownership_repair.sh walk at :994. REPRO: seed a tree whose interior directories carry uid 100000 via podman unshare, run the repair, observe no automated assertion covers the outcome. WHY UNTESTED: the unprivileged harness cannot create symlinks inside a directory it no longer owns, which cases 8/9/18 require. The DECLARED GAPS note cross-references tests/ownership/test_container_writes_owned_files.py, but that covers the CREATION side (FR-002), not the repair-side walk. ACCEPTANCE: an integration-layer test (where the unprivileged-harness constraint does not bind) that seeds foreign-owned interior directories, runs the repair, and asserts post-state ownership plus mode preservation. Surfaced by the BOB-207 independent review 2026-08-27.
 
 ## BOB-231 — A gate asserting every executable a pre-build invariant invokes is itself tracked (BOB-227 criterion 2 follow-up)
 

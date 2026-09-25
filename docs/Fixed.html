@@ -175,8 +175,8 @@
 </head>
 <body>
 <h1 id="fixed-closed-workable-items">Fixed — Closed Workable Items</h1>
-<p><strong>Revision:</strong> 56 <strong>Last modified:</strong>
-2026-09-25T08:31:18Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 57 <strong>Last modified:</strong>
+2026-09-25T09:13:10Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Closed items
 only. Open items live in <a
 href="Issues.md"><code>Issues.md</code></a>.</p>
@@ -6498,5 +6498,41 @@ the status-code trigger.</p>
 <p>ACCEPTANCE: both gaps closed with their own REDs, or explicitly
 closed per 11.4.112 with evidence. Immediate sub-task: append a
 stated-gaps paragraph to docs/qa/BOB-172/fix_evidence_20260822.log.</p>
+<h2
+id="bob-226-repair-side-walk-over-foreign-owned-interior-directories-is-untested-by-any-automated-path">BOB-226
+— Repair-side walk over foreign-owned INTERIOR directories is untested
+by any automated path</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Task <strong>Evidence:</strong>
+docs/qa/BOB-226/closure_evidence_20260925.md <strong>Severity:</strong>
+major <strong>Created-By:</strong> Claude <strong>Assigned-To:</strong>
+Claude</p>
+<p>WHAT: ownership_repair walks a declared root and repairs items whose
+uid is not the operator. The unit suite seeds a foreign uid only onto
+FILES and SYMLINKS; interior DIRECTORIES stay operator-owned (case 22
+seeds only a foreign declared ROOT, on the failure path). Production
+first-start repairs exactly the untested shape. MANIFEST:
+tests/unit/test_ownership_repair.sh seed_tree/seed_wrong;
+scripts/ownership_repair.sh walk at :994. REPRO: seed a tree whose
+interior directories carry uid 100000 via podman unshare, run the
+repair, observe no automated assertion covers the outcome. WHY UNTESTED:
+the unprivileged harness cannot create symlinks inside a directory it no
+longer owns, which cases 8/9/18 require. The DECLARED GAPS note
+cross-references tests/ownership/test_container_writes_owned_files.py,
+but that covers the CREATION side (FR-002), not the repair-side walk.
+ACCEPTANCE: an integration-layer test (where the unprivileged-harness
+constraint does not bind) that seeds foreign-owned interior directories,
+runs the repair, and asserts post-state ownership plus mode
+preservation. Surfaced by the BOB-207 independent review 2026-08-27.</p>
+<h2
+id="bob-143-orphaned-.worktrees-dirs-46m-unresolvable-gitdir-pollute-gate-scan-scope-and-manufacture-false-bob-126-class-findings">BOB-143
+— Orphaned .worktrees/ dirs (46M, unresolvable gitdir) pollute gate scan
+scope and manufacture false BOB-126-class findings</h2>
+<p><strong>Status:</strong> Fixed (→ Fixed.md) <strong>Type:</strong>
+Bug <strong>Evidence:</strong>
+docs/qa/BOB-143/closure_evidence_20260925.md <strong>Severity:</strong>
+Medium <strong>Created-By:</strong> Claude</p>
+<p>Orphaned .worktrees/ dirs (46M, unresolvable gitdir) pollute gate
+scan scope and manufacture false BOB-126-class findings</p>
 </body>
 </html>

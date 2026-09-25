@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260925</h1>
+</header>
+<h1 id="bob-226-closure-evidence-2026-09-25">BOB-226 — closure evidence
+(2026-09-25)</h1>
+<h2 id="item">Item</h2>
+<p><code>scripts/ownership_repair.sh</code>’s repair walk fixes
+ownership on files/directories whose uid is not the operator. The
+existing unit suite (<code>tests/unit/test_ownership_repair.sh</code>)
+seeds a foreign uid only onto FILES and SYMLINKS — never onto INTERIOR
+DIRECTORIES (the one case that does seed a foreign-owned root, Case 22,
+is on the injected-failure path, not the repair-walk success path).
+Production’s real first-start repair exercises exactly the untested
+shape: interior directories with a foreign uid.</p>
+<p><strong>Acceptance criterion:</strong> an integration-layer test that
+seeds foreign-owned INTERIOR directories via <code>podman unshare</code>
+(or the mechanism
+<code>tests/ownership/test_container_writes_owned_files.py</code>
+already establishes), runs the actual repair
+(<code>scripts/ownership_repair.sh</code>), and asserts the POST-repair
+state: ownership corrected on those interior directories, AND mode
+preserved.</p>
+<h2
+id="confirmation-the-podman-unshare-mechanism-actually-works-here">1.
+Confirmation the <code>podman unshare</code> mechanism actually works
+here</h2>
+<pre><code>$ which podman docker
+/usr/bin/podman
+$ id -u; id -g
+1000
+1000
+$ podman info --format &#39;{{.Host.Security.Rootless}}&#39;
+true
+$ grep &quot;^$(whoami):&quot; /etc/subuid /etc/subgid
+/etc/subgid:milosvasic:100000:65536
+/etc/subuid:milosvasic:100000:65536</code></pre>
+<p>Live probe (before writing the test), on a real directory tree with
+content created BEFORE the chown, matching the fixture shape the test
+uses:</p>
+<pre><code>BEFORE:
+.../bob226_probe uid=1000 gid=1000 mode=775
+.../bob226_probe/outer uid=1000 gid=1000 mode=775
+.../bob226_probe/outer/inner uid=1000 gid=1000 mode=775
+.../bob226_probe/outer/inner/leaf.txt uid=1000 gid=1000 mode=664
+---running podman unshare chown on interior dir &#39;outer&#39; (non-recursive, dir itself only)---
+AFTER (host view):
+.../bob226_probe uid=1000 gid=1000 mode=775
+.../bob226_probe/outer uid=100000 gid=100000 mode=775
+.../bob226_probe/outer/inner uid=1000 gid=1000 mode=775
+.../bob226_probe/outer/inner/leaf.txt uid=1000 gid=1000 mode=664
+---can operator write into outer now?---
+touch: cannot touch &#39;.../bob226_probe/outer/should_fail&#39;: Permission denied
+write denied (expected, matches production defect shape)
+---cleanup via unshare---
+done</code></pre>
+<p>This confirms: (a)
+<code>podman unshare chown 1:1 -- &lt;dir&gt;</code> produces a REAL,
+not-operator-owned INTERIOR directory (uid 100000, the first subordinate
+uid — exactly the production defect’s identity class), (b) content
+created inside it <em>before</em> the chown survives untouched (so the
+fixture never needs write access to a directory it no longer owns — the
+exact constraint the BOB-226 item names for why cases 8/9/18 in the unit
+suite could not be extended this way), and (c) the operator genuinely
+loses write access afterward, reproducing the real defect shape rather
+than a proxy for it.</p>
+<p>Cleanup mechanism (<code>podman unshare rm -rf &lt;root&gt;</code>)
+confirmed to remove the WHOLE tree, including the outer, operator-owned
+root, in one call:</p>
+<pre><code>$ podman unshare rm -rf &quot;$WORK&quot;
+rc=0
+REMOVED ENTIRELY: $WORK</code></pre>
+<h2 id="files-created-modified">2. Files created / modified</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Path</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tests/ownership/test_repair_interior_directories.py</code></td>
+<td><strong>NEW.</strong> Integration-layer pytest test.</td>
+</tr>
+<tr>
+<td><code>docs/qa/BOB-226/closure_evidence_20260925.md</code></td>
+<td><strong>NEW.</strong> This file.</td>
+</tr>
+</tbody>
+</table>
+<p><code>scripts/ownership_repair.sh</code> was <strong>not
+modified</strong> — see §4.</p>
+<h2 id="red-then-green">3. RED-then-GREEN</h2>
+<h3 id="a.-green-the-shipped-unmodified-script">3a. GREEN — the shipped,
+unmodified script</h3>
+<pre><code>$ .venv/bin/python -m pytest tests/ownership/test_repair_interior_directories.py -v \
+    --import-mode=importlib -p no:cacheprovider
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0
+collecting ... collected 1 item
+
+tests/ownership/test_repair_interior_directories.py::test_repair_reaches_interior_directories_and_preserves_their_mode PASSED [100%]
+
+============================== 1 passed in 0.73s ===============================</code></pre>
+<p>Re-run to confirm determinism (§11.4.50): also 1 passed, no flake
+observed across two independent runs (this section’s run + the run
+captured during authoring, both green).</p>
+<h3
+id="b.-red-proving-the-oracle-actually-detects-the-untested-shape">3b.
+RED — proving the oracle actually detects the untested shape</h3>
+<p>Per §11.4.115(F)/(G), a RED must be traceable to the real defect
+shape, not a synthetic one. Rather than modifying the shipped
+<code>scripts/ownership_repair.sh</code> (out of scope unless a genuine
+bug is found — see §4), the RED was produced against a
+<strong>byte-for-byte copy</strong> of the real script with ONE line
+mutated: the walk’s item-selection predicate gained
+<code>! -type d</code>, which excludes every directory from repair while
+leaving file/symlink repair untouched — i.e. it mechanically disables
+exactly the capability this item is about, and nothing else.</p>
+<pre><code>$ grep -n &#39;find_args+=(! -uid&#39; scripts/ownership_repair.sh
+1099:    find_args+=(! -uid &quot;${OP_UID}&quot; -printf &#39;%U\t%G\t%m\t%p\0&#39;)
+
+$ diff -u scripts/ownership_repair.sh /tmp/.../bob226_red/scripts/ownership_repair.sh
+--- scripts/ownership_repair.sh
++++ /tmp/.../bob226_red/scripts/ownership_repair.sh
+@@ -1096,7 +1096,7 @@
+     # owns is left alone, so a deliberate shared-group or setgid arrangement is
+     # no longer silently dismantled by a repair that was never asked to.
+     # -------------------------------------------------------------------------
+-    find_args+=(! -uid &quot;${OP_UID}&quot; -printf &#39;%U\t%G\t%m\t%p\0&#39;)
++    find_args+=(! -type d ! -uid &quot;${OP_UID}&quot; -printf &#39;%U\t%G\t%m\t%p\0&#39;)</code></pre>
+<p>Test run against that patched copy (via <code>SCRIPT</code> pointed
+at the mutated file — the test’s own fixture-building, seeding, scope
+file and invocation are otherwise byte-identical to the GREEN run):</p>
+<pre><code>$ .venv/bin/python -m pytest /tmp/.../bob226_red/test_repair_interior_directories_RED.py -v \
+    --import-mode=importlib -p no:cacheprovider
+...
+&gt;           assert wrong_dir_uid_after == operator_uid, (
+                f&quot;interior directory {wrong_dir} is still owned by uid &quot;
+                f&quot;{wrong_dir_uid_after} after the repair reported success — the &quot;
+                f&quot;repair-side walk does not reach foreign-owned INTERIOR &quot;
+                f&quot;DIRECTORIES, only the files/symlinks the unit suite covers &quot;
+                f&quot;(BOB-226)&quot;
+            )
+E           AssertionError: interior directory /tmp/ownership-repair-interior-9x6gg0np/declared_scope/wrong_dir is still owned by uid 100000 after the repair reported success — the repair-side walk does not reach foreign-owned INTERIOR DIRECTORIES, only the files/symlinks the unit suite covers (BOB-226)
+E           assert 100000 == 1000
+
+FAILED .../test_repair_interior_directories_RED.py::test_repair_reaches_interior_directories_and_preserves_their_mode
+========================= 1 failed, 1 warning in 0.70s =========================</code></pre>
+<p>The RED is for the <strong>right, narrow reason</strong>: the mutated
+repair still exits <code>0</code> (“reported success”) because
+directories are simply never discovered as needing repair — it is not a
+crash, not a script-bug fail (§11.4.1), and it fails on the FIRST
+directory-uid assertion, exactly the load-bearing assertion this item
+exists to add. The seeding, control-needle, and pre-repair
+<code>PermissionError</code> assertions all still pass identically in
+both runs, proving the failure is isolated to the repair’s
+directory-handling and nothing else in the fixture.</p>
+<p>Restoring the unmutated script (§3a) turns the identical test GREEN
+again.</p>
+<h2 id="was-there-a-genuine-bug-in-ownership_repair.sh">4. Was there a
+genuine bug in <code>ownership_repair.sh</code>?</h2>
+<p><strong>No — the script was already correct; only the test coverage
+was missing.</strong></p>
+<p>The walk’s item-selection predicate
+(<code>scripts/ownership_repair.sh:1099</code>,
+<code>find_args+=(! -uid "${OP_UID}" -printf ...)</code>) carries
+<strong>no <code>-type</code> filter at all</strong>, so by the script’s
+own source it already selects files, directories, AND symlinks uniformly
+— nothing in the shipped code special-cases directories out of repair.
+Running the real, unmodified script against the new fixture (§3a)
+confirms this empirically: both the top-level and the nested interior
+directory are repaired to the operator’s uid, their mode is
+byte-identical before and after, and the files inside them are repaired
+too, all through the real invocation path
+(<code>bash scripts/ownership_repair.sh --scope ... --state-dir ...</code>),
+with the <code>unshare_chown_paths()</code> fallback exercised (a plain
+<code>chown</code> on a uid-100000 directory fails EPERM as an
+unprivileged operator; the script’s own fallback then re-enters the
+namespace and succeeds — this is the “production repair path” the unit
+suite’s own header identifies as previously exercised only by files,
+never by directories).</p>
+<p>One genuine, unrelated Unix-permissions finding surfaced while
+building the fixture and was corrected in the TEST (not the script): an
+interior directory’s mode denying “other” <strong>read</strong>
+(e.g. <code>0o751</code>) makes <code>find</code> itself report
+<code>Permission denied</code> when trying to enumerate that directory’s
+contents — <code>find</code> runs as the unprivileged operator for
+<em>discovery</em>; only the individual <code>chown</code> falls back to
+the namespace on failure. This is a property of how Unix directory
+permissions interact with an unprivileged <code>find</code>, not a
+defect in <code>ownership_repair.sh</code>’s logic, and it does not
+match the realistic production shape (containers create directories
+under an ordinary umask, typically <code>0755</code>/<code>0775</code>,
+which keeps “other” readable). The fixture now uses <code>0o745</code> /
+<code>0o715</code> (both retain <code>r-x</code> for “other” so
+<code>find</code> can traverse, both distinctive so a silent mode-reset
+would still be caught, and both still deny write so the pre-repair
+<code>PermissionError</code> assertion continues to reproduce the real
+defect).</p>
+<h2 id="full-existing-unit-suite-confirms-no-regression">5. Full
+existing unit suite — confirms no regression</h2>
+<p>Although <code>scripts/ownership_repair.sh</code> was not touched,
+the full existing suite was run anyway for confidence, since it shares
+<code>scripts/lib/ownership.sh</code> with the new test’s invocation
+path:</p>
+<pre><code>$ bash tests/unit/test_ownership_repair.sh
+...
+RESULT: 153 passed, 0 failed, 0 skipped</code></pre>
+<h2 id="assumptions-the-item-text-did-not-fully-specify">6. Assumptions
+the item text did not fully specify</h2>
+<ul>
+<li><strong>Which directory (§3b’s mutation target).</strong> The item
+did not name the exact code path that would need to change to reach
+interior directories; the script’s own source (no <code>-type</code>
+filter) made clear none was needed, so the RED demonstration mutation
+targets the one line that <em>would</em> need to exist if the walk were
+narrower than it actually is.</li>
+<li><strong>Directory permission mode for the fixture.</strong> The item
+asked for “mode preservation” without specifying a mode. The realistic
+production shape (container-created directories under an ordinary umask,
+readable by “other”) was chosen over an arbitrary restrictive mode, both
+because it matches production and because an overly restrictive mode
+(first attempt: <code>0o751</code>) broke <code>find</code>’s own
+discovery step for reasons unrelated to the repair under test — see
+§4.</li>
+<li><strong>Placement: <code>tests/ownership/</code> over
+<code>tests/integration/</code>.</strong>
+<code>tests/ownership/__init__.py</code> explicitly documents that
+package’s tests are kept out of <code>tests/integration/</code> because
+that package’s <code>conftest.py</code> installs an autouse fixture
+requiring the full live stack to be up, which this test does not need
+(it only needs a container <em>runtime</em>, not the compose stack). The
+existing sibling test
+(<code>test_container_writes_owned_files.py</code>, which the item
+cross-references) already lives there for the identical reason, so the
+new file follows it.</li>
+<li><strong>Not adding an out-of-declared-scope negative
+control.</strong> The bash suite’s Case 3 already covers the scope-fence
+property; this test focuses narrowly on the acceptance criterion
+(interior-directory ownership + mode preservation) rather than
+re-proving already-covered ground, per §11.4.83 (evidence, not
+gold-plating).</li>
+</ul>
+</body>
+</html>

@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260925</h1>
+</header>
+<h1 id="bob-219-closure-evidence-2026-09-25">BOB-219 closure evidence —
+2026-09-25</h1>
+<p><strong>Status: PARTIAL — criteria (1) and (4) closed this session
+(criterion 1 already closed upstream, independently re-verified here);
+criterion (2) is CONFIRMED UNSATISFIABLE for the specific lost artifact
+(independently re-confirmed, matching the prior session’s finding);
+criterion (3)’s general “future-swallow” mechanism is closed for the
+.md-export-twin class (criterion 4’s guard) but deliberately NOT closed
+for the QA-evidence non-<code>.log</code>-extension class — a candidate
+fix was measured and found unsafe (see below), so it was not
+shipped.</strong></p>
+<p>This item was NOT fully closeable within this session’s authorized
+scope (<code>.gitignore</code> + the three named artifacts + one new
+script/test pair, explicitly excluding
+<code>scripts/pre_build_verification.sh</code> wiring). The honest
+state, and the reasoning behind every decision, is recorded below.</p>
+<h2
+id="prior-sessions-partial-progress-found-on-entry-independently-re-verified">0.
+Prior session’s partial progress (found on entry, independently
+re-verified)</h2>
+<p>Before starting,
+<code>docs/qa/BOB-219/progress_note_20260923.md</code> was already
+present, dated two days prior. It records: criterion (1) MET (twins
+rescued), criterion (2) unsatisfiable (file already gone), criteria
+(3)/(4) attempted-and-reverted (a blanket <code>!docs/qa/**</code>
+negation was tried, caught in self-review as a real credential-leak
+risk, and reverted). This session independently re-derived and
+RE-CONFIRMED every one of those findings from scratch (see §1–§3 below)
+before building on top of them, per the skill’s root-cause-before-fix
+discipline — nothing here is taken on the prior note’s word alone.</p>
+<h2 id="root-cause-before-state-independently-confirmed">1. Root cause —
+BEFORE state, independently confirmed</h2>
+<pre><code>$ git check-ignore -v docs/guides/tracker-credentials.html docs/guides/tracker-credentials.pdf docs/qa/BOB-124/evidence/loginctl_user_state.txt
+.gitignore:73:*_user*   docs/qa/BOB-124/evidence/loginctl_user_state.txt
+exit=0</code></pre>
+<p>Only ONE of the three target paths still matches a
+<code>git check-ignore -v</code> rule:
+<code>docs/qa/BOB-124/evidence/loginctl_user_state.txt</code>, matched
+by <code>.gitignore:73:*_user*</code>. The other two
+(<code>tracker-credentials.html</code>, <code>.pdf</code>) produced no
+output at all — meaning <code>check-ignore</code> found no blocking rule
+for them, i.e. they are NOT ignored.</p>
+<p>Cross-checked against tracked state:</p>
+<pre><code>$ git ls-files docs/guides/tracker-credentials.html docs/guides/tracker-credentials.pdf
+docs/guides/tracker-credentials.html
+docs/guides/tracker-credentials.pdf
+
+$ git log --oneline --diff-filter=A -- docs/guides/tracker-credentials.html docs/guides/tracker-credentials.pdf
+9f6f517 fix(security,pre-build,plugins): close 5 tracked defects — real auth middleware on 7186/7187, bash-suite discovery hole, plugin-update rollback, doc/gitignore drift</code></pre>
+<p><strong>Root cause confirmed:</strong> criterion (1)’s defect (the
+<code>.html</code>/<code>.pdf</code> export twins of the tracked
+<code>docs/guides/tracker-credentials.md</code> being swallowed by the
+<code>.gitignore:31:*credentials*</code> deny-all with no rescue entry)
+was already fixed and committed in <code>9f6f517</code>, BEFORE this
+session started. The <code>.gitignore</code> itself, at lines 49–54,
+already carries the two <code>!</code> rescue lines with a comment
+attributing them to BOB-219. <code>git status --short</code> on these
+two paths was empty (clean, tracked, unmodified) — no action was needed
+or taken on them this session.</p>
+<h2
+id="criterion-2-genuinely-unsatisfiable-for-the-specific-lost-artifact-independently-re-confirmed">2.
+Criterion (2) — genuinely unsatisfiable for the specific lost artifact
+(independently re-confirmed)</h2>
+<pre><code>$ ls -la docs/qa/BOB-124/evidence/loginctl_user_state.txt
+ls: cannot access &#39;docs/qa/BOB-124/evidence/loginctl_user_state.txt&#39;: No such file or directory
+
+$ git log --all --diff-filter=A --oneline -- &quot;*loginctl_user_state*&quot;
+(empty — the file was NEVER committed, at any point, in this repository&#39;s
+entire history, on any branch)
+
+$ find . -iname &quot;*loginctl*&quot; -not -path &quot;./.git/*&quot;
+(empty — no file with this name exists anywhere in the current working
+tree, under any name or extension)</code></pre>
+<p>The file does not exist on disk, has no trace in git history under
+this name or any similar name, and no candidate for recovery was found.
+Its sibling <code>.log</code> files in the SAME directory
+(<code>user1000_grepped.log</code>,
+<code>user_scope_events_head.log</code>,
+<code>user_service_lifecycle.log</code>) ARE tracked (rescued by
+<code>!docs/qa/**/*.log</code>, .gitignore:79) — confirming the item’s
+claim that this specific <code>.txt</code> file was lost purely by
+extension, not by any other property of its content.</p>
+<p><strong>There is nothing to commit.</strong> The specific captured
+evidence content (whatever <code>loginctl</code> diagnostic output it
+once held) is unrecoverable — fabricating replacement content would
+itself be an anti-bluff violation (inventing QA evidence). Criterion
+(2), read literally (“the BOB-124 .txt evidence likewise [becomes
+trackable]”), cannot be satisfied for this exact artifact. This matches,
+and independently reconfirms, the prior session’s identical conclusion
+from 2026-09-23.</p>
+<h2 id="criteria-34-the-general-mechanism">3. Criteria (3)/(4) — the
+general mechanism</h2>
+<h3
+id="a.-criterion-4-new-guard-for-the-.md-export-twin-class-implemented-and-self-validated">3a.
+Criterion (4): NEW guard for the .md-export-twin class — IMPLEMENTED and
+self-validated</h3>
+<p><strong>New files</strong> (both within the authorized scope: “a NEW
+script file under <code>scripts/pre_build/</code> plus its companion
+test under <code>tests/pre_build/</code>” — criterion 4 genuinely
+required this; <code>scripts/pre_build_verification.sh</code> was NOT
+touched, per the scope boundary):</p>
+<ul>
+<li><p><code>scripts/pre_build/check_md_export_twins_committable.sh</code>
+— for every TRACKED <code>.md</code> in §11.4.65 export scope (root
+<code>*.md</code>, <code>docs/**/*.md</code>,
+<code>scripts/**/*.md</code> — the exact scope
+<code>scripts/generate_markdown_exports.sh</code> itself sweeps), if an
+<code>.html</code>/<code>.pdf</code>/<code>.docx</code> twin EXISTS on
+disk, it must NOT be gitignored. A twin that is simply absent (not yet
+generated) is silently skipped — that is a different, already-owned
+invariant (CM-MARKDOWN-EXPORT-SYNC / BOB-223), not this one. Exit 0 =
+clean, exit 1 = &gt;=1 swallowed twin (named, with source
+<code>.md</code> + exact <code>.gitignore:&lt;N&gt;</code> rule), exit 2
+= fail-closed on bad/missing/non-git repo-root argument.</p></li>
+<li><p><code>tests/pre_build/test_check_md_export_twins_committable.sh</code>
+— a 7-arm self-validated harness (§11.4.107(10)): RED (a swallowed twin,
+no rescue — must FAIL loudly), GREEN (rescue line added — must PASS),
+two golden-FALSE arms (no twin at all; twin present but not swallowed —
+neither may be flagged), fail-closed (no args / missing root / non-git
+dir — all exit 2), a run against the REAL repo root (confirms today’s
+live state is clean), and a §1.1 paired mutation (neutralise the
+detection branch — the mutated guard must then PASS on the RED fixture,
+proving the real guard’s branch is load-bearing, not
+decorative).</p></li>
+</ul>
+<p><strong>RED proof</strong> (fixture reconstructs the EXACT
+pre-BOB-219 <code>.gitignore</code> state — real <code>.gitignore</code>
+minus only the two twin-rescue lines this session’s predecessor added,
+keeping the pre-existing <code>.md</code>-source rescue — rather than an
+invented filename, so the fixture is a faithful replay of the real
+defect):</p>
+<pre><code>-- ARM 1 (RED): swallowed twin, no rescue -&gt; guard must FAIL loudly --
+  [ok]   guard exited 1 and named the swallowed twin, its source .md, and the blocking rule</code></pre>
+<p><strong>GREEN proof</strong> (same fixture, rescue line
+re-added):</p>
+<pre><code>-- ARM 2 (GREEN): fix applied (rescue line added) -&gt; guard must PASS --
+  [ok]   guard exited 0 after the rescue line was added</code></pre>
+<p><strong>Full test output</strong> (all 7 arms, exit 0):</p>
+<pre><code>BOB-219 criterion-4 guard test — /home/milosvasic/Projects/boba/scripts/pre_build/check_md_export_twins_committable.sh
+fixture: /tmp/bob219_twins.VjEoS9/fixture
+
+-- ARM 1 (RED): swallowed twin, no rescue -&gt; guard must FAIL loudly --
+  [ok]   guard exited 1 and named the swallowed twin, its source .md, and the blocking rule
+
+-- ARM 2 (GREEN): fix applied (rescue line added) -&gt; guard must PASS --
+  [ok]   guard exited 0 after the rescue line was added
+
+-- ARM 3 (golden-FALSE): tracked .md with NO existing twin at all --
+  [ok]   guard exited 0 — a merely-absent twin is never flagged
+
+-- ARM 4 (golden-FALSE): twin exists and is NOT swallowed --
+  [ok]   guard exits 0 on the whole fixture once every twin is committable
+
+-- ARM 5: fail-closed on unresolvable input --
+  [ok]   guard exits 2 on: no args, nonexistent root, non-git directory
+
+-- ARM 6: the real project checkout, as it stands, is clean --
+  [ok]   guard exits 0 against the real repo root (/home/milosvasic/Projects/boba)
+    OK: no tracked §11.4.65-scope .md export twin is silently swallowed by .gitignore (436 .md files scanned)
+
+-- ARM 7 (§1.1 paired mutation): a guard that never detects is itself a defect --
+  [ok]   mutated guard PASSES on the RED (swallowed-twin) fixture — confirms the
+  [ok]     real guard&#39;s detection branch is load-bearing, not decorative
+
+=======================================================================
+RESULT: PASS (exit 0) — all arms behaved as specified
+test_exit=0</code></pre>
+<p><strong>Standalone run against the real repo</strong> (proving the
+guard works independent of the test harness, per the task’s anti-bluff
+instruction “verify the check script works standalone”):</p>
+<pre><code>$ bash scripts/pre_build/check_md_export_twins_committable.sh &quot;$(pwd)&quot;
+OK: no tracked §11.4.65-scope .md export twin is silently swallowed by .gitignore (436 .md files scanned)
+guard_real_repo_exit=0</code></pre>
+<h3
+id="b.-criteria-23-the-qa-evidence-non-.log-extension-class-investigated-a-candidate-fix-was-measured-unsafe-and-was-not-shipped">3b.
+Criteria (2)/(3): the QA-evidence non-<code>.log</code>-extension class
+— investigated, a candidate fix was measured UNSAFE, and was NOT
+shipped</h3>
+<p>The item’s own text frames criteria (2) and (3) as covering both
+defect instances “because it is one fix” — but the two instances have
+genuinely different safe-fix shapes, and this session’s investigation
+(going further than the 2026-09-23 note, which stopped at “no safe
+blanket mechanism was found in the time available”) produced a CONCRETE,
+MEASURED disproof of the most obvious remaining candidate direction that
+note left open.</p>
+<p><strong>Candidate considered:</strong> extend the already-shipped,
+already-safe <code>!docs/qa/**/*.log</code> glob negation
+(<code>.gitignore:79</code>) to also cover <code>.txt</code> — i.e. add
+<code>!docs/qa/**/*.txt</code>, mirroring the <code>.log</code> rescue
+exactly. This is the narrowest plausible general fix: unlike the blanket
+<code>!docs/qa/**</code> the prior session already rejected, an
+extension-scoped rescue cannot interact with any of the project’s
+genuinely extension-based secret patterns (<code>*.key</code>,
+<code>*.pem</code>, <code>*.p12</code>, <code>*.pfx</code>,
+<code>*.jks</code>, <code>*.env</code> — none of these end in
+<code>.txt</code>, so a <code>.txt</code>-scoped negation can never
+rescue them).</p>
+<p><strong>Measured, and found unsafe.</strong> This project’s OWN
+<code>.gitignore</code> documents a secret-naming convention that
+specifically uses the <code>.txt</code> extension:
+<code>cookies_*.txt</code> (line 360, “§11.4.10 CRITICAL — cookies txt
+files MUST NEVER be git-versioned”). The existing
+<code>test_gitignore_swallow_is_loud.sh</code> golden-false corpus
+independently confirms <code>.txt</code> is a live secret-bearing shape
+in this project’s own threat model — it includes
+<code>cookies_rutracker.txt</code>, <code>RUTRACKER_session.txt</code>,
+and <code>my_password.txt</code> as entries that MUST stay ignored. A
+scratch-tree experiment, run exactly in the style of the prior session’s
+own <code>.env</code>/<code>creds.json</code> disproof of the
+blanket-directory candidate, confirms the <code>.txt</code>-extension
+candidate would leak exactly these shapes if placed under
+<code>docs/qa/**</code>:</p>
+<pre><code>$ # scratch git tree, real .gitignore + hypothetical &quot;!docs/qa/**/*.txt&quot;
+$ printf &#39;cookie=SECRET_SESSION_TOKEN\n&#39; &gt; docs/qa/FAKE/evidence/cookies_rutracker.txt
+$ printf &#39;user=admin\npass=hunter2\n&#39; &gt; docs/qa/FAKE/evidence/my_password.txt
+$ printf &#39;harmless observation\n&#39; &gt; docs/qa/FAKE/evidence/loginctl_user_state.txt
+$ git status --porcelain --untracked-files=all
+?? .gitignore
+?? docs/qa/FAKE/evidence/cookies_rutracker.txt
+?? docs/qa/FAKE/evidence/loginctl_user_state.txt
+?? docs/qa/FAKE/evidence/my_password.txt</code></pre>
+<p>All three become visible/stageable under the hypothetical rule —
+including the two genuinely secret-shaped files. This is a real,
+non-hypothetical regression risk for THIS project specifically (not a
+generic “any glob can theoretically leak” caveat): <code>.txt</code> is
+this repo’s documented cookie-file extension, so a
+<code>.txt</code>-wide rescue under <code>docs/qa/**</code> is
+measurably LESS safe than the already-shipped <code>.log</code>-wide
+rescue (<code>.log</code> matches none of this project’s documented
+secret-file conventions).</p>
+<p><strong>Decision: do not ship this fix.</strong> Per the task’s
+explicit instruction — “Do not weaken or blanket-disable the
+<code>*credentials*</code> or <code>*_user*</code> gitignore patterns
+themselves… never a broad exception that could let a real credential
+leak through” — and per this session’s authorized scope (only
+<code>.gitignore</code> plus the three named artifacts; no second new
+script was authorized for a QA-evidence-specific detective gate, and the
+prior session’s own considered-but-rejected “narrower re-deny of the
+word-substring globs scoped to <code>docs/qa/**</code>” direction
+remains rejected for the same reason it was originally: this project
+routinely authors legitimate auth-testing QA evidence whose SUBJECT is
+credentials).</p>
+<p><strong><code>.gitignore</code> was left untouched by this
+session</strong> (confirmed: <code>git diff --stat -- .gitignore</code>
+and <code>git diff --stat HEAD -- .gitignore</code> both produced no
+output). Criterion (3)’s “future-swallow” mechanism remains closed ONLY
+for the .md-export-twin class (§3a); it remains open for the QA-evidence
+non-<code>.log</code>-extension class, now with one more
+concretely-disproven candidate direction on record.</p>
+<h2 id="verification-summary">4. Verification summary</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Check</th>
+<th>Command</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.gitignore</code> BEFORE/AFTER (unchanged this session)</td>
+<td><code>git check-ignore -v &lt;3 paths&gt;</code></td>
+<td>Only <code>loginctl_user_state.txt</code> still matches a rule
+(<code>.gitignore:73:*_user*</code>); the html/pdf twins match none</td>
+</tr>
+<tr>
+<td>html/pdf twins tracked</td>
+<td><code>git ls-files docs/guides/tracker-credentials.{html,pdf}</code></td>
+<td>Both listed — tracked, clean</td>
+</tr>
+<tr>
+<td>html/pdf twins stageable</td>
+<td><code>git add -n docs/guides/tracker-credentials.{html,pdf}</code></td>
+<td>No output (already committed and unmodified — the strongest form of
+“committable”)</td>
+</tr>
+<tr>
+<td><code>.gitignore</code> untouched</td>
+<td><code>git diff --stat -- .gitignore</code> /
+<code>git diff --stat HEAD -- .gitignore</code></td>
+<td>Empty (no diff)</td>
+</tr>
+<tr>
+<td>BOB-124 <code>.txt</code> file</td>
+<td><code>ls</code>, <code>git log --all</code>,
+<code>find .</code></td>
+<td>Confirmed absent on disk and in all of history — nothing to
+commit</td>
+</tr>
+<tr>
+<td>New guard, standalone</td>
+<td><code>bash scripts/pre_build/check_md_export_twins_committable.sh "$(pwd)"</code></td>
+<td><code>OK ... (436 .md files scanned)</code>, exit 0</td>
+</tr>
+<tr>
+<td>New guard, syntax</td>
+<td><code>bash -n scripts/pre_build/check_md_export_twins_committable.sh</code></td>
+<td><code>SYNTAX_OK</code></td>
+</tr>
+<tr>
+<td>New test, syntax</td>
+<td><code>bash -n tests/pre_build/test_check_md_export_twins_committable.sh</code></td>
+<td><code>SYNTAX_OK</code></td>
+</tr>
+<tr>
+<td>New test, full run</td>
+<td><code>bash tests/pre_build/test_check_md_export_twins_committable.sh</code></td>
+<td><code>RESULT: PASS (exit 0)</code> — all 7 arms,
+RED+GREEN+golden-false×2+fail-closed+real-repo+§1.1 mutation</td>
+</tr>
+<tr>
+<td><code>.txt</code>-extension rescue candidate</td>
+<td>scratch git-tree experiment</td>
+<td>DISPROVEN — leaks <code>cookies_*.txt</code>-shaped secrets; not
+shipped</td>
+</tr>
+</tbody>
+</table>
+<h2 id="assumptions-made-item-text-did-not-fully-specify">5. Assumptions
+made (item text did not fully specify)</h2>
+<ol type="1">
+<li><strong>“§11.4.65 scope” for the new guard</strong> is operationally
+defined as exactly the scope
+<code>scripts/generate_markdown_exports.sh</code> itself sweeps
+(<code>root/*.md</code> + <code>docs/**/*.md</code> +
+<code>scripts/**/*.md</code>), since that script IS the mechanism
+§11.4.65 mandates, rather than re-deriving scope from the constitution’s
+prose independently. This keeps the new guard and the generator in
+permanent agreement about what “in scope” means.</li>
+<li><strong>The guard checks <code>.html</code>, <code>.pdf</code>, AND
+<code>.docx</code></strong> twins, even though the item text names only
+<code>.html</code>/<code>.pdf</code> for the specific
+<code>tracker-credentials</code> instance. §11.4.65/§11.4.153 mandate
+all three as the export set, and BOB-225 (already closed) establishes
+<code>.docx</code> as a live member of this same defect class, so
+covering all three closes more of “this class” per criterion (3)’s
+intent without expanding the file-scope boundary (still one new script +
+one new test).</li>
+<li><strong>A twin that does not exist on disk is never flagged</strong>
+by the new guard — the item’s phrasing (“has COMMITTABLE twins”) is read
+as conditional on existence, not as also mandating presence (a separate,
+already-owned concern per BOB-223/CM-MARKDOWN-EXPORT-SYNC). Conflating
+the two would make this guard fire on the ~large fraction of in-scope
+<code>.md</code> files whose exports simply have not been regenerated
+recently, which is not this item’s defect class.</li>
+<li><strong>No companion doc was created under
+<code>docs/scripts/</code></strong> for the new script, even though the
+sibling <code>check_gitignore_swallow.sh</code> (BOB-212) has one. This
+is deliberate, not an oversight: <code>docs/scripts/</code> was not in
+this session’s authorized file scope, AND creating one would directly
+reproduce the exact hazard <code>docs/Issues.md</code> BOB-223 already
+documents (a new <code>docs/scripts/&lt;name&gt;.md</code> companion doc
+trips CM-MARKDOWN-EXPORT-SYNC for its own un-generated
+<code>.html</code>/<code>.pdf</code> twins). The script instead carries
+a thorough in-source header (Purpose / Usage / Behaviour / Exit codes /
+Depends / Refs), matching §11.4.18’s in-source-block half.</li>
+<li><strong>Criterion (2) is read as genuinely unsatisfiable</strong>,
+not as “left for a future session to eventually satisfy” — there is no
+plausible path to making a nonexistent, never-committed file trackable
+other than fabricating its content, which this session declines to
+do.</li>
+</ol>
+<h2 id="what-is-not-done-for-the-conductor-next-session">6. What is NOT
+done (for the conductor / next session)</h2>
+<ul>
+<li>Criterion (2) — permanently unsatisfiable for this specific
+artifact; no further action possible without fabricating evidence.</li>
+<li>Criterion (3)’s QA-evidence half — the <code>.log</code>-extension
+rescue remains the only safe general mechanism shipped; extending it to
+cover more non-secret-shaped QA-evidence extensions (<code>.txt</code>
+specifically disproven this session) needs its own narrower design —
+candidate directions not yet disproven: (a) a detective (loud-refusal,
+non-rescuing) gate scoped to <code>docs/qa/**</code>, mirroring
+<code>check_gitignore_swallow.sh</code>’s “leave the deny rules
+untouched, only add visibility” approach instead of a rescue-based one;
+(b) a content-inspection check rather than a path-pattern one. Both were
+out of this session’s authorized scope (no second new script was
+authorized).</li>
+<li><strong>Wiring <code>check_md_export_twins_committable.sh</code>
+into <code>scripts/pre_build_verification.sh</code> is NOT done</strong>
+— per the explicit scope boundary, that file was never touched. The
+invariant call needed is: a new numbered invariant that runs
+<code>scripts/pre_build/check_md_export_twins_committable.sh "$PROJECT_ROOT"</code>
+(or equivalent repo-root variable already used by sibling invariants in
+that file, e.g. however invariant 56/CM-GITIGNORE-SWALLOW-GUARD for
+<code>check_gitignore_swallow.sh</code> is currently wired) and BLOCKS
+the build on a non-zero exit, printing the guard’s own stdout/stderr
+(which already names the exact swallowed file + source <code>.md</code>
++ blocking <code>.gitignore</code> line — no additional formatting
+needed at the call site).</li>
+<li>The DB item itself was left untouched (no
+<code>workable-items</code> CLI invocation, no direct edit to
+<code>docs/workable_items.db</code>), per this session’s instructions —
+closure/status change is for the conductor.</li>
+</ul>
+</body>
+</html>
