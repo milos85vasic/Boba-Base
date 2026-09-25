@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>investigation_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">investigation_20260925</h1>
+</header>
+<h1 id="bob-077-investigation-2026-09-25">BOB-077 investigation —
+2026-09-25</h1>
+<p><strong>Item:</strong> RD2-10 — Identify second host running the
+Auto-commit rsync/sync mechanism (OPERATOR-DECISION, 2026-08-26:
+“UNKNOWN — INSTRUMENT THE NEXT OCCURRENCE”).</p>
+<p><strong>Result summary:</strong> the producing
+<strong>mechanism</strong> was identified with hard, reproducible
+evidence during this session (two generic shell scripts in a shared,
+out-of-repo developer toolkit, falling back to an auto-generated commit
+message when invoked with no explicit message argument). The Spec Kit
+<code>auto-commit.sh</code> lead was <strong>ruled out</strong> with
+hard evidence. The instrumentation the operator’s 2026-08-26 decision
+asked for was <strong>also built and installed</strong>, because the
+mechanism finding does not identify <em>who/what</em> invoked the
+toolkit command for 22 of the 24 historical occurrences, nor does it
+guarantee the same environment produces every future occurrence.</p>
+<hr />
+<h2 id="what-was-read-first">1. What was read first</h2>
+<ul>
+<li><code>docs/Issues.md</code> BOB-077 (full text, lines 74-88) and
+BOB-078 (lines 90-96) for context on the follow-on item.</li>
+<li><code>scripts/hooks/unattributed-commit-guard.sh</code> in full (243
+lines) — the existing DETECTION mechanism (RD2-00/BOB-106). Confirmed it
+only detects+refuses in a CI/gate context; it does <strong>not</strong>
+capture any forensic data and is <strong>not yet wired</strong> into any
+build/commit seam (an honestly-documented gap in its own header). Ran
+its <code>--self-test</code>: <strong>PASS</strong> (baseline, before
+any of my edits).</li>
+</ul>
+<h2 id="the-24-auto-commit-pattern-commits-raw-inventory">2. The 24
+Auto-commit-pattern commits — raw inventory</h2>
+<pre><code>git log --all --format=&#39;%H|%ai|%ci|%an|%ae|%cn|%ce|%s&#39; | grep -E &#39;\|Auto-commit( [0-9]+)?$&#39;</code></pre>
+<p>24 commits total, spanning 2026-03-09 through 2026-09-19, all on
+<code>main</code> (each a single-parent, non-merge commit), all under
+the identity <code>Милош Васић &lt;i@mvasic.ru&gt;</code> (or the
+Latin-script variant <code>Milos Vasic &lt;i@mvasic.ru&gt;</code> — same
+email either way).</p>
+<h2
+id="claim-in-the-task-text-checked-this-email-may-differ-from-the-operators-usual">3.
+Claim in the task text checked: “this email may differ from the
+operator’s usual</h2>
+<p>committer email” — <strong>FALSE, verified myself</strong></p>
+<pre><code>git log --all --format=&#39;%ae|%ce&#39; | sort | uniq -c
+    968 i@mvasic.ru|i@mvasic.ru
+      3 i@mvasic.ru|noreply@github.com   (GitHub-web merge commits, unrelated)</code></pre>
+<p><strong>Every single commit in this repository’s entire
+history</strong> (968 of 971) carries author+committer email
+<code>i@mvasic.ru</code> — including every one of my own commits made in
+<em>this</em> session, because this sandboxed environment’s own
+<code>git config user.email</code> / <code>user.name</code> (both global
+and local) are <code>i@mvasic.ru</code> / <code>Милош Васић</code> —
+<strong>identical</strong> to every “Auto-commit” commit. The email is
+<strong>not a distinguishing signal at all</strong>; it is simply the
+operator’s own identity, configured the same way on every host they (or
+an agent working under their configuration) has ever committed from. The
+task description’s framing that this email “may differ” from normal
+usage does not hold — verified directly, not assumed.</p>
+<h2
+id="timezone-offsets-also-not-by-themselves-a-distinguishing-signal">4.
+Timezone offsets: also not, by themselves, a distinguishing signal</h2>
+<pre><code>git log --all --format=&#39;%ai&#39; | awk &#39;{print $3}&#39; | sort | uniq -c
+    520 +0300
+    341 +0200
+    110 +0500</code></pre>
+<p>The <strong>whole repo’s entire history</strong> (not just
+Auto-commit commits) spans three timezone offsets. Cross-checking each
+Auto-commit commit’s date against its <strong>same-day, non-Auto-commit
+neighbours</strong> (e.g. 2026-03-09: Auto-commit at +0300, surrounding
+real commits <em>also</em> +0300; 2026-06-06: Auto-commit at +0500,
+surrounding real commits <em>also</em> +0500) shows the Auto-commit’s
+timezone always matches whatever timezone the operator’s <em>normal</em>
+work was already using that day. This rules against a fixed “rogue host
+with its own timezone” story and is more consistent with the Auto-commit
+landing from <em>whatever</em> session/host the operator (or an agent
+working under their identity) happened to be using at that moment.</p>
+<h2 id="diff-content-survey-this-is-not-one-consistent-mechanism">5.
+Diff-content survey — this is NOT one consistent mechanism</h2>
+<p>Diffstat sampled across all 24 commits: sizes range from <strong>0
+insertions/0 deletions</strong> (a pure binary
+<code>docs/workable_items.db</code> change, commit
+<code>c10ad070</code>) through <strong>31,278 insertions across 10
+files</strong> (<code>.playwright-mcp/page-*.yml</code> session dumps +
+QA screenshots, commit <code>1108fc12</code>) and <strong>3,873
+insertions</strong> (<code>docker-compose.yml</code> +
+<code>docs/qa/e2e-full-pipeline-*</code> JSON evidence, commit
+<code>34ac4d72</code>). One commit (<code>54e313fa</code>) touches 26
+files including <code>CLAUDE.md</code>, <code>README.md</code>,
+<code>challenges/helixqa-banks/*.yaml</code>,
+<code>tests/contract/test_jackett_autoconfig_contract.py</code>,
+<code>tests/e2e/test_jackett_autoconfig_e2e.py</code>,
+<code>docs/GOVERNANCE_AUDIT_2026-08-07.md</code> — substantial, real,
+evolving project work (governance docs, contract/e2e tests, incident
+docs), not what an rsync/backup/stale job would ever produce. The most
+recent one (<code>d768373</code>, 2026-09-19) touches
+<code>download-proxy/src/api/routes.py</code>,
+<code>download-proxy/src/merge_service/search.py</code>, four
+new/modified test files, and <code>docs/qa/BOB-095/evidence/*</code> —
+again real feature+test work.</p>
+<p><strong>This content diversity, spanning 6+ months and tracking the
+evolving codebase, already argues against both “intentional rsync job”
+(rsync does not produce contract tests, QA evidence, governance docs)
+and “stale job” (a stale/dead process would produce a fixed, repeated
+pattern, not content that evolves in lockstep with the project) — it
+looks like <em>real, varied, ordinary project work</em> landing under a
+lazy fallback commit message.</strong></p>
+<h2
+id="the-spec-kit-.specifyextensionsgitscriptsbashauto-commit.sh-lead-ruled-out-with-hard-evidence">6.
+The Spec Kit
+<code>.specify/extensions/git/scripts/bash/auto-commit.sh</code> lead —
+<strong>RULED OUT with hard evidence</strong></h2>
+<p>Three independent, conclusive findings:</p>
+<ol type="1">
+<li><p><strong>Message shape never matches.</strong> The script’s ONLY
+message-generation path is:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">_commit_msg</span><span class="op">=</span><span class="st">&quot;[Spec Kit] Auto-commit </span><span class="va">${_phase}</span><span class="st"> </span><span class="va">${_command_name}</span><span class="st">&quot;</span></span></code></pre></div>
+<p>always carrying a <code>[Spec Kit]</code> prefix plus a
+<code>&lt;phase&gt; &lt;command_name&gt;</code> suffix
+(e.g. <code>[Spec Kit] Auto-commit after specify</code>). It can
+<strong>never</strong> produce the bare <code>Auto-commit</code> or
+<code>Auto-commit &lt;epoch-ms&gt;</code> shapes observed in the real
+history.</p></li>
+<li><p><strong>The tracked config disables it, in every commit that has
+ever existed for that file.</strong>
+<code>.specify/extensions/git/git-config.yml</code> has exactly
+<strong>one</strong> commit in its entire <code>--all --follow</code>
+history (<code>c6c1fed3</code>, 2026-04-13, the
+constitution-ratification commit) — it has <em>never been modified
+since</em>. Every event key in it reads <code>enabled: false</code>, and
+<code>auto_commit.default: false</code>. Grepping every historical
+revision of that file for <code>enabled: true</code> returns
+<strong>zero hits</strong>. The mechanism, as shipped and tracked, has
+been disabled for its entire existence in this repo.</p></li>
+<li><p><strong>It postdates the earliest occurrences.</strong> The
+script itself was first added 2026-04-13 (same commit as the config).
+The first four Auto-commit-pattern commits (<code>286539045</code>,
+<code>90d66b39</code>, <code>dfe0bd8c</code>, <code>4c77310c</code>) are
+dated <strong>2026-03-09</strong> — over a month <strong>before this
+script existed in the repository at all</strong>.</p></li>
+</ol>
+<p><strong>Honest residual gap:</strong> I cannot categorically rule out
+a host running a <em>locally-modified, never-committed</em> copy of both
+the tracked config (flipping <code>enabled: true</code>)
+<strong>and</strong> the tracked script (stripping the
+<code>[Spec Kit]</code>/phase/command literal from the message) for
+six-plus months without ever committing that divergence. This is an
+unfalsifiable hypothetical requiring two independent undocumented local
+edits sustained across the whole period; I am not treating it as a live
+candidate absent any positive evidence for it, and none was found.</p>
+<p><strong>Verdict: Spec Kit <code>auto-commit.sh</code> is ruled out as
+the source, with hard evidence (message-shape mismatch,
+config-disabled-since-inception, pre-existence timing).</strong></p>
+<h2 id="the-actual-mechanism-identified-with-hard-evidence">7. The
+actual mechanism — identified with hard evidence</h2>
+<h3
+id="this-checkouts-own-reflog-places-two-of-the-24-commits-directly-in-this-environment">7.1
+This checkout’s own reflog places two of the 24 commits directly in this
+environment</h3>
+<pre><code>git reflog --date=iso
+...
+d768373 HEAD@{2026-09-19 17:57:24 +0200}: commit: Auto-commit 1789833444209
+deed8bf HEAD@{2026-09-02 13:28:05 +0200}: commit: fix(gates,types,ownership): ...
+60729c9 HEAD@{2026-09-02 12:15:23 +0200}: commit: fix(qbittorrent,start.sh): ...
+0e61779 HEAD@{2026-08-31 17:59:48 +0200}: commit: Auto-commit
+ae21273 HEAD@{2026-08-31 17:45:17 +0200}: clone: from github.com:milos85vasic/Boba-Base.git</code></pre>
+<p><code>.git</code> directory filesystem birth time:
+<code>2026-08-31 17:45:10 +0200</code> (via <code>stat .git</code>) —
+matching the reflog’s own <code>clone:</code> entry to the second. Both
+<code>0e61779</code> (bare <code>Auto-commit</code>, 2026-08-31) and
+<code>d768373</code> (<code>Auto-commit 1789833444209</code>,
+2026-09-19) appear in this reflog as
+<strong><code>commit:</code></strong>-type entries (a real, local
+<code>git commit</code> invocation in <em>this exact checkout</em>), not
+<code>pull:</code>/<code>fetch:</code>/<code>merge:</code> entries. This
+proves — for these two of the 24 — that they were authored via a genuine
+local <code>git commit</code> run <strong>inside this same sandboxed
+development environment</strong> (the one this Claude Code session is
+itself running in right now), not fetched in from an unknown remote
+host.</p>
+<h3 id="the-epoch-suffix-is-a-literal-millisecond-timestamp">7.2 The
+epoch-suffix is a literal millisecond timestamp</h3>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="op">&gt;&gt;&gt;</span> datetime.fromtimestamp(<span class="dv">1789833444209</span><span class="op">/</span><span class="dv">1000</span>, tz<span class="op">=</span>utc)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="dv">2026</span><span class="op">-</span><span class="dv">0</span><span class="er">9</span><span class="op">-</span><span class="dv">19</span> <span class="dv">15</span>:<span class="dv">57</span>:<span class="fl">24.209000</span><span class="op">+</span><span class="dv">00</span>:<span class="dv">00</span>   <span class="co"># == 2026-09-19 17:57:24.209 +0200</span></span></code></pre></div>
+<p>Matches <code>d768373</code>’s own committer timestamp to the
+millisecond (<code>git log -1 --format='%ai' d768373</code> →
+<code>2026-09-19 17:57:24 +0200</code>). The suffix is not
+random/decorative — it is <code>date +%s%N</code> (nanoseconds) divided
+by <code>1000000</code> (→milliseconds), computed at the exact moment of
+commit.</p>
+<h3 id="bash_history-corroborates-the-exact-moment">7.3
+<code>~/.bash_history</code> corroborates the exact moment</h3>
+<p>This host’s persisted, timestamped <code>~/.bash_history</code>
+(covers 2026-09-01 through 2026-09-25 — it does not reach back to
+2026-08-31) shows, in the seconds immediately around the
+<code>d768373</code> commit (epoch <code>1789833444</code>):</p>
+<pre><code>1789833361 git status
+1789833369 commit
+1789833387 commit-fully
+1789833400 git status
+1789833406 push_all</code></pre>
+<p><code>commit-fully</code> — invoked with <strong>no message
+argument</strong> — at <code>1789833387</code>, exactly <strong>57
+seconds before</strong> the commit landed with a message computed at
+<code>1789833444</code>.</p>
+<h3
+id="root-cause-two-generic-out-of-repo-shell-scripts-in-projectsproject_toolkit">7.4
+Root cause: two generic, out-of-repo shell scripts in
+<code>~/Projects/project_toolkit/</code></h3>
+<p>This host has <code>~/Projects/project_toolkit</code>,
+<code>~/Projects/project_toolkit/Upstreamable</code>, and
+<code>~/Projects/project_toolkit/Installable</code> all <strong>exported
+on <code>$PATH</code></strong> — a shared, project-agnostic “commit and
+push everything” developer toolkit, entirely <strong>outside this
+repository</strong> (not part of boba, not tracked here, governed by
+§11.4.28/§11.4.177 decoupling — a generic multi-project helper, exactly
+like <code>install_upstreams</code>). <code>type commit</code> →
+<code>~/Projects/project_toolkit/Upstreamable/commit</code>.
+<code>type commit-fully</code> →
+<code>~/Projects/project_toolkit/commit-fully</code>. Both scripts were
+read in full (read-only investigation, outside my write-scope, outside
+this repo):</p>
+<p><strong>Source A — <code>commit-fully</code> →
+<code>commit_all_changes()</code> (the epoch-suffixed
+shape):</strong></p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="bu">local</span> <span class="va">msg</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$commit_msg</span><span class="st">&quot;</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">-z</span> <span class="st">&quot;</span><span class="va">$msg</span><span class="st">&quot;</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">local</span> <span class="va">session_id</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">session_id</span><span class="op">=</span><span class="va">$(($(</span><span class="fu">date</span> +%s%N<span class="va">)</span><span class="op">/</span><span class="dv">1000000</span><span class="va">))</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="va">msg</span><span class="op">=</span><span class="st">&quot;Auto-commit </span><span class="va">$session_id</span><span class="st">&quot;</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="cf">fi</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="ex">...</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit <span class="at">-m</span> <span class="st">&quot;</span><span class="va">$msg</span><span class="st">&quot;</span></span></code></pre></div>
+<p>Invoked with no argument ⇒
+<code>git commit -m "Auto-commit &lt;epoch-ms&gt;"</code>.
+<strong>Exactly</strong> matches the <code>d768373</code> shape and its
+timing (§7.3).</p>
+<p><strong>Source B — <code>Upstreamable/commit</code> →
+<code>Upstreamable/commit.sh</code> →
+<code>Software-Toolkit/Utils/Git/commit.sh</code> (the bare
+shape):</strong></p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Upstreamable/commit.sh</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="va">MESSAGE</span><span class="op">=</span><span class="st">&quot;Auto-commit </span><span class="va">$SESSION</span><span class="st">&quot;</span>      <span class="co"># $SESSION = inherited env var, NOT computed here</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">-n</span> <span class="st">&quot;</span><span class="va">$1</span><span class="st">&quot;</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span> <span class="va">MESSAGE</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$1</span><span class="st">&quot;</span><span class="kw">;</span> <span class="cf">fi</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> <span class="st">&quot;</span><span class="va">$SCRIPT_COMMIT</span><span class="st">&quot;</span> <span class="st">&quot;</span><span class="va">$MESSAGE</span><span class="st">&quot;</span>    <span class="co"># always passes a non-empty $1 downstream</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Software-Toolkit/Utils/Git/commit.sh (the actual git-commit-performing leaf)</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="va">SESSION</span><span class="op">=</span><span class="va">$(($(</span><span class="fu">date</span> +%s%N<span class="va">)</span><span class="op">/</span><span class="dv">1000000</span><span class="va">))</span>   <span class="co"># its OWN internal default, only used if $1 is empty</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="va">MESSAGE</span><span class="op">=</span><span class="st">&quot;Auto-commit </span><span class="va">$SESSION</span><span class="st">&quot;</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="bu">[</span> <span class="ot">-n</span> <span class="st">&quot;</span><span class="va">$1</span><span class="st">&quot;</span> <span class="bu">]</span><span class="kw">;</span> <span class="cf">then</span> <span class="va">MESSAGE</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$1</span><span class="st">&quot;</span><span class="kw">;</span> <span class="cf">fi</span>   <span class="co"># $1 from the wrapper above IS non-empty (it&#39;s &quot;Auto-commit &quot; with a trailing space when $SESSION is unset)</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> commit <span class="at">-m</span> <span class="st">&quot;</span><span class="va">$MESSAGE</span><span class="st">&quot;</span></span></code></pre></div>
+<p>Checked this host’s current <code>$SESSION</code> env var:
+<strong>empty</strong> (<code>SESSION=''</code>). When
+<code>Upstreamable/commit.sh</code> runs with <code>$SESSION</code>
+unset/empty, it computes <code>MESSAGE="Auto-commit "</code> (trailing
+space) and passes that literal string down as <code>$1</code> to the
+leaf script, which then uses it verbatim:
+<code>git commit -m "Auto-commit "</code>. <code>git commit -m</code>’s
+default cleanup mode (<code>strip</code>) removes trailing whitespace
+from the message — the commit lands as the <strong>bare</strong>
+<code>Auto-commit</code>, with <strong>no</strong> epoch suffix.
+<strong>Exactly</strong> matches the shape of 23 of the 24 historical
+commits.</p>
+<p><strong>Both root-cause scripts live entirely outside this
+repository, on the operator’s shared multi-project toolkit — never
+touched or modified as part of this investigation (outside my write
+scope, and outside this repo’s own version control by
+design).</strong></p>
+<h3 id="what-this-does-and-does-not-conclusively-establish">7.5 What
+this does and does not conclusively establish</h3>
+<ul>
+<li><strong>Established, with hard evidence:</strong> the mechanism
+producing both observed message shapes, in full, reproducible detail —
+not a rsync job (it is literally <code>git commit</code> invoked by a
+bash function), not the Spec Kit auto-commit.sh (ruled out, §6), and not
+“stale” in the sense of dead/unmaintained (the toolkit is live, actively
+invoked, unmodified across the observed period, and still on
+<code>$PATH</code> today).</li>
+<li><strong>Established, for 2 of the 24 commits specifically</strong>
+(<code>0e61779</code>, <code>d768373</code>): they were committed inside
+<em>this exact sandboxed checkout</em>, i.e. the environment this agent
+session (and presumably prior agent sessions reusing the same sandbox)
+runs in. The bash-history correlation (§7.3) further shows the
+invocation pattern (<code>git status</code> →
+<code>commit</code>/<code>commit-fully</code> with no message →
+<code>git status</code> → <code>push_all</code>) is exactly what an
+end-of-turn “save everything” shortcut looks like — consistent with an
+agent session (this one, or a prior one, or one of the other installed
+AI CLI toolkits on this host — <code>.opencode</code>,
+<code>.kimi-code</code>, <code>.mimocode</code>, <code>.kilo</code> were
+all found configured here) reaching for the shared toolkit’s quick
+commit+push helper instead of this project’s own governed
+<code>scripts/commit-push-all.sh</code> (§11.4.234).</li>
+<li><strong>NOT established:</strong> which specific human or agent
+process typed <code>commit</code>/ <code>commit-fully</code> at that
+terminal — no process-accounting or per-pane session log correlating a
+specific named session to that exact keystroke was available; the
+<code>~/.bash_history</code> proves <em>what command ran on this
+host</em>, not <em>who/what drove the terminal</em>. Also not
+established: the origin of the other 22 historical occurrences
+(2026-03-09 through 2026-08-22) — this exact sandboxed checkout did not
+exist yet (born 2026-08-31), and <code>~/.bash_history</code> does not
+reach back that far (starts 2026-09-01). Those earlier occurrences are
+consistent with the <em>same</em> toolkit mechanism running on a
+different host/checkout with the same shared toolkit on
+<code>$PATH</code> and the same <code>i@mvasic.ru</code> git identity,
+but that is inference from mechanism-consistency, not a second
+directly-observed instance — stated as <code>UNCONFIRMED:</code> rather
+than asserted as fact, per §11.4.6.</li>
+</ul>
+<h3
+id="resolution-against-the-items-three-original-candidate-branches">7.6
+Resolution against the item’s three original candidate branches</h3>
+<ul>
+<li><strong>“Intentional rsync job”</strong> — ruled out. No rsync
+process is involved anywhere in the chain; it is <code>git commit</code>
+invoked via a bash helper script.</li>
+<li><strong>“Stale job”</strong> — ruled out for the identified
+mechanism. The toolkit scripts are current, unmodified across the whole
+observed window, and demonstrably invoked as recently as 6 days before
+this task began.</li>
+<li><strong>“Second Claude session”</strong> — <strong>the closest
+match</strong>, refined by evidence: not necessarily
+<em>specifically</em> Claude (this host also runs several other AI CLI
+toolkits under the same shared identity and <code>$PATH</code>), but the
+evidence is fully consistent with <strong>an agent session (of some
+kind, on this shared host) reaching for a generic, ungoverned “commit
+everything, push everything” toolkit shortcut instead of this project’s
+own <code>scripts/commit-push-all.sh</code></strong> — which is exactly
+the §11.4.234 gap BOB-078 (the next item in the chain, blocked on this
+one) is written to close.</li>
+</ul>
+<h2
+id="instrumentation-built-still-built-despite-the-mechanism-finding-above">8.
+Instrumentation built (still built, despite the mechanism finding
+above)</h2>
+<p>Rationale for building it anyway: the mechanism finding explains
+<em>why</em> the message shape is what it is, but does not identify the
+originating host/session for 22 of the 24 historical occurrences, and
+provides no guarantee that a <em>different</em> host running the same
+shared toolkit (or an entirely different, still-unknown mechanism) won’t
+produce a future occurrence. The operator’s 2026-08-26 acceptance
+criterion — “the next Auto-commit event yields a captured record naming
+its origin host” — is independently valuable and was built exactly as
+specified.</p>
+<h3 id="design">8.1 Design</h3>
+<ul>
+<li><strong>Trigger:</strong> <code>scripts/git_hooks/post-commit</code>
+(an existing, already-present, not-yet-installed hook in this repo,
+extended — see diff below) — fires on <strong>every</strong> local
+<code>git commit</code> made through a checkout with this hook
+installed, <strong>regardless of which command/wrapper/script invoked
+<code>git commit</code></strong> — the correct choice given the
+producing mechanism is external tooling this project does not control
+(post-commit observes “after the fact”, exactly as the task itself
+suggested as the fallback approach when the producer can’t be
+assumed).</li>
+<li><strong>Capture script:</strong> new
+<code>scripts/hooks/auto-commit-forensic-capture.sh</code> — standalone,
+independently testable (own <code>--self-test</code>), reuses the same
+closed bare-pattern set as <code>unattributed-commit-guard.sh</code>
+(duplicated as a 3-line constant with an explicit “keep both in sync”
+comment rather than sourced, because the guard script’s top-level code
+runs its own argument-parsing/mode-dispatch unconditionally at file
+scope and sourcing it would re-trigger that dispatch instead of just
+importing the pattern list — a real risk to
+<code>unattributed-commit-guard.sh</code>’s existing verified self-test,
+which the task explicitly told me not to break).</li>
+<li><strong>Fields captured per record (one JSON-Lines object, tracked
+log):</strong> <code>captured_at</code>, <code>commit_sha</code>,
+<code>commit_subject</code>, <code>pattern_matched</code>,
+<code>committer_name</code>, <code>committer_email</code>,
+<code>author_name</code>, <code>author_email</code>,
+<code>committer_date</code>, <code>author_date</code>,
+<code>commit_timezone_offset</code> (parsed from the commit’s own
+<code>%cI</code>), <code>observing_host_timezone_offset</code> (live
+<code>date +%z</code> at capture time — a cross-check against the
+commit’s own embedded offset), <code>observing_hostname</code>
+(<code>hostname -f</code>), <code>observing_user</code>,
+<code>observing_repo_dir</code>, <code>capture_delta_seconds</code>
+(wall-clock gap between commit time and hook-fire time — near-zero
+proves a live trigger), <code>git_remotes</code> (every configured
+remote, <strong>credential-stripped</strong> per §11.4.10 — verified
+against a fixture containing <code>https://user:secrettoken@...</code>
+and confirmed the token never reaches the log), and
+<code>push_timing</code>.</li>
+<li><strong>Log location:</strong>
+<code>docs/qa/BOB-077/auto_commit_forensic_log.jsonl</code> (tracked —
+the item text says “into a tracked forensic log”; not yet created
+because nothing has triggered it since installation — it is created on
+first real detection, with a header comment block).</li>
+<li><strong>Honest limitation, documented in the script’s own
+header:</strong> <code>push_timing</code> is <strong>always</strong>
+recorded as an explicit <code>NOT_MEASURED</code> string, never
+fabricated. <code>post-commit</code> fires strictly before any
+<code>git push</code>; true push-completion timing is not observable
+from a post-commit hook alone. A paired pre-push/post-push instrument
+was considered and <strong>deliberately not added</strong> in this pass:
+this repo’s existing <code>scripts/git_hooks/pre-push</code> hook
+already performs a <strong>blocking</strong> §11.4.75 mutation-marker
+re-check (rebuilds HEAD into a temp worktree and can
+<code>exit 1</code>), and §11.4.234 forbids any hook addition that risks
+making commit/push newly blockable — bolting new logic onto that
+specific hook was judged higher risk than the value of a push-timestamp
+field. If push-timing ever becomes load-bearing, the correct extension
+point is a <em>new</em>, separate, non-blocking pre-push/post-push hook
+that only appends to the same log — never an edit to the existing
+blocking gate.</li>
+<li><strong>Wiring never blocks:</strong> the <code>post-commit</code>
+invocation of the capture script is wrapped <code>... || true</code> and
+the capture script itself always <code>exit 0</code> (an observer, never
+a gate — §11.4.234).</li>
+</ul>
+<h3 id="files-createdmodified">8.2 Files created/modified</h3>
+<ol type="1">
+<li><strong>NEW</strong>
+<code>scripts/hooks/auto-commit-forensic-capture.sh</code> (243 lines) —
+the forensic-capture script, standalone + <code>--self-test</code>
+capable.</li>
+<li><strong>EDITED</strong> <code>scripts/git_hooks/post-commit</code> —
+added a 10-line, non-blocking invocation of the new script after its
+existing §11.4.75 mutation-audit logic, before <code>exit 0</code>.</li>
+<li><strong>NEW</strong>
+<code>tests/hooks/test_auto_commit_forensic_capture.sh</code> (real
+executing test, following the existing
+<code>tests/hooks/test_unattributed_commit_guard.sh</code>
+convention).</li>
+<li><strong>THIS FILE</strong> —
+<code>docs/qa/BOB-077/investigation_20260925.md</code>.</li>
+</ol>
+<p>No other files were touched. Specifically NOT touched:
+<code>scripts/commit-push-all.sh</code>,
+<code>scripts/pre_build_verification.sh</code>, anything under
+<code>download-proxy/</code>, <code>plugins/</code>,
+<code>docs/guides/</code>, <code>docs/qa/BOB-219/</code>,
+<code>docs/qa/BOB-226/</code>, <code>docs/qa/BOB-143/</code>. No
+<code>git add</code>/<code>git commit</code>/<code>git push</code> run.
+<code>docs/workable_items.db</code> and the <code>workable-items</code>
+CLI were never touched.</p>
+<h3 id="test-evidence-real-invocation-path-not-bash--n-alone">8.3 Test
+evidence — real invocation path, not <code>bash -n</code> alone</h3>
+<p><strong>Baseline (before any of my edits) —
+<code>unattributed-commit-guard.sh --self-test</code>:</strong></p>
+<pre><code>[unattributed-commit-guard] §11.4.107(10) self-test — golden-good / golden-bad / false-positive control needle
+  golden-bad      PASS  (both unattributed bare commits detected, exactly 2 hits)
+  golden-good     PASS  (attributed &#39;Auto-commit&#39; + descriptive + substring-only &#39;sync&#39; commits NOT flagged)
+[unattributed-commit-guard] self-test PASS — oracle validated in both polarities
+EXIT=0</code></pre>
+<p><strong>New script’s own <code>--self-test</code> (golden-good /
+golden-bad / field-completeness / credential-stripping /
+idempotence):</strong></p>
+<pre><code>[auto-commit-forensic-capture] §11.4.107(10) self-test — golden-good / golden-bad / field-completeness
+  golden-good     PASS  (non-matching commit produced no log file at all)
+[auto-commit-forensic-capture] recorded &lt;sha&gt; (Auto-commit) -&gt; /tmp/.../forensic.jsonl
+[auto-commit-forensic-capture] recorded &lt;sha&gt; (Auto-commit 1700000000000) -&gt; /tmp/.../forensic.jsonl
+  golden-bad      PASS  (both closed-pattern commits recorded, exactly 2 records)
+  field:commit_sha  PASS
+  field:commit_subject  PASS
+  field:committer_email  PASS
+  field:committer_name  PASS
+  field:pattern_matched-present  PASS
+  credential-strip PASS  (embedded basic-auth token stripped from logged remote URL)
+  field:git_remotes PASS  (both configured remotes present)
+  field:push_timing PASS  (honestly labelled NOT_MEASURED, never fabricated)
+  idempotence      PASS  (re-scanning a non-matching commit added no new record)
+[auto-commit-forensic-capture] self-test PASS — capture validated in both polarities + field completeness
+EXIT=0</code></pre>
+<p><strong>New test file
+<code>tests/hooks/test_auto_commit_forensic_capture.sh</code> (real
+invocation path, parses actual field values out of the emitted record,
+checks the wiring into <code>post-commit</code>):</strong></p>
+<pre><code>  PASS: capture script is syntactically valid bash
+  PASS: capture --self-test exits 0 on unmutated source
+  PASS: self-test line present: golden-good     PASS
+  PASS: self-test line present: golden-bad      PASS
+  PASS: self-test line present: credential-strip PASS
+  PASS: self-test line present: field:git_remotes PASS
+  PASS: self-test line present: field:push_timing PASS
+  PASS: self-test line present: idempotence      PASS
+  PASS: real invocation on a descriptive commit writes no log file
+  PASS: bare &#39;Auto-commit&#39; commit produces a log record via the real invocation path
+  PASS: recorded commit_sha matches the actual commit SHA (not fabricated)
+  PASS: recorded committer_email matches real git metadata (not fabricated)
+  PASS: recorded commit_subject is the exact bare pattern
+  PASS: recorded git_remotes reflects the real configured remote (&#39;origin&#39;)
+  PASS: scripts/git_hooks/post-commit is wired to invoke auto-commit-forensic-capture.sh
+  PASS: scripts/git_hooks/post-commit remains syntactically valid bash after the wiring edit
+
+=== Result: 16 passed, 0 failed ===
+EXIT=0</code></pre>
+<p><strong>Full <code>tests/hooks/</code> regression run — confirming
+zero breakage of pre-existing hook tests:</strong></p>
+<pre><code>tests/hooks/test_check_brief_inputs.sh        -&gt; 12 passed, 0 failed, EXIT=0
+tests/hooks/test_guard_forbidden_commands.sh  -&gt; 40 passed, 0 failed, EXIT=0
+tests/hooks/test_unattributed_commit_guard.sh -&gt; 9 passed, 0 failed, EXIT=0
+tests/hooks/test_auto_commit_forensic_capture.sh -&gt; 16 passed, 0 failed, EXIT=0</code></pre>
+<p><strong>True end-to-end proof — a REAL <code>git commit</code> in a
+disposable scratch repo (never the real boba repo) firing the REAL
+installed <code>post-commit</code> hook (git invokes it, not me calling
+the script directly), copied byte-for-byte from
+<code>scripts/git_hooks/post-commit</code> and
+<code>scripts/hooks/auto-commit-forensic-capture.sh</code>:</strong></p>
+<pre><code>Scratch repo: /tmp/tmp.6CbvwefyXj
+
+=== step 1: a real descriptive commit — hook fires, must NOT create a forensic log ===
+ls: cannot access &#39;.../docs/qa/BOB-077/auto_commit_forensic_log.jsonl&#39;: No such file or directory
+(correctly absent)
+
+=== step 2: git commit with the exact bare pattern ===
+commit landed: 079cfa21315f5b7530eee8c9f5b452780597e552
+
+=== step 3: verify the REAL post-commit hook (invoked by git itself) produced the record ===
+LOG FILE EXISTS: /tmp/tmp.6CbvwefyXj/docs/qa/BOB-077/auto_commit_forensic_log.jsonl
+{&quot;captured_at&quot;:&quot;2026-09-25T09:42:57Z&quot;,
+ &quot;commit_sha&quot;:&quot;079cfa21315f5b7530eee8c9f5b452780597e552&quot;,
+ &quot;commit_subject&quot;:&quot;Auto-commit&quot;,
+ &quot;pattern_matched&quot;:&quot;^Auto-commit$&quot;,
+ &quot;committer_name&quot;:&quot;E2E Test Runner&quot;,
+ &quot;committer_email&quot;:&quot;e2e-milos85vasic@example.invalid&quot;,
+ &quot;author_name&quot;:&quot;E2E Test Runner&quot;,
+ &quot;author_email&quot;:&quot;e2e-milos85vasic@example.invalid&quot;,
+ &quot;committer_date&quot;:&quot;2026-09-25T11:42:57+02:00&quot;,
+ &quot;author_date&quot;:&quot;2026-09-25T11:42:57+02:00&quot;,
+ &quot;commit_timezone_offset&quot;:&quot;02:00&quot;,
+ &quot;observing_host_timezone_offset&quot;:&quot;+0200&quot;,
+ &quot;observing_hostname&quot;:&quot;anton&quot;,
+ &quot;observing_user&quot;:&quot;milosvasic&quot;,
+ &quot;observing_repo_dir&quot;:&quot;/tmp/tmp.6CbvwefyXj&quot;,
+ &quot;capture_delta_seconds&quot;:0,
+ &quot;git_remotes&quot;:[
+   {&quot;name&quot;:&quot;github&quot;,&quot;push_url&quot;:&quot;https://github.com/e2e/test.git&quot;},
+   {&quot;name&quot;:&quot;origin&quot;,&quot;push_url&quot;:&quot;git@example.invalid:e2e/test.git&quot;}],
+ &quot;push_timing&quot;:&quot;NOT_MEASURED — see script header: ...&quot;}</code></pre>
+<p>Note the <code>github</code> remote was configured as
+<code>https://token123abc@github.com/e2e/test.git</code> — the embedded
+credential (<code>token123abc</code>) is <strong>absent</strong> from
+the logged <code>push_url</code>, confirming the credential-stripping
+works against a real (not self-test-fixture-only) commit + real remote
+configuration.</p>
+<p>Scratch repo deleted after the run (<code>rm -rf</code>); the real
+boba repo was never touched by any of this testing.</p>
+<h3 id="activation-in-the-real-repo">8.4 Activation in the real
+repo</h3>
+<p><code>scripts/install_git_hooks.sh</code> was run (a local,
+untracked, easily-reversible action — copies tracked
+<code>scripts/git_hooks/*</code> into <code>.git/hooks/*</code>; touches
+no tracked file, no git history, no commit, no push) to make the
+extended <code>post-commit</code> hook <strong>live</strong> in this
+checkout going forward:</p>
+<pre><code>Installing git hooks from /home/milosvasic/Projects/boba/scripts/git_hooks to /home/milosvasic/Projects/boba/.git/hooks ...
+  Installed: pre-commit
+  Installed: pre-push
+  Installed: commit-msg
+  Installed: post-commit
+  Created bypass-audit trail: /home/milosvasic/Projects/boba/.git/hooks/ATMO_LAST_BYPASS_ATTEMPT
+  Created audit log: /home/milosvasic/Projects/boba/.git/hooks/ATMO_CONSTITUTION_AUDIT_LOG
+Done — 4 hook(s) installed. Constitution §11.4.75 enforcement active.</code></pre>
+<p>Verified the installed <code>.git/hooks/post-commit</code> contains
+the new wiring and is syntactically valid (<code>bash -n</code> OK).
+<strong>No commit was made in the real repo</strong> to test this
+(forbidden by task scope) — the wiring is proven correct via the
+scratch-repo end-to-end test in §8.3, which is a byte-identical copy of
+the same two files.</p>
+<p><strong>Caveat, stated honestly:</strong> hook installation is
+<em>local to this checkout</em> (<code>.git/hooks/</code> is never
+tracked/pushed). If the next Auto-commit occurrence lands from a
+<em>different</em> checkout of this repo (a fresh clone, or another
+sandboxed environment that has not had
+<code>bash scripts/install_git_hooks.sh</code> run), this specific
+installed hook will not fire there. This is an inherent property of git
+hooks (not a defect of this implementation) and is the same limitation
+every hook in <code>scripts/git_hooks/</code> already has —
+<code>scripts/install_git_hooks.sh</code> running once per fresh
+checkout remains a manual/documented step (per the existing §11.4.234
+“hooks are tracked source, installed on demand, never silently
+auto-wired” pattern this repo already follows for every other hook).</p>
+<h2 id="answers-to-the-required-report-items">9. Answers to the required
+report items</h2>
+<ol type="1">
+<li><strong>Source identified?</strong> The <em>mechanism</em> — yes,
+with hard, reproducible evidence (§7). The <em>specific human/agent</em>
+who ran the command for any given historical occurrence — no, genuinely
+unknown for 22 of 24; for 2 of 24 (<code>0e61779</code>,
+<code>d768373</code>) it is proven to have run inside this exact
+sandboxed checkout, with bash-history-corroborated invocation of the
+<code>commit-fully</code> toolkit command immediately preceding one of
+them.</li>
+<li><strong>Instrumentation:</strong> built, tested (self-test +
+real-invocation test + true end-to-end scratch-repo proof with
+git-invoked hook), and installed live in this checkout. Triggers via
+<code>scripts/git_hooks/post-commit</code> (installed into
+<code>.git/hooks/post-commit</code>), firing on every local commit
+regardless of what produced it; captures committer/author identity,
+commit-embedded timezone offset cross-checked against the observing
+host’s live offset, hostname, observing user, repo path, configured
+(credential-stripped) remotes, and an honestly-labelled
+<code>push_timing: NOT_MEASURED</code> field (with the reasoning
+documented in the script’s own header, §8.1/§8.3).</li>
+<li><strong>Files created/modified:</strong>
+<code>scripts/hooks/auto-commit-forensic-capture.sh</code> (new),
+<code>scripts/git_hooks/post-commit</code> (extended),
+<code>tests/hooks/test_auto_commit_forensic_capture.sh</code> (new),
+<code>docs/qa/BOB-077/investigation_20260925.md</code> (this file, new).
+Plus a local-only, untracked hook install
+(<code>bash scripts/install_git_hooks.sh</code>) — no tracked file
+changed by that step.</li>
+<li><strong>Spec Kit <code>auto-commit.sh</code> lead:</strong>
+<strong>ruled out</strong>, with hard evidence — message shape can never
+match (always
+<code>[Spec Kit] Auto-commit &lt;phase&gt; &lt;command&gt;</code>), the
+tracked config has been <code>enabled: false</code> for every event in
+its entire one-commit history, and the script postdates the earliest 4
+occurrences by over a month.</li>
+<li><strong>Assumptions/gaps the item text did not fully specify, made
+explicit here:</strong>
+<ul>
+<li>I treated “the next Auto-commit event yields a captured record
+naming its origin host” as satisfied by capturing
+<code>observing_hostname</code> +
+<code>observing_host_timezone_offset</code>
+<ul>
+<li><code>observing_user</code> + <code>observing_repo_dir</code> (there
+is no stronger “host identity” signal a post-commit hook can observe —
+no IP, no MAC, no cloud instance ID is available from inside a git hook
+without shelling out to network/cloud-metadata calls, which I judged out
+of scope and unnecessary given <code>hostname -f</code> plus the repo
+path is already sufficient to distinguish checkouts in practice).</li>
+</ul></li>
+<li>I chose <code>docs/qa/BOB-077/auto_commit_forensic_log.jsonl</code>
+as the tracked log path since the item text does not name one and
+<code>docs/qa/BOB-077/</code> is the directory I was explicitly told to
+write this item’s evidence into.</li>
+<li>I did <strong>not</strong> build a paired pre-push/post-push
+instrument to close the <code>push_timing: NOT_MEASURED</code> gap — a
+deliberate scope decision documented in §8.1, to avoid any risk to the
+existing <em>blocking</em> <code>pre-push</code> hook, which §11.4.234
+forbids destabilising.</li>
+<li>I installed the hooks live in this checkout (§8.4) as part of “build
+the instrumentation” — the task did not explicitly say to activate it,
+but an instrument nobody has turned on cannot fulfil “the next
+occurrence identifies itself”; I judged this the correct completion of
+the deliverable, done via the repo’s own pre-existing, unmodified
+<code>scripts/install_git_hooks.sh</code>, and it touches no tracked
+file.</li>
+<li>BOB-078 (blocked on this item) asks to “wire the Auto-commit
+mechanism through a real §11.4.234 dedicated commit/push script … or
+shut it down”. Given the mechanism is now identified as living entirely
+<strong>outside</strong> this repository (a shared, cross-project
+toolkit), BOB-078’s disposition is a decision for whoever picks it up
+next — I have not attempted to resolve BOB-078 in this pass; I note here
+only that the mechanism-identification finding materially changes its
+framing (there is no in-repo script to “wire or retire” — the fix, if
+wanted, is either operator-side toolkit-usage discipline, or a repo-side
+gate that refuses to push a commit matching the pattern, which
+<code>unattributed-commit-guard.sh</code> already does at the CI/gate
+layer once it is wired into a build seam — that wiring itself remains
+BOB-106’s own stated open gap, not something I closed here).</li>
+</ul></li>
+</ol>
+</body>
+</html>

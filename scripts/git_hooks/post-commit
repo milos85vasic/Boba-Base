@@ -41,4 +41,18 @@ TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   fi
 } >> "$AUDIT_LOG"
 
+# BOB-077 (RD2-10) forensic capture — observes every commit that lands
+# through THIS checkout's post-commit hook and appends a forensic record
+# (committer identity, hostname, timezone offset, configured remotes) when
+# the subject matches a closed Auto-commit/templated pattern. See
+# scripts/hooks/auto-commit-forensic-capture.sh for the full mandate,
+# the identified producing mechanism, and honest limitations (push-timing
+# is not observable from post-commit alone). The `|| true` is deliberate,
+# never an oversight: this hook must never affect its own exit status on
+# a capture failure (§11.4.234 — hooks never gate commit/push).
+FORENSIC_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo "")"
+if [ -n "$FORENSIC_ROOT" ] && [ -x "$FORENSIC_ROOT/scripts/hooks/auto-commit-forensic-capture.sh" ]; then
+  bash "$FORENSIC_ROOT/scripts/hooks/auto-commit-forensic-capture.sh" "$COMMIT_HASH" >/dev/null 2>&1 || true
+fi
+
 exit 0

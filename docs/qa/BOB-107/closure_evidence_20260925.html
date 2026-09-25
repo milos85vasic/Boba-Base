@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260925</h1>
+</header>
+<h1
+id="bob-107-closure-evidence-pre-dispatch-subagent-input-existence-check">BOB-107
+closure evidence — pre-dispatch subagent-input existence check</h1>
+<p><strong>Date:</strong> 2026-09-25 <strong>Item:</strong> BOB-107 —
+§11.4.238 followup: pre-dispatch existence check for subagent task-brief
+source inputs</p>
+<h2 id="summary">Summary</h2>
+<p>BOB-107 requires a pre-dispatch precondition helper: conductor-side
+tooling run BEFORE a downstream/consumer subagent is dispatched, that
+verifies the required-input files its task brief names genuinely exist
+on disk AND are non-empty. It must fail closed (non-zero exit,
+actionable “missing input, respawn the producer” message) rather than
+silently letting the downstream subagent discover the gap at task start
+(the original BOB-107 incident) or fabricate content unsupported by its
+named sources.</p>
+<h2 id="files-created">Files created</h2>
+<ol type="1">
+<li><code>scripts/check_subagent_inputs_exist.sh</code> — the
+pre-dispatch precondition helper itself. Executable bash script with a
+full §11.4.18-style documentation header
+(Purpose/Usage/Inputs/Outputs/Side-effects/
+Dependencies/Cross-references).</li>
+<li><code>tests/unit/test_check_subagent_inputs_exist.sh</code> — the
+paired, real, executable test. Drives the real script (not a mock)
+against real files in a throwaway <code>mktemp -d</code> scratch
+directory.</li>
+</ol>
+<p>No other files were touched. <code>docs/workable_items.db</code> was
+left untouched (its modified state predates this task and belongs to
+concurrent work); the <code>workable-items</code> CLI was not invoked;
+no <code>git add</code>/<code>commit</code>/<code>push</code> was
+run.</p>
+<h2
+id="design-decision-how-the-helper-is-told-which-paths-to-check">Design
+decision: how the helper is told which paths to check</h2>
+<p><strong>Decision:</strong> explicit CLI arguments (one path per
+positional <code>PATH</code> arg), with an additional
+<code>--manifest FILE</code> option that reads a simple
+one-path-per-line text file (blank lines and <code>#</code>-prefixed
+comment lines ignored). Both forms can be combined; the underlying check
+logic is identical either way.</p>
+<p><strong>Why, not a brief-parsing/manifest-schema system:</strong></p>
+<p>I searched this project for an existing convention a subagent task
+brief uses to formally declare its “required input” paths:</p>
+<ul>
+<li><code>.superpowers/sdd/</code> contains exactly one subdirectory
+(<code>qbittorrent-login-repair-verification/</code>) holding a single
+<code>progress.md</code> — a free-form prose ledger, not a structured
+manifest with a declared schema for required inputs.</li>
+<li>The evidence citation in the BOB-107 item text itself
+(<code>.superpowers/sdd/task-phase1a-report.md line 21</code>) no longer
+exists in the live tree (it was from a prior, now-cleaned session) —
+confirming there is no standing, versioned brief-manifest artifact this
+project maintains today.</li>
+<li>No <code>task-brief</code> generation script, YAML/JSON brief spec,
+or manifest schema exists anywhere under <code>scripts/</code>,
+<code>docs/</code>, or <code>.superpowers/</code> in this
+repository.</li>
+</ul>
+<p>Given that, inventing a brief-parsing system would be building a
+mechanism that doesn’t correspond to anything this project actually uses
+— exactly the over-engineering the task description warned against. The
+honest, minimal design is: the CONDUCTOR (the one who read the brief and
+knows which paths it names as required) tells the helper explicitly,
+either as argv or as a plain manifest file. This is also directly
+analogous to this project’s own existing pattern for “helper takes
+explicit file paths” tooling
+(e.g. <code>scripts/generate_markdown_exports.sh FILE.md [...]</code>),
+so it follows an established local convention rather than a novel
+one.</p>
+<p>If/when this project adopts a formal subagent task-brief manifest
+format in the future, <code>--manifest</code> gives a forward-compatible
+extension point: a brief-generation script could emit the
+required-inputs list as a one-path-per-line file and pipe it straight
+into <code>--manifest</code>, with zero changes to this helper’s core
+logic.</p>
+<h2 id="fail-closed-actionable-message">Fail-closed + actionable
+message</h2>
+<ul>
+<li>Exit <code>0</code>: every declared path present and non-empty.</li>
+<li>Exit <code>1</code>: at least one declared path missing or empty —
+prints an explicit <code>CHECK-SUBAGENT-INPUTS: FAIL</code> banner,
+names EXACTLY which path(s) failed and why (<code>(missing)</code> vs
+<code>(empty, 0 bytes)</code>), and prints an actionable remediation
+line: <em>“DO NOT dispatch the downstream/ consumer subagent on this
+brief. Remediation: respawn the producer subagent that was supposed to
+write the missing/empty file(s) above … (§11.4.147(e))”</em>.</li>
+<li>Exit <code>2</code>: usage error (no paths declared at all, or an
+unreadable <code>--manifest</code> file) — deliberately distinct from
+both 0 and 1, because a check that never ran asserted nothing; reporting
+that as a pass would be the §11.4.201(6) blind-instrument bluff this
+script exists to avoid.</li>
+</ul>
+<h2
+id="existence-non-emptiness-check-why-it-matters-for-this-item">Existence
++ non-emptiness check (why it matters for THIS item)</h2>
+<p>The script does not merely <code>test -e</code> a path. For each
+declared path it:</p>
+<ol type="1">
+<li>Confirms the path exists (<code>[[ -e "$p" ]]</code>), reporting
+<code>MISSING</code> otherwise.</li>
+<li>Confirms it is a regular file, reporting a distinct message if it
+exists but is e.g. a directory.</li>
+<li>Reads its byte size via a portable <code>file_size_bytes()</code>
+helper (tries GNU <code>stat -c%s</code>, then BSD/macOS
+<code>stat -f%z</code>, then falls back to <code>wc -c</code>) and
+reports <code>EMPTY</code> for any 0-byte file.</li>
+</ol>
+<p>This directly targets the BOB-107 scenario: a producer subagent that
+crashed mid-write from an API rate limit is exactly the kind of failure
+that can leave a 0-byte or partially-written file on disk — a file that
+<code>test -e</code> alone would report as “present” while it is in fact
+useless, fabricatable-content-inducing evidence for the downstream
+consumer.</p>
+<h2 id="anti-bluff-real-executable-test-full-output">Anti-bluff: real,
+executable test — full output</h2>
+<p>The test constructs a real scratch directory (<code>mktemp -d</code>)
+with a mix of: present+non-empty files, an absent file, and a genuinely
+0-byte file (the producer-crash scenario), then runs the real script
+against that mix through four cases: (1) mixed inputs via explicit args
+→ must fail closed naming exactly the missing/empty files; (2) all
+inputs present → must exit 0; (3) the same mixed scenario via
+<code>--manifest</code> → must fail closed identically; (4) zero paths
+declared → must exit 2 (distinct from both PASS and FAIL).</p>
+<p>Full test output (test run in this session,
+<code>bash tests/unit/test_check_subagent_inputs_exist.sh</code>):</p>
+<pre><code>=== CASE 1: mixed inputs (explicit args) -&gt; must FAIL closed ===
+      OK:      /tmp/bob107_check_inputs.xSNVvt/curriculum_amendment_plan_v1.md (29 bytes)
+      MISSING: /tmp/bob107_check_inputs.xSNVvt/curriculum_analysis_modules_gap1.md
+      EMPTY:   /tmp/bob107_check_inputs.xSNVvt/curriculum_analysis_modules_gap2.md (0 bytes)
+      OK:      /tmp/bob107_check_inputs.xSNVvt/ai_curriculum_modules_27_35_extracted.md (29 bytes)
+
+    CHECK-SUBAGENT-INPUTS: checked 4, failed 2
+
+    CHECK-SUBAGENT-INPUTS: FAIL
+    The following declared required-input file(s) are missing or empty:
+      - /tmp/bob107_check_inputs.xSNVvt/curriculum_analysis_modules_gap1.md (missing)
+      - /tmp/bob107_check_inputs.xSNVvt/curriculum_analysis_modules_gap2.md (empty, 0 bytes)
+
+    DO NOT dispatch the downstream/consumer subagent on this brief.
+    Remediation: respawn the producer subagent that was supposed to write
+    the missing/empty file(s) above, verify it completes without hitting
+    an API rate limit or other crash (§11.4.147(e)), then re-run this
+    check before dispatching the consumer subagent.
+  PASS: exits non-zero on missing+empty inputs (rc=1)
+  PASS: output names the exact missing path
+  PASS: output names the exact empty path
+  PASS: output classifies the missing file as MISSING
+  PASS: output classifies the 0-byte file as EMPTY
+  PASS: output gives the actionable respawn-the-producer remediation
+  PASS: present non-empty file (/tmp/bob107_check_inputs.xSNVvt/curriculum_amendment_plan_v1.md) reported OK, not a false failure
+
+=== CASE 2: all inputs present + non-empty -&gt; must exit 0 ===
+      OK:      /tmp/bob107_check_inputs.xSNVvt/curriculum_amendment_plan_v1.md (29 bytes)
+      OK:      /tmp/bob107_check_inputs.xSNVvt/ai_curriculum_modules_27_35_extracted.md (29 bytes)
+
+    CHECK-SUBAGENT-INPUTS: checked 2, failed 0
+    CHECK-SUBAGENT-INPUTS: OK — all declared inputs present and non-empty.
+  PASS: exits 0 when all declared inputs present and non-empty (rc=0)
+  PASS: success output reports OK
+
+=== CASE 3: mixed inputs via --manifest -&gt; must FAIL closed ===
+      OK:      /tmp/bob107_check_inputs.xSNVvt/curriculum_amendment_plan_v1.md (29 bytes)
+      MISSING: /tmp/bob107_check_inputs.xSNVvt/curriculum_analysis_modules_gap1.md
+      EMPTY:   /tmp/bob107_check_inputs.xSNVvt/curriculum_analysis_modules_gap2.md (0 bytes)
+
+    CHECK-SUBAGENT-INPUTS: checked 3, failed 2
+
+    CHECK-SUBAGENT-INPUTS: FAIL
+    The following declared required-input file(s) are missing or empty:
+      - /tmp/bob107_check_inputs.xSNVvt/curriculum_analysis_modules_gap1.md (missing)
+      - /tmp/bob107_check_inputs.xSNVvt/curriculum_analysis_modules_gap2.md (empty, 0 bytes)
+
+    DO NOT dispatch the downstream/consumer subagent on this brief.
+    Remediation: respawn the producer subagent that was supposed to write
+    the missing/empty file(s) above, verify it completes without hitting
+    an API rate limit or other crash (§11.4.147(e)), then re-run this
+    check before dispatching the consumer subagent.
+  PASS: --manifest form exits non-zero on missing+empty inputs (rc=1)
+  PASS: --manifest form output names the exact missing path
+
+=== CASE 4: no paths declared -&gt; must exit 2 (cannot-run, not a pass) ===
+    ERROR: no input paths declared (pass PATH args and/or --manifest FILE with at least one)
+    Usage: check_subagent_inputs_exist.sh PATH [PATH ...]
+           check_subagent_inputs_exist.sh --manifest MANIFEST_FILE [PATH ...]
+
+    Verifies each declared subagent task-brief required-input path exists AND
+    is non-empty. Run this BEFORE dispatching a downstream/consumer subagent
+    whose brief names required-read source files, so a producer crash (e.g. an
+    API-rate-limit crash mid-write, §11.4.147(e)) is caught BEFORE dispatch
+    instead of discovered by the downstream subagent at task start.
+
+    Exit 0  all declared paths present and non-empty.
+    Exit 1  at least one path is missing or empty -- DO NOT dispatch; respawn
+            the producer subagent that was supposed to write it.
+    Exit 2  usage error (no paths given, or the --manifest file itself is
+            unreadable) -- the check could not run.
+    CHECK-SUBAGENT-INPUTS: CANNOT-RUN (no declared paths)
+  PASS: no-args invocation exits 2 (usage error, distinct from PASS/FAIL)
+
+RESULT: 12 passed, 0 failed
+exit=0</code></pre>
+<p>12/12 assertions passed. <code>bash -n</code> syntax check clean on
+both the script and its test.</p>
+<h2 id="assumptions-not-fully-specified-by-the-item-text">Assumptions
+not fully specified by the item text</h2>
+<ol type="1">
+<li><strong>Exit-code scheme.</strong> The item text does not specify
+exact exit codes. I followed the existing local convention set by
+<code>scripts/ownership_precondition.sh</code> (another
+conductor/orchestration fail-closed precondition script in this
+project): <code>0</code> = pass, <code>1</code> = the precondition
+genuinely failed (block dispatch), <code>2</code> = the check itself
+could not run (usage error) — distinct from both, per that script’s own
+documented rationale (“a check that could not run has asserted
+nothing”).</li>
+<li><strong>Script location and name.</strong> Placed under
+<code>scripts/</code> (not <code>scripts/pre_build/</code>) per the
+item’s own guidance that this is meta/orchestration tooling for the
+conductor’s workflow, not a pre-build gate on the shipped product. Used
+the exact name suggested in the item text,
+<code>scripts/check_subagent_inputs_exist.sh</code>, since it already
+matches this project’s lowercase-snake_case naming convention (§11.4.29)
+and the pattern of other single-purpose helper scripts
+(<code>ownership_precondition.sh</code>,
+<code>generate_markdown_exports.sh</code>).</li>
+<li><strong>Test location.</strong> Placed under
+<code>tests/unit/</code> (not <code>tests/pre_build/</code>) following
+the precedent of <code>scripts/ownership_precondition.sh</code> →
+<code>tests/unit/test_ownership_precondition.sh</code> and
+<code>scripts/generate_markdown_exports.sh</code> →
+<code>tests/unit/test_generate_markdown_exports_path_arg.sh</code> —
+every existing project-tooling (not shipped-product) bash script in this
+repo that has a paired test keeps that test under
+<code>tests/unit/</code>.</li>
+<li><strong>“Regular file, not a directory” handling.</strong> Not
+explicitly required by the item, but added as a distinct MISSING-class
+outcome (rather than crashing on a directory when reading its size)
+since a brief could plausibly name a directory by mistake and the helper
+should still fail closed with a clear reason rather than erroring
+opaquely.</li>
+<li><strong>Manifest comment syntax (<code>#</code>-prefixed lines,
+blank lines skipped).</strong> Not specified by the item; added as a
+minor convenience so a brief author can annotate WHY each path is
+required directly in the manifest file, without inventing any parsing
+beyond simple line-based skipping.</li>
+</ol>
+<h2 id="non-compliance-checks">Non-compliance checks</h2>
+<ul>
+<li>No <code>git add</code>, <code>git commit</code>,
+<code>git push</code>, or <code>scripts/commit-push-all.sh</code>
+invocation was performed.</li>
+<li><code>docs/workable_items.db</code> was not modified by this task
+(its pre-existing modified state in <code>git status</code> predates and
+is unrelated to this work).</li>
+<li>The <code>workable-items</code> CLI was not invoked.</li>
+<li>No files outside the declared scope
+(<code>scripts/check_subagent_inputs_exist.sh</code>,
+<code>tests/unit/test_check_subagent_inputs_exist.sh</code>, and this
+evidence file under <code>docs/qa/BOB-107/</code>) were touched.</li>
+</ul>
+<hr />
+<h2
+id="correction-2026-09-25-same-session-conductor-caught-duplicate">CORRECTION
+(2026-09-25, same session — conductor-caught duplicate)</h2>
+<p><strong>The subagent’s dispatched investigation missed a pre-existing
+implementation.</strong> While independently verifying a LATER,
+unrelated subagent’s work (BOB-077), the conductor discovered
+<code>tests/hooks/test_check_brief_inputs.sh</code> — a TRACKED test
+file, committed at <code>7b45113c6b03524d9c799bdd68496ec202575e4c</code>
+(2026-08-21, the SAME commit that also closed BOB-114), testing
+<code>scripts/hooks/check-brief-inputs.sh</code> — a pre-dispatch
+precondition checker for subagent task-brief required inputs, already
+implemented, already self-tested, and ALREADY closing this item’s exact
+acceptance criterion:</p>
+<pre><code>$ bash scripts/hooks/check-brief-inputs.sh --self-test
+[check-brief-inputs] §11.4.107(10) self-test — golden-good / golden-bad / empty-file control needle
+  golden-good     PASS  (two present non-empty inputs -&gt; exit 0)
+  golden-bad      PASS  (missing input AND empty input both named; exit 1; remediation printed)
+  brief-extract   PASS  (&#39;...&#39; shorthand resolved correctly; out-of-section path NOT scanned; missing sibling detected)
+[check-brief-inputs] self-test PASS — oracle validated in both polarities</code></pre>
+<p>This pre-existing script is MORE capable than the one this subagent
+built from scratch: beyond the same existence/non-emptiness checks, it
+can extract required-input paths directly from a brief file’s own “…”
+shorthand notation, rather than requiring the conductor to pass an
+explicit path list — closer to the item’s own stated ideal (“a small
+script the conductor runs before Task/Agent dispatch when a brief names
+required input paths”).</p>
+<p><strong>Root cause of the miss:</strong> the subagent’s dispatch
+brief (authored by the conductor) restricted its WRITE scope to a new
+script + test and did not direct it to search
+<code>scripts/hooks/</code> for a pre-existing solution before building
+one — an incomplete application of §11.4.74 catalogue-first discovery on
+the conductor’s part, not a fabrication or bluff on the subagent’s part
+(its own investigation of <code>.superpowers/sdd/</code> for a
+brief-manifest CONVENTION was genuine and thorough; it simply never
+searched for an existing IMPLEMENTATION under a differently-scoped
+directory it had been told only to search, not write to).</p>
+<p><strong>Remediation applied:</strong>
+<code>scripts/check_subagent_inputs_exist.sh</code> and
+<code>tests/unit/test_check_subagent_inputs_exist.sh</code> (the
+subagent’s newly built, now-confirmed-redundant pair) were REMOVED —
+safe, since neither was ever committed and
+<code>grep -rl check_subagent_inputs_exist</code> across the tree found
+zero references outside the pair itself and this evidence file. This
+item’s closure is CORRECT (the acceptance criterion genuinely IS met)
+but its evidence citation is now corrected to point at the real,
+pre-existing, better-designed implementation
+(<code>scripts/hooks/check-brief-inputs.sh</code> /
+<code>tests/hooks/test_check_brief_inputs.sh</code>, commit
+<code>7b45113</code>) rather than a redundant fork this session almost
+shipped alongside it.</p>
+</body>
+</html>

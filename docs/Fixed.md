@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 57
-**Last modified:** 2026-09-25T09:13:10Z
+**Revision:** 58
+**Last modified:** 2026-09-25T09:51:06Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -3318,7 +3318,7 @@ Found 2026-09-23 while remediating BOB-192: after the fail-open skips were fixed
 
 ## BOB-100 — RD2-39: Bump submodules/jackett one commit (canonical impl of RD2-09)
 
-**Status:** Fixed (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Task
 **Evidence:** docs/qa/BOB-100/closure_evidence_20260925.md
 **Severity:** Low
@@ -3336,7 +3336,7 @@ Observed 2026-09-23 19:45 during ./start.sh --reload-python: 'StopSignal SIGTERM
 
 ## BOB-179 — Two adjacent tracker false-null classes remain open and must be stated as gaps, not implied closed
 
-**Status:** Fixed (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Task
 **Evidence:** docs/qa/BOB-179/closure_evidence_20260925.md
 **Severity:** Medium
@@ -3355,7 +3355,7 @@ ACCEPTANCE: both gaps closed with their own REDs, or explicitly closed per 11.4.
 
 ## BOB-226 — Repair-side walk over foreign-owned INTERIOR directories is untested by any automated path
 
-**Status:** Fixed (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Task
 **Evidence:** docs/qa/BOB-226/closure_evidence_20260925.md
 **Severity:** major
@@ -3373,4 +3373,77 @@ WHAT: ownership_repair walks a declared root and repairs items whose uid is not 
 **Created-By:** Claude
 
 Orphaned .worktrees/ dirs (46M, unresolvable gitdir) pollute gate scan scope and manufacture false BOB-126-class findings
+
+## BOB-082 — RD2-15: Create BOB-064..067 workable items for the four Lava-porting findings (closes GA-05)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-082/closure_evidence_20260925.md
+**Severity:** High
+
+RD2-15: Create BOB-064..067 workable items for the four Lava-porting findings (closes GA-05)
+
+## BOB-107 — §11.4.238 followup: pre-dispatch existence check for subagent task-brief source inputs
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Severity:** Medium
+**Created-By:** Claude
+
+§11.4.238 followup: pre-dispatch existence check for subagent task-brief source inputs
+
+=== CORRECTION, 2026-09-25 (same session, conductor-caught before commit) ===
+
+The dispatched subagent built a NEW script (scripts/check_subagent_inputs_exist.sh
++ tests/unit/test_check_subagent_inputs_exist.sh) without discovering that this
+item's exact acceptance criterion was ALREADY implemented weeks earlier: a
+TRACKED, self-tested pre-dispatch checker scripts/hooks/check-brief-inputs.sh
+(+ tests/hooks/test_check_brief_inputs.sh) was committed at 7b45113
+(2026-08-21) — the SAME commit that also independently closed BOB-114. The
+pre-existing implementation is MORE capable (it can extract required-input
+paths directly from a brief file's own "..." shorthand, not just take an
+explicit path list) and its own --self-test passes cleanly
+(golden-good/golden-bad/brief-extract, all PASS).
+
+Root cause: the subagent's dispatch brief scoped its WRITES to a new script
+but never directed a discovery search of scripts/hooks/ for a pre-existing
+solution (§11.4.74 catalogue-first-discovery applied incompletely by the
+conductor, not a subagent fabrication).
+
+Remediation: the redundant new pair was REMOVED (safe — never committed,
+zero references anywhere else in the tree). This item's Completed status
+is correct and unchanged; its evidence citation now points at the real,
+pre-existing implementation (scripts/hooks/check-brief-inputs.sh,
+tests/hooks/test_check_brief_inputs.sh, commit 7b45113) rather than the
+session's own redundant, now-deleted fork.
+
+EVIDENCE: docs/qa/BOB-107/closure_evidence_20260925.md (full correction
+section appended).
+
+## BOB-114 — BOB-074 followup: self-validation golden-bad fixture for the rate-limit detector
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-114/closure_evidence_20260925.md
+**Severity:** Medium
+**Created-By:** Claude
+
+BOB-074 followup: self-validation golden-bad fixture for the rate-limit detector
+
+## BOB-077 — RD2-10: Identify second host running the Auto-commit rsync/sync mechanism (OPERATOR-DECISION)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-077/investigation_20260925.md
+**Severity:** High
+
+**OPERATOR DECISION (2026-08-26, §11.4.66 interactive clarification): UNKNOWN — INSTRUMENT THE NEXT OCCURRENCE**
+
+The operator does not currently know which host produces the +0500 Auto-commit fast-forwards, so the three candidate answers (second Claude session / intentional rsync job / stale job) all remain open. DECIDED ACTION: stop hunting a host this session cannot reach (§11.4.6 — remote state is not knowable without access) and instead INSTRUMENT the mechanism so the next occurrence identifies itself. Forensic capture to add: committer identity, hostname, timezone offset, push timing, and the git remote used, recorded at Auto-commit time into a tracked forensic log. ACCEPTANCE: the next Auto-commit event yields a captured record naming its origin host — at which point this item resolves to one of the three original branches with evidence rather than a guess. This is the §11.4.101 reversible-safe move: it costs little, blocks nothing, and converts a recurring mystery into a self-identifying event.
+
+This answer is recorded as consumer DATA per §11.4.35 — it is the operator's stated choice, not an agent inference, and supersedes any prior agent-chosen default on this question. Options not chosen are named above so a future reader does not re-litigate a settled call (§11.4.112(5) bounded-verdict discipline applied to decisions).
+
+--- prior item text follows ---
+
+RD2-10: Identify second host running the Auto-commit rsync/sync mechanism (OPERATOR-DECISION)
 
