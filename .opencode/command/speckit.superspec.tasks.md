@@ -1,1 +1,0 @@
-../../.specify/extensions/superspec/.specify-dev/agent-commands/opencode/speckit.superspec.tasks.md
