@@ -1,6 +1,76 @@
 <!--
 Sync Impact Report:
-- Version change: 1.3.0 → 1.4.0 (MINOR)
+- Version change: 1.4.0 → 1.5.0 (MINOR)
+- Bump rationale: a full-repo, full-git-history reconciliation pass
+  (2026-09-25) against 161 main-repo commits since the 1.4.0 amendment
+  (2026-08-20) plus one extended working session's own landed work. Two
+  factual corrections to already-stated text, two of the three open TODOs
+  resolved with cited evidence, three drifted counts refreshed, and one
+  new durable coding convention codified. MINOR, not MAJOR: nothing
+  previously permitted becomes forbidden; nothing is removed; the
+  corrections make existing clauses ACCURATE, they do not redefine them.
+- Corrected principles (titles unchanged):
+  Security Requirements — stated "No root escalation: containers run with
+  PUID=1000/PGID=1000" unconditionally. FALSE for two of five services:
+  `docker-compose.yml`'s own extensively-commented `qbittorrent` +
+  `jackett` blocks set PUID=0/PGID=0 DELIBERATELY (feature 002,
+  2026-08-21) — under rootless Podman, container-uid-0 maps to the HOST
+  OPERATOR, not real root, so PUID=0 there is a MORE correct mapping than
+  PUID=1000 was (which mapped to host uid 100999, an identity the
+  operator does not own). The other three services (`download-proxy`,
+  `qbittorrent-proxy-go`, `boba-jackett`) run as container root by design
+  and already write host-uid-1000 files. Corrected to state the real,
+  mixed, per-service ownership model and forbid re-flattening it to a
+  single PUID/PGID pair.
+- Resolved TODOs (cited evidence, not asserted):
+  TODO(COVERAGE_GATE) — Principle X stated the gate as 49%. Live source
+  of truth `pyproject.toml:70` reads `fail_under = 88` — the ≥85% floor
+  the TODO deferred to an operator decision has ALREADY been adopted; no
+  decision remains pending. Principle X corrected to 88%, TODO closed.
+  TODO(PLUGIN_COUNT_PROPAGATION) — the prior 43/42/48 divergence between
+  the authoritative `install-plugin.sh` array, CLAUDE.md, and the README
+  badge is gone: `README.md`'s `plugins-43` badge now agrees with
+  Principle II's 43-entry roster (machine-verified via
+  `scripts/compute-badges.sh`, which derives it from the array, not a
+  hand-typed number). TODO closed.
+  TODO(BOB_MASTER_KEY_ROTATION) — re-checked, still open, no doc change:
+  `grep -rn "rotate-key|envfile-replace" qBitTorrent-go/` (excluding
+  tests) still returns zero hits; the documented rotation procedure at
+  `docs/BOBA_DATABASE.md` still prescribes subcommands that do not exist
+  in the Go source. Left open, unchanged.
+- Refreshed counts (drift only, no rule change):
+  * "Before Every Commit" step 9 — the pre-build gate cited as "44
+    invariants" now runs 58 (`scripts/pre_build_verification.sh`'s own
+    final invariant is labeled `[58/58]`), most recently BOB-219's
+    CM-MD-EXPORT-TWINS-COMMITTABLE (a tracked .md's §11.4.65 export twin
+    silently gitignore-swallowed is now a blocking pre-build finding, not
+    a quiet false-null).
+  * Governance — the inherited constitution submodule advanced past
+    §11.4.267 (the anchor ceiling this document previously cited) to
+    §11.4.271 (Revision 69): §11.4.268 tamper-evident evidence-chain
+    integrity, §11.4.269 critic/consensus-advisory-only ban at the
+    evidence-acceptance seam, §11.4.270 dependency-existence-verdict
+    register, §11.4.271 the waiver mechanism (rostered authoriser +
+    mandatory expiry + tracked item, formalizing the existing
+    BOBA_SYNC_SKIP_CI recorded-deferral pattern already in step 9 below).
+    Binding per §11.4.35 whether or not cited here; now cited.
+- Added: a new bullet under Principle VI's Python conventions codifying
+  the graceful-shutdown pattern BOB-236 established (2026-09-25,
+  root-caused a live SIGTERM/SIGKILL defect in `qbittorrent-proxy`: two
+  background HTTP servers on one process, neither ever wired to actually
+  stop — a `threading.Event` set on SIGTERM does nothing if nothing
+  polls it) — a reusable convention for any future long-running Python
+  service under this compose file, not a one-off fix.
+- Templates requiring updates (re-checked 2026-09-25):
+  ✅ plan-template.md / spec-template.md — the only string hits for
+     "1000"/"44 invariant"/"49%"/"PUID" are generic placeholder examples
+     ("1000 req/s", "1000 concurrent users") unrelated to this
+     amendment — no changes needed.
+  ✅ tasks-template.md / checklist-template.md / agent-file-template.md
+     — no constitution refs — no changes needed.
+  ✅ .claude/skills/speckit-*/SKILL.md — no principle refs — no changes
+     needed.
+- Original 1.3.0 → 1.4.0 entry preserved below for history.
 - Bump rationale: material expansion of existing guidance; no principle
   added, removed, or redefined incompatibly. The 1.3.0 drift review
   (earlier the same day) predated a working session that landed the
@@ -389,12 +459,12 @@ hermetic, well-isolated, and located in the canonical directory.
   containers.
 - Integration and E2E tests MAY require running containers but MUST
   fail loudly (not skip silently) when services are unavailable.
-- Coverage gate is 49% and MUST be maintained or raised. Raising the
-  gate requires updating `docs/COVERAGE_BASELINE.md` simultaneously.
-  (Note: the inherited Helix Universal Constitution §11.4.224
-  mandates a ≥85% floor; adoption of that higher floor is an
-  operator §11.4.66 decision — see the Sync Impact Report
-  TODO(COVERAGE_GATE).)
+- Coverage gate is 88% (`pyproject.toml`'s `fail_under`) and MUST be
+  maintained or raised. Raising the gate requires updating
+  `docs/COVERAGE_BASELINE.md` simultaneously. The inherited Helix
+  Universal Constitution §11.4.224 mandates a ≥85% floor; this project's
+  gate already exceeds it — no operator decision remains outstanding on
+  this point (the prior TODO(COVERAGE_GATE) is resolved).
 - `sys.modules` isolation for unit tests MUST NOT leak into
   integration or E2E tests.
 - Event loop state MUST NOT leak between tests; async tests MUST use
@@ -568,8 +638,24 @@ missed feature. Host safety is non-negotiable.
     external access is rejected — leaving it unset in a public
     deployment is a Principle III / Security violation.
   - `9117` — Jackett. MUST be firewalled from public access.
-- No root escalation: containers run with `PUID=1000`/`PGID=1000`.
-  Rootless Podman is required per Principle IV.
+- No root escalation, by a MIXED per-service ownership model — this is
+  deliberate, not drift, and MUST NOT be flattened to a single
+  `PUID=1000`/`PGID=1000` pair for every service:
+  - `qbittorrent` and `jackett` run `PUID=0`/`PGID=0`. Under rootless
+    Podman, container-uid-0 maps to the HOST OPERATOR (not real root);
+    `PUID=1000` on these two images previously mapped to host uid
+    `100999` — an identity the operator does not own — forcing manual
+    `chown` after every download. `PUID=0` here grants NO additional
+    host privilege; the container is still rootless and confined to the
+    operator's own account. See `docs/guides/file-ownership.md`.
+  - `download-proxy`, `qbittorrent-proxy-go`, and `boba-jackett` run as
+    container root by design and already write host-uid-1000 files
+    directly; they need no `PUID`/`PGID` mapping.
+  - `userns_mode: keep-id` MUST NOT be added to any service in this
+    stack: it hangs the linuxserver images (measured, twice) and is
+    pointless for the root-running three. Rootless Podman is required
+    per Principle IV regardless of which per-service mode a container
+    uses.
 - `BOBA_MASTER_KEY` presence MUST be enforced at boot by
   `bootstrap.EnsureMasterKey`; a missing key on a populated
   `boba.db` is a Principle III violation and MUST fail the boot
@@ -601,8 +687,8 @@ missed feature. Host safety is non-negotiable.
    §11.4.234 dedicated entrypoint. It is the ONLY sanctioned path:
    direct `git commit` / `git push` on the main repo bypass the gate,
    the doc/DB sync seam, and the multi-upstream fan-out.
-   - It runs `scripts/pre_build_verification.sh` (44 invariants) as an
-     explicit stage. Boba ships NO blocking git hooks, so the
+   - It runs `scripts/pre_build_verification.sh` (58 invariants, as of
+     2026-09-25) as an explicit stage. Boba ships NO blocking git hooks, so the
      always-unblocked invariant holds at the hook layer by
      construction.
    - When another agent or process is concurrently writing the tree,
@@ -663,6 +749,26 @@ missed feature. Host safety is non-negotiable.
   `requirements.txt` — only `tests/requirements.txt`. `ruff` config
   in `pyproject.toml` is authoritative (`py312`, line 120, rule set
   `E,F,W,I,UP,B,SIM,RUF,ASYNC,S,PT,C4,TID`).
+- **Graceful shutdown for any long-running Python service under this
+  compose file**: a `SIGTERM` handler that only sets a
+  `threading.Event` does NOTHING unless something actually polls or
+  reacts to it. Any background thread hosting an HTTP server (raw
+  `http.server`/`ThreadingHTTPServer`, `uvicorn`, or equivalent) MUST
+  be wired so the shared shutdown signal actively calls that server's
+  own shutdown API — `httpd.shutdown()` from a watcher thread for
+  `http.server`, `server.should_exit = True` (polled by the server's
+  own event loop, not a fixed sleep) for `uvicorn`. Forensic anchor
+  (BOB-236, 2026-09-25): `qbittorrent-proxy` ran two such servers on
+  one process; NEITHER was ever wired this way, so both `.join(timeout=5)`
+  calls in the shutdown sequence were *guaranteed* to fully time out
+  (5+5=10.0s), landing exactly at the container's `StopTimeout` and
+  forcing `SIGKILL` on nearly every restart. A container reporting
+  `Up ... (healthy)` proves nothing about whether it can also STOP
+  cleanly — that needs its own, separately-verified test (the
+  standing regression guard for this class:
+  `tests/integration/test_bob236_sigterm_graceful_shutdown.py`, which
+  drives a REAL `podman stop` against the REAL container and asserts
+  exit code ≠ 137 within a bounded time, not a mocked signal handler).
 - **TypeScript / Angular 21** (`frontend/`): Angular CLI defaults,
   Vitest for unit tests, ng-lint clean.
 - **Go** (`qBitTorrent-go/`): `go fmt` clean, `go vet` clean,
@@ -702,8 +808,21 @@ practices, conventions, and ad-hoc decisions.
   (progressive delivery gated on business metrics, not only
   infrastructure metrics), §11.4.266 (claim-vs-reality ledger keyed on
   what the project ADVERTISES), and §11.4.267 (shared attempt record —
-  a failed approach is never silently retried). Where this document is
-  silent on an inherited anchor, the submodule governs (§11.4.35).
+  a failed approach is never silently retried). As of the 2026-09-25
+  pull (submodule Revision 69) those additionally include §11.4.268
+  (tamper-evident evidence-chain integrity — deletion, reordering, and
+  tail-truncation of an accepted evidence record MUST be detected, not
+  merely discouraged), §11.4.269 (an ungoverned critic/consensus signal
+  MAY inform but MUST NEVER substitute for a receipt, nor adjudicate a
+  producer-verifier disagreement, at the evidence-acceptance seam),
+  §11.4.270 (every proposed dependency carries a closed-set existence
+  verdict before adoption — a hallucinated package cannot be adopted
+  silently), and §11.4.271 (the waiver mechanism: a rostered
+  non-producer authoriser + a mandatory unelapsed expiry + a named
+  tracked item — the formalized version of the BOBA_SYNC_SKIP_CI
+  recorded-deferral pattern this project already uses in "Before Every
+  Commit" step 9). Where this document is silent on an inherited
+  anchor, the submodule governs (§11.4.35).
 - All PRs and code reviews MUST verify compliance with these
   principles AND with the inherited universal constitution.
 - Amendments to THIS project constitution require: (1) a written
@@ -718,4 +837,4 @@ practices, conventions, and ad-hoc decisions.
 - The `CONTRIBUTING.md` file governs external contribution workflow
   and MUST remain consistent with the principles herein.
 
-**Version**: 1.4.0 | **Ratified**: 2026-04-13 | **Last Amended**: 2026-08-20
+**Version**: 1.5.0 | **Ratified**: 2026-04-13 | **Last Amended**: 2026-09-25

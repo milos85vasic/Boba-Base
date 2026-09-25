@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>investigation_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">investigation_20260925</h1>
+</header>
+<h1 id="bob-065-investigation-evidence-2026-09-25">BOB-065 —
+Investigation &amp; evidence (2026-09-25)</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-09-25T10:13:18Z <strong>Status:</strong> PARTIAL — see “What
+remains” below. NOT full closure.</p>
+<h2 id="item-under-investigation">Item under investigation</h2>
+<p><code>docs/Issues.md</code> BOB-065 — “Lava P2: Egress diagnosis and
+VPN-host SOCKS routing (containers pkg/egress)”. Status at investigation
+start: <code>Queued</code>, Type <code>Task</code>, Severity
+<code>High</code>.</p>
+<p>Verbatim acceptance criterion from the item text: <em>“TDD: assert
+the via-proxy egress IP != direct host IP AND a known-blocked tracker
+returns 200 via proxy.”</em></p>
+<h2
+id="root-cause-investigation-11.4.102-systematic-debugging-the-dispatch-premise-was-wrong">Root-cause
+investigation (§11.4.102 systematic-debugging) — the dispatch premise
+was wrong</h2>
+<p>The dispatching instructions stated:
+<em>“<code>constitution/submodules/containers/ pkg/egress</code> does
+not exist yet, and no VPN-related environment variables are configured
+in this checkout.”</em> That premise is only half right.</p>
+<ol type="1">
+<li><p><code>constitution/submodules/containers/pkg/egress</code> —
+confirmed absent
+(<code>ls: cannot access ... No such file or directory</code>). This is
+correct. But this is <strong>the wrong submodule</strong>.
+<code>constitution/submodules/containers</code> is a nested dependency
+belonging to the <code>constitution</code> submodule’s own tree (no
+<code>.gitmodules</code> entry of its own visible from the project root,
+and <code>ls constitution/submodules/containers/pkg/</code> fails — it
+has no <code>pkg/</code> directory at all).</p></li>
+<li><p>The “containers submodule” <code>docs/PORTING-FROM-LAVA.md</code>
+and BOB-065’s own item text actually mean is the
+<strong>project-root</strong> submodule declared in
+<code>.gitmodules</code>:</p>
+<pre><code>[submodule &quot;submodules/containers&quot;]
+    path = submodules/containers
+    url = git@github.com:vasic-digital/Containers.git</code></pre>
+<p><code>submodules/containers/pkg/egress/</code> <strong>already
+exists</strong> and is fully implemented: <code>egress.go</code>,
+<code>egress_test.go</code>,
+<code>wave20_eg2hard_test.go</code>.</p></li>
+<li><p><code>scripts/egress-via-vpn.sh</code> <strong>already
+exists</strong> and is already tracked in this repo
+(<code>git ls-files scripts/egress-via-vpn.sh</code> confirms
+it).</p></li>
+<li><p>Both landed together in commit <code>be5062d</code>
+(“feat(egress): wire configurable proxy env + durable remote-exec into
+deployment”, 2026-07-01), which explicitly cites the
+containers-submodule commits it builds on: <code>cde354f</code> (feat:
+SOCKS egress verify + durable remote-exec), and two subsequent hardening
+rounds in the submodule’s own history:</p>
+<pre><code>3a52825 hardening(egress): Wave-20 EG2 — ssh arg-injection guard
+         (leading-dash destination) + sub-second ConnectTimeout floor
+e273fd2 fix(egress): CT-HARDEN-EG-HARD — TunnelUp child-death
+         surfacing + IP-echo status/IP validation + keep-alive leak +
+         idempotent Down (Wave-20)
+cde354f feat(egress+remoteexec): SOCKS egress verify + durable
+         remote-exec + durable-run shell</code></pre>
+<p>The submodule pin currently checked out at this project’s
+<code>HEAD</code> (<code>0788dd75...</code>) is a
+<strong>descendant</strong> of <code>3a52825</code>
+(<code>git merge-base --is-ancestor cde354f HEAD</code> →
+<code>YES ancestor</code>, verified), so what’s on disk right now
+genuinely includes the latest hardened code, not a stale/partial
+pin.</p></li>
+<li><p>BOB-065 itself was filed on 2026-08-08 as a <strong>retroactive
+backfill</strong> (“[Backfill from RD2-15/GA-05, audit doc 2026-08-08] …
+Per audit RD2-15 [P0]: Create tracked workable items (BOB-064..067) for
+the four Lava-porting findings, citing implementing commits as evidence,
+closed as Implemented.”) — i.e. the backfill process that created
+BOB-065 was <em>supposed</em> to cite
+<code>be5062d</code>/<code>cde354f</code> as implementing evidence and
+close it as Implemented, exactly as its own text says to do for the
+sibling items. It appears the backfill for BOB-065 specifically never
+completed that citation-and-close step and the item was left
+<code>Queued</code>. This is a <strong>tracking/documentation
+gap</strong>, not an implementation gap.</p></li>
+</ol>
+<p><strong>Consequence for my dispatched scope:</strong> the dispatch
+instructions told me to treat
+<code>constitution/submodules/containers/pkg/egress</code> and
+<code>scripts/egress-via-vpn.sh</code> as <strong>new</strong> files to
+create. Both are, in reality, pre-existing, complete, hardened, and
+unit-tested components at a <strong>different, correct</strong> path.
+Per §11.4.124 (investigate-before-remove) and §11.4.251
+(byte-identical-fork prohibition), I did <strong>not</strong> create a
+duplicate/parallel egress implementation at the nonexistent
+<code>constitution/submodules/containers/pkg/egress</code> path — doing
+so would have produced dead, unused, divergent code shadowing a
+component that already works, which is a defect class this constitution
+explicitly forbids, not progress.</p>
+<h2 id="what-genuinely-was-missing-and-what-i-added">What genuinely was
+missing and what I added</h2>
+<p>The one real gap I found: <code>scripts/egress-via-vpn.sh</code> had
+<strong>no dedicated test file</strong> — its only prior verification
+(per <code>be5062d</code>’s own commit message) was a bare
+<code>bash -n</code> syntax check. I added
+<code>tests/integration/test_egress_via_vpn.py</code>, following this
+repo’s existing pytest conventions
+(<code>@pytest.mark.skipif(..., reason="SKIP: ... (§11.4.3)")</code> for
+environment-gated live tests, matching e.g.
+<code>tests/integration/test_webui_bridge_auth_live.py</code>,
+<code>tests/integration/test_bob236_sigterm_graceful_shutdown.py</code>).</p>
+<h2 id="real-evidence-captured-this-session">Real evidence captured this
+session</h2>
+<h3
+id="pre-existing-go-unit-tests-for-submodulescontainerspkgegress-all-real-all-pass">1.
+Pre-existing Go unit tests for
+<code>submodules/containers/pkg/egress</code> — ALL REAL, ALL PASS</h3>
+<pre><code>$ cd submodules/containers &amp;&amp; go test ./pkg/egress/... -v
+=== RUN   TestBuildDynamicForwardArgs_DynamicSocksAndHardening
+--- PASS: TestBuildDynamicForwardArgs_DynamicSocksAndHardening (0.00s)
+=== RUN   TestOptions_UserNotDoubledWhenHostHasAt
+--- PASS: TestOptions_UserNotDoubledWhenHostHasAt (0.00s)
+=== RUN   TestVerify_EgressIPDiffersViaProxy
+    egress_test.go:91: direct egress IP = 127.0.0.1
+    egress_test.go:92: via-proxy egress IP = 127.0.0.2
+--- PASS: TestVerify_EgressIPDiffersViaProxy (0.00s)
+=== RUN   TestVerify_DeadPortFails
+    egress_test.go:122: dead-port Verify error (expected): egress: verify via 127.0.0.1:1: Get &quot;http://127.0.0.1:1/&quot;: proxyconnect tcp: dial tcp 127.0.0.1:1: connect: connection refused
+--- PASS: TestVerify_DeadPortFails (0.00s)
+=== RUN   TestWave20_EG2_ArgInjectionDestinationRefused
+--- PASS: TestWave20_EG2_ArgInjectionDestinationRefused (0.20s)
+=== RUN   TestWave20_EG2_ConnectTimeoutNotTruncatedToZero
+--- PASS: TestWave20_EG2_ConnectTimeoutNotTruncatedToZero (0.00s)
+=== RUN   TestWave20_EG2_RemoteDNSSentToProxyNotLocalResolution
+--- PASS: TestWave20_EG2_RemoteDNSSentToProxyNotLocalResolution (0.00s)
+=== RUN   TestWave20_EG1_ChildExitSurfacedNotTimeout
+    wave20_eghard_test.go:101: EG-1(a) child-exit error in 203.139139ms (expected): egress: ssh tunnel to 127.0.0.1:41125 exited before the SOCKS proxy became ready: exit status 255: ssh: connect to host vpnhost port 22: Connection refused
+--- PASS: TestWave20_EG1_ChildExitSurfacedNotTimeout (0.20s)
+=== RUN   TestWave20_EG1_DeadChildBehindForeignListener
+    wave20_eghard_test.go:125: EG-1(b) foreign-listener+dead-child error (expected): egress: ssh tunnel to 127.0.0.1:33159 exited before the SOCKS proxy became ready: exit status 255: ssh: bind: Address already in use
+--- PASS: TestWave20_EG1_DeadChildBehindForeignListener (0.00s)
+=== RUN   TestWave20_EG4_DownConcurrentIdempotent
+--- PASS: TestWave20_EG4_DownConcurrentIdempotent (5.01s)
+=== RUN   TestWave20_EG2_BlockedIPEchoIsError
+    wave20_eghard_test.go:198: EG-2 403 error (expected): egress: direct egress IP: egress: IP-echo returned HTTP 403 (body &quot;Access Denied&quot;)
+--- PASS: TestWave20_EG2_BlockedIPEchoIsError (0.00s)
+=== RUN   TestWave20_EG3_DirectEgressIPNoKeepAliveLeak
+--- PASS: TestWave20_EG3_DirectEgressIPNoKeepAliveLeak (0.15s)
+PASS
+ok      digital.vasic.containers/pkg/egress 5.584s</code></pre>
+<p>12/12 real Go tests pass. These use a fake <code>execCommand</code>
+seam (<code>egress_test.go</code>’s own package comment: <em>“tests
+substitute a fake child to exercise the ssh-child lifecycle … WITHOUT a
+real ssh/VPN (§11.4.27 — no real ssh in tests)”</em>) — this is the
+package’s own documented, intentional design, not a gap I introduced or
+am papering over.</p>
+<h3
+id="scriptsegress-via-vpn.sh-real-live-command-invocations-against-this-host-right-now">2.
+<code>scripts/egress-via-vpn.sh</code> — real, live command invocations
+against THIS host, right now</h3>
+<pre><code>$ bash -n scripts/egress-via-vpn.sh
+OK: bash -n clean
+
+$ scripts/egress-via-vpn.sh
+usage: egress-via-vpn.sh {up|verify|diagnose|down} [opts] [targets...]
+exit=2
+
+$ scripts/egress-via-vpn.sh up
+egress: set BOBA_VPN_HOST or pass --host
+exit=2
+
+$ scripts/egress-via-vpn.sh diagnose https://rutracker.org/ https://kinozal.guru/ https://nnmclub.to/
+direct_egress_ip=178.221.219.248
+direct  https://rutracker.org/ -&gt; 301
+direct  https://kinozal.guru/ -&gt; 302
+direct  https://nnmclub.to/ -&gt; 200
+--- via proxy ---
+curl: (7) Failed to connect to api.ipify.org port 443 via 127.0.0.1 after 0 ms: Could not connect to server
+[egress] FAIL: cannot reach ip-echo via 127.0.0.1:1080 (tunnel dead?)
+exit=1</code></pre>
+<p><strong>Honest reading of this diagnosis output:</strong> from THIS
+sandbox host, right now, none of the three probed trackers show the
+block signature BOB-065 describes (DNS-fail / TLS-MITM /
+connection-refused). <code>rutracker.org</code> 301s (protocol
+redirect), <code>kinozal.guru</code> 302s, <code>nnmclub.to</code> 200s
+— all real, reachable responses. This sandbox is not the “datacenter
+host with network-blocked trackers” scenario the item is written
+against; it has unrestricted outbound internet. This is reported as
+fact, not massaged — it does <strong>not</strong> mean the
+egress-blocking problem doesn’t exist elsewhere, only that it does not
+currently reproduce from this exact host, so there is no live
+“known-blocked” target available here to differentiate direct-vs-proxy
+against.</p>
+<p>The “via proxy” half of <code>diagnose</code> correctly, honestly
+FAILED with exit 1
+(<code>[egress] FAIL: cannot reach ip-echo via 127.0.0.1:1080 (tunnel dead?)</code>)
+because there is no live tunnel — it did <strong>not</strong> fabricate
+a proxy response. This is the exact anti-bluff behavior BOB-065
+requires: no VPN host configured ⇒ no live via-proxy claim ⇒ loud,
+honest failure.</p>
+<h3
+id="new-test-file-testsintegrationtest_egress_via_vpn.py-real-pytest-run">3.
+New test file: <code>tests/integration/test_egress_via_vpn.py</code> —
+real pytest run</h3>
+<pre><code>$ .venv/bin/python -m pytest tests/integration/test_egress_via_vpn.py -v --import-mode=importlib
+collected 7 items
+
+tests/integration/test_egress_via_vpn.py::test_usage_with_no_subcommand_exits_2_and_lists_all_four_verbs PASSED
+tests/integration/test_egress_via_vpn.py::test_live_via_proxy_egress_ip_differs_and_blocked_tracker_returns_200 SKIPPED
+tests/integration/test_egress_via_vpn.py::test_verify_without_a_live_tunnel_fails_honest_never_fakes_success PASSED
+tests/integration/test_egress_via_vpn.py::test_script_exists_and_is_executable PASSED
+tests/integration/test_egress_via_vpn.py::test_up_without_host_configured_fails_loud_never_silent PASSED
+tests/integration/test_egress_via_vpn.py::test_diagnose_direct_probe_returns_the_real_current_host_egress_ip PASSED
+tests/integration/test_egress_via_vpn.py::test_bash_syntax_clean PASSED
+
+SKIPPED [1] tests/integration/test_egress_via_vpn.py:174: SKIP: no VPN host
+configured (§11.4.3) — set BOBA_VPN_HOST to a reachable ssh destination
+(e.g. user@vpnhost) to exercise the live SOCKS-tunnel-and-routing
+acceptance criterion (BOB-065)
+
+6 passed, 1 skipped in 1.08s</code></pre>
+<p>The skipped test —
+<code>test_live_via_proxy_egress_ip_differs_and_blocked_tracker_returns_200</code>
+— is <strong>verbatim</strong> the item’s own acceptance criterion
+(“assert the via-proxy egress IP != direct host IP AND a known-blocked
+tracker returns 200 via proxy”), wired and ready to run unmodified the
+moment an operator sets <code>BOBA_VPN_HOST</code> (and optionally
+<code>BOBA_EGRESS_LIVE_TARGET</code>) to a real, reachable VPN-connected
+host. It is <strong>not</strong> currently exercised and I make
+<strong>no claim</strong> it passes — it is honestly skipped per
+§11.4.3, exactly as the dispatch instructions required.</p>
+<h2 id="files-created-this-session">Files created this session</h2>
+<ol type="1">
+<li><code>tests/integration/test_egress_via_vpn.py</code> — new. The
+only genuinely new artifact this session produced. Covers: script
+presence/executable bit, <code>bash -n</code> syntax,
+usage-with-no-args, <code>up</code> without a configured host (must fail
+loud), <code>verify</code> against a dead port (must fail honestly,
+never fake success), the real direct-probe half of <code>diagnose</code>
+against this host’s actual current network state, and the live
+end-to-end acceptance test (environment-gated, honestly skipped
+here).</li>
+<li>This file:
+<code>docs/qa/BOB-065/investigation_20260925.md</code>.</li>
+</ol>
+<h2 id="files-not-created-and-why">Files NOT created (and why)</h2>
+<ul>
+<li><strong><code>constitution/submodules/containers/pkg/egress</code></strong>
+— NOT created. This path is not the containers submodule the
+item/porting-doc actually means, and the real path
+(<code>submodules/containers/pkg/egress</code>) already has a complete,
+tested, hardened implementation. Creating anything at the dispatched
+(wrong) path would be dead, unused, duplicate code.</li>
+<li><strong><code>scripts/egress-via-vpn.sh</code></strong> — NOT
+(re)created / not overwritten. It already exists, is already tracked,
+and already does exactly what the item asks (<code>up</code> /
+<code>verify</code> / <code>diagnose</code> / <code>down</code>, reusing
+<code>ensure-macos-tunnel.sh</code>’s SSH-tunnel style per its own
+header comment and the <code>be5062d</code> commit message). Rewriting a
+working, tested, git-tracked script the task itself did not know existed
+would have been a regression risk with no benefit.</li>
+</ul>
+<h2
+id="submodule-note-per-bob-191-precedent-cited-by-the-dispatch-instructions">Submodule
+note (per BOB-191 precedent, cited by the dispatch instructions)</h2>
+<p>No files were created inside <code>submodules/containers</code> (the
+real “containers submodule”) this session — the egress implementation
+there was already complete before this investigation began; I only
+<em>read</em> and <em>ran its tests</em>. Nothing needs to be
+committed/pushed in that submodule as a result of this session’s work.
+The one file I did create
+(<code>tests/integration/test_egress_via_vpn.py</code>) lives in the
+<strong>main repo</strong>, not a submodule, so no separate submodule
+commit/push workflow applies to it.</p>
+<h2
+id="explicit-statement-this-is-a-partial-result-not-full-closure">Explicit
+statement: this is a PARTIAL result, not full closure</h2>
+<p><strong>What is done and real-tested:</strong> - The
+<code>containers</code> submodule’s <code>pkg/egress</code>
+(tunnel-up/verify/direct-IP, hardened across 3 rounds) — pre-existing,
+12/12 real Go tests pass. - <code>scripts/egress-via-vpn.sh</code>
+(up/verify/diagnose/down glue reusing the
+<code>ensure-macos-tunnel.sh</code> SSH-tunnel style) — pre-existing,
+confirmed working for every code path that does NOT require a live VPN
+host: usage, no-host error, dead-port verify error, and the direct-probe
+half of diagnosis (real IP, real tracker HTTP codes, captured above). -
+A new, dedicated test file wired for all of the above plus the exact
+BOB-065 acceptance assertion, ready to run unmodified against a real VPN
+host.</p>
+<p><strong>What is still needed to fully close BOB-065:</strong> 1. A
+real, reachable, SSH-accessible VPN-connected host, configured via
+<code>BOBA_VPN_HOST</code> (this environment has none and I cannot
+provision one). 2. With that host set, a real run of
+<code>tests/integration/test_egress_via_vpn.py::test_live_via_proxy_egress_ip_differs_and_blocked_tracker_returns_200</code>
+(or the equivalent
+<code>scripts/egress-via-vpn.sh diagnose &lt;known-blocked-tracker&gt;</code>
+invocation) producing the item’s exact acceptance evidence: via-proxy
+egress IP differs from the direct host IP, AND a known-blocked tracker
+returns HTTP 200 via the proxy. 3. Separately (<strong>not</strong> part
+of my file scope, <strong>not</strong> touched this session — no
+<code>docs/workable_items.db</code> writes, no
+<code>workable-items</code> CLI invocation, no commits): BOB-065’s own
+tracker status is stale. It should almost certainly be reconciled
+against <code>be5062d</code>/<code>cde354f</code> per its own backfill
+instruction (“citing implementing commits as evidence, closed as
+Implemented”), and then reopened (or kept partially open) specifically
+for the still-missing live-VPN-host verification in point 1-2 above — a
+status/tracking correction I am explicitly not authorized to make in
+this session.</p>
+<h2
+id="assumptions-made-not-fully-specified-by-the-item-text">Assumptions
+made (not fully specified by the item text)</h2>
+<ol type="1">
+<li>“A known-blocked tracker” in the acceptance criterion is read as:
+any tracker target the operator names via
+<code>BOBA_EGRESS_LIVE_TARGET</code>/CLI arg at verification time — the
+item does not name a specific tracker, and which tracker is currently
+blocked is inherently host-and-time dependent (as demonstrated above:
+none of <code>rutracker.org</code>, <code>kinozal.guru</code>,
+<code>nnmclub.to</code> are currently blocked from THIS host).
+<code>https://rutracker.org/</code> was used as the default probe target
+in the new test file only as a reasonable stand-in, overridable via env
+var.</li>
+<li>The “containers submodule pkg/egress” referenced by the item and by
+<code>docs/PORTING-FROM-LAVA.md</code> is the project-root
+<code>submodules/containers</code>
+(<code>vasic-digital/Containers.git</code>), not the nested
+<code>constitution/submodules/containers</code> — established above from
+<code>.gitmodules</code>, from the actual presence of a matching,
+hardened, commit-history-traceable implementation, and from the porting
+doc’s own framing (“both repos already share
+<code>submodules/{containers, ...}</code>”).</li>
+<li>No <code>.env</code>/<code>BOBA_VPN_HOST</code> was added to this
+repo’s <code>.env.example</code> or anywhere else — the item’s own
+diagnosis script already documents the env contract
+(<code>BOBA_VPN_HOST</code>, <code>BOBA_EGRESS_SOCKS_PORT</code>,
+<code>BOBA_EGRESS_SSH_PORT</code>, <code>BOBA_EGRESS_KEY</code>,
+<code>BOBA_EGRESS_IP_ECHO</code>, <code>BOBA_EGRESS_TARGETS</code>) in
+its own header comment, so no further documentation was judged necessary
+for this partial scope.</li>
+</ol>
+</body>
+</html>

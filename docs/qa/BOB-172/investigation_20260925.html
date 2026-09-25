@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>investigation_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">investigation_20260925</h1>
+</header>
+<h1
+id="bob-172-rutracker-search-endpoint-http-403-fresh-re-measurement-header-tuning-test-roster-mirror-check">BOB-172
+— rutracker SEARCH endpoint HTTP 403: fresh re-measurement +
+header-tuning test + roster-mirror check</h1>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Revision</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Last modified</td>
+<td>2026-09-25T10:30:00Z</td>
+</tr>
+<tr>
+<td>Item</td>
+<td>BOB-172 (Bug, <code>Ready for testing</code> — left open, NOT closed
+by this investigation)</td>
+</tr>
+<tr>
+<td>Method</td>
+<td>superpowers:systematic-debugging (root cause before fix; §11.4.199
+exact-reproduction-sequence)</td>
+</tr>
+<tr>
+<td>Secrets</td>
+<td>No credential or cookie VALUE appears below (§11.4.10). Every probe
+below is unauthenticated — no <code>.env</code> read, no cookie jar
+used.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="verdict">1. Verdict</h2>
+<p><strong>Outcome 2 — structurally blocked.</strong> The rutracker
+search endpoint’s 403 is a genuine Cloudflare edge-level bot-mitigation
+(“Managed Challenge” class: <code>cf-mitigated: challenge</code>
+response header), re-confirmed live today with the exact BOB-172
+signature, and — newly tested this session — <strong>identical whether
+the request carries no special headers or a full realistic
+Chrome-browser header set</strong>. This rules out client-header tuning
+as a fix. All three configured roster mirrors
+(<code>rutracker.org</code>, <code>rutracker.net</code>,
+<code>rutracker.nl</code>) were also probed live; none offers an escape
+(two are Cloudflare-gated identically, the third has a broken TLS chain
+from this host). No code change in this repository can pass this
+challenge without external infrastructure (a JS-capable challenge
+solver) or an operator-supplied <code>cf_clearance</code> cookie — both
+of which are §11.4.122 operator-owned decisions, exactly the precedent
+BOB-235 already established for kinozal’s Cloudflare wall.</p>
+<p>Separately — and this matters for scoping the remaining work —
+<strong>acceptance criteria (b) and (c) of BOB-172’s own text (loud
+error reporting instead of a silent “empty”) are already implemented and
+tested</strong>, via <code>_classify_upstream_http_status</code> /
+<code>_check_search_response</code>, landed under this same item plus
+its two follow-on gap-closure items (BOB-177, BOB-179). I ran that test
+suite live this session (51 tests, all green — §2 below). What remains
+open is <strong>acceptance (a)</strong> (which this investigation
+answers: permanent Cloudflare policy, not
+rate/reputation/header-fixable) and <strong>acceptance (d)</strong>
+(stop advertising rutracker as a live search source in the README/docs —
+NOT yet done for the <em>private</em>-tracker fan-out; only unrelated
+<em>public</em>-tracker entries in
+<code>docs/MERGE_SEARCH_DIAGNOSTICS.md</code>’s
+<code>DEAD_PUBLIC_TRACKERS</code> list carry this treatment).</p>
+<h2
+id="existing-fix-verification-source-side-already-landed-under-this-item-its-follow-ons">2.
+Existing-fix verification (source-side, already landed under this item +
+its follow-ons)</h2>
+<p>Before re-measuring the live wall, I confirmed the source-side
+portion of BOB-172’s own acceptance criteria is in place and passing, so
+this investigation’s job is squarely the remaining external-capability
+question, not a re-implementation:</p>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/merge_service/test_bob172_tracker_http_error_not_empty.py \
+    tests/unit/merge_service/test_bob177_guard_wiring_collapse.py \
+    tests/unit/merge_service/test_bob179_stated_gaps_closure.py -q --import-mode=importlib
+...................................................                      [100%]
+51 passed in 3.49s</code></pre>
+<p><code>download-proxy/src/merge_service/search.py</code>’s
+<code>_classify_upstream_http_status()</code> (module-level, lines
+~376-445) explicitly cites BOB-172’s 2026-08-21 measurement in its own
+docstring, classifies any non-2xx as a diagnostic
+(<code>upstream_http_403</code>, etc.) rather than letting the refusal
+body fall through to the row parser and render as a false “empty”, and
+appends the exact BOB-172 language (“bot-protection refusal … supplying
+credentials or refreshing cookies does not address it”) when challenge
+markers are present in the body. <code>_check_search_response()</code>
+wires this into both of <code>_search_rutracker</code>’s auth paths
+(cookie path and username/password path). This is what I re-verified is
+live and green — <strong>I made no changes to this code</strong>, since
+no bug was found in it.</p>
+<h2
+id="fresh-live-re-measurement-2026-09-25-this-session-unauthenticated">3.
+Fresh live re-measurement (2026-09-25, THIS session,
+unauthenticated)</h2>
+<p>Reproduced with the exact search-endpoint request shape the item’s
+own evidence uses (§11.4.199 — same path, same query param shape as the
+code’s
+<code>f"{base_url}/forum/tracker.php?{urlencode({'nm': query, 'fo': 1})}"</code>),
+from this host, no cookies, no credentials:</p>
+<pre><code>$ curl -sS -D headers_index_default.txt -o body_index_default.html -w &quot;HTTP:%{http_code} SIZE:%{size_download} TIME:%{time_total}\n&quot; \
+    --max-time 15 &quot;https://rutracker.org/forum/index.php&quot;
+HTTP:200 SIZE:96460 TIME:0.093309
+
+$ curl -sS -D headers_search_default.txt -o body_search_default.html -w &quot;HTTP:%{http_code} SIZE:%{size_download} TIME:%{time_total}\n&quot; \
+    --max-time 15 &quot;https://rutracker.org/forum/tracker.php?nm=debian&amp;fo=1&quot;
+HTTP:403 SIZE:5381 TIME:0.027218</code></pre>
+<p>Marker census on the 403 body (<code>grep -a</code> used defensively
+after a control-needle catch below — §11.4.273):</p>
+<pre><code>challenge markers:  just a moment=1  cf-chl=0  challenge-platform=1  cf-browser-verification=0
+login markers:      login_username=0  login_password=0  bb_session=0</code></pre>
+<p>Response headers on the 403 carry the authoritative,
+non-body-dependent Cloudflare signal:</p>
+<pre><code>server: cloudflare
+cf-mitigated: challenge
+content-security-policy: ... script-src &#39;nonce-...&#39; &#39;unsafe-eval&#39; https://challenges.cloudflare.com ...</code></pre>
+<p><strong>This is the exact same shape as the item’s own 2026-08-21
+measurement</strong> (403, challenge markers present, zero login
+markers, sub-100ms — too fast for a real remote search), independently
+reproduced 35 days later. The finding has not gone stale.</p>
+<p>Control-needle note (§11.4.273, recorded honestly because it is
+instructive): my first pass at grep-checking the 200
+<code>index.php</code> body for a sanity string (<code>RuTracker</code>)
+silently returned zero matches with plain <code>grep -c -i</code>,
+because that body is served <code>charset=Windows-1251</code> and the
+shell’s <code>LANG=en_US.UTF-8</code> made grep treat the non-UTF-8
+bytes as unreadable and refuse to match — a textbook false-null, not
+evidence the string was absent (<code>file</code> confirmed “Non-ISO
+extended-ASCII text”; the literal bytes for <code>RuTracker.org</code>
+are visible in a hex dump at offset 0x90). Re-run with
+<code>grep -a</code> (treat as text) found 171 matches. The 403 body
+itself is <code>charset=UTF-8</code> (confirmed by both its header and
+<code>file</code>), so the marker counts quoted above were never
+affected by this — I re-ran them with <code>-a</code> regardless,
+defensively, with identical results, and record the near-miss per the
+same discipline BOB-172’s own provenance section used for its Gap-A
+correction.</p>
+<h2
+id="new-this-session-client-signature-header-test-per-the-tasks-outcome-1-requirement">4.
+NEW this session — client-signature (header) test, per the task’s
+outcome-1 requirement</h2>
+<p>The task asked me to test, not assume, whether the merge service’s
+<em>own</em> request signature (headers/timing/UA) — as opposed to
+rutracker.org’s blanket policy — is what triggers the challenge, since
+<code>_tracker_session_kwargs()</code> sends only
+<code>{"trust_env": True}</code> and no browser-shaped headers at all
+(aiohttp’s bare default
+<code>User-Agent: Python/x.y aiohttp/x.y.z</code>).</p>
+<p>I sent the identical search request with a full, realistic
+Chrome-on-Linux header set (<code>User-Agent</code>,
+<code>Accept</code>, <code>Accept-Language</code>,
+<code>Accept-Encoding</code>, <code>Referer</code>,
+<code>sec-ch-ua*</code>, <code>Sec-Fetch-*</code>,
+<code>Upgrade-Insecure-Requests</code>), decompressing the response
+properly (<code>--compressed</code>; the raw first attempt without it
+produced a Brotli-compressed body that a naive <code>grep</code> again
+silently failed to match — the same control-needle class of near-miss
+caught and corrected before I drew a conclusion from it):</p>
+<pre><code>$ curl -sS --compressed -D headers_search_browserlike2.txt -o body_search_browserlike2.html \
+    -w &quot;HTTP:%{http_code} SIZE:%{size_download} TIME:%{time_total}\n&quot; --max-time 15 \
+    -H &quot;User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36&quot; \
+    -H &quot;Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8&quot; \
+    -H &quot;Accept-Language: en-US,en;q=0.9&quot; \
+    -H &quot;Referer: https://rutracker.org/forum/index.php&quot; \
+    -H &#39;sec-ch-ua: &quot;Chromium&quot;;v=&quot;128&quot;, &quot;Not;A=Brand&quot;;v=&quot;24&quot;, &quot;Google Chrome&quot;;v=&quot;128&quot;&#39; \
+    -H &quot;sec-ch-ua-mobile: ?0&quot; -H &#39;sec-ch-ua-platform: &quot;Linux&quot;&#39; \
+    -H &quot;Sec-Fetch-Dest: document&quot; -H &quot;Sec-Fetch-Mode: navigate&quot; -H &quot;Sec-Fetch-Site: same-origin&quot; -H &quot;Sec-Fetch-User: ?1&quot; \
+    -H &quot;Upgrade-Insecure-Requests: 1&quot; \
+    &quot;https://rutracker.org/forum/tracker.php?nm=debian&amp;fo=1&quot;
+HTTP:403 SIZE:3597 TIME:0.021067</code></pre>
+<p>Same verdict, same authoritative header:</p>
+<pre><code>cf-mitigated: challenge     (identical to the bare-headers request — headers_search_default.txt has the same line)
+challenge markers:  just a moment=1  challenge-platform=1
+login markers:      login_username=0  login_password=0</code></pre>
+<p><strong>Finding: headers make no difference.</strong> A full
+browser-shaped request set and a bare curl request set both received the
+identical <code>cf-mitigated: challenge</code> edge decision, in
+~21-27ms — far too fast for any client-side JS challenge to have been
+attempted, meaning Cloudflare decided at the edge, before serving any
+page, using signals a static HTTP client (any HTTP library — aiohttp,
+curl, requests) structurally cannot present regardless of which headers
+it sends: most likely TLS/JA3-JA4 fingerprint and/or the absence of a
+prior browser-issued challenge-clearance cookie. Setting a convincing
+<code>User-Agent</code> string does not touch either of those signals.
+This matches the mechanism already documented for the unrelated
+<code>kickass</code> public tracker at
+<code>docs/MERGE_SEARCH_DIAGNOSTICS.md:150-153</code>
+(“<code>cf-mitigated: challenge</code> response header, identical
+whether curl sent a spoofed browser User-Agent or its own default … same
+unfixable-from-our-side class as rutracker/BOB-172”).</p>
+<p>Control probes on the same host, to characterize scope (is it only
+the search path, or the whole forum):</p>
+<pre><code>GET /forum/index.php      -&gt; 200  (no cf-mitigated header at all)
+GET /forum/tracker.php    -&gt; 403  cf-mitigated: challenge   &lt;- the search endpoint the code uses
+GET /forum/search.php     -&gt; 403
+GET /forum/viewforum.php  -&gt; 403</code></pre>
+<p>The landing page is open; everything past it (search, browse) is
+gated by the same site-wide Cloudflare policy. This is consistent with a
+deliberate anti-scraping posture on rutracker’s part, not a signature
+the merge service happens to trip.</p>
+<h2 id="new-this-session-roster-mirror-check">5. NEW this session —
+roster-mirror check</h2>
+<p><code>trackers.py:102</code> declares three configured mirrors for
+rutracker: <code>rutracker.org</code>, <code>rutracker.net</code>,
+<code>rutracker.nl</code> (the code’s
+<code>base_url = os.getenv("RUTRACKER_MIRRORS", "https://rutracker.org").split(",")[0].strip()</code>
+only ever tries the FIRST one unless the operator sets
+<code>RUTRACKER_MIRRORS</code> explicitly). I probed the search path on
+all three live, unauthenticated:</p>
+<pre><code>rutracker.org  index=200            search=403  cf-mitigated: challenge
+rutracker.net  index=502 (upstream) search=403  cf-mitigated: challenge   (same wall, plus its own outage)
+rutracker.nl   index=curl:60 (TLS: unable to get local issuer certificate)   search=same TLS failure</code></pre>
+<p><code>rutracker.nl</code>’s certificate is issued by Let’s Encrypt
+for the correct CN (<code>CN=rutracker.nl</code>), so this reads as a
+broken/incomplete certificate chain from this host rather than an
+obvious MITM — but it is unusable as measured regardless of cause,
+including with <code>-k</code> (which itself failed with an HTTP/2
+protocol error). <strong>No configured mirror offers an escape from the
+Cloudflare wall</strong>; a mirror switch is not a viable fix path.</p>
+<h2 id="answer-to-acceptance-criterion-a">6. Answer to acceptance
+criterion (a)</h2>
+<blockquote>
+<p>Determine whether the 403 is permanent policy, rate/reputation-based,
+or triggered by a client signature the plugin can legitimately present —
+by measurement, not assumption, and WITHOUT evasion techniques that
+would violate the site’s terms.</p>
+</blockquote>
+<p><strong>Measured answer: this is Cloudflare edge-level bot-mitigation
+policy (Managed Challenge class), not a client-signature issue we can
+legitimately fix, and not distinguishable from rate/reputation-based
+blocking by the tests available to an unauthenticated, non-JS-executing
+client</strong> — the sub-30ms response time on every probe (bare
+headers, full browser headers, alternate mirrors) rules out anything
+that would require Cloudflare to inspect request history or apply
+escalating suspicion; it looks like the endpoint is challenge-gated
+unconditionally for any client lacking a prior browser-issued clearance
+token. I did <strong>not</strong> attempt any evasion technique (no
+TLS-fingerprint spoofing library, no headless-browser JS-challenge
+solver, no scraping proxy) — every probe above is a plain,
+honestly-identified HTTP client presenting real or realistic headers,
+which is exactly what the item’s own acceptance criterion asked for and
+what “without evasion techniques” rules out going further than.</p>
+<h2
+id="recommended-disposition-mirrors-the-bob-235-format-i-am-not-applying-this-myself-no-workable-items-cli-access-and-the-task-explicitly-asked-me-not-to">7.
+Recommended disposition (mirrors the BOB-235 format; I am NOT applying
+this myself — no <code>workable-items</code> CLI access, and the task
+explicitly asked me not to)</h2>
+<p><strong>Recommend: mark BOB-172
+<code>Operator-blocked</code></strong>, citing this investigation and
+<code>docs/qa/BOB-172/rutracker_search_403_20260821.log</code> +
+<code>fix_evidence_20260822.log</code>, with the following enumerated
+operator choices (BOB-235’s own four-option shape, adapted to
+rutracker’s specifics):</p>
+<ol type="1">
+<li><strong>Accept a challenge-solving service.</strong> Deploy
+FlareSolverr (or equivalent headless-browser Cloudflare-challenge
+solver) as a sidecar, and have <code>_search_rutracker</code> route its
+search GET through it instead of a bare <code>aiohttp</code> request.
+Not deployed today (same gap noted for kinozal in BOB-235).
+Infrastructure + maintenance cost; introduces a JS-execution dependency
+into the merge path.</li>
+<li><strong>Accept a supplied <code>cf_clearance</code> cookie.</strong>
+<code>RUTRACKER_COOKIES</code> already exists as an env var and its
+cookie-path branch in <code>_search_rutracker</code> (lines 1607-1680)
+already sends whatever cookie dict is supplied — but it only checks for
+<code>bb_session</code> (the forum login cookie) and never checks for,
+or requires, a <code>cf_clearance</code> cookie, which is the actual
+token Cloudflare’s edge is checking for on this path. A
+<code>cf_clearance</code> value is short-lived (bound to the issuing IP
++ user-agent) and would need an operator-run refresh cadence (mirroring
+the existing <code>scripts/load-tracker-cookies.sh</code> autoload
+pattern this project already uses for tracker session cookies).</li>
+<li><strong>Route rutracker searches through Jackett’s rutracker indexer
+instead of the direct HTTP path</strong>, if Jackett’s own scraper has a
+working Cloudflare-bypass for this tracker (unverified in this session —
+out of scope; a follow-up investigation would need to check
+<code>boba-jackett</code>’s indexer health for rutracker
+specifically).</li>
+<li><strong>Mark rutracker search unsupported per §11.4.90 / BOB-172
+acceptance (d)</strong> — stop presenting it as a live search source:
+qualify or remove the unconditional “RuTracker” mention in
+<code>README.md:167</code> (currently listed under credentials with no
+caveat) and add the same honest-capability-boundary note
+<code>docs/MERGE_SEARCH_DIAGNOSTICS.md</code> already carries for the
+unrelated <code>kickass</code>/<code>eztv</code>/etc. public-tracker
+entries, cross-referencing this item. (The download-proxy /
+credential-registration flow for rutracker downloads is unaffected —
+this only concerns the merge-search fan-out.)</li>
+</ol>
+<p>Whichever option the operator chooses, the code-side reporting is
+already correct as of this session (§2): a 403 from rutracker’s search
+endpoint surfaces to the merge result as
+<code>error_type=upstream_http_403</code> with the bot-protection
+explanation appended, not as a silent <code>empty</code> — so no user is
+currently being misled about <em>why</em> rutracker contributes nothing;
+the remaining question is purely whether/how to make it contribute
+something again, which is the operator’s call.</p>
+<h2 id="honest-boundary">8. Honest boundary</h2>
+<p>Measured from <strong>one host, unauthenticated, today
+(2026-09-25)</strong> — same caveat the original 2026-08-21 measurement
+carried. I did not test from a different network/IP
+(rate/reputation-based blocking, if any, could in principle differ by
+source IP), and I did not test with a genuine browser-issued
+<code>cf_clearance</code> cookie (option 2 above remains untested, not
+ruled out as a fix — only the
+<em>header-tuning-without-a-real-clearance-cookie</em> path is ruled out
+by this session’s evidence). The finding is that the current
+unauthenticated, non-JS-executing code path gets a 403 regardless of
+header signature; it is not a claim that no legitimate client
+configuration could ever pass.</p>
+</body>
+</html>

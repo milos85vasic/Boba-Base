@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 115
-**Last modified:** 2026-09-25T09:51:06Z
+**Revision:** 119
+**Last modified:** 2026-09-25T10:45:47Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -27,11 +27,21 @@ RuTracker automated login blocked by CAPTCHA
 
 ## BOB-065 — Lava P2: Egress diagnosis and VPN-host SOCKS routing (containers pkg/egress)
 
-**Status:** Queued
+**Status:** In progress
 **Type:** Task
 **Severity:** High
 
-[Backfill from RD2-15/GA-05, audit doc 2026-08-08] Lava-porting finding P2 (Egress decision + VPN-host routing, Lava PLAYBOOK sections 0 and 4). Problem Boba-Base shares: on a datacenter host, trackers are network-blocked (DNS-fail/TLS-MITM, not Cloudflare so FlareSolverr cannot fix). Affects Jackett indexer fetches + merge_service/download-proxy + plugin engines. Diagnosis (port the script): curl https://api.ipify.org (host IP) + curl -o /dev/null -w %{http_code} https://<tracker>/ direct vs via a VPN-host SOCKS proxy. Different egress IP + 200 via proxy confirms. Fix: route outbound through a VPN-connected host (the nezha pattern). SOCKS tunnel ssh -D 127.0.0.1:1080 -N <vpnhost> (use --socks5-hostname for remote DNS); point Jackett + download-proxy + qBitTorrent-go at it (P3). For browser-cookie harvest, run the harvester ON the VPN host. Port: containers submodule pkg/egress (tunnel up/verify) + scripts/egress-via-vpn.sh glue; reuse Boba-Base existing ensure-macos-tunnel.sh style. TDD: assert the via-proxy egress IP != direct host IP AND a known-blocked tracker returns 200 via proxy. Source: docs/PORTING-FROM-LAVA.md. Per audit RD2-15 [P0]: Create tracked workable items (BOB-064..067) for the four Lava-porting findings, citing implementing commits as evidence, closed as Implemented.
+Lava P2: Egress diagnosis and VPN-host SOCKS routing (containers pkg/egress)
+
+=== ROUND-2, 2026-09-25 — the egress/VPN mechanism ALREADY EXISTS (2026-07-01, commit be5062d + submodule cde354f/e273fd2/3a52825), this item's own tracker row was just never reconciled against it ===
+
+Root cause of the confusion: TWO different "containers submodule" paths exist in this tree. `constitution/submodules/containers` (an unrelated nested dependency, no pkg/ dir) is NOT what this item or docs/PORTING-FROM-LAVA.md mean. The REAL one is the project-root `submodules/containers` (.gitmodules -> vasic-digital/Containers.git), which already has a complete, hardened, unit-tested pkg/egress (egress.go + egress_test.go + wave20_eg2hard_test.go, 12/12 tests independently re-verified passing this round), and scripts/egress-via-vpn.sh already exists and is already git-tracked (fail-loud on missing host, real direct-egress-IP probing, honest failure when no tunnel exists).
+
+NEW THIS ROUND: tests/integration/test_egress_via_vpn.py -- scripts/egress-via-vpn.sh previously had no dedicated test (only a bare `bash -n` cited in its own commit). Adds 7 tests covering presence/exec-bit/syntax/usage/fail-loud-on-missing-host/fail-honest-on-dead-tunnel/real-direct-probe, plus the item's own exact acceptance criterion as an honestly `@pytest.mark.skipif`-gated test (SKIP: no VPN host configured, §11.4.3) -- ready to run unmodified the moment BOBA_VPN_HOST is configured. Independently re-verified: 6 passed, 1 honestly skipped.
+
+REMAINING WORK: (1) an operator-provisioned, SSH-reachable VPN host set via BOBA_VPN_HOST; (2) running the skipped test (or `scripts/egress-via-vpn.sh diagnose <known-blocked-tracker>`) against it to produce the item's own exact acceptance evidence (via-proxy egress IP != direct host IP AND a known-blocked tracker returns 200 via proxy). No tracker is currently blocked from this sandbox host, so "known-blocked" is necessarily operator/time-dependent and cannot be hardcoded.
+
+EVIDENCE: docs/qa/BOB-065/investigation_20260925.md.
 
 ## BOB-066 — Lava P3: BOBA_UPSTREAM_PROXY in download-proxy + qBitTorrent-go + Jackett + compose env-forward
 
@@ -94,14 +104,6 @@ RD2-07: DDoS-class testing fully absent from the mandated test-type matrix
 **Severity:** Medium
 
 [Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-18, P2 — closes GA-10] Create the top-level Boba (proxy/merge-service) v1.0.0 readiness ledger (GA-10) — dedupe with the browser_extension existing one as the template. GA-10 evidence: only docs/RELEASE_READINESS_20260616.html/.md/.pdf (dated point-in-time snapshot) and the extension own ledger exist; no top-level proxy/merge-service ledger created. Priority: P2.
-
-## BOB-088 — RD2-21: Complete/verify README Tracked-Items + Status Documents table row-completeness (GA-07 remainder)
-
-**Status:** Queued
-**Type:** Task
-**Severity:** Medium
-
-[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-21, P1] Complete/verify the README Tracked-Items + Status Documents table row-completeness (GA-07 remaining half). Not independently re-verified this round whether every mandated doc (CONTINUATION.md, Issues.md, Fixed.md, PORTING-FROM-LAVA.md, both new GA/RD2 audit docs, every Status.md/Status_Summary.md pair) actually has a row. Priority: P1.
 
 ## BOB-090 — RD2-25: HelixQA Challenge entry exercising all three start.sh subcommands end-to-end against real compose stack
 
@@ -194,12 +196,20 @@ Coverage-escape followup (docs/QA_DISCOVERY_LEDGER.md, BOB-075 agent-code-readin
 
 ## BOB-106 — §11.4.238 followup: §11.4.84 quiescence-check helper for the unattributed auto-commit path
 
-**Status:** Queued
+**Status:** In progress
 **Type:** Task
 **Severity:** Medium
 **Created-By:** Claude
 
-Coverage-escape followup (docs/QA_DISCOVERY_LEDGER.md RD2-00/BOB-068 entry, docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-00): 20 bare 'Auto-commit' commits exist in this repo's git history (confirmed via git log --oneline --all --grep, e.g. 54e313f/9c8f684/743097a/de9270b/1c36777/41179c2/7c529ca) with no ATM-NNN reference and no TDD trail, landing via ordinary git pull fast-forward from a second session/host with push access to the same remotes (mismatched commit timezone vs the investigating host, per RD2-00 Update). §11.4.84 working-tree-quiescence has no mechanical guard on this path — no gate flags a commit reaching main with a bare/templated message and no ticket citation. Author a §11.4.84 quiescence-check helper (e.g. challenges/scripts/no_unattributed_autocommit_challenge.sh) that scans the commit range since the last known-good release tag and FAILs on any commit message matching a closed bare/templated pattern (e.g. ^Auto-commit$, ^sync: ) with no ATM-NNN or task/PR reference, wired into scripts/pre_build_verification.sh or the §11.4.234 commit-push-all.sh entrypoint. BOB-068 (RD2-00) remains the tracking item for identifying/stopping the source; this item is specifically the new automated CHECK.
+§11.4.238 followup: §11.4.84 quiescence-check helper for the unattributed auto-commit path
+
+=== ROUND-2 PROGRESS, 2026-08-21 (discovered + independently verified 2026-09-25 via BOB-238 investigation) ===
+
+Already substantially implemented at commit 7b45113c6b03524d9c799bdd68496ec202575e4c: `scripts/hooks/unattributed-commit-guard.sh` (237 lines) + companion doc + a hermetic self-validated test (140 lines, golden-good/golden-bad/self-test per §11.4.107(10)). The guard's own header carries an explicit, honest "WIRING (honest gap, §11.4.6)" section stating it is NOT yet invoked from scripts/pre_build_verification.sh or scripts/commit-push-all.sh. Confirmed via full-diff grep the guard's name appears only in itself/its doc/its own test/BOB-162's text -- never inside either seam file.
+
+REMAINING WORK: (1) actual wiring into one of the two seams; (2) the §11.4.224(E) brownfield-adoption operator decision -- 14 pre-existing violating commits would immediately fail the seam as written today, so wiring it in un-gated would retroactively "break the build" on history nobody is fixing. This item is explicitly tracked as blocked on that same operator decision via sibling item BOB-162 ("this item is not closed until that answer is recorded").
+
+EVIDENCE: docs/qa/BOB-238/investigation_20260925.md (full citation trail).
 
 ## BOB-109 — BOB-074 followup: scaling-class test coverage absent from mandated test-type matrix
 
@@ -209,15 +219,6 @@ Coverage-escape followup (docs/QA_DISCOVERY_LEDGER.md RD2-00/BOB-068 entry, docs
 **Created-By:** Claude
 
 docs/testing/test_type_matrix.md's §11.4.27 test-type audit found zero scaling-class coverage anywhere in the tree (no scaling-tagged directory, test file, or HelixQA bank distinguishes growing-dataset/tracker-count/concurrent-user scale-out from stress-under-burst). Scope at least one scaling dimension, e.g. tracker-count scale-out in merge search against challenges/helixqa-banks/boba-services.yaml's tracker set, or the qbittorrent-proxy-go --profile go swap, with a real measured baseline.
-
-## BOB-110 — BOB-074 followup: UX-class test coverage (accessibility/usability) absent
-
-**Status:** Queued
-**Type:** Task
-**Severity:** Medium
-**Created-By:** Claude
-
-docs/testing/test_type_matrix.md's §11.4.27 test-type audit found UI functional coverage (Vitest + Playwright) but nothing framed around usability/accessibility/UX outcomes specifically. Scope an axe-core or equivalent accessibility pass over the Angular frontend, covering WCAG checks, keyboard-nav coverage, and screen-reader labeling.
 
 ## BOB-111 — BOB-074 followup: configure real rate limiting for boba's 3 public HTTP endpoints
 
@@ -368,8 +369,9 @@ PROVENANCE. Raised as IMPORTANT-2 by the independent Fable-substrate reviewer of
 
 ## BOB-172 — rutracker search endpoint returns HTTP 403 with Cloudflare challenge markers and zero login markers, so one of three merge-search trackers silently contributes no results
 
-**Status:** Ready for testing
+**Status:** Operator-blocked
 **Type:** Bug
+**Operator-Block-Details:** WHAT: Choose how the merge service reaches rutracker for SEARCH (not just login) given real-time re-verified 2026-09-25: GET /forum/tracker.php?nm=... returns 403 with cf-mitigated: challenge, zero login markers, in ~21-27ms -- Cloudflare's edge decides before serving content, before any JS challenge runs. WHY: Attempted: (a) full realistic Chrome-header-set request vs the merge service's bare default request -- identical 403 in ~21ms, ruling out header tuning; (b) live-probed all 3 configured rutracker mirrors -- rutracker.org and rutracker.net both cf-mitigated:challenge, rutracker.nl fails TLS verification entirely; (c) no code path can solve a Cloudflare edge-layer challenge without external infrastructure or a supplied clearance token -- changing shipped capability, needing §11.4.122 operator sign-off. UNBLOCK: Operator picks ONE: [1] Deploy a challenge-solving service (FlareSolverr or equivalent) and route the rutracker search GET through it -- not deployed today, same class of gap as kinozal/BOB-235; [2] Accept a supplied cf_clearance cookie -- RUTRACKER_COOKIES already forwards supplied cookies but the code only checks for bb_session, never cf_clearance (the actual token this wall checks) -- would need a small code change plus an operator refresh cadence via the existing scripts/load-tracker-cookies.sh pattern; [3] Route rutracker searches through Jackett's own rutracker indexer if its scraper has a working bypass -- unverified, needs a separate boba-jackett indexer-health check; [4] Mark rutracker SEARCH unsupported per §11.4.90/BOB-172 acceptance(d) -- README.md:167 still lists RuTracker with no caveat, unlike kickass/eztv which already carry this exact honest-capability-boundary treatment in docs/MERGE_SEARCH_DIAGNOSTICS.md. WHO: repository operator UNBLOCK: Operator picks ONE: [1] Deploy a challenge-solving service (FlareSolverr or equivalent) and route the rutracker search GET through it; [2] Accept a supplied cf_clearance cookie (RUTRACKER_COOKIES already forwards supplied cookies but only checks bb_session, never cf_clearance); [3] Route rutracker searches through Jackett's own rutracker indexer if its scraper has a working bypass; [4] Mark rutracker SEARCH unsupported per §11.4.90/BOB-172 acceptance(d)
 **Severity:** High
 **Created-By:** Claude
 **Assigned-To:** Claude
@@ -649,50 +651,54 @@ DISPOSITION FOR THIS SESSION'S COMMIT: per §11.4.234(D) (the commit/push mechan
 
 DISCOVERY CHANNEL (§11.4.238): found by boba's own pre-build sweep (scripts/pre_build_verification.sh, invariant 38/57) during a routine session commit — the automated gate itself is the discoverer, exactly as §11.4.238 requires.
 
-## BOB-238 — Commit 7b45113 (2026-08-21 T041 remediation) may close BOB-088/106/110/159/162 — unverified stale-tracker pattern, confirmed for BOB-107/114
+## BOB-240 — workable-items close/update do not validate the status word against the item's Type (§11.4.33) — extend CLI + validate invariant (BOB-239 mechanical-fix half)
 
 **Status:** Queued
-**Type:** Bug
+**Type:** Task
 **Severity:** medium
 **Created-By:** AI
 **Assigned-To:** AI
 
-WHAT: while independently verifying this session's BOB-077 subagent report, the conductor discovered `tests/hooks/test_check_brief_inputs.sh` — a tracked file proving BOB-107 was ALREADY fully implemented by commit `7b45113c6b03524d9c799bdd68496ec202575e4c` (2026-08-21), weeks before this session dispatched a subagent that built a redundant duplicate (caught and removed before commit — see BOB-107's own corrected closure evidence). The SAME commit's own message independently confirmed it also closed BOB-114 (docs/testing/ddos_resilience.md:571 carries an explicit "CLOSED 2026-08-21" note this session found and verified for BOB-114 separately).
+WHAT: split from BOB-239 (closed 2026-09-25 after bulk-correcting 30
+pre-existing §11.4.33 closure-vocabulary violations). This item is the
+remaining MECHANICAL-PREVENTION half: extend
+constitution/scripts/workable-items' `close` and `update` subcommands to
+VALIDATE the chosen status word against the item's own Type (Bug->Fixed,
+Feature->Implemented, Task->Completed, any type->Obsolete) and REFUSE a
+mismatched call rather than silently accepting it. Also extend the
+`validate` subcommand's existing invariant set to catch this class for
+defense-in-depth — confirmed this session that `validate: OK` ran
+repeatedly against a DB simultaneously holding 30+ live violations of
+this exact class, so the current invariant set does not check it.
 
-Two confirmed stale-tracker cases from ONE commit raised a systemic question: does 7b45113 close MORE currently-open items than the two this session happened to stumble onto?
+EVIDENCE THIS IS A REAL, RECURRING MISTAKE, NOT A HYPOTHETICAL: this
+session's own conductor made the identical error 4 times in a row
+(BOB-077/100/179/226, all Type=Task closed with `--status fixed`) before
+an unrelated self-audit caught it — on a DB that ALREADY held 30
+historical instances of the same mistake from earlier sessions. A
+CLI-level guard would have refused every one of those 34 calls at the
+moment they were made, instead of requiring a human/agent to remember to
+audit for it afterward.
 
-MEASURED: `git log -1 --format="%B" 7b45113 | grep -oE "BOB-[0-9]+" | sort -u` returns 14 distinct item references: BOB-079, BOB-088, BOB-092, BOB-106, BOB-110, BOB-120, BOB-136, BOB-154, BOB-158, BOB-159, BOB-160, BOB-161, BOB-162, BOB-163. Cross-checked against the live DB (`sqlite3 docs/workable_items.db "SELECT atm_id, status FROM items WHERE atm_id IN (...)"`): 9 of the 14 are ALREADY closed (BOB-079/092/120/136/154/158/160/161/163, all Completed/Fixed) — consistent with genuine closures already reconciled. **5 remain Queued: BOB-088, BOB-106, BOB-110, BOB-159, BOB-162.**
+SCOPE: constitution/scripts/workable-items/ (Go source) — a UNIVERSAL,
+constitution-submodule-owned tool, per §11.4.17. Landing a real fix here
+needs the §11.4.26 fetch/merge/push-to-all-upstreams workflow, same as
+BOB-191's gate fix this session, NOT boba's own commit-push-all.sh.
 
-HONEST BOUNDARY (§11.4.6): a bare mention of an item-ID in a large remediation-round commit message does NOT by itself prove that commit closed it — the commit could equally have referenced an item as CONTEXT, PARTIALLY addressed it, or introduced work that only later closes it. The 9-of-14-already-closed ratio is suggestive but not proof for the remaining 5. This item does NOT claim BOB-088/106/110/159/162 are stale — it claims they are UNVERIFIED against this specific commit and flags the pattern so nobody re-derives the same discovery-by-accident path this session took.
+ACCEPTANCE: (1) `workable-items close --status <word>` refuses when
+<word>'s implied Type-mapping does not match the target item's actual
+Type, printing the correct word to use; (2) same for `update --status`;
+(3) `validate` gains a new invariant scanning every Fixed-location item
+for a Type/Status mismatch per the closed §11.4.33 mapping, FAILing (not
+silently passing) on any hit; (4) each of (1)-(3) ships a paired §1.1
+mutation proving the check is load-bearing (a neutered version of the
+check must let a known-bad Type/Status pair through); (5) the Obsolete
+status is correctly treated as valid for ANY Type (it is not part of the
+type-specific mapping) so the new check does not false-positive on
+legitimately Obsolete-closed items.
 
-ACCEPTANCE: for each of BOB-088, BOB-106, BOB-110, BOB-159, BOB-162: read `7b45113`'s full diff for the file(s)/section relevant to that item's own acceptance criteria (not just the commit MESSAGE's mention of the ID), and CONFIRM whichever of these three outcomes actually applies — (a) the commit already closes it — close it with a corrected evidence citation to 7b45113, mirroring BOB-107/BOB-114's corrected closure pattern exactly; (b) the commit partially addresses it — update its description with the partial-progress split, same pattern as this session's BOB-191/BOB-219; (c) the commit's mention is unrelated/contextual only — leave it open, note the mention was investigated and ruled out so nobody re-checks it.
-
-DISCOVERY CHANNEL (§11.4.238): found by the conductor's own independent-verification discipline (re-running a sibling subagent's regression suite surfaced the stale-tracker file), not by any automated gate — itself worth noting as a coverage-escape class: no mechanical check currently catches "a large remediation commit's own message references an item-id that never gets tracker-reconciled."
-
-## BOB-239 — 30 pre-existing Fixed-location items violate §11.4.33 Type<->Status closure-vocabulary mapping (Task closed as Fixed/Implemented, not Completed) — workable-items validate does not catch this class
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** low
-**Created-By:** AI
-**Assigned-To:** AI
-
-WHAT: §11.4.33's closed vocabulary mapping is Bug->Fixed, Feature->Implemented, Task->Completed. A comprehensive audit of the whole workable-items DB (2026-09-25) found 30 Fixed-location items whose Type/Status pairing violates this mapping — all 30 pre-existing (from earlier sessions, spanning at least back through BOB-005/015/016/042..059), found AFTER this session had already self-corrected 4 of its OWN fresh instances of the identical mistake (BOB-077/100/179/226, all Type=Task mistakenly closed with status=Fixed instead of Completed — caught by this same audit discipline and fixed in-session, before commit, and therefore NOT among the 30 counted here).
-
-REPRODUCTION (exact count independently re-verified twice, §11.4.6 — the first draft of this item mis-stated the count as 25; the second, careful recount below is the corrected, accurate figure):
-```
-$ sqlite3 docs/workable_items.db "SELECT atm_id, type, status FROM items WHERE current_location='Fixed' AND ((type='Task' AND status NOT LIKE 'Completed%' AND status NOT LIKE 'Obsolete%') OR (type='Bug' AND status NOT LIKE 'Fixed%' AND status NOT LIKE 'Obsolete%') OR (type='Feature' AND status NOT LIKE 'Implemented%' AND status NOT LIKE 'Obsolete%'));" | wc -l
-30
-```
-Full list (all Type=Task): BOB-005, BOB-015, BOB-016, BOB-042, BOB-043, BOB-044, BOB-045, BOB-046, BOB-047, BOB-048, BOB-049, BOB-050, BOB-051, BOB-052, BOB-053, BOB-054, BOB-055, BOB-056, BOB-057, BOB-058, BOB-059, BOB-141, BOB-150, BOB-161, BOB-168, BOB-182, BOB-192, BOB-199, BOB-228, BOB-232 — 19 of the 30 (BOB-042..058, a consecutive run, plus none others) are closed as "Implemented" (the Feature-only word); the remaining 11 (BOB-005/015/016/059/141/150/161/168/182/192/199/228/232 — recount: that is 13, not 11; see honest note below) are closed as "Fixed" (the Bug-only word). Every one of the 30 is Type=Task and should read "Completed".
-
-HONEST NOTE ON SUB-COUNTS (§11.4.6): the 19-Implemented / (30-19)=11-Fixed split stated above does not balance against the full 30-item list (13 "Fixed" entries are actually visible in the raw query output, not 11) — this description does not re-verify the sub-split further; the AUTHORITATIVE figure is the machine-counted TOTAL of 30, independently reproducible via the command above. Whoever picks up this item's ACCEPTANCE criteria MUST re-run the reproduction command fresh (never trust either sub-count stated in prose here) before acting, per the same discipline that caught this description's own first-draft miscount.
-
-WHY NOT BULK-FIXED IN THIS SESSION: changing 30 historical closure Status fields is a consequential, tracker-wide action — it rewrites how every one of these items reads in Fixed.md/Fixed_Summary.md and their exported HTML/PDF/DOCX twins, touches items this session did zero individual investigation on, and deserves its own dedicated pass with regenerated docs and a focused commit, not a rushed side-effect of an unrelated backlog-triage session already carrying substantial other work. §11.4.33 itself does not mandate WHEN a pre-existing violation must be corrected, only that new closures follow the mapping.
-
-CANDIDATE ROOT CAUSE (stated as a hypothesis, not proven — §11.4.6): the CLI's `close` subcommand accepts `--status <fixed|implemented|completed|obsolete>` as a literal flag value the caller must choose correctly per the item's own Type; nothing in the CLI itself cross-checks the chosen status word against the item's Type and refuses a mismatch. This session's own 4 fresh violations happened exactly this way — the closing agent (this conductor) simply typed `--status fixed` out of habit without checking Type first, on three separate close calls, before an unrelated audit query caught the pattern. If 30 independent historical instances of the identical mistake exist, the likely mechanism is the same human/agent habit, uncaught because no mechanical gate enforces the Type<->Status mapping at write time — corroborated by the fact `workable-items validate` ran clean throughout this session despite 30 (34 counting this session's own transient instances) live violations existing simultaneously.
-
-ACCEPTANCE: (1) each of the 30 pre-existing items is individually corrected via `workable-items update --status "Completed (-> Fixed.md)" --location Fixed`, docs regenerated, one focused commit; (2) per the stated candidate root cause, extend `workable-items close`/`update` to VALIDATE the status word against the item's own Type and refuse a mismatch (closing the write-time gap that let 34 total instances of this exact mistake land, 30 of them still uncaught as of this filing) — a genuine candidate mechanical fix, not yet built; (3) extend `workable-items validate`'s existing invariant set to catch this class for defense-in-depth (it currently does not, confirmed by this session's own repeated clean `validate: OK` runs against a database that simultaneously held these violations).
-
-DISCOVERY CHANNEL (§11.4.238): found by the conductor's own routine self-audit after catching its own instance of the same mistake on BOB-077 — not by any pre-build gate (`workable-items validate` ran clean throughout this session despite 30+ live instances, confirming this class is currently invisible to that check).
+DISCOVERY CHANNEL (§11.4.238): found by the conductor's own repeated,
+self-caught instances of the mistake this session, generalised into
+BOB-239 (the bulk-correction), now split into this item (the mechanical
+prevention) per BOB-239's own acceptance criterion 2/3.
 

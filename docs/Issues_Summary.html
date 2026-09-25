@@ -195,27 +195,27 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Operator-blocked</td>
-<td>2</td>
+<td>3</td>
 </tr>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>7</td>
+<td>5</td>
 </tr>
 <tr>
 <td>Bug</td>
 <td>Ready for testing</td>
-<td>2</td>
+<td>1</td>
 </tr>
 <tr>
 <td>Task</td>
 <td>In progress</td>
-<td>10</td>
+<td>12</td>
 </tr>
 <tr>
 <td>Task</td>
 <td>Queued</td>
-<td>17</td>
+<td>14</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -225,7 +225,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>45</strong></td>
+<td><strong>42</strong></td>
 </tr>
 </tbody>
 </table>
@@ -279,10 +279,40 @@ item text follows — RuTracker automated login blocked by CAPTCHA</td>
 <tr>
 <td>BOB-065</td>
 <td>Task</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>High</td>
 <td>Lava P2: Egress diagnosis and VPN-host SOCKS routing (containers
-pkg/egress)</td>
+pkg/egress) === ROUND-2, 2026-09-25 — the egress/VPN mechanism ALREADY
+EXISTS (2026-07-01, commit be5062d + submodule cde354f/e273fd2/3a52825),
+this item’s own tracker row was just never reconciled against it ===
+Root cause of the confusion: TWO different “containers submodule” paths
+exist in this tree. <code>constitution/submodules/containers</code> (an
+unrelated nested dependency, no pkg/ dir) is NOT what this item or
+docs/PORTING-FROM-LAVA.md mean. The REAL one is the project-root
+<code>submodules/containers</code> (.gitmodules -&gt;
+vasic-digital/Containers.git), which already has a complete, hardened,
+unit-tested pkg/egress (egress.go + egress_test.go +
+wave20_eg2hard_test.go, 12/12 tests independently re-verified passing
+this round), and scripts/egress-via-vpn.sh already exists and is already
+git-tracked (fail-loud on missing host, real direct-egress-IP probing,
+honest failure when no tunnel exists). NEW THIS ROUND:
+tests/integration/test_egress_via_vpn.py – scripts/egress-via-vpn.sh
+previously had no dedicated test (only a bare <code>bash -n</code> cited
+in its own commit). Adds 7 tests covering
+presence/exec-bit/syntax/usage/fail-loud-on-missing-host/fail-honest-on-dead-tunnel/real-direct-probe,
+plus the item’s own exact acceptance criterion as an honestly
+<code>@pytest.mark.skipif</code>-gated test (SKIP: no VPN host
+configured, §11.4.3) – ready to run unmodified the moment BOBA_VPN_HOST
+is configured. Independently re-verified: 6 passed, 1 honestly skipped.
+REMAINING WORK: (1) an operator-provisioned, SSH-reachable VPN host set
+via BOBA_VPN_HOST; (2) running the skipped test (or
+<code>scripts/egress-via-vpn.sh diagnose &lt;known-blocked-tracker&gt;</code>)
+against it to produce the item’s own exact acceptance evidence
+(via-proxy egress IP != direct host IP AND a known-blocked tracker
+returns 200 via proxy). No tracker is currently blocked from this
+sandbox host, so “known-blocked” is necessarily operator/time-dependent
+and cannot be hardcoded. EVIDENCE:
+docs/qa/BOB-065/investigation_20260925.md.</td>
 </tr>
 <tr>
 <td>BOB-066</td>
@@ -339,14 +369,6 @@ Auto-commit diffs</td>
 <td>Medium</td>
 <td>RD2-18: Create top-level Boba proxy/merge-service v1.0.0 readiness
 ledger (closes GA-10)</td>
-</tr>
-<tr>
-<td>BOB-088</td>
-<td>Task</td>
-<td>Queued</td>
-<td>Medium</td>
-<td>RD2-21: Complete/verify README Tracked-Items + Status Documents
-table row-completeness (GA-07 remainder)</td>
 </tr>
 <tr>
 <td>BOB-090</td>
@@ -450,10 +472,29 @@ challenge</td>
 <tr>
 <td>BOB-106</td>
 <td>Task</td>
-<td>Queued</td>
+<td>In progress</td>
 <td>Medium</td>
 <td>§11.4.238 followup: §11.4.84 quiescence-check helper for the
-unattributed auto-commit path</td>
+unattributed auto-commit path === ROUND-2 PROGRESS, 2026-08-21
+(discovered + independently verified 2026-09-25 via BOB-238
+investigation) === Already substantially implemented at commit
+7b45113c6b03524d9c799bdd68496ec202575e4c:
+<code>scripts/hooks/unattributed-commit-guard.sh</code> (237 lines) +
+companion doc + a hermetic self-validated test (140 lines,
+golden-good/golden-bad/self-test per §11.4.107(10)). The guard’s own
+header carries an explicit, honest “WIRING (honest gap, §11.4.6)”
+section stating it is NOT yet invoked from
+scripts/pre_build_verification.sh or scripts/commit-push-all.sh.
+Confirmed via full-diff grep the guard’s name appears only in itself/its
+doc/its own test/BOB-162’s text – never inside either seam file.
+REMAINING WORK: (1) actual wiring into one of the two seams; (2) the
+§11.4.224(E) brownfield-adoption operator decision – 14 pre-existing
+violating commits would immediately fail the seam as written today, so
+wiring it in un-gated would retroactively “break the build” on history
+nobody is fixing. This item is explicitly tracked as blocked on that
+same operator decision via sibling item BOB-162 (“this item is not
+closed until that answer is recorded”). EVIDENCE:
+docs/qa/BOB-238/investigation_20260925.md (full citation trail).</td>
 </tr>
 <tr>
 <td>BOB-109</td>
@@ -462,14 +503,6 @@ unattributed auto-commit path</td>
 <td>Medium</td>
 <td>BOB-074 followup: scaling-class test coverage absent from mandated
 test-type matrix</td>
-</tr>
-<tr>
-<td>BOB-110</td>
-<td>Task</td>
-<td>Queued</td>
-<td>Medium</td>
-<td>BOB-074 followup: UX-class test coverage (accessibility/usability)
-absent</td>
 </tr>
 <tr>
 <td>BOB-111</td>
@@ -690,7 +723,7 @@ SKIP at today’s load.</td>
 <tr>
 <td>BOB-172</td>
 <td>Bug</td>
-<td>Ready for testing</td>
+<td>Operator-blocked</td>
 <td>High</td>
 <td>WHAT. The rutracker SEARCH endpoint is refused by bot protection
 while the site itself is fully reachable. Measured unauthenticated
@@ -1463,139 +1496,49 @@ during a routine session commit — the automated gate itself is the
 discoverer, exactly as §11.4.238 requires.</td>
 </tr>
 <tr>
-<td>BOB-238</td>
-<td>Bug</td>
+<td>BOB-240</td>
+<td>Task</td>
 <td>Queued</td>
 <td>medium</td>
-<td>WHAT: while independently verifying this session’s BOB-077 subagent
-report, the conductor discovered
-<code>tests/hooks/test_check_brief_inputs.sh</code> — a tracked file
-proving BOB-107 was ALREADY fully implemented by commit
-<code>7b45113c6b03524d9c799bdd68496ec202575e4c</code> (2026-08-21),
-weeks before this session dispatched a subagent that built a redundant
-duplicate (caught and removed before commit — see BOB-107’s own
-corrected closure evidence). The SAME commit’s own message independently
-confirmed it also closed BOB-114 (docs/testing/ddos_resilience.md:571
-carries an explicit “CLOSED 2026-08-21” note this session found and
-verified for BOB-114 separately). Two confirmed stale-tracker cases from
-ONE commit raised a systemic question: does 7b45113 close MORE
-currently-open items than the two this session happened to stumble onto?
-MEASURED:
-<code>git log -1 --format="%B" 7b45113 \| grep -oE "BOB-[0-9]+" \| sort -u</code>
-returns 14 distinct item references: BOB-079, BOB-088, BOB-092, BOB-106,
-BOB-110, BOB-120, BOB-136, BOB-154, BOB-158, BOB-159, BOB-160, BOB-161,
-BOB-162, BOB-163. Cross-checked against the live DB
-(<code>sqlite3 docs/workable_items.db "SELECT atm_id, status FROM items WHERE atm_id IN (...)"</code>):
-9 of the 14 are ALREADY closed (BOB-079/092/120/136/154/158/160/161/163,
-all Completed/Fixed) — consistent with genuine closures already
-reconciled. <strong>5 remain Queued: BOB-088, BOB-106, BOB-110, BOB-159,
-BOB-162.</strong> HONEST BOUNDARY (§11.4.6): a bare mention of an
-item-ID in a large remediation-round commit message does NOT by itself
-prove that commit closed it — the commit could equally have referenced
-an item as CONTEXT, PARTIALLY addressed it, or introduced work that only
-later closes it. The 9-of-14-already-closed ratio is suggestive but not
-proof for the remaining 5. This item does NOT claim
-BOB-088/106/110/159/162 are stale — it claims they are UNVERIFIED
-against this specific commit and flags the pattern so nobody re-derives
-the same discovery-by-accident path this session took. ACCEPTANCE: for
-each of BOB-088, BOB-106, BOB-110, BOB-159, BOB-162: read
-<code>7b45113</code>’s full diff for the file(s)/section relevant to
-that item’s own acceptance criteria (not just the commit MESSAGE’s
-mention of the ID), and CONFIRM whichever of these three outcomes
-actually applies — (a) the commit already closes it — close it with a
-corrected evidence citation to 7b45113, mirroring BOB-107/BOB-114’s
-corrected closure pattern exactly; (b) the commit partially addresses it
-— update its description with the partial-progress split, same pattern
-as this session’s BOB-191/BOB-219; (c) the commit’s mention is
-unrelated/contextual only — leave it open, note the mention was
-investigated and ruled out so nobody re-checks it. DISCOVERY CHANNEL
-(§11.4.238): found by the conductor’s own independent-verification
-discipline (re-running a sibling subagent’s regression suite surfaced
-the stale-tracker file), not by any automated gate — itself worth noting
-as a coverage-escape class: no mechanical check currently catches “a
-large remediation commit’s own message references an item-id that never
-gets tracker-reconciled.”</td>
-</tr>
-<tr>
-<td>BOB-239</td>
-<td>Bug</td>
-<td>Queued</td>
-<td>low</td>
-<td>WHAT: §11.4.33’s closed vocabulary mapping is Bug-&gt;Fixed,
-Feature-&gt;Implemented, Task-&gt;Completed. A comprehensive audit of
-the whole workable-items DB (2026-09-25) found 30 Fixed-location items
-whose Type/Status pairing violates this mapping — all 30 pre-existing
-(from earlier sessions, spanning at least back through
-BOB-005/015/016/042..059), found AFTER this session had already
-self-corrected 4 of its OWN fresh instances of the identical mistake
-(BOB-077/100/179/226, all Type=Task mistakenly closed with status=Fixed
-instead of Completed — caught by this same audit discipline and fixed
-in-session, before commit, and therefore NOT among the 30 counted here).
-REPRODUCTION (exact count independently re-verified twice, §11.4.6 — the
-first draft of this item mis-stated the count as 25; the second, careful
-recount below is the corrected, accurate figure):
-<code>$ sqlite3 docs/workable_items.db "SELECT atm_id, type, status FROM items WHERE current_location='Fixed' AND ((type='Task' AND status NOT LIKE 'Completed%' AND status NOT LIKE 'Obsolete%') OR (type='Bug' AND status NOT LIKE 'Fixed%' AND status NOT LIKE 'Obsolete%') OR (type='Feature' AND status NOT LIKE 'Implemented%' AND status NOT LIKE 'Obsolete%'));" \| wc -l 30</code>
-Full list (all Type=Task): BOB-005, BOB-015, BOB-016, BOB-042, BOB-043,
-BOB-044, BOB-045, BOB-046, BOB-047, BOB-048, BOB-049, BOB-050, BOB-051,
-BOB-052, BOB-053, BOB-054, BOB-055, BOB-056, BOB-057, BOB-058, BOB-059,
-BOB-141, BOB-150, BOB-161, BOB-168, BOB-182, BOB-192, BOB-199, BOB-228,
-BOB-232 — 19 of the 30 (BOB-042..058, a consecutive run, plus none
-others) are closed as “Implemented” (the Feature-only word); the
-remaining 11 (BOB-005/015/016/059/141/150/161/168/182/192/199/228/232 —
-recount: that is 13, not 11; see honest note below) are closed as
-“Fixed” (the Bug-only word). Every one of the 30 is Type=Task and should
-read “Completed”. HONEST NOTE ON SUB-COUNTS (§11.4.6): the
-19-Implemented / (30-19)=11-Fixed split stated above does not balance
-against the full 30-item list (13 “Fixed” entries are actually visible
-in the raw query output, not 11) — this description does not re-verify
-the sub-split further; the AUTHORITATIVE figure is the machine-counted
-TOTAL of 30, independently reproducible via the command above. Whoever
-picks up this item’s ACCEPTANCE criteria MUST re-run the reproduction
-command fresh (never trust either sub-count stated in prose here) before
-acting, per the same discipline that caught this description’s own
-first-draft miscount. WHY NOT BULK-FIXED IN THIS SESSION: changing 30
-historical closure Status fields is a consequential, tracker-wide action
-— it rewrites how every one of these items reads in
-Fixed.md/Fixed_Summary.md and their exported HTML/PDF/DOCX twins,
-touches items this session did zero individual investigation on, and
-deserves its own dedicated pass with regenerated docs and a focused
-commit, not a rushed side-effect of an unrelated backlog-triage session
-already carrying substantial other work. §11.4.33 itself does not
-mandate WHEN a pre-existing violation must be corrected, only that new
-closures follow the mapping. CANDIDATE ROOT CAUSE (stated as a
-hypothesis, not proven — §11.4.6): the CLI’s <code>close</code>
-subcommand accepts
-<code>--status &lt;fixed\|implemented\|completed\|obsolete&gt;</code> as
-a literal flag value the caller must choose correctly per the item’s own
-Type; nothing in the CLI itself cross-checks the chosen status word
-against the item’s Type and refuses a mismatch. This session’s own 4
-fresh violations happened exactly this way — the closing agent (this
-conductor) simply typed <code>--status fixed</code> out of habit without
-checking Type first, on three separate close calls, before an unrelated
-audit query caught the pattern. If 30 independent historical instances
-of the identical mistake exist, the likely mechanism is the same
-human/agent habit, uncaught because no mechanical gate enforces the
-Type&lt;-&gt;Status mapping at write time — corroborated by the fact
-<code>workable-items validate</code> ran clean throughout this session
-despite 30 (34 counting this session’s own transient instances) live
-violations existing simultaneously. ACCEPTANCE: (1) each of the 30
-pre-existing items is individually corrected via
-<code>workable-items update --status "Completed (-&gt; Fixed.md)" --location Fixed</code>,
-docs regenerated, one focused commit; (2) per the stated candidate root
-cause, extend <code>workable-items close</code>/<code>update</code> to
-VALIDATE the status word against the item’s own Type and refuse a
-mismatch (closing the write-time gap that let 34 total instances of this
-exact mistake land, 30 of them still uncaught as of this filing) — a
-genuine candidate mechanical fix, not yet built; (3) extend
-<code>workable-items validate</code>’s existing invariant set to catch
-this class for defense-in-depth (it currently does not, confirmed by
-this session’s own repeated clean <code>validate: OK</code> runs against
-a database that simultaneously held these violations). DISCOVERY CHANNEL
-(§11.4.238): found by the conductor’s own routine self-audit after
-catching its own instance of the same mistake on BOB-077 — not by any
-pre-build gate (<code>workable-items validate</code> ran clean
-throughout this session despite 30+ live instances, confirming this
-class is currently invisible to that check).</td>
+<td>WHAT: split from BOB-239 (closed 2026-09-25 after bulk-correcting 30
+pre-existing §11.4.33 closure-vocabulary violations). This item is the
+remaining MECHANICAL-PREVENTION half: extend
+constitution/scripts/workable-items’ <code>close</code> and
+<code>update</code> subcommands to VALIDATE the chosen status word
+against the item’s own Type (Bug-&gt;Fixed, Feature-&gt;Implemented,
+Task-&gt;Completed, any type-&gt;Obsolete) and REFUSE a mismatched call
+rather than silently accepting it. Also extend the <code>validate</code>
+subcommand’s existing invariant set to catch this class for
+defense-in-depth — confirmed this session that <code>validate: OK</code>
+ran repeatedly against a DB simultaneously holding 30+ live violations
+of this exact class, so the current invariant set does not check it.
+EVIDENCE THIS IS A REAL, RECURRING MISTAKE, NOT A HYPOTHETICAL: this
+session’s own conductor made the identical error 4 times in a row
+(BOB-077/100/179/226, all Type=Task closed with
+<code>--status fixed</code>) before an unrelated self-audit caught it —
+on a DB that ALREADY held 30 historical instances of the same mistake
+from earlier sessions. A CLI-level guard would have refused every one of
+those 34 calls at the moment they were made, instead of requiring a
+human/agent to remember to audit for it afterward. SCOPE:
+constitution/scripts/workable-items/ (Go source) — a UNIVERSAL,
+constitution-submodule-owned tool, per §11.4.17. Landing a real fix here
+needs the §11.4.26 fetch/merge/push-to-all-upstreams workflow, same as
+BOB-191’s gate fix this session, NOT boba’s own commit-push-all.sh.
+ACCEPTANCE: (1) <code>workable-items close --status &lt;word&gt;</code>
+refuses when <word>’s implied Type-mapping does not match the target
+item’s actual Type, printing the correct word to use; (2) same for
+<code>update --status</code>; (3) <code>validate</code> gains a new
+invariant scanning every Fixed-location item for a Type/Status mismatch
+per the closed §11.4.33 mapping, FAILing (not silently passing) on any
+hit; (4) each of (1)-(3) ships a paired §1.1 mutation proving the check
+is load-bearing (a neutered version of the check must let a known-bad
+Type/Status pair through); (5) the Obsolete status is correctly treated
+as valid for ANY Type (it is not part of the type-specific mapping) so
+the new check does not false-positive on legitimately Obsolete-closed
+items. DISCOVERY CHANNEL (§11.4.238): found by the conductor’s own
+repeated, self-caught instances of the mistake this session, generalised
+into BOB-239 (the bulk-correction), now split into this item (the
+mechanical prevention) per BOB-239’s own acceptance criterion 2/3.</td>
 </tr>
 </tbody>
 </table>

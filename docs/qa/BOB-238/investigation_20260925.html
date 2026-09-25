@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>investigation_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">investigation_20260925</h1>
+</header>
+<h1
+id="bob-238-investigation-verdicts-for-bob-088-bob-106-bob-110-bob-159-bob-162-against-commit-7b45113">BOB-238
+investigation — verdicts for BOB-088 / BOB-106 / BOB-110 / BOB-159 /
+BOB-162 against commit 7b45113</h1>
+<p><strong>Investigation date:</strong> 2026-09-25 <strong>Investigated
+commit:</strong> <code>7b45113c6b03524d9c799bdd68496ec202575e4c</code>
+(2026-08-21T21:56:22+02:00, “fix(002,T041): close the review’s 5
+IMPORTANT + 7 MINOR findings, and three defects nobody had reported”)
+<strong>Method:</strong>
+<code>git show 7b45113c6b03524d9c799bdd68496ec202575e4c --stat</code>
+for the touched-file list, then
+<code>git show 7b45113c6b03524d9c799bdd68496ec202575e4c -- &lt;file&gt;</code>
+for each item’s own scope, cross-referenced against each item’s current
+full text in <code>docs/Issues.md</code> / <code>docs/Fixed.md</code>.
+No source, test, config, or DB file was modified during this
+investigation — pure read-only
+<code>git show</code>/<code>grep</code>/<code>sed</code> against the
+tree.</p>
+<p>Scope note: BOB-107 and BOB-114 were already confirmed case (a) by
+the conductor before this dispatch (cited in BOB-238’s own body) — not
+re-investigated here. This report covers the 5 remaining UNVERIFIED
+ids.</p>
+<hr />
+<h2
+id="bob-088-rd2-21-completeverify-readme-tracked-items-status-documents-table-row-completeness">BOB-088
+— “RD2-21: Complete/verify README Tracked-Items + Status Documents table
+row-completeness”</h2>
+<p><strong>Verdict: (a) — the commit already closes it.</strong></p>
+<p><strong>Item’s stated acceptance (from
+<code>docs/Issues.md</code>):</strong> “Complete/verify the README
+Tracked-Items + Status Documents table row-completeness (GA-07 remaining
+half). Not independently re-verified this round whether every mandated
+doc (CONTINUATION.md, Issues.md, Fixed.md, PORTING-FROM-LAVA.md, both
+new GA/RD2 audit docs, every Status.md/Status_Summary.md pair) actually
+has a row.”</p>
+<p><strong>Citing evidence:</strong></p>
+<ol type="1">
+<li><p><code>git show 7b45113 --stat</code> shows a brand-new,
+executable generator script
+<code>scripts/testing/update_readme_doc_links.sh</code> (259 lines,
+<code>new file mode 100755</code>), plus its §11.4.18 companion doc
+<code>docs/scripts/update_readme_doc_links.md</code> (114 lines, new)
+and a regression test
+<code>tests/unit/test_update_readme_doc_links_no_duplication.sh</code>
+(133 lines, new).</p></li>
+<li><p>The generator script’s own in-source header states verbatim (diff
+of <code>scripts/testing/update_readme_doc_links.sh</code>): &gt;
+<code># tracked file itself in THIS invocation; a table cell is never</code>
+&gt;
+<code># hand-typed or assumed correct because it "looked right last time"</code>
+&gt; <code># (§11.4.6).</code> &gt; and its cross-reference block: &gt;
+<code># Cross-references: docs/scripts/update_readme_doc_links.md (§11.4.18</code>
+&gt;
+<code>#   companion), CLAUDE.md / constitution/CLAUDE.md §11.4.57 (the mandate</code>
+&gt;
+<code>#   this script implements), BOB-088 (the tracked item this script closes).</code></p></li>
+<li><p>The companion doc
+<code>docs/scripts/update_readme_doc_links.md</code> (new file, this
+commit) states the exact measured drift BOB-088’s acceptance text asks
+about, and names its own closing effect verbatim: &gt; “Before this
+script existed, that table was hand-maintained, and it had drifted:
+measured &gt; 2026-08-21 (BOB-088), 10 of its 18 rows carried a stale
+<code>Revision</code>/<code>Last modified</code> pair … two &gt; rows
+read <code>— (not yet exported)</code> for HTML/PDF cells that had real
+exports on disk, and one &gt; MANDATED document
+(<code>docs/GOVERNANCE_AUDIT_2026-08-08_ROUND2.md</code>, cited by name
+in BOB-088’s own &gt; body text) had no row at all.” &gt; …
+“Cross-references: … BOB-088 — the tracked workable item this script
+closes.”</p></li>
+<li><p>The diff of <code>README.md</code> itself is direct evidence the
+table was actually regenerated and completed in this same commit — not
+just scripted for later use:</p>
+<ul>
+<li><code>PORTING-FROM-LAVA</code> row: HTML/PDF cells flip from
+<code>— (not yet exported)</code> to real links
+(<code>[HTML](docs/PORTING-FROM-LAVA.html)</code> /
+<code>[PDF](docs/PORTING-FROM-LAVA.pdf)</code>).</li>
+<li><code>GOVERNANCE_AUDIT_2026-08-07</code> row: HTML/PDF cells flip
+from <code>— (not yet exported)</code> to real links.</li>
+<li><code>GOVERNANCE_AUDIT_2026-08-08_ROUND2</code> — the item literally
+named as missing in BOB-088’s own acceptance text (“both new GA/RD2
+audit docs”) — appears as a brand-new row for the first time:
+<code>| GOVERNANCE_AUDIT_2026-08-08_ROUND2 | 2026-08-09T12:54:30Z | 6 | ... |</code>.</li>
+<li><code>Issues</code> row’s Revision cell corrects from stale
+<code>10</code> to live <code>40</code>; <code>Fixed</code> corrects
+from <code>20</code> to <code>25</code>; every
+<code>Status.md</code>/<code>Status_Summary.md</code> pair present in
+the pre-commit table is present and current post-commit.</li>
+<li>The table is now bounded by machine-generated markers
+(<code>&lt;!-- doc-link-section:begin --&gt;</code> /
+<code>&lt;!-- doc-link-section:end --&gt;</code>) with a note directly
+above it reading “Regenerated by
+<code>scripts/testing/update_readme_doc_links.sh</code> — never
+hand-typed (§11.4.57).”</li>
+</ul></li>
+<li><p>Anti-bluff proof cited in the same companion doc:
+“<code>tests/unit/test_update_readme_doc_links_no_duplication.sh</code>
+… run against the pre-fix script and confirmed to fail 3/5 assertions
+before the fix, then pass 5/5 after” — a real RED→GREEN pair, not a
+claimed-only fix.</p></li>
+</ol>
+<p><strong>Assumption:</strong> BOB-088’s acceptance text does not
+literally use the word “close”; it asks to “complete/verify” the table.
+I read the generator’s own explicit self-citation (“the tracked item
+this script closes”) plus the concrete before/after diff evidence (every
+explicitly-named gap in BOB-088’s body text is filled) as jointly
+satisfying that acceptance. The commit message’s separate claim of an
+“orphan sweep [that] went 96 orphans of 305 tracked docs -&gt; 0/305”
+could not be independently located as a discrete artifact in this diff
+(no <code>orphan</code> count is printed by
+<code>update_readme_doc_links.sh</code> itself, whose own doc describes
+its scope as deliberately narrower than the full §11.4.212 reachability
+obligation) — I treat that specific “96→0/305” figure as
+<code>UNCONFIRMED:</code> on its own, but it does not change BOB-088’s
+own verdict, since BOB-088’s acceptance text is about the Tracked-Items
+table specifically, and that is fully, concretely closed by the evidence
+above.</p>
+<hr />
+<h2
+id="bob-106-11.4.238-followup-11.4.84-quiescence-check-helper-for-the-unattributed-auto-commit-path">BOB-106
+— “§11.4.238 followup: §11.4.84 quiescence-check helper for the
+unattributed auto-commit path”</h2>
+<p><strong>Verdict: (b) — the commit partially addresses
+it.</strong></p>
+<p><strong>Item’s stated acceptance (from
+<code>docs/Issues.md</code>):</strong> “Author a §11.4.84
+quiescence-check helper (e.g.
+<code>challenges/scripts/no_unattributed_autocommit_challenge.sh</code>)
+that scans the commit range since the last known-good release tag and
+FAILs on any commit message matching a closed bare/templated pattern …
+<strong>wired into <code>scripts/pre_build_verification.sh</code> or the
+§11.4.234 <code>commit-push-all.sh</code> entrypoint</strong>.”</p>
+<p><strong>What landed (real progress):</strong></p>
+<ol type="1">
+<li>New executable guard
+<code>scripts/hooks/unattributed-commit-guard.sh</code> (237 lines, new
+file), which implements exactly the described check: closed
+bare/templated pattern set (<code>^Auto-commit$</code>,
+<code>^sync:[[:space:]]</code>), structure-not-substring matching
+(§11.4.201(7)(a)), a ticket/task-PR reference exemption, and a
+<code>--self-test</code> mode implementing §11.4.107(10)
+golden-good/golden-bad/false-positive self-validation.</li>
+<li>Companion doc <code>docs/scripts/unattributed-commit-guard.md</code>
+(new, 82 lines) and hermetic executing test
+<code>tests/hooks/test_unattributed_commit_guard.sh</code> (new, 140
+lines) driving the REAL invocation path (not a <code>bash -n</code>
+parse check), with a documented paired §1.1 mutation.</li>
+<li>Real-history proof: run against this repo’s actual git log, the
+guard names the 14 unattributed commits since the last tag exactly as
+the commit message claims (“BOB-106/107: two guards built. The commit
+guard names 14 unattributed commits since the last tag”).</li>
+</ol>
+<p><strong>What is missing (explicit, unmet acceptance clause — the
+wiring):</strong></p>
+<p>The guard’s own in-source header states this verbatim, as a section
+literally titled “WIRING (honest gap, §11.4.6)” (diff of
+<code>scripts/hooks/unattributed-commit-guard.sh</code>):</p>
+<blockquote>
+<p><code># ─── WIRING (honest gap, §11.4.6) ───────────────────────────────────────</code>
+<code># This script is NOT yet invoked from scripts/pre_build_verification.sh</code>
+<code># or scripts/commit-push-all.sh (the two entry points the tracked item</code>
+<code># names as candidates) — both are outside this authoring pass's granted</code>
+<code># edit scope. Wiring it into one of those two seams remains OWED as the</code>
+<code># item's closing step; see the BOB-106 tracker entry.</code></p>
+</blockquote>
+<p>Cross-checked mechanically:
+<code>scripts/pre_build_verification.sh</code> IS touched by this commit
+(164 lines changed per <code>git show --stat</code>), but
+<code>grep -n "unattributed-commit-guard.sh"</code> against the full
+commit diff finds the string ONLY inside: the guard script itself, its
+<code>docs/scripts/*.md</code> companion doc,
+<code>tests/hooks/test_unattributed_commit_guard.sh</code> (a test that
+invokes the guard directly, not a pre-build/commit seam), and —
+critically — inside the newly-added <code>docs/Issues.md</code> text for
+the <strong>sibling item BOB-162</strong> (filed in this same commit;
+see below), which independently states: “Neither is invoked by
+<code>scripts/pre_build_verification.sh</code> or
+<code>scripts/commit-push-all.sh</code>, so neither exerts standing
+detection pressure (11.4.226: a guard with no execution seam is not
+coverage; registration is not coverage).”
+<code>scripts/commit-push-all.sh</code> is not in this commit’s
+touched-file list at all.</p>
+<p><strong>Precisely what is still missing to fully close
+BOB-106:</strong> 1. Wiring <code>unattributed-commit-guard.sh</code>
+into <code>scripts/pre_build_verification.sh</code> or
+<code>scripts/commit-push-all.sh</code> as a real invocation seam
+(currently invoked by nothing but its own test/self-test). 2. An
+operator decision on the §11.4.224(E) brownfield-adoption question the
+guard’s own header and BOB-162 raise: wiring the guard AS-IS against the
+14 pre-existing unattributed commits would refuse every future commit
+immediately, so the acceptance criteria explicitly requires either the
+wiring OR “a registered deferral pointing at” the tracking item
+(BOB-162) recording that adoption choice — and BOB-162’s own text states
+plainly “this item is not closed until that answer is recorded,” i.e. as
+of the commit, that answer had not yet been recorded.</p>
+<p>This partial-progress gap is not something this investigation should
+silently complete: per the task’s own scope boundary, wiring a guard
+into
+<code>pre_build_verification.sh</code>/<code>commit-push-all.sh</code>
+when its own in-source comment explicitly defers that decision to the
+operator (§11.4.66/§11.4.224(E) brownfield adoption) is exactly the kind
+of decision reserved for the operator, not a low-risk mechanical
+follow-up a subagent should make unilaterally. I did not attempt it.</p>
+<hr />
+<h2
+id="bob-110-bob-074-followup-ux-class-test-coverage-accessibilityusability-absent">BOB-110
+— “BOB-074 followup: UX-class test coverage (accessibility/usability)
+absent”</h2>
+<p><strong>Verdict: (a) — the commit already closes it.</strong></p>
+<p><strong>Item’s stated acceptance (from
+<code>docs/Issues.md</code>):</strong>
+“<code>docs/testing/test_type_matrix.md</code>’s §11.4.27 test-type
+audit found UI functional coverage (Vitest + Playwright) but nothing
+framed around usability/accessibility/UX outcomes specifically. Scope an
+axe-core or equivalent accessibility pass over the Angular frontend,
+covering WCAG checks, keyboard-nav coverage, and screen-reader
+labeling.”</p>
+<p><strong>Citing evidence:</strong></p>
+<ol type="1">
+<li><p><code>git show 7b45113 --stat</code> shows a brand-new
+<code>tests/ux/</code> suite: <code>conftest.py</code> (137 lines),
+<code>test_accessibility_axe.py</code> (141 lines),
+<code>test_keyboard_navigation.py</code> (111 lines),
+<code>test_live_dashboard_accessibility.py</code> (72 lines), 4 fixture
+HTML files (good/bad pairs for accessibility and keyboard-nav), plus
+<code>docs/testing/ux_accessibility.md</code> (187 lines, new
+documentation) and
+<code>frontend/package.json</code>/<code>package-lock.json</code>
+changes adding <code>axe-core</code> as a real npm devDependency (not
+vendored by hand).</p></li>
+<li><p><code>docs/testing/ux_accessibility.md</code> (new this commit)
+explicitly maps its coverage table against the 3 named acceptance
+criteria:</p>
+<ul>
+<li><strong>WCAG checks</strong> — real <code>axe-core</code> scan of a
+real Playwright-rendered, JS-hydrated DOM: image alt-text
+(<code>image-alt</code>), form-control labels (<code>label</code>),
+colour contrast (<code>color-contrast</code>), single
+<code>&lt;h1&gt;</code>/heading order (<code>heading-order</code>),
+<code>&lt;html lang&gt;</code> (<code>html-has-lang</code>).</li>
+<li><strong>Keyboard-nav coverage</strong> — real
+<code>page.keyboard.press("Tab")</code> traversal asserting on
+<code>document.activeElement.id</code>, plus real computed
+<code>:focus-visible</code> style checks
+(<code>outlineStyle</code>/<code>outlineWidth</code>/<code>boxShadow</code>)
+read after a real Tab press.</li>
+<li><strong>Screen-reader labeling</strong> — covered via axe’s
+accessible-name/ARIA-resolution rule set (the doc’s own oracle-selection
+table states the chosen oracle “Implements the actual WCAG 2.x success
+criteria (real computed contrast, real ARIA resolution, real
+accessible-name computation)”), plus the <code>label</code> and
+<code>image-alt</code> rules directly assert screen-reader-relevant
+labeling.</li>
+</ul></li>
+<li><p>Anti-bluff RED→GREEN evidence pasted in the doc:
+<code>a11y_good.html</code>’s alt attribute was removed, the golden-good
+suite observed to FAIL on <code>image-alt</code>, the file restored with
+a verified byte-identical <code>sha256sum</code> match, then re-observed
+to PASS.</p></li>
+<li><p>Golden-FALSE (negative control) cases are documented and
+asserted: a decorative <code>alt=""</code> image and an
+<code>aria-hidden="true"</code> icon inside an
+<code>aria-label</code>-carrying button are both proven NOT flagged,
+proving the oracle discriminates rather than blanket-failing the
+fixture.</p></li>
+<li><p>The suite found a REAL defect on the first live run (21 WCAG AA
+colour-contrast violations on the dashboard) and, per §11.4.238
+(automated QA must be the discoverer), left the assertion honestly
+FAILING rather than silencing it — this is the correct,
+constitution-mandated behaviour for newly discovered coverage, not a
+sign BOB-110 itself is incomplete: the item’s acceptance text only asks
+to <em>scope</em> the accessibility pass, not to guarantee the
+underlying app has zero accessibility defects.</p></li>
+<li><p>Confirming that the discovered defect was NOT lost and was NOT
+conflated with BOB-110’s own scope: a separate tracked item,
+<code>BOB-164</code> (“Live dashboard fails WCAG AA colour contrast on
+21 nodes — brand heading measures 1.43:1 against a 3:1 floor”), exists
+in <code>docs/Fixed.md</code> with
+<code>**Created-By:** BOB-110 UX-class coverage, discovered by the new axe-core suite on its first live run</code>
+— and BOB-164 has since been independently CLOSED (it lives in
+<code>Fixed.md</code>, not <code>Issues.md</code>). This confirms the
+discovery→tracked-item→fix pipeline worked exactly as the constitution
+mandates, and that the found defect is fully accounted for outside
+BOB-110’s own scope.</p></li>
+</ol>
+<p><strong>Assumption:</strong> BOB-110’s acceptance text does not
+explicitly require covering every route/dialog in the Angular app; the
+doc itself lists honest gaps (only the dashboard landing view scanned
+live; the <code>ng serve</code>-hosted route set not scanned directly —
+a documented, reasoned scope narrowing, not a silent omission). I read
+BOB-110’s acceptance as “scope [build] an accessibility pass covering
+these three classes of check” (which was done, comprehensively, with
+real oracle proof), not as “achieve zero accessibility violations across
+the whole app” (which is explicitly BOB-164’s separate, already-closed
+scope). Under that reading the verdict is (a).</p>
+<hr />
+<h2
+id="bob-159-warm-.start.sh-over-an-already-running-stack-leaves-the-fr-004d-repair-window-open">BOB-159
+— “Warm ./start.sh over an already-running stack leaves the FR-004d
+repair window open”</h2>
+<p><strong>Verdict: (c) — the commit’s mention is unrelated/contextual
+(specifically: the commit FILES this item to track work it explicitly
+did NOT do).</strong></p>
+<p><strong>Citing evidence — exact context of the mention in the commit
+message:</strong></p>
+<blockquote>
+<p>“Warm path still has the window; bounded (needs a stale marker AND a
+live stack together) and filed as BOB-159. The call-site comment that
+claimed the gate runs”before any container writes” was a misstatement in
+our own source and now states the real boundary.”</p>
+</blockquote>
+<p>and, at the very bottom of the commit message, under a section
+literally listing new items:</p>
+<blockquote>
+<p>“Filed this round: BOB-159, BOB-160, BOB-161, BOB-162, BOB-163.”</p>
+</blockquote>
+<p><strong>Mechanical confirmation this is item <em>creation</em>, not
+closure:</strong> <code>git show 7b45113 -- docs/Issues.md</code> shows
+the
+<code>## BOB-159 — Warm ./start.sh over an already-running stack leaves the FR-004d repair window open</code>
+heading appearing as a brand-new added (<code>+</code>) block in the
+diff — the item did not exist in <code>docs/Issues.md</code> before this
+commit. It is therefore structurally impossible for this commit to have
+“closed” an item it simultaneously created.</p>
+<p><strong>Confirming the commit explicitly declined to do BOB-159’s own
+scope of work</strong>, from the item’s own “prior item text” (i.e. the
+text as originally filed by this commit, still preserved verbatim in the
+live <code>docs/Issues.md</code> entry today, below a later 2026-08-26
+operator-decision addendum):</p>
+<blockquote>
+<p>“The –recreate path was fixed this round: run_ownership_precondition
+-&gt; stack_down -&gt; run_ownership_repair -&gt; stack_up … <strong>The
+WARM path is NOT covered by that fix and this item tracks the
+remainder.</strong> … <strong>NOT DONE THIS ROUND, with the reason
+stated rather than hidden</strong>: the clean guard is a cheap
+marker-only probe mode on <code>scripts/ownership_repair.sh</code> …
+Deferred to this item rather than done unilaterally or silently.”</p>
+</blockquote>
+<p>BOB-159’s own “Affected scope / file-scope manifest” line
+(<code>start.sh (warm-start dispatch, run_ownership_gate call site); scripts/ownership_repair.sh (marker fast-path)</code>)
+names exactly the work the commit says it did NOT do. The commit’s
+actual substantive fix (–recreate ordering:
+<code>run_ownership_precondition</code> → <code>stack_down</code> →
+<code>run_ownership_repair</code> → <code>stack_up</code>) is a
+<em>different, already-completed</em> scope (IMPORTANT-2 from the T041
+review), explicitly distinguished in the commit message from the
+still-open warm-path gap that BOB-159 tracks.</p>
+<p><strong>Status confirmation:</strong> <code>docs/Issues.md</code>
+currently shows BOB-159 as <code>**Status:** Queued</code>, with a
+2026-08-26 <code>OPERATOR DECISION</code> recording HOW the warm-path
+fix should eventually be implemented (repair, then re-verify until
+stable) — a decision made 5 days <em>after</em> commit 7b45113, further
+confirming the fix itself has still not landed as of this
+investigation.</p>
+<p><strong>No follow-up work attempted:</strong> BOB-159’s acceptance
+criteria (a bounded, honestly-reporting repair loop on the warm-start
+path, asserted behaviourally with paired §1.1 mutations) is real
+implementation work against a now-operator-decided design, not a small
+disjoint mechanical fix — outside this task’s low-risk-optional-work
+exception.</p>
+<hr />
+<h2
+id="bob-162-two-new-guards-exist-but-no-seam-invokes-them-plus-the-brownfield-adoption-decision-the-commit-guard-needs">BOB-162
+— “Two new guards exist but no seam invokes them — plus the brownfield
+adoption decision the commit guard needs”</h2>
+<p><strong>Verdict: (c) — the commit’s mention is unrelated/contextual
+(specifically: the commit FILES this item, in the same breath explicitly
+stating it is NOT closed).</strong></p>
+<p><strong>Citing evidence — exact context of the mention in the commit
+message:</strong> BOB-162 is not named inline in the commit message’s
+prose sections at all; it appears ONLY in the closing roll-call
+line:</p>
+<blockquote>
+<p>“Filed this round: BOB-159, BOB-160, BOB-161, BOB-162, BOB-163.”</p>
+</blockquote>
+<p><strong>Mechanical confirmation this is item <em>creation</em>, not
+closure:</strong> <code>git show 7b45113 -- docs/Issues.md</code> shows
+the
+<code>## BOB-162 — Two new guards exist but no seam invokes them — plus the brownfield adoption decision the commit guard needs</code>
+heading as a brand-new added (<code>+</code>) block — the item did not
+exist before this commit.
+<code>**Reported-Via:** §11.4.202 reporting directive \</code>task` on
+2026-08-21T19:35:02Z` (a timestamp ~21 minutes before the commit’s own
+19:56:22Z UTC authoring time) confirms it was filed as a live §11.4.202
+reporting-directive action during the same working session that produced
+this commit, then included in the commit’s docs sync.</p>
+<p><strong>The item’s own body text, written and committed in the SAME
+commit, explicitly states it is unresolved</strong> (quoted from the
+<code>docs/Issues.md</code> diff added by this commit):</p>
+<blockquote>
+<p>“But the GUARDS themselves are still invoked by nothing.” … “Neither
+is invoked by <code>scripts/pre_build_verification.sh</code> or
+<code>scripts/commit-push-all.sh</code>, so neither exerts standing
+detection pressure (11.4.226: a guard with no execution seam is not
+coverage; registration is not coverage).” … “But it is the operator’s
+call <strong>and this item is not closed until that answer is
+recorded.</strong>”</p>
+</blockquote>
+<p><strong>Acceptance criteria (from the same, self-authored
+text):</strong> “Each guard is invoked by a named seam, OR carries a
+registered deferral pointing at this item. For
+<code>unattributed-commit-guard.sh</code> specifically, the operator has
+answered the adoption question below and the answer is recorded as
+consumer DATA — never an invented ratchet.” As of this investigation
+(<code>docs/Issues.md</code>, live), BOB-162 remains
+<code>**Status:** Queued</code> and carries no recorded operator answer
+to the (a)/(b)/(c)/(d) brownfield-adoption menu it poses — confirming
+the acceptance criteria genuinely remains unmet, not merely
+undocumented.</p>
+<p><strong>No follow-up work attempted:</strong> BOB-162’s own
+acceptance criteria requires either (1) wiring the guards into a real
+seam — an operator-owned decision per its own explicit text, same
+reasoning as BOB-106 above — or (2) an operator’s recorded answer to a
+4-option policy question (11.4.224(E) brownfield adoption). Neither is a
+small, safe, disjoint mechanical fix a subagent should make
+unilaterally; both are explicitly reserved for the operator by the
+item’s own text.</p>
+<hr />
+<h2 id="summary-table">Summary table</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Item</th>
+<th>Verdict</th>
+<th>One-line reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>BOB-088</td>
+<td>(a) closes it</td>
+<td>New <code>update_readme_doc_links.sh</code> generator + regenerated
+README table; script’s own header + companion doc explicitly say
+“BOB-088 — the tracked workable item this script closes”; every
+named-missing row now present.</td>
+</tr>
+<tr>
+<td>BOB-106</td>
+<td>(b) partial</td>
+<td>Guard <code>unattributed-commit-guard.sh</code> authored + tested +
+self-validated, but its own header admits “NOT yet invoked from
+scripts/pre_build_verification.sh or scripts/commit-push-all.sh … Wiring
+… remains OWED” — the explicit acceptance-criteria clause.</td>
+</tr>
+<tr>
+<td>BOB-110</td>
+<td>(a) closes it</td>
+<td>Full <code>tests/ux/</code> axe-core + keyboard-nav +
+screen-reader-labeling suite built with real oracle, RED→GREEN proof,
+negative controls; discovered defect correctly spun into its own (now
+separately Fixed) item BOB-164, not silenced.</td>
+</tr>
+<tr>
+<td>BOB-159</td>
+<td>(c) unrelated/contextual (item-filing)</td>
+<td>Commit explicitly created this item (“filed as BOB-159”) to track
+warm-path work it says plainly it did NOT do this round; still Queued
+today.</td>
+</tr>
+<tr>
+<td>BOB-162</td>
+<td>(c) unrelated/contextual (item-filing)</td>
+<td>Commit created this item via a §11.4.202 report during the same
+session, whose own text states “this item is not closed until that
+answer is recorded”; still Queued today with no recorded operator
+answer.</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>

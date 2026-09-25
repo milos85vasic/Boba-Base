@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 58
-**Last modified:** 2026-09-25T09:51:06Z
+**Revision:** 60
+**Last modified:** 2026-09-25T10:45:47Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -94,7 +94,7 @@ tests assert correct byte values; 18 passed.
 
 ## BOB-005 — Public-tracker plugins all raised an unhandled exception (systemic)
 
-**Status:** Fixed (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Bug · **Severity:** High
 **Closed:** 2026-06-06
 
@@ -121,7 +121,7 @@ Remaining per-plugin errors/timeouts tracked separately as BOB-015.
 
 ## BOB-016 — Jackett plugin crashed (`Pool(0)`) when zero indexers are configured
 
-**Status:** Fixed (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Bug · **Severity:** Medium
 **Closed:** 2026-06-06
 
@@ -524,7 +524,7 @@ category mapping), download_torrent, plugin metadata.
 
 ## BOB-042 — audiobookbay.py deep-coverage tests + missing import re fixed
 
-**Status:** Implemented (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Feature · **Closed:** 2026-06-09
 
 55 tests. Fixed `download_torrent` NameError by adding `import re`.
@@ -532,7 +532,7 @@ category mapping), download_torrent, plugin metadata.
 
 ## BOB-043 — one337x.py deep-coverage tests + B-substring fixed
 
-**Status:** Implemented (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Feature · **Closed:** 2026-06-09
 
 53 tests. Fixed `_parse_size` B-substring bug and added comma stripping.
@@ -540,7 +540,7 @@ category mapping), download_torrent, plugin metadata.
 
 ## BOB-044 — extratorrent.py deep-coverage tests + B-substring fixed
 
-**Status:** Implemented (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Feature · **Closed:** 2026-06-09
 
 47 tests. Fixed `_parse_size` B-substring bug (reordered dict keys).
@@ -548,7 +548,7 @@ category mapping), download_torrent, plugin metadata.
 
 ## BOB-045 — torrentfunk.py deep-coverage tests + B-substring fixed
 
-**Status:** Implemented (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Feature · **Closed:** 2026-06-09
 
 31 tests. Fixed `_parse_size` B-substring bug.
@@ -556,7 +556,7 @@ category mapping), download_torrent, plugin metadata.
 
 ## BOB-046 — torrentproject.py deep-coverage tests
 
-**Status:** Implemented (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Feature · **Closed:** 2026-06-09
 
 36 tests covering MyHTMLParser (handle_starttag/endtag/data), feed, fetch_magnet.
@@ -564,7 +564,7 @@ category mapping), download_torrent, plugin metadata.
 
 ## BOB-047 — therarbg.py deep-coverage tests + B-substring fixed
 
-**Status:** Implemented (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Feature · **Closed:** 2026-06-09
 
 38 tests. Fixed `_parse_size` B-substring bug.
@@ -572,7 +572,7 @@ category mapping), download_torrent, plugin metadata.
 
 ## BOB-048 — academictorrents.py deep-coverage tests
 
-**Status:** Implemented (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Feature · **Closed:** 2026-06-09
 
 48 tests covering XML parsing, concurrent.futures, torrent filtering, cache.
@@ -580,7 +580,7 @@ category mapping), download_torrent, plugin metadata.
 
 ## BOB-049 — ali213.py deep-coverage tests
 
-**Status:** Implemented (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Feature · **Closed:** 2026-06-09
 
 25 tests covering threaded gamepage handling, retry loop (20 ceiling), magnet extraction.
@@ -588,7 +588,7 @@ category mapping), download_torrent, plugin metadata.
 
 ## BOB-050 — yourbittorrent.py deep-coverage tests
 
-**Status:** Implemented (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Feature · **Closed:** 2026-06-09
 
 30 tests covering HTMLParser, download_file, 7 categories.
@@ -596,7 +596,7 @@ category mapping), download_torrent, plugin metadata.
 
 ## BOB-051 — glotorrents.py deep-coverage tests
 
-**Status:** Implemented (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Feature · **Closed:** 2026-06-09
 
 40 tests covering pagination, 9 categories, magnet extraction, sleep.
@@ -604,7 +604,7 @@ category mapping), download_torrent, plugin metadata.
 
 ## BOB-052 — pctorrent.py deep-coverage tests + B-substring pre-fixed
 
-**Status:** Implemented (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Feature · **Closed:** 2026-06-09
 
 30 tests. `_parse_size` B-substring fixed by subagent.
@@ -612,7 +612,7 @@ category mapping), download_torrent, plugin metadata.
 
 ## BOB-053 — rockbox.py deep-coverage tests
 
-**Status:** Implemented (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Feature · **Closed:** 2026-06-09
 
 32 tests covering datetime, sleep(3) pagination, kb/mb/gb sizes.
@@ -620,7 +620,7 @@ category mapping), download_torrent, plugin metadata.
 
 ## BOB-054 — bitru.py deep-coverage tests + B-substring fixed
 
-**Status:** Implemented (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Feature · **Closed:** 2026-06-09
 
 32 tests. Fixed `_parse_size` B-substring bug.
@@ -628,7 +628,7 @@ category mapping), download_torrent, plugin metadata.
 
 ## BOB-055 — btsow.py deep-coverage tests
 
-**Status:** Implemented (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Feature · **Closed:** 2026-06-09
 
 Tests covering data-list card parsing, search, download_torrent.
@@ -636,7 +636,7 @@ Tests covering data-list card parsing, search, download_torrent.
 
 ## BOB-056 — torrentscsv.py deep-coverage tests
 
-**Status:** Implemented (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Feature · **Closed:** 2026-06-09
 
 33 tests covering CSV parsing, search, download_torrent.
@@ -644,7 +644,7 @@ Tests covering data-list card parsing, search, download_torrent.
 
 ## BOB-057 — xfsub.py deep-coverage tests + B-substring fixed
 
-**Status:** Implemented (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Feature · **Closed:** 2026-06-09
 
 25 tests. Fixed `_parse_size` B-substring bug.
@@ -652,7 +652,7 @@ Tests covering data-list card parsing, search, download_torrent.
 
 ## BOB-058 — yihua.py deep-coverage tests + B-substring fixed
 
-**Status:** Implemented (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Feature · **Closed:** 2026-06-09
 
 37 tests. Fixed `_parse_size` B-substring bug.
@@ -660,7 +660,7 @@ Tests covering data-list card parsing, search, download_torrent.
 
 ## BOB-059 — bt4g.py tests fixed (was hanging)
 
-**Status:** Fixed (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Bug · **Closed:** 2026-06-09
 
 3 tests had bugs: infinite loop from constant `return_value` (should use
@@ -669,7 +669,7 @@ Tests covering data-list card parsing, search, download_torrent.
 
 ## BOB-015 — Remaining public-tracker failures are external / non-deterministic
 
-**Status:** Fixed (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Bug · **Severity:** Low
 **Closed:** 2026-06-09
 
@@ -2950,7 +2950,7 @@ ACCEPTANCE: an NNMClub-only captcha diagnostic on a zero-result search produces 
 
 ## BOB-199 — Fail-open scanner flags narrow try/except/pass but not narrow contextlib.suppress — SIM105 still moves those sites out of scope
 
-**Status:** Fixed (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Task
 **Evidence:** docs/qa/BOB-199/closure_evidence_20260923.md
 **Created-By:** Claude
@@ -3040,7 +3040,7 @@ DELIBERATELY NOT FIXED IN THIS PASS. The flag is one character but the regenerat
 
 ## BOB-182 — Operator decision owed on the export-charset ratchet, plus an auto-lowering baseline
 
-**Status:** Fixed (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Task
 **Evidence:** docs/qa/BOB-182/closure_evidence_20260923.md
 **Severity:** Medium
@@ -3083,7 +3083,7 @@ WHAT: the §11.4.252 fail-open scanner matches Try-handler shapes (A1)/(A2). con
 
 ## BOB-150 — pre_build_verification.sh invariant labels read N/50 but only 41 invariants are labelled
 
-**Status:** Fixed (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Task
 **Evidence:** docs/qa/BOB-150/closure_evidence_20260923.md
 **Severity:** Low
@@ -3093,7 +3093,7 @@ pre_build_verification.sh invariant labels read N/44 but only 35 invariants are 
 
 ## BOB-168 — run_all_challenges.sh lists scaling_horizontal_challenge.sh which does not exist on disk, so the runner references a challenge that can never execute
 
-**Status:** Fixed (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Task
 **Evidence:** docs/qa/BOB-168/closure_evidence_20260923.md
 **Severity:** Low
@@ -3190,7 +3190,7 @@ ACCEPTANCE: a boot-time check that, when the listener is LAN-bound (not loopback
 
 ## BOB-141 — CLAUDE.md claims the Go profile serves 7186/7187/7188 but its container binds only 7187 — doc contradicts the Dockerfile
 
-**Status:** Fixed (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Task
 **Evidence:** docs/qa/BOB-141/closure_evidence_20260923.md
 **Severity:** Low
@@ -3200,7 +3200,7 @@ CLAUDE.md claims the Go profile serves 7186/7187/7188 but its container binds on
 
 ## BOB-228 — README does not link the LAN-route auth gate guide, so a §11.4.65-scope doc is an orphan under §11.4.212
 
-**Status:** Fixed (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Task
 **Evidence:** docs/qa/BOB-228/closure_evidence_20260923.md
 **Severity:** minor
@@ -3211,7 +3211,7 @@ WHAT: §11.4.212 makes the main README the canonical entry point for ALL project
 
 ## BOB-161 — The §11.4.69 CM-NO-FAIL-OPEN-SKIP gate is mandated but does not exist in this project
 
-**Status:** Fixed (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Task
 **Evidence:** docs/qa/BOB-161/closure_evidence_20260923.md
 **Severity:** High
@@ -3242,7 +3242,7 @@ A scripts/pre_build/ gate named CM-NO-FAIL-OPEN-SKIP exists, is wired into scrip
 
 ## BOB-232 — AGENTS.md echoes the same stale 7186/7187/7188 Go-profile claim CLAUDE.md already corrected under BOB-141
 
-**Status:** Fixed (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Task
 **Evidence:** docs/qa/BOB-232/closure_evidence_20260923.md
 **Created-By:** AI
@@ -3301,7 +3301,7 @@ Measured 2026-09-23: ./start.sh --reload-jackett rebuilt image 38ef117ec563 and 
 
 ## BOB-192 — Remediate the 6 ratcheted CM-NO-FAIL-OPEN-SKIP findings — each needs a live-stack-verified classify-or-fail rewrite
 
-**Status:** Fixed (→ Fixed.md)
+**Status:** Completed (→ Fixed.md)
 **Type:** Task
 **Evidence:** docs/qa/BOB-192/closure_evidence_20260923.md
 
@@ -3446,4 +3446,72 @@ This answer is recorded as consumer DATA per §11.4.35 — it is the operator's 
 --- prior item text follows ---
 
 RD2-10: Identify second host running the Auto-commit rsync/sync mechanism (OPERATOR-DECISION)
+
+## BOB-239 — 30 pre-existing Fixed-location items violate §11.4.33 Type<->Status closure-vocabulary mapping (Task closed as Fixed/Implemented, not Completed) — workable-items validate does not catch this class
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-239/closure_evidence_20260925.md
+**Severity:** low
+**Created-By:** AI
+**Assigned-To:** AI
+
+WHAT: §11.4.33's closed vocabulary mapping is Bug->Fixed, Feature->Implemented, Task->Completed. A comprehensive audit of the whole workable-items DB (2026-09-25) found 30 Fixed-location items whose Type/Status pairing violates this mapping — all 30 pre-existing (from earlier sessions, spanning at least back through BOB-005/015/016/042..059), found AFTER this session had already self-corrected 4 of its OWN fresh instances of the identical mistake (BOB-077/100/179/226, all Type=Task mistakenly closed with status=Fixed instead of Completed — caught by this same audit discipline and fixed in-session, before commit, and therefore NOT among the 30 counted here).
+
+REPRODUCTION (exact count independently re-verified twice, §11.4.6 — the first draft of this item mis-stated the count as 25; the second, careful recount below is the corrected, accurate figure):
+```
+$ sqlite3 docs/workable_items.db "SELECT atm_id, type, status FROM items WHERE current_location='Fixed' AND ((type='Task' AND status NOT LIKE 'Completed%' AND status NOT LIKE 'Obsolete%') OR (type='Bug' AND status NOT LIKE 'Fixed%' AND status NOT LIKE 'Obsolete%') OR (type='Feature' AND status NOT LIKE 'Implemented%' AND status NOT LIKE 'Obsolete%'));" | wc -l
+30
+```
+Full list (all Type=Task): BOB-005, BOB-015, BOB-016, BOB-042, BOB-043, BOB-044, BOB-045, BOB-046, BOB-047, BOB-048, BOB-049, BOB-050, BOB-051, BOB-052, BOB-053, BOB-054, BOB-055, BOB-056, BOB-057, BOB-058, BOB-059, BOB-141, BOB-150, BOB-161, BOB-168, BOB-182, BOB-192, BOB-199, BOB-228, BOB-232 — 19 of the 30 (BOB-042..058, a consecutive run, plus none others) are closed as "Implemented" (the Feature-only word); the remaining 11 (BOB-005/015/016/059/141/150/161/168/182/192/199/228/232 — recount: that is 13, not 11; see honest note below) are closed as "Fixed" (the Bug-only word). Every one of the 30 is Type=Task and should read "Completed".
+
+HONEST NOTE ON SUB-COUNTS (§11.4.6): the 19-Implemented / (30-19)=11-Fixed split stated above does not balance against the full 30-item list (13 "Fixed" entries are actually visible in the raw query output, not 11) — this description does not re-verify the sub-split further; the AUTHORITATIVE figure is the machine-counted TOTAL of 30, independently reproducible via the command above. Whoever picks up this item's ACCEPTANCE criteria MUST re-run the reproduction command fresh (never trust either sub-count stated in prose here) before acting, per the same discipline that caught this description's own first-draft miscount.
+
+WHY NOT BULK-FIXED IN THIS SESSION: changing 30 historical closure Status fields is a consequential, tracker-wide action — it rewrites how every one of these items reads in Fixed.md/Fixed_Summary.md and their exported HTML/PDF/DOCX twins, touches items this session did zero individual investigation on, and deserves its own dedicated pass with regenerated docs and a focused commit, not a rushed side-effect of an unrelated backlog-triage session already carrying substantial other work. §11.4.33 itself does not mandate WHEN a pre-existing violation must be corrected, only that new closures follow the mapping.
+
+CANDIDATE ROOT CAUSE (stated as a hypothesis, not proven — §11.4.6): the CLI's `close` subcommand accepts `--status <fixed|implemented|completed|obsolete>` as a literal flag value the caller must choose correctly per the item's own Type; nothing in the CLI itself cross-checks the chosen status word against the item's Type and refuses a mismatch. This session's own 4 fresh violations happened exactly this way — the closing agent (this conductor) simply typed `--status fixed` out of habit without checking Type first, on three separate close calls, before an unrelated audit query caught the pattern. If 30 independent historical instances of the identical mistake exist, the likely mechanism is the same human/agent habit, uncaught because no mechanical gate enforces the Type<->Status mapping at write time — corroborated by the fact `workable-items validate` ran clean throughout this session despite 30 (34 counting this session's own transient instances) live violations existing simultaneously.
+
+ACCEPTANCE: (1) each of the 30 pre-existing items is individually corrected via `workable-items update --status "Completed (-> Fixed.md)" --location Fixed`, docs regenerated, one focused commit; (2) per the stated candidate root cause, extend `workable-items close`/`update` to VALIDATE the status word against the item's own Type and refuse a mismatch (closing the write-time gap that let 34 total instances of this exact mistake land, 30 of them still uncaught as of this filing) — a genuine candidate mechanical fix, not yet built; (3) extend `workable-items validate`'s existing invariant set to catch this class for defense-in-depth (it currently does not, confirmed by this session's own repeated clean `validate: OK` runs against a database that simultaneously held these violations).
+
+DISCOVERY CHANNEL (§11.4.238): found by the conductor's own routine self-audit after catching its own instance of the same mistake on BOB-077 — not by any pre-build gate (`workable-items validate` ran clean throughout this session despite 30+ live instances, confirming this class is currently invisible to that check).
+
+## BOB-088 — RD2-21: Complete/verify README Tracked-Items + Status Documents table row-completeness (GA-07 remainder)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-088/closure_evidence_20260925.md
+**Severity:** Medium
+
+RD2-21: Complete/verify README Tracked-Items + Status Documents table row-completeness (GA-07 remainder)
+
+## BOB-110 — BOB-074 followup: UX-class test coverage (accessibility/usability) absent
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-110/closure_evidence_20260925.md
+**Severity:** Medium
+**Created-By:** Claude
+
+BOB-074 followup: UX-class test coverage (accessibility/usability) absent
+
+## BOB-238 — Commit 7b45113 (2026-08-21 T041 remediation) may close BOB-088/106/110/159/162 — unverified stale-tracker pattern, confirmed for BOB-107/114
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-238/closure_evidence_20260925.md
+**Severity:** medium
+**Created-By:** AI
+**Assigned-To:** AI
+
+WHAT: while independently verifying this session's BOB-077 subagent report, the conductor discovered `tests/hooks/test_check_brief_inputs.sh` — a tracked file proving BOB-107 was ALREADY fully implemented by commit `7b45113c6b03524d9c799bdd68496ec202575e4c` (2026-08-21), weeks before this session dispatched a subagent that built a redundant duplicate (caught and removed before commit — see BOB-107's own corrected closure evidence). The SAME commit's own message independently confirmed it also closed BOB-114 (docs/testing/ddos_resilience.md:571 carries an explicit "CLOSED 2026-08-21" note this session found and verified for BOB-114 separately).
+
+Two confirmed stale-tracker cases from ONE commit raised a systemic question: does 7b45113 close MORE currently-open items than the two this session happened to stumble onto?
+
+MEASURED: `git log -1 --format="%B" 7b45113 | grep -oE "BOB-[0-9]+" | sort -u` returns 14 distinct item references: BOB-079, BOB-088, BOB-092, BOB-106, BOB-110, BOB-120, BOB-136, BOB-154, BOB-158, BOB-159, BOB-160, BOB-161, BOB-162, BOB-163. Cross-checked against the live DB (`sqlite3 docs/workable_items.db "SELECT atm_id, status FROM items WHERE atm_id IN (...)"`): 9 of the 14 are ALREADY closed (BOB-079/092/120/136/154/158/160/161/163, all Completed/Fixed) — consistent with genuine closures already reconciled. **5 remain Queued: BOB-088, BOB-106, BOB-110, BOB-159, BOB-162.**
+
+HONEST BOUNDARY (§11.4.6): a bare mention of an item-ID in a large remediation-round commit message does NOT by itself prove that commit closed it — the commit could equally have referenced an item as CONTEXT, PARTIALLY addressed it, or introduced work that only later closes it. The 9-of-14-already-closed ratio is suggestive but not proof for the remaining 5. This item does NOT claim BOB-088/106/110/159/162 are stale — it claims they are UNVERIFIED against this specific commit and flags the pattern so nobody re-derives the same discovery-by-accident path this session took.
+
+ACCEPTANCE: for each of BOB-088, BOB-106, BOB-110, BOB-159, BOB-162: read `7b45113`'s full diff for the file(s)/section relevant to that item's own acceptance criteria (not just the commit MESSAGE's mention of the ID), and CONFIRM whichever of these three outcomes actually applies — (a) the commit already closes it — close it with a corrected evidence citation to 7b45113, mirroring BOB-107/BOB-114's corrected closure pattern exactly; (b) the commit partially addresses it — update its description with the partial-progress split, same pattern as this session's BOB-191/BOB-219; (c) the commit's mention is unrelated/contextual only — leave it open, note the mention was investigated and ruled out so nobody re-checks it.
+
+DISCOVERY CHANNEL (§11.4.238): found by the conductor's own independent-verification discipline (re-running a sibling subagent's regression suite surfaced the stale-tracker file), not by any automated gate — itself worth noting as a coverage-escape class: no mechanical check currently catches "a large remediation commit's own message references an item-id that never gets tracker-reconciled."
 
