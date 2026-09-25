@@ -99,6 +99,11 @@ class _FakeResp:
         self.status = status
         self._body = body
         self.cookies = cookies or {}
+        # BOB-179: complete the aiohttp.ClientResponse contract -- see the
+        # identical addition (and its rationale) in
+        # test_bob172_tracker_http_error_not_empty.py's `_FakeResponse`.
+        self.history: tuple = ()
+        self.url = ""
 
     async def text(self, *a, **kw) -> str:
         return self._body

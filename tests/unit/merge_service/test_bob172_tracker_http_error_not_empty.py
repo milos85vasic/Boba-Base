@@ -109,6 +109,14 @@ class _FakeResponse:
         self.status = status
         self._body = body
         self.cookies: dict = {}
+        # BOB-179: complete the aiohttp.ClientResponse contract -- a real
+        # response always carries `.history` (empty tuple, no redirect) and
+        # `.url` (the resolved URL). `_detect_session_expired_redirect`
+        # reads both; an incomplete stub (not a product defect) previously
+        # raised AttributeError here, mirroring BOB-172's own documented
+        # `.status`-completion precedent for this same class of stub.
+        self.history: tuple = ()
+        self.url = ""
 
     async def text(self, *a, **kw) -> str:
         return self._body

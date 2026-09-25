@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260925</h1>
+</header>
+<h1
+id="bob-236-closure-evidence-qbittorrent-proxy-ignores-sigterm-sigkilled-after-10s-grace">BOB-236
+closure evidence — qbittorrent-proxy ignores SIGTERM / SIGKILLed after
+10s grace</h1>
+<p><strong>Date (UTC):</strong> 2026-09-25 <strong>Item:</strong>
+BOB-236 (Bug) — “qbittorrent-proxy ignores SIGTERM and is SIGKILLed
+after the 10 s grace period on every restart” <strong>Method:</strong>
+§11.4.102 systematic-debugging (Iron Law: root cause before fix);
+§11.4.115 RED-baseline-on-the-broken-artifact; §11.4.43 TDD-fix
+workflow.</p>
+<p>This document is machine-verifiable §11.4.5/§11.4.69 evidence, not a
+narrative claim. Every timestamp/log line below was captured in this
+session against the real, live <code>qbittorrent-proxy</code> container
+and the real unit-test suite. No commit/push and no
+<code>workable-items close</code> was performed — that is the
+conductor’s job per instructions.</p>
+<hr />
+<h2 id="root-cause-proven-not-guessed">1. Root cause (proven, not
+guessed)</h2>
+<p>PID 1 inside the container is
+<code>python3 /config/download-proxy/src/main.py</code> directly
+(confirmed via <code>podman top</code> below —
+<code>start-proxy.sh</code> ends with
+<code>exec python3 "$SRC_DIR/main.py"</code>, so the
+shell-wrapper-eats-signal candidate is <strong>ruled out</strong>).</p>
+<p><code>main.py::main()</code> installs a SIGTERM handler that only
+does <code>_shutdown_event.set()</code> (a
+<code>threading.Event</code>). The main loop wakes on it and runs:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>logger.info(<span class="st">&quot;Shutting down...&quot;</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>proxy_thread.join(timeout<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>fastapi_thread.join(timeout<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>logger.info(<span class="st">&quot;Shutdown complete&quot;</span>)</span></code></pre></div>
+<p>Neither background thread was ever wired to actually stop:</p>
+<ol type="1">
+<li><p><strong><code>proxy_thread</code></strong>
+(<code>download_proxy.run_server()</code>, port 7186) —
+<code>ThreadingHTTPServer.serve_forever()</code> only called
+<code>httpd.shutdown()</code> on <code>KeyboardInterrupt</code>. CPython
+never raises <code>KeyboardInterrupt</code> on a non-main thread, and
+this function always runs on a background daemon thread. So SIGTERM
+never reached this server at all.</p></li>
+<li><p><strong><code>fastapi_thread</code></strong>
+(<code>uvicorn.Server.serve()</code>, port 7187) — uvicorn’s own
+<code>Server.capture_signals()</code>
+(<code>uvicorn/server.py:323-327</code>) explicitly does:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> threading.current_thread() <span class="kw">is</span> <span class="kw">not</span> threading.main_thread():</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Signals can only be listened to from the main thread.</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">yield</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span></span></code></pre></div>
+<p>Since <code>asyncio.run(_serve_with_heartbeat())</code> always runs
+on the background <code>fastapi_thread</code>, uvicorn never installs
+its own SIGTERM handler and nothing else in the codebase ever set
+<code>server.should_exit = True</code>.
+<code>await server.serve()</code> therefore ran forever regardless of
+the process-level shutdown signal.</p></li>
+</ol>
+<p><strong>Consequence:</strong> both <code>.join(timeout=5)</code>
+calls were <em>guaranteed</em> to fully time out on every SIGTERM (5s +
+5s = 10.0s), landing shutdown right at — and, with logging/scheduling
+overhead, consistently just past — the container’s default 10s
+<code>StopTimeout</code> (<code>docker-compose.yml</code> sets no
+<code>stop_grace_period</code>; podman confirms the container’s
+configured default below), forcing a SIGKILL on effectively every
+restart. This is not a shell-PID-1 issue, not a blocked event loop, and
+not <code>BOB-137</code> stall-related — it is two background service
+loops that were structurally never told to stop.</p>
+<hr />
+<h2 id="red-baseline-defect-reproduced-live-on-the-pre-fix-artifact">2.
+RED baseline — defect reproduced live on the pre-fix artifact</h2>
+<p>Container’s configured stop timeout (confirms the “10 second grace
+period” in the ticket):</p>
+<pre><code>$ podman inspect qbittorrent-proxy --format &#39;{{.Config.StopTimeout}}&#39;
+10</code></pre>
+<p>PID 1 confirmed (rules out the shell-wrapper candidate):</p>
+<pre><code>$ podman top qbittorrent-proxy -eo pid,ppid,comm,args
+    PID    PPID COMMAND         COMMAND
+      1       0 python3         python3 /config/download-proxy/src/main.py
+    372       1 python          [python] &lt;defunct&gt;
+    ...</code></pre>
+<h3
+id="red-1-extended-grace-30s-proves-the-process-eventually-exits-cleanly-but-far-too-slowly">RED
+#1 — extended grace (30s), proves the process <em>eventually</em> exits
+cleanly but far too slowly</h3>
+<pre><code>2026-09-25T08:10:15Z
+podman stop rc=0 elapsed=11.044408462s</code></pre>
+<p>Container log (timestamps):</p>
+<pre><code>2026-09-25T10:10:15.632929000+02:00 2026-09-25 08:10:15,632 - INFO - Shutting down...
+2026-09-25T10:10:25.633725000+02:00 2026-09-25 08:10:25,633 - INFO - Shutdown complete</code></pre>
+<p>Delta = <strong>10.000796s exactly</strong> between “Shutting down…”
+and “Shutdown complete” — the two sequential
+<code>.join(timeout=5)</code> calls both fully timed out, confirming
+neither thread ever exits on its own.</p>
+<h3
+id="red-2-default-10s-grace-the-exact-production-invocation-start.shcompose-use-no---time-override">RED
+#2 — default 10s grace, the exact production invocation
+(<code>start.sh</code>/compose use no <code>--time</code> override)</h3>
+<pre><code>2026-09-25T08:13:00Z
+podman stop rc=0 elapsed=10.171619266s container_exitcode=137
+time=&quot;2026-09-25T10:13:10+02:00&quot; level=warning msg=&quot;StopSignal SIGTERM failed to stop container qbittorrent-proxy in 10 seconds, resorting to SIGKILL&quot;</code></pre>
+<p><code>container_exitcode=137</code> = SIGKILL. The logged warning is
+<strong>verbatim</strong> the symptom quoted in the BOB-236 description.
+This is the RED-baseline-on-the-broken-artifact required by
+§11.4.115.</p>
+<h3
+id="red-3-unit-level-reproduction-of-the-specific-mechanism-pluginsdownload_proxy.pyrun_server">RED
+#3 — unit-level reproduction of the specific mechanism
+(<code>plugins/download_proxy.py::run_server()</code>)</h3>
+<p>With the fix in <code>plugins/download_proxy.py</code> temporarily
+reverted in place (no git operations — <code>.git/index.lock</code> was
+held by a stale, non-live lock from an unrelated crashed process;
+touching git was out of scope for this task, so the revert was done via
+in-memory file edit and restored immediately after capturing
+evidence):</p>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/test_download_proxy_deep.py::TestRunServer::test_run_server_calls_httpd_shutdown_when_shutdown_event_is_set -v
+
+PytestUnhandledThreadExceptionWarning: Exception in thread Thread-1 (run_server)
+Traceback (most recent call last):
+  ...
+  TypeError: run_server() takes 0 positional arguments but 1 was given
+...
+E           AssertionError: Expected &#39;shutdown&#39; to have been called once. Called 0 times.
+FAILED tests/unit/test_download_proxy_deep.py::TestRunServer::test_run_server_calls_httpd_shutdown_when_shutdown_event_is_set
+1 failed, 1 warning in 0.39s</code></pre>
+<p>Full log: this session’s transcript (also saved to the scratchpad
+during the session as <code>bob236_red_unittest.log</code>).</p>
+<hr />
+<h2 id="the-fix">3. The fix</h2>
+<h3
+id="pluginsdownload_proxy.py"><code>plugins/download_proxy.py</code></h3>
+<p><code>run_server()</code> now accepts an optional
+<code>shutdown_event: threading.Event | None</code>. When supplied, a
+small daemon watcher thread blocks on <code>shutdown_event.wait()</code>
+and calls <code>httpd.shutdown()</code> the moment it fires —
+<code>socketserver.BaseServer.shutdown()</code> is documented as safe to
+call from a different thread while <code>serve_forever()</code> runs
+elsewhere, and makes it return within one polling interval (default
+0.5s).</p>
+<h3
+id="download-proxysrcmain.py"><code>download-proxy/src/main.py</code></h3>
+<ul>
+<li><code>start_original_proxy()</code> now calls
+<code>run_server(_shutdown_event)</code> instead of
+<code>run_server()</code>.</li>
+<li><code>start_fastapi_server()</code>’s
+<code>_serve_with_heartbeat()</code> now also starts an
+<code>_await_process_shutdown()</code> task that awaits
+<code>_shutdown_event.wait()</code> off-loop
+(<code>loop.run_in_executor</code>) and then sets
+<code>server.should_exit = True</code> — the exact flag uvicorn’s own
+<code>on_tick()</code> polls every 0.1s
+(<code>uvicorn/server.py:233-262</code>).</li>
+</ul>
+<p>No change was needed to <code>main()</code>’s join structure — the
+root cause was “never signaled,” not “joins are sequential”; fixing the
+signaling makes both joins return almost immediately.</p>
+<p>Deployment: <code>plugins/download_proxy.py</code> is an “infra
+module” copied by <code>./install-plugin.sh --all</code> into
+<code>config/qBittorrent/nova3/engines/download_proxy.py</code> (the
+actual import path inside the container, per <code>ENGINES_DIR</code>),
+then <code>download-proxy/src/</code> is bind-mounted directly. Both
+steps were run this session (<code>./install-plugin.sh --all</code>,
+then <code>./start.sh --reload-python</code>) to make the fix live.</p>
+<hr />
+<h2
+id="green-fix-confirmed-live-same-exact-invocation-as-the-red-baseline">4.
+GREEN — fix confirmed live, same exact invocation as the RED
+baseline</h2>
+<p>Container restarted with the fix live and confirmed healthy:</p>
+<pre><code>$ podman ps --filter name=qbittorrent-proxy --format &quot;{{.Status}}&quot;
+Up 31 seconds (healthy)</code></pre>
+<p>Same exact default-timeout invocation as RED #2:</p>
+<pre><code>2026-09-25T08:17:27Z
+podman stop rc=0 elapsed=.588671048s container_exitcode=0</code></pre>
+<p>Container log (timestamps) — full application-level shutdown,
+including uvicorn’s own graceful-lifespan shutdown now actually
+engaging:</p>
+<pre><code>2026-09-25T10:17:27.561119000+02:00 2026-09-25 08:17:27,560 - INFO - Shutting down...
+2026-09-25T10:17:27.651920000+02:00 INFO:     Shutting down
+2026-09-25T10:17:27.752402000+02:00 INFO:     Waiting for application shutdown.
+2026-09-25T10:17:27.752983000+02:00 2026-09-25 08:17:27,752 - INFO - Saved 0 scheduled searches
+2026-09-25T10:17:27.753066000+02:00 2026-09-25 08:17:27,752 - INFO - Scheduler stopped
+2026-09-25T10:17:27.753210000+02:00 2026-09-25 08:17:27,753 - INFO - Merge Service API stopped
+2026-09-25T10:17:27.753410000+02:00 INFO:     Application shutdown complete.
+2026-09-25T10:17:27.753536000+02:00 INFO:     Finished server process [1]
+2026-09-25T10:17:27.884697000+02:00 2026-09-25 08:17:27,884 - INFO - Shutdown complete</code></pre>
+<p>Delta “Shutting down…” → “Shutdown complete” =
+<strong>0.323s</strong> (was 10.000796s pre-fix). No SIGKILL warning.
+<code>container_exitcode=0</code> (graceful exit), was <code>137</code>
+pre-fix.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Pre-fix (RED)</th>
+<th>Post-fix (GREEN)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>podman stop</code> wall time (default 10s grace)</td>
+<td>10.17s</td>
+<td>0.59s</td>
+</tr>
+<tr>
+<td>Container exit code</td>
+<td>137 (SIGKILLed)</td>
+<td>0 (graceful)</td>
+</tr>
+<tr>
+<td>Runtime warning</td>
+<td><code>StopSignal SIGTERM failed... resorting to SIGKILL</code></td>
+<td>none</td>
+</tr>
+<tr>
+<td>App-level shutdown log delta</td>
+<td>10.0008s</td>
+<td>0.323s</td>
+</tr>
+</tbody>
+</table>
+<h3 id="unit-level-green-mechanism-level-regression-guard">Unit-level
+GREEN (mechanism-level regression guard)</h3>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/test_download_proxy_deep.py -v --import-mode=importlib
+...
+tests/unit/test_download_proxy_deep.py::TestRunServer::test_run_server_calls_httpd_shutdown_when_shutdown_event_is_set PASSED
+...
+32 passed in 2.02s</code></pre>
+<h3
+id="standing-integration-regression-guard-drives-the-real-live-container-no-mocks">Standing
+integration regression guard (drives the REAL live container, no
+mocks)</h3>
+<pre><code>$ .venv/bin/python -m pytest tests/integration/test_bob236_sigterm_graceful_shutdown.py -v --import-mode=importlib
+tests/integration/test_bob236_sigterm_graceful_shutdown.py::test_sigterm_stops_container_within_grace_period_no_sigkill PASSED
+1 passed in 33.68s</code></pre>
+<p>(This test does a real
+<code>podman/docker stop &lt;container&gt;</code> with the container’s
+default configured timeout — no override — and asserts (a) exit code is
+never 137/SIGKILL and (b) wall time is comfortably below the 5s bound,
+well under the container’s 10s grace period. The 33.68s total run time
+is fixture teardown re-waiting for the container to report healthy
+again, not the assertion itself.)</p>
+<h3 id="full-suite-sanity-no-regressions">Full suite sanity (no
+regressions)</h3>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/test_main.py tests/unit/test_download_proxy_deep.py --import-mode=importlib -q
+63 passed, 4 warnings in 5.96s</code></pre>
+<p>(The 4 warnings are a pre-existing, unrelated
+<code>RuntimeWarning: coroutine ... was never awaited</code> in tests
+that fully mock <code>asyncio.run</code> — present before this change
+too, confirmed unaffected by re-inspection.)</p>
+<h3 id="live-service-health-after-fix-both-ports">Live service health
+after fix (both ports)</h3>
+<pre><code>$ curl -sf http://localhost:7187/health
+{&quot;status&quot;:&quot;healthy&quot;,&quot;service&quot;:&quot;merge-search&quot;,&quot;version&quot;:&quot;1.3.0&quot;}
+$ curl -sf -o /dev/null -w &quot;%{http_code}\n&quot; http://localhost:7186/
+200</code></pre>
+<hr />
+<h2 id="files-changed">5. Files changed</h2>
+<ul>
+<li><code>plugins/download_proxy.py</code> — <code>run_server()</code>
+gains optional <code>shutdown_event</code> param + watcher thread;
+<code>import threading</code> added. (Also propagated to the deployed
+copy <code>config/qBittorrent/nova3/engines/download_proxy.py</code> via
+<code>./install-plugin.sh --all</code>, per repo convention — that
+destination file is generated/deployed, not hand-edited.)</li>
+<li><code>download-proxy/src/main.py</code> —
+<code>start_original_proxy()</code> passes <code>_shutdown_event</code>
+through; <code>start_fastapi_server()</code>’s
+<code>_serve_with_heartbeat()</code> gains an
+<code>_await_process_shutdown()</code> task that sets
+<code>server.should_exit = True</code>.</li>
+<li><code>tests/unit/test_download_proxy_deep.py</code> — new RED/GREEN
+regression test
+<code>TestRunServer::test_run_server_calls_httpd_shutdown_when_shutdown_event_is_set</code>
+(+ <code>threading</code>/<code>time</code> imports).</li>
+<li><code>tests/integration/test_bob236_sigterm_graceful_shutdown.py</code>
+— new standing §11.4.135 regression guard driving the real live
+container.</li>
+</ul>
+<h2 id="not-done-out-of-scope-per-instructions">6. Not done (out of
+scope per instructions)</h2>
+<ul>
+<li>No <code>git commit</code>/<code>git push</code> (conductor’s
+job).</li>
+<li>No
+<code>constitution/scripts/workable-items/bin/workable-items close</code>
+invocation (left for the conductor after independent verification, per
+§11.4.240 producer≠verifier).</li>
+<li>The stale <code>.git/index.lock</code> (dated 2026-09-23, no live
+holder found via <code>ps</code>) was left untouched — reaping it is not
+this task’s scope and destructive git-state changes are the conductor’s
+responsibility.</li>
+</ul>
+</body>
+</html>

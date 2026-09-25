@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260925</h1>
+</header>
+<h1 id="bob-100-bump-submodulesjackett-closure-evidence">BOB-100 — Bump
+submodules/jackett — Closure Evidence</h1>
+<p><strong>Date:</strong> 2026-09-25 <strong>Status:</strong> Fixed (→
+Fixed.md)</p>
+<h2 id="context">Context</h2>
+<p>BOB-100 (backfilled from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md
+RD2-39) asked to bump <code>submodules/jackett</code> “one commit” to
+track upstream <code>Jackett/Jackett</code>. That framing was already
+stale by the time this closure ran: the pin had drifted to <strong>165
+tagged releases</strong> behind upstream <code>main</code>, not one
+commit.</p>
+<p>This closure was triggered by the operator’s separate mid-session
+mandate (“make sure our projects uses and targets the latest Jackett
+version and that is fully and properly incorporated”) — a dedicated
+subagent
+(<code>docs/qa/BOB-JACKETT-LATEST/investigation_20260925.md</code>)
+verified the <em>running</em>
+<code>lscr.io/linuxserver/jackett:latest</code> container and the Go API
+client have no hardcoded version dependency and needed no code change.
+That investigation did not touch <code>submodules/jackett</code> (a
+separate, build-disconnected reference submodule) — this closure covers
+that gap.</p>
+<h2
+id="verification-that-the-submodule-is-build-disconnected-safe-to-bump">Verification
+that the submodule is build-disconnected (safe to bump)</h2>
+<pre><code>$ grep -rln &quot;submodules/jackett&quot; --include=&quot;*.yml&quot; --include=&quot;Dockerfile*&quot; --include=&quot;*.sh&quot; .
+scripts/codegraph_validate.sh
+scripts/deploy-remote.sh
+tests/pre_build/test_check_gitignore_swallow.sh</code></pre>
+<ul>
+<li><code>scripts/codegraph_validate.sh</code> only asserts the
+submodule’s paths are EXCLUDED from the CodeGraph index (§11.4.79
+third-party exclusion) — no dependency on submodule content or
+commit.</li>
+<li><code>scripts/deploy-remote.sh</code> only <code>--exclude</code>s
+the path from an rsync.</li>
+<li><code>tests/pre_build/test_check_gitignore_swallow.sh</code> uses
+the path string as a synthetic fixture directory name — unrelated to the
+real submodule.</li>
+<li>No <code>docker-compose.yml</code> service, Dockerfile, or build
+script references <code>submodules/jackett</code> (confirmed via the
+same grep). The real Jackett container comes from
+<code>lscr.io/linuxserver/jackett:latest</code> (auto-updating, see
+BOB-JACKETT-LATEST investigation) — <code>submodules/jackett</code> is a
+pure reference/upstream-tracking checkout, not a build input.</li>
+</ul>
+<h2 id="fix-applied">Fix applied</h2>
+<pre><code>$ cd submodules/jackett &amp;&amp; git fetch --all --tags --prune
+ * [new tag]             v0.24.2631         -&gt; v0.24.2631
+ * [new tag]             v0.24.2644         -&gt; v0.24.2644
+ * [new tag]             v0.24.2651         -&gt; v0.24.2651
+ * [new tag]             v0.24.2663         -&gt; v0.24.2663
+ * [new tag]             v0.24.2668         -&gt; v0.24.2668
+
+$ git describe --tags   # before
+v0.24.2503-1-g8529ce4f2
+
+$ git checkout v0.24.2668
+HEAD is now at cf228beea Revert &quot;crabpt: drop redundant default: true from cats&quot;
+
+$ git describe --tags   # after
+v0.24.2668
+$ git log -1 --format=&#39;%H %s&#39;
+cf228beea7574389da01d7b6a00805e6a9ec77ea Revert &quot;crabpt: drop redundant default: true from cats&quot;</code></pre>
+<p>Pointer bumped from <code>8529ce4f2</code> (v0.24.2503) to
+<code>cf228beea</code> (v0.24.2668) — matches the same absolute-latest
+release the BOB-JACKETT-LATEST investigation identified via live GitHub
+release data (§11.4.99).</p>
+<h2 id="no-hardcoded-commit-hash-dependents">No hardcoded commit-hash
+dependents</h2>
+<pre><code>$ grep -n &quot;8529ce4f2\|submodules/jackett&quot; scripts/codegraph_validate.sh \
+    scripts/deploy-remote.sh tests/pre_build/test_check_gitignore_swallow.sh</code></pre>
+<p>Zero references to the old commit hash <code>8529ce4f2</code>
+anywhere in the repository — only path-string references, confirmed
+above.</p>
+<h2 id="classification">Classification</h2>
+<p>Project-specific (§11.4.17) — a submodule-pointer bump; no universal
+constitution change.</p>
+</body>
+</html>

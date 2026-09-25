@@ -299,3 +299,81 @@ case and the parser-invocation spy were added AFTER the first RED capture (this
 log says so for the spy). The reviewer measured 9 failed / 4 passed on the
 pre-fix code and 883 rather than 882 on the full suite — the +1 is a sibling
 stream's test, benign. Internally honest, now reconciled explicitly.
+
+================================================================================
+STATED-GAPS CLOSURE — BOB-179, appended 2026-09-25
+================================================================================
+
+Both gaps stated above (2026-08-23) are now CLOSED. Full detail, RED/GREEN
+proof, and the full test list live in
+docs/qa/BOB-179/closure_evidence_20260925.md; the summary below exists so a
+reader of THIS log is not left believing the class is still open.
+
+GAP A — CLOSED. Every private-tracker `_search_*` method's `except
+Exception:` clause (rutracker cookie path, rutracker credential path,
+nnmclub search leg, iptorrents), plus the ONE additional call frame the
+2026-08-23 note did not separately name (`_nnmclub_login`'s own except,
+reached when NNMCLUB_COOKIES is unset and username/password auth is
+configured — a failure there never propagates to `_search_nnmclub`'s
+except at all), now stash `{error_type: <exception class name>, error:
+<message>}` onto `self._last_public_tracker_diag[<tracker>]` before
+returning. kinozal already carried this fix from BOB-235 (this session,
+prior to BOB-179); the same pattern is now applied to the four remaining
+call frames, reusing the identical diagnostic shape (§11.4.28 -- no second
+exception-dialect was minted). A connection-refused tracker now reports
+`status="error"`, `error_type=<real exception class>`,
+`http_status=None` (no HTTP response was ever received) instead of the
+silent `status="empty", error=None` the review's Probe B captured.
+
+GAP B — CLOSED. A new, DISTINCT function, `_detect_session_expired_redirect`
+(download-proxy/src/merge_service/search.py, immediately after
+`_classify_upstream_http_status`), inspects aiohttp's OWN redirect-chain
+bookkeeping (`resp.history` / `resp.url`) -- never a body-text proxy -- and
+is wired in at all five private-tracker search-GET call sites, AFTER
+`_check_search_response` (unmodified; still correctly passes any 2xx
+through) and BEFORE the row parser runs. It fires ONLY when (a) a redirect
+genuinely occurred (`resp.history` non-empty) AND (b) the final resolved
+path differs from the requested search-endpoint path AND (c) the final
+path contains "login" (the shared substring of every one of this module's
+own login endpoints: rutracker/nnmclub `login.php`, kinozal
+`takelogin.php`, iptorrents `do-login.php`). `_classify_upstream_http_status`
+itself is UNTOUCHED -- its own docstring, its 2xx-always-None contract, and
+its existing negative-control tests
+(test_bob172_tracker_http_error_not_empty.py) all remain exactly as they
+were; this is additive, not a widening of that function's trigger.
+
+STUB RECONCILIATION (§11.4.120), same class as this log's own precedent
+above ("a real aiohttp ClientResponse always carries `.status`" ->
+now also `.history` and `.url`). Five sibling unit-test files' fake
+response stubs (`_FakeResp`/`_FakeResponse` in
+test_bob172_tracker_http_error_not_empty.py,
+test_bob177_guard_wiring_collapse.py,
+test_bob178_kinozal_login_status_diagnostic.py,
+test_bob235_kinozal_connect_failure_diagnostic.py, and
+test_nnmclub_session_login.py) modelled an INCOMPLETE aiohttp contract --
+missing `.history`/`.url` -- and raised AttributeError once the product
+code started reading them. Each stub's `__init__` gained
+`self.history = ()` / `self.url = ""` (the real aiohttp default for a
+non-redirected response); ZERO assertions in any of those five files were
+touched. Same discipline as this log's earlier STUB RECONCILIATION section:
+the stub was incomplete, not the product code wrong, and the tolerant
+alternative (defaulting a missing attribute in the PRODUCT code) was
+rejected for the same §11.4.252 fail-open reason stated there.
+
+RED/GREEN (full detail in docs/qa/BOB-179/closure_evidence_20260925.md):
+new file tests/unit/merge_service/test_bob179_stated_gaps_closure.py, 18
+tests (5 Gap A defect + 2 Gap A negative-control + 5 Gap B defect + 2 Gap B
+negative-control + 4 detector-unit). RED (fix's 5 wiring call-sites +
+except-clause diagnostics reverted, `_detect_session_expired_redirect`
+left defined-but-unwired): 10 failed (the 5 Gap A + 5 Gap B defect tests,
+each with `diag is None`), 8 passed (both negative-control classes +
+the 4 isolated detector-unit tests, which do not depend on wiring). GREEN
+(fix restored, byte-identical `diff` against the pre-revert file
+confirmed): 18 passed. Full relevant suite after the fix:
+`tests/unit/merge_service/` + `tests/unit/test_merge_trackers.py` +
+`tests/unit/test_private_tracker_search.py` = 1159 passed, 0 failed;
+`ruff check` clean on every touched file.
+
+Both closures are FIXES, not §11.4.112 structurally-impossible
+classifications -- the FIX DIRECTION in the tracked item's own text was
+correct that both were fixable.

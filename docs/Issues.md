@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 106
-**Last modified:** 2026-09-23T17:21:36Z
+**Revision:** 112
+**Last modified:** 2026-09-25T08:49:56Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -174,14 +174,6 @@ RD2-30: Author tests/stress/test_scheduler_hooks_sse_stress_chaos.py for Go-side
 **Severity:** Low
 
 [Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-32, P3] Author DDoS-class coverage (RD2-07) for the exposed download-proxy/merge endpoints. Priority: P3.
-
-## BOB-100 — RD2-39: Bump submodules/jackett one commit (canonical impl of RD2-09)
-
-**Status:** Queued
-**Type:** Task
-**Severity:** Low
-
-[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-39, P3] Bump submodules/jackett one commit (RD2-09). Priority: P3.
 
 ## BOB-101 — GA-19/RW-09: Is --profile go parity still a release goal? (gates RW-10..13) — OPERATOR-DECISION
 
@@ -533,24 +525,6 @@ HONEST BOUNDARY. This is not a live data defect. Zero corpus instances, and the 
 
 PROVENANCE. Raised by the implementing agent of BOB-166 as a known asymmetry it deliberately did not close, independently verified and endorsed as an acceptable scope boundary by that item's reviewer, on the condition that it become a tracked item rather than a comment. This is that item.
 
-## BOB-179 — Two adjacent tracker false-null classes remain open and must be stated as gaps, not implied closed
-
-**Status:** Queued
-**Type:** Task
-**Severity:** Medium
-**Created-By:** Claude
-**Assigned-To:** Claude
-
-WHAT: the BOB-172 independent review demonstrated two further paths that still report a refusing or unreachable tracker as an empty result. Both are PRE-EXISTING and neither is a regression from BOB-172, but the fix evidence log presents the five-site coverage without stating the boundary (11.4.194(5) requires un-analysed dimensions be explicit gaps, never silently assumed safe).
-
-GAP A -- exception before resp.status is read. Reviewer probe B, captured: a connection-refused rutracker yields status=empty, error=None, http_status=None, metadata.errors=[], metadata.status=completed. Each _search_* method swallows exceptions (except Exception: logger.error; return results) before _search_one's error handling can see them, so a tracker that is DOWN is indistinguishable from one that is genuinely empty.
-
-GAP B -- soft refusal at HTTP 200. Reviewer probe A, captured: _classify_upstream_http_status(200, <cf-chl body>) returns None, which is CORRECT by design (a 2xx is a usable response; body-marker triggering would risk the over-fire the negative controls exist to prevent). But all five search GETs use aiohttp's default allow_redirects=True, so a session-expiry 302 -> login-page-200 chain parses to zero rows and reports empty.
-
-FIX DIRECTION: Gap A needs the exception to reach a diagnostic rather than being swallowed. Gap B needs a DISTINCT detector (final-URL check or login-form marker) with its own RED -- explicitly NOT a widening of the status-code trigger.
-
-ACCEPTANCE: both gaps closed with their own REDs, or explicitly closed per 11.4.112 with evidence. Immediate sub-task: append a stated-gaps paragraph to docs/qa/BOB-172/fix_evidence_20260822.log.
-
 ## BOB-184 — Icon-glyph controls are unverified for non-text contrast because neither contrast oracle can measure them
 
 **Status:** Queued
@@ -611,6 +585,50 @@ ACCEPTANCE: (a) resolution must never prefer a stale artifact over a current one
 **Type:** Bug
 
 WHAT: the §11.4.252 fail-open scan reports 0 hits for qBitTorrent-go, and that zero is NOT evidence. The triage agent ran control needles through the scanner's own path per §11.4.201(7)(b): a Python 'except Exception: pass' needle was SEEN, a TypeScript 'catch (e) {}' needle was SEEN (so frontend/src's zero IS a real zero), but a Go empty-'if err != nil {}' needle was NOT SEEN. An instrument that cannot see the idiom returns the same quiet zero as a clean tree, and only one of those is honest. DISTINCT FROM BOB-189, deliberately not merged with it per §11.4.214: BOB-189 is a false MATCH (fail-closed guards reported as fail-open); this is a false NULL (an entire language unscanned). Same scanner, opposite failure directions, different fixes - merging them would hide one behind the other. IMPACT: Go is the language of qbittorrent-proxy-go and boba-jackett (port 7189, which owns encrypted tracker credentials), so the unscanned surface is exactly where §11.4.252's credential-plus-mutation combination is most likely. Nobody has assessed it; the dashboard says clean. ACCEPTANCE: the scanner grows a Go arm covering the empty-err-block and swallowed-error idioms, its needle is SEEN through the real path, qBitTorrent-go's result is re-derived, and every finding is triaged as this Python/TS pass was. Until then qBitTorrent-go's fail-open posture is UNKNOWN and must be reported as UNKNOWN, never as 0.
+
+=== ROUND-2 INVESTIGATION, MEASURED 2026-08-26 — THE FILED TITLE WAS TOO NARROW (§11.4.6) ===
+
+The live scanner is constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh, driven per-root by invariant 39 at scripts/pre_build_verification.sh:1481-1544. (scripts/pre_build/check_cm_no_fail_open_skip.sh has NEVER existed on any branch — it exists only in an uncommitted worktree. Any citation of that path is citing a file that is not there.)
+
+IT IS A WEAK-MATCHER DEFECT, NOT A SCOPE HOLE. Line :243 sets exts="py go rs c cc cpp h hpp java cs js ts jsx tsx php rb" — .go IS enumerated. But line :537 gates the Python ast analyser on `case "$f" in *.py)`, so every non-Python file falls through to just two text matchers (:772 empty `catch (...) {`, :794 credential `= x || "literal"`). Go has no `catch` keyword, so neither matcher CAN fire on Go by construction.
+
+NEEDLE TEST, BOTH ARMS (planted / rc / result): Python 2 / 1 / SEEN · TypeScript 1 / 1 / SEEN · Java 1 / 1 / SEEN · **Go 6 / 0 / NOT SEEN — PASS** · Rust 2 / 0 / NOT SEEN · Ruby 1 / 0 / NOT SEEN · C 2 / 0 / NOT SEEN. Go is ONE OF FIVE BLIND EXTENSIONS, not a special case. The Go needle is real code: go build rc=0, go vet rc=0, gofmt -e clean.
+
+THE DECISIVE DISCRIMINATOR — same bytes, extension changed: .zig (NOT enumerated) → "SKIP — topology_unsupported"; .go (enumerated) → "PASS". The gate ALREADY OWNS an honest-blindness mechanism and it works correctly; Go routes around it precisely BY BEING ENUMERATED. A scope hole announces itself; this matcher hole prints green. That makes it the worse defect and is why the corrected title leads with it.
+
+QUANTIFIED SURFACE (exclusions stated, §11.4.224(E)): using the scanner's OWN prune list and nothing added — 106 .go files / 20,389 LOC (52 production files / 6,858 LOC). WITH and WITHOUT exclusions the count is 106 == 106; no vendored tree exists, so no unstated exclusion could manufacture a clean number. qBitTorrent-go holds 106 blind files and 0 analysable files — 100% blind — yet invariant 39 counts it among "5 first-party source root(s)" reported clean.
+
+DEFECTS THE BLINDNESS HID → filed as BOB-204 (credential DELETE returns unconditional 204 while the .env plaintext delete error is discarded; plus the env_write_failed_db_rolled_back code asserting an unconfirmed rollback).
+SEPARATE SCOPE HOLE → filed as BOB-205 (cmd/boba-ctl, 947 LOC orchestrator, absent from DANGER_ROOTS entirely). Distinct-but-similar per §11.4.214, deliberately not merged.
+
+GOLDEN-FALSE FIXTURE FOR ANY FUTURE GO ARM: internal/jackettapi/auth_middleware.go:45-66 is correctly fail-CLOSED (constant-time compare, 401+return) — a Go arm MUST NOT flag it.
+
+LOAD-BEARING §11.4.250 PREDICTION: bolting a naive Go regex arm on will IMMEDIATELY manufacture BOB-189-class false positives in Go — `if err != nil { return false }` in a Go validator is fail-CLOSED. Fixing this as layer N+1 reproduces BOB-189 in a new language. THEREFORE the remediation order is fixed: (1) analyser REGISTRY with an UNANALYSED verdict FIRST — extension→analyser map, unmapped extension reports UNANALYSED never silent PASS, which converts the false null into an honest gap and covers rust/ruby/C too; (2) only then a Go arm, call-site-aware from day one (go/ast, or adopt errcheck/staticcheck rather than hand-rolled regex), shipped with the auth_middleware golden-FALSE.
+
+ONE PRIMITIVE, TWO SYMPTOMS: the scanner classifies by local syntactic shape and never consults semantic role — BOB-189 ignores the CALLER's context (false match), BOB-191 searches for a shape from a DIFFERENT language family (false null). The gate's own header already concedes the primitive ("requires real data-flow analysis this gate CANNOT honestly claim"); what is missing is propagating that concession into PER-LANGUAGE honesty. Keep two tracker items.
+
+INSTRUMENT BUG RECORDED, NOT HIDDEN (§11.4.201(12)): the investigation's first verdict extraction used `grep -oE 'PASS|FAIL|SKIP'`, which matched FAIL inside the gate's own name (...FAIL-CLOSED) and mislabelled three PASSes. Re-run keyed on exit code; the table above is the corrected run.
+
+EVIDENCE: docs/qa/BOB-191/scanner_blindness_investigation_20260826.md (255 lines, §11.4.44 header). No source, gate, or config modified by the investigation.
+
+=== ROUND-3 PARTIAL FIX, MEASURED 2026-09-25 — STEP (1) OF THE ROUND-2 REMEDIATION ORDER LANDED; STEP (2) STILL OPEN, ACCEPTANCE NOT YET MET ===
+
+Per the round-2 remediation order, step (1) — the analyser REGISTRY with an honest UNANALYSED verdict — is now implemented and independently re-verified (conductor re-ran the mutation suite from a clean shell, 206/206 green). Step (2) — a real semantic Go arm — is DELIBERATELY DEFERRED, so this item stays Queued: the ACCEPTANCE criterion above ("its needle is SEEN through the real path") is still unmet for Go/Rust/Ruby/C.
+
+CORRECTION TO ROUND-2's OWN FIGURE (§11.4.6, re-verified live, not re-guessed): round-2 said "5 blind extensions (go/rs/rb/c/h)". Re-run live against all candidates this round: C++ (.cpp, a genuine empty `catch(){}`) is SEEN — `rc=1 FAIL`, already correctly caught. It was never actually blind; `.h` is content-ambiguous (same header extension serves both C and C++) and is not a distinct 5th case. **Exactly 4 languages are structurally blind: Go, Rust, Ruby, C.** This narrows, not widens, the round-2 figure.
+
+WHAT LANDED (constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh — a constitution-submodule file, inherited by reference; landing it for real still needs the submodule's own §11.4.26 fetch/pull/push workflow, separate from boba's commit path):
+- New `DANGEROUS_COMBO_UNANALYSED_EXT` registry (default `go rs rb c`). Verdict now has 3 branches: real hits → FAIL (unchanged); zero hits + UNANALYSED files present → new honest `⚠ NOTE — N file(s) UNANALYSED...` + `PASS (PARTIAL COVERAGE)` (still exit 0, advisory — never blocks a build on an unanalysed language); zero hits + zero unanalysed → unchanged original clean-PASS text.
+- `scripts/pre_build_verification.sh` invariant 39 (boba-owned): fixed to read the UNANALYSED count unconditionally, not only on nonzero exit — otherwise a 100%-UNANALYSED root would still have silently printed "no fail-open anti-pattern across N clean roots" with the caller never seeing the NOTE.
+- Mutation test extended with 17 new assertions covering Go/Rust/Ruby/C UNANALYSED-branch RED/GREEN, a C++ negative control (still caught, never marked UNANALYSED — the registry must not swallow a working extension), a clean-root negative control, and a mixed-real-hit-not-masked control. Full suite 206/206 (189 pre-existing + 17 new), independently re-run by the conductor from a clean shell.
+
+LIVE FULL-REPO RESCAN RESULT (real DANGER_ROOTS, this round): Python backlog unchanged at 59 hits (download-proxy/src:25, plugins:32, scripts:2 — pre-existing, out of scope, advisory since 2026-08-20). **New honest signal: 121 files now reported UNANALYSED** (qBitTorrent-go:117, cmd/boba-ctl:4 — BOB-205's scope hole now visibly folded into the same honest-gap mechanism) instead of silently counting toward "clean." Zero new FAIL findings in Go — by design; a real Go checker needs call-site-aware semantic analysis, still deferred.
+
+WHY STEP (2) STAYS DEFERRED, NOT A REGRESSION: the round-2 §11.4.250 PREDICTION stands unrefuted — a naive Go regex arm would immediately flag `internal/jackettapi/auth_middleware.go:45-66` (the golden-FALSE fixture) as a BOB-189-class false positive. A real arm needs go/ast or an adopted tool (errcheck/staticcheck), shipped WITH that golden-FALSE passing, before it can fire.
+
+REMAINING WORK TO CLOSE THIS ITEM: implement the Go semantic arm (go/ast-based or errcheck/staticcheck-adopted) covering the empty-err-block and swallowed-error idioms, verified against the auth_middleware.go golden-FALSE fixture, re-derive qBitTorrent-go's real result (currently UNKNOWN, honestly reported as such), and triage every real finding as the Python/TS pass already is. Rust/Ruby/C have zero first-party files in boba's tree today (verified this round) so their own arms are lower priority until such files exist — the UNANALYSED registry already covers them honestly in the meantime.
+
+EVIDENCE: docs/qa/BOB-191/closure_evidence_20260925.md (full RED/GREEN transcripts, the C++ correction with live proof, the live full-repo scan table, anti-bluff provenance). State left uncommitted by design (constitution-submodule files need the §11.4.26 workflow, not boba's commit-push-all.sh).
 
 ## BOB-194 — Pre-build gates walk .claude/worktrees, so a stale agent worktree can fail the main build (§11.4.201(1))
 
@@ -702,19 +720,34 @@ WHAT: ownership_repair walks a declared root and repairs items whose uid is not 
 
 BOB-227 measured 3 of 4 artifacts of the CM-LAN-ROUTES-AUTHENTICATED gate untracked in git; criterion 1 (commit them) was already resolved by an unrelated prior commit before this session, closed 2026-09-23. Criterion 2 was NOT addressed: 'a gate asserting that every executable a pre-build invariant invokes is itself tracked' -- a general mechanism preventing this whole CLASS of defect (a pre-build gate's own implementation files shipping untracked, invisible to a fresh clone, no committed baseline for round-over-round diffs) from recurring for ANY future gate, not merely this one. ACCEPTANCE: (1) enumerate every file path scripts/pre_build_verification.sh invokes (via bash/timeout/python3 calls to scripts under scripts/pre_build/, plus every tests/pre_build/*.sh and tests/hooks/*.sh it runs) -- likely via a static grep/parse of pre_build_verification.sh itself, or a runtime trace; (2) assert every one of those paths is git-tracked (git ls-files --error-unmatch); (3) wire this as a new pre-build invariant so a future untracked gate implementation is caught immediately, not discovered independently weeks later; (4) a RED test creating an untracked fake gate-invocation target and asserting the new check fails on it, GREEN once the mechanism exists and the fake target is either removed or tracked.
 
-## BOB-234 — tests/integration/test_merge_api.py mutating-route tests send no API token, so 10 of them FAIL with HTTP 401 against the live token-armed merge service
-
-**Status:** Queued
-**Type:** Bug
-**Created-By:** Claude
-
-Found 2026-09-23 while remediating BOB-192: after the fail-open skips were fixed, the live run of tests/integration/test_merge_api.py gave 10 x HTTP 401 (hooks x5, magnet x3, download x2). The running merge service has BOBA_API_TOKEN set (BOB-197 mandatory auth guard), so POST /api/v1/magnet etc. answer 401 'valid API token required'; the tests build requests without the Authorization header. Each failing assert precedes any line BOB-192 changed, so HEAD fails identically: these tests were previously masked or never run against an armed service. Fix: the integration fixtures must read BOBA_API_TOKEN (env or .env, never printed, §11.4.10) and send it; when no token is available and the service demands one, FAIL loudly rather than skip. RED-first: local http.server fixture answering 401 without the header.
-
 ## BOB-235 — Live kinozal credential test reports authenticated=False, status='empty', error='' — cause UNKNOWN
 
-**Status:** Queued
+**Status:** Operator-blocked
 **Type:** Bug
+**Operator-Block-Details:** WHAT: Choose how the merge service reaches Kinozal (kinozal.tv resolves to 127.0.0.1 here; kinozal.guru sits behind a Cloudflare challenge) WHY: Attempted: (a) diagnostics now surface the real failure (code half fixed + tested); (b) no code path can bypass a Cloudflare challenge or change host DNS; (c) picking a mirror, a challenge solver or dropping a tracker changes shipped capability and needs an operator decision (§11.4.122) UNBLOCK: Operator picks ONE: [1] KINOZAL_MIRRORS=https://kinozal.guru in .env + ./start.sh --recreate; [2] change the roster primary host in trackers.py; [3] supply a cf_clearance cookie / FlareSolverr / Jackett kinozal indexer; [4] mark Kinozal unsupported (Obsolete, feature-removed per §11.4.90) WHO: repository operator
 **Created-By:** Claude
 
-Found 2026-09-23 running tests/integration/test_tracker_auth_live.py against the live stack after BOB-192: test_private_tracker_credentials_authenticate[kinozal] fails with authenticated=False status='empty' error=''. UNKNOWN whether this is expired cookies/credentials, tracker-side bot protection, or a plugin/parse regression (compare BOB-176/BOB-178 which touched the kinozal path and BOB-172 for rutracker). Needs systematic-debugging: capture the raw login response classification, distinguish credential failure from empty parse, and only then decide fix vs operator action (credential refresh is an operator step, §11.4.10). Not to be re-skipped: the test verdict is genuine.
+Live kinozal credential test reports authenticated=False, status='empty', error='' (found 2026-09-23). ROOT CAUSES (docs/qa/BOB-235/investigation_20260923.md): (A) operator/environment: kinozal.tv publishes A record 127.0.0.1 (host, container, DoH Cloudflare+Google all agree; rutracker.org resolves normally as control), KINOZAL_MIRRORS is empty so search.py falls back to kinozal.tv; the live mirror kinozal.guru answers every non-browser client with a Cloudflare 403 'Just a moment' challenge (login POST, curl, aiohttp, operator cookies with two user-agents; no cf_clearance cookie; KINOZAL_COOKIES is loaded into the container but no code reads it). (B) code defect FIXED under TDD (RED 2 failed/1 passed, GREEN 19 passed): _search_kinozal's except branch only logged and stashed no diagnostic, so the chip read empty with error=None; it now stashes error_type + 'Kinozal request failed: <msg>'. Needs ./start.sh --reload-python to be live. Credential validity is UNKNOWN (no request ever reached a login endpoint) - do not rotate credentials on this evidence. Operator-Block-Details: WHAT: choose (1) reachable domain - set KINOZAL_MIRRORS=https://kinozal.guru + ./start.sh --recreate, or change the roster primary in trackers.py; (2) how to pass the Cloudflare challenge - FlareSolverr (not deployed), cf_clearance cookie + code that actually reads KINOZAL_COOKIES, Jackett's kinozal indexer, or mark kinozal operator-blocked; (3) optionally re-export a kinozal-only cookie file. WHY: every agent-reachable path was exhausted - DNS, mirrors, login POST, cookies, env propagation all measured. UNBLOCK CONDITION: the live test authenticates or the operator marks kinozal unsupported. WHO: repository operator.
+
+## BOB-237 — CM-GATE-LEDGER-RATCHET FAIL: constitution corpus has 414 unimplemented CM-* gates against a checked-in baseline of 403 (§11.4.227(A))
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** high
+**Created-By:** AI
+**Assigned-To:** AI
+
+WHAT: CM-GATE-LEDGER-RATCHET (§11.4.227(A)) FAILED the pre-build sweep during this session's batch-15 commit attempt: unimplemented=414 exceeds the checked-in baseline=403 in constitution/scripts/gates/gate_ledger_baseline.txt. This is a HARD, blocking FAIL (unlike the other gate findings surfaced in the same sweep, which are all explicitly ADVISORY/non-blocking per §11.4.234).
+
+INVESTIGATION (§11.4.102): the four newest anchors this session's constitution pull brought in (§11.4.268 tamper-evident evidence chain, §11.4.269 critic/consensus advisory-only ban, §11.4.270 dependency-existence-verdict register, §11.4.271 waiver mechanism) were checked FIRST as the likely cause, since they are the most recently landed (2026-08-26) and each names several recommended mechanism gates in its own text. RULED OUT: every one of those gates' names (CM-CRITIC-CONSENSUS-ADVISORY-ONLY, CM-DEPENDENCY-EXISTENCE-VERDICT-REGISTER, CM-EVIDENCE-CHAIN-ANCHOR-CATCHES-RECOMPUTE-AND-TRUNCATION, CM-EVIDENCE-CHAIN-DELETE-REORDER-DETECTED, CM-EVIDENCE-CHAIN-INCOMPLETE-VERIFICATION-REFUSES, CM-WAIVER-ROSTERED-EXPIRY-TRACKED) is already correctly registered DEFERRED against an OWED-GATE-NNN tracked item, and each anchor's own §11.4.227(B) propagation gate is IMPLEMENTED. So this batch of new anchors did NOT introduce the ratchet violation.
+
+The full ledger run (docs/qa/BOB-237/unimplemented_gates_snapshot_20260925.txt, 414 lines, captured verbatim from `bash constitution/scripts/gates/cm_gate_ledger_ratchet.sh`) shows the total current state is 414 UNIMPLEMENTED + 121 IMPLEMENTED + 73 DEFERRED. The checked-in baseline (403) was last legitimately bumped by commit 34e42f0 ("cite the §11.4.209 gate rename, bump baseline 397->403") — some point after that, the unimplemented count grew to 414 (11 more) without a matching baseline bump or deferral registration for the newly-named gates, across one or more subsequent anchor-landing rounds in the constitution submodule. This is accumulated UNIVERSAL governance-corpus debt, not something introduced by any boba-side edit in this session (confirmed: `git diff eba38e8..HEAD -- constitution/scripts/gates/gate_ledger_baseline.txt` inside the constitution submodule is empty — the baseline file itself was never touched across the two merges this session performed).
+
+WHY DEFERRED RATHER THAN FIXED HERE: identifying which of the 414 unimplemented names are the specific 11 that pushed past baseline, and then either implementing 11 gates' worth of real UNIVERSAL gate-code or registering 11 proper OWED-GATE-NNN deferrals with tracked-item citations, is itself real engineering work scoped to the constitution submodule (universal, not project-specific per §11.4.17) — it is not a boba-project fix and doing it hastily mid-session, unrelated to this session's actual mandate (Jackett incorporation + backlog triage), risks exactly the kind of rushed, unreviewed governance-corpus edit §11.4.209's Fable-xhigh review requirement exists to prevent.
+
+ACCEPTANCE: (1) a future session (or the constitution's own maintainers) triages the 414-line snapshot against the 403 baseline to identify the specific unaccounted gate names; (2) each is either implemented, registered as a proper OWED-GATE-NNN deferral, or (if genuinely retired) cited in constitution/scripts/gates/gate_ledger_removals.tsv; (3) the constitution submodule's baseline is re-bumped with a citation once accounted, following the same pattern as commit 34e42f0; (4) boba's own pinned constitution pointer is then re-synced and this item closed with the passing CM-GATE-LEDGER-RATCHET re-run as evidence.
+
+DISPOSITION FOR THIS SESSION'S COMMIT: per §11.4.234(D) (the commit/push mechanism MUST always be able to complete; a failing gate is skippable ONLY via an explicit recorded deferral flag, with the skip recorded in the commit message so the debt stays tracked, never forgotten), this session's batch-15 commit used the sanctioned skip (BOBA_SYNC_SKIP_CI=1), citing this tracked item BOB-237, rather than silently bypassing or spending unbounded effort resolving an inherited universal-corpus debt mid-session.
+
+DISCOVERY CHANNEL (§11.4.238): found by boba's own pre-build sweep (scripts/pre_build_verification.sh, invariant 38/57) during a routine session commit — the automated gate itself is the discoverer, exactly as §11.4.238 requires.
 

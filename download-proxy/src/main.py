@@ -383,7 +383,13 @@ def _signal_handler(signum: int, frame: object) -> None:
 
 
 def start_original_proxy() -> None:
-    """Start the original download_proxy.py."""
+    """Start the original download_proxy.py.
+
+    BOB-236: ``_shutdown_event`` is passed through so ``run_server()``
+    can call ``httpd.shutdown()`` the moment SIGTERM/SIGINT arrives.
+    Without it this thread never exits on its own -- see
+    ``download_proxy.run_server()`` for the full root-cause note.
+    """
     logger.info("Starting original download proxy...")
     try:
         engines_dir = os.environ.get("ENGINES_DIR", "/config/qBittorrent/nova3/engines")
@@ -391,7 +397,7 @@ def start_original_proxy() -> None:
             sys.path.insert(0, engines_dir)
         from download_proxy import run_server  # type: ignore[import-not-found]
 
-        run_server()
+        run_server(_shutdown_event)
     except Exception as e:
         logger.error(f"Original proxy failed: {e}")
 
@@ -474,6 +480,26 @@ def start_fastapi_server() -> None:
         )
         server = uvicorn.Server(config)
 
+        # BOB-236 root cause: uvicorn's own Server.capture_signals()
+        # (server.py) explicitly skips installing SIGTERM/SIGINT handlers
+        # when NOT called from the main thread ("Signals can only be
+        # listened to from the main thread."). This server always runs
+        # inside asyncio.run() on a background daemon thread
+        # (fastapi_thread in main()), so uvicorn never sees the process's
+        # SIGTERM and `server.should_exit` was never set by anything --
+        # `await server.serve()` ran forever regardless of the top-level
+        # `_shutdown_event`, and `fastapi_thread.join(timeout=5)` in
+        # main() unconditionally burned its full 5s budget on every
+        # shutdown. `_await_process_shutdown` below is the missing link:
+        # it blocks (off-loop, so it costs no event-loop time) on the
+        # SAME `_shutdown_event` the process-level SIGTERM handler sets,
+        # then flips the one flag uvicorn's own serve loop already polls
+        # to exit gracefully.
+        async def _await_process_shutdown() -> None:
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(None, _shutdown_event.wait)
+            server.should_exit = True
+
         # Run in async mode. The heartbeat task is the BOB-137 stall
         # observatory's liveness probe; it stamps a monotonic clock from
         # inside this event loop so the watchdog thread can tell "loop is
@@ -481,11 +507,13 @@ def start_fastapi_server() -> None:
         # no behaviour to request handling and is cancelled with the server.
         async def _serve_with_heartbeat() -> None:
             beat = asyncio.ensure_future(_diag_heartbeat()) if _DIAG_ON else None
+            shutdown_watcher = asyncio.ensure_future(_await_process_shutdown())
             try:
                 await server.serve()
             finally:
                 if beat is not None:
                     beat.cancel()
+                shutdown_watcher.cancel()
 
         asyncio.run(_serve_with_heartbeat())
     except Exception as e:

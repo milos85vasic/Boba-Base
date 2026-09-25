@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import os
 import sys
+import threading
+import time
 from unittest.mock import MagicMock, patch
 
 # The suite runs under --import-mode=importlib (pyproject.toml), so a
@@ -383,3 +385,54 @@ class TestRunServer:
                 run_server()
                 mock_server.serve_forever.assert_called_once()
                 mock_server.shutdown.assert_called_once()
+
+    def test_run_server_calls_httpd_shutdown_when_shutdown_event_is_set(self):
+        """BOB-236 RED/GREEN regression guard.
+
+        Root cause: ``run_server()`` only called ``httpd.shutdown()`` on
+        ``KeyboardInterrupt`` -- which CPython never raises on a
+        background thread, exactly how ``main.py`` always runs this
+        function. So a process-level SIGTERM never stopped the download
+        proxy's ``ThreadingHTTPServer.serve_forever()`` loop at all.
+
+        This test simulates the REAL blocking shape of
+        ``serve_forever()`` with a genuine ``threading.Event`` that only
+        the mocked ``shutdown()`` call releases -- so it can only PASS if
+        ``run_server(shutdown_event)`` truly spawns a watcher thread that
+        waits on ``shutdown_event`` and calls ``httpd.shutdown()``.
+        Pre-fix, ``run_server`` accepted zero arguments, so this call
+        raises ``TypeError`` immediately (the RED failure); a version
+        that accepted-but-ignored the argument would instead time out on
+        ``run_thread.join()`` never observing ``shutdown.assert_called``
+        (also a FAIL) -- both failure shapes are caught by this test.
+        """
+        mock_server = MagicMock()
+        serve_forever_released = threading.Event()
+
+        def _serve_forever_blocks() -> None:
+            # Mirrors socketserver.BaseServer.serve_forever(): blocks the
+            # calling thread until something external unblocks it.
+            serve_forever_released.wait(timeout=5)
+
+        def _shutdown_releases_serve_forever() -> None:
+            serve_forever_released.set()
+
+        mock_server.serve_forever.side_effect = _serve_forever_blocks
+        mock_server.shutdown.side_effect = _shutdown_releases_serve_forever
+
+        shutdown_event = threading.Event()
+
+        with patch("download_proxy.ThreadingHTTPServer", return_value=mock_server):
+            run_thread = threading.Thread(target=run_server, args=(shutdown_event,), daemon=True)
+            run_thread.start()
+            # Give run_server a moment to enter serve_forever() and install
+            # its shutdown watcher before the event is set.
+            time.sleep(0.1)
+            shutdown_event.set()
+            run_thread.join(timeout=5)
+
+        assert not run_thread.is_alive(), (
+            "run_server(shutdown_event) did not return after shutdown_event was set -- "
+            "the shutdown_event was never wired to httpd.shutdown()"
+        )
+        mock_server.shutdown.assert_called_once()

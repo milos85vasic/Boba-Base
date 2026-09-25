@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>investigation_20260923</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">investigation_20260923</h1>
+</header>
+<h1
+id="bob-235-kinozal-live-credential-test-authenticatedfalse-statusempty-error">BOB-235
+— kinozal live credential test:
+<code>authenticated=False status='empty' error=''</code></h1>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Revision</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Last modified</td>
+<td>2026-09-23T17:50:00Z</td>
+</tr>
+<tr>
+<td>Item</td>
+<td>BOB-235 (Bug, left open — NOT closed by this investigation)</td>
+</tr>
+<tr>
+<td>Method</td>
+<td>superpowers:systematic-debugging (root cause before fix)</td>
+</tr>
+<tr>
+<td>Secrets</td>
+<td>No credential or cookie VALUE appears below (§11.4.10). Only
+lengths, cookie NAMES, domains, expiry dates, HTTP status codes.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="verdict">1. Verdict</h2>
+<p><strong>The item has two separate causes. One is a code defect, now
+fixed with TDD. The other is on the operator’s side: an upstream /
+environment problem that needs an operator decision.</strong></p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Class</th>
+<th>Finding</th>
+<th>Disposition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td><strong>Operator / environment: the upstream domain is dead</strong>
+(not one of the five hypothesised classes)</td>
+<td>The code’s hard-coded primary <code>https://kinozal.tv</code>
+publishes the A record <strong>127.0.0.1</strong>. Both Cloudflare and
+Google DNS-over-HTTPS return it, so no local resolver is intercepting.
+The kinozal leg never reaches the tracker, and every run fails with a
+connection refused.</td>
+<td><strong>Operator decision required.</strong> See §5.</td>
+</tr>
+<tr>
+<td>B</td>
+<td><strong>Code defect: an empty result was reported where the tracker
+was actually unreachable (a false-null)</strong></td>
+<td>In <code>_search_kinozal</code>, the <code>except Exception:</code>
+branch only logged the error. It stashed <strong>no</strong> diagnostic,
+so the chip read <code>status=empty, error=None</code>. The
+BOB-172/BOB-178 fixes left this exception leg open.</td>
+<td><strong>Fixed with TDD.</strong> See §4.</td>
+</tr>
+<tr>
+<td>C</td>
+<td>Blocker <strong>behind</strong> A (a Cloudflare check that a script
+cannot pass)</td>
+<td>The live mirror <code>kinozal.guru</code> answers every non-browser
+HTTP client with a Cloudflare “Just a moment” <strong>HTTP 403</strong>.
+This happens even when the request carries the operator’s valid
+<code>uid</code>/<code>pass</code> session cookies.</td>
+<td><strong>Operator decision required.</strong> Fixing A alone will NOT
+make the test pass.</td>
+</tr>
+</tbody>
+</table>
+<p>Hypotheses ruled out, with evidence: - <strong>Env not reaching the
+container:</strong> ruled out. All three <code>KINOZAL_*</code>
+variables are present and non-empty (§3.3). - <strong>Login-form or
+parse change:</strong> ruled out. The code never reached kinozal, so no
+HTML was parsed at all. - <strong>Credentials expired:</strong>
+<strong>UNKNOWN</strong>. No request has reached a real kinozal login
+endpoint since kinozal.tv died. <code>kinozal.guru</code> answers the
+login POST with a Cloudflare 403 before any authentication runs. The
+operator’s browser cookies for <code>.kinozal.guru</code> are
+<strong>not</strong> expired (§3.5). - <strong>CAPTCHA / bot
+protection:</strong> this is real, but it applies to the <em>mirror</em>
+(C). It is not what failed this run. This run failed on (A).</p>
+<h2 id="reproduction-red-on-the-live-stack-unchanged-no-restart">2.
+Reproduction (RED on the live stack, unchanged, no restart)</h2>
+<pre><code>$ nice -n 19 .venv/bin/python -m pytest &quot;tests/integration/test_tracker_auth_live.py::test_private_tracker_credentials_authenticate[kinozal]&quot; -v --import-mode=importlib -p no:cacheprovider
+E   Failed: kinozal: authenticated=False (expected True) — the STORED credentials failed to log in. status=&#39;empty&#39;, error=&#39;&#39;. This is a genuine bad/expired-credential failure, not a transient.
+FAILED tests/integration/test_tracker_auth_live.py::test_private_tracker_credentials_authenticate[kinozal]
+============================== 1 failed in 21.76s ==============================</code></pre>
+<p>Container log (<code>qbittorrent-proxy</code>) for the same search,
+kinozal lines only:</p>
+<pre><code>2026-09-23 17:35:49,806 - ERROR - Kinozal search error: Cannot connect to host kinozal.tv:443 ssl:default [Connect call failed (&#39;127.0.0.1&#39;, 443)]
+2026-09-23 17:35:49,806 - INFO - Tracker kinozal: 0 results for &#39;ubuntu&#39;</code></pre>
+<h2 id="evidence">3. Evidence</h2>
+<h3 id="code-path-why-error">3.1 Code path → why
+<code>error=''</code></h3>
+<p><code>download-proxy/src/merge_service/search.py::_search_kinozal</code>:
+- It uses
+<code>base_url = os.getenv("KINOZAL_MIRRORS", "https://kinozal.tv")</code>.
+<code>KINOZAL_MIRRORS</code> has length 0 in the container, so the base
+URL is <code>kinozal.tv</code>. - The <code>aiohttp</code> connect
+failure lands in <code>except Exception as e: logger.error(...)</code>.
+Before the fix, that branch stashed nothing in
+<code>_last_public_tracker_diag</code>. - <code>_search_one</code> then
+sets <code>status = "empty"</code> (because there are no results). With
+no diagnostic to read, <code>error</code> stays <code>None</code>, which
+the test renders as <code>''</code>. -
+<code>_refresh_stat_auth_state</code> returns False because no
+<code>_tracker_sessions["kinozal"]</code> entry was ever written. That
+entry is written only after a successful search fetch.</p>
+<h3
+id="dns-the-primary-domain-resolves-to-loopback-and-not-only-locally">3.2
+DNS: the primary domain resolves to loopback, and not only locally</h3>
+<pre><code>== host getent
+127.0.0.1       STREAM kinozal.tv
+== container
+127.0.0.1         kinozal.tv  kinozal.tv          (no /etc/hosts entry; resolv.conf -&gt; 127.0.0.53)
+== host resolvectl:  kinozal.tv: 127.0.0.1  -- link: enp5s0
+== DoH cloudflare: {&quot;Answer&quot;:[{&quot;name&quot;:&quot;kinozal.tv&quot;,&quot;type&quot;:1,&quot;TTL&quot;:1851,&quot;data&quot;:&quot;127.0.0.1&quot;}]}
+== DoH google:     {&quot;Answer&quot;:[{&quot;name&quot;:&quot;kinozal.tv.&quot;,&quot;type&quot;:1,&quot;TTL&quot;:1571,&quot;data&quot;:&quot;127.0.0.1&quot;}]}
+== NS (DoH google): ns-uk.topdns.com., ns-usa.topdns.com., ...
+== control needle rutracker.org: 104.21.32.39 (host) / 2606:4700:3037::ac43:b6c4 (container)</code></pre>
+<p>The control needle shows that the same resolver path does resolve a
+real tracker, so this is not a blind instrument (§11.4.273). Two
+independent DoH resolvers return 127.0.0.1, which means the published
+authoritative record is loopback. Local interception is ruled out.</p>
+<p>Mirrors (from the <code>trackers.py</code> roster
+<code>("kinozal.tv", "kinozal.me", "kinozal.guru")</code>):</p>
+<pre><code>kinozal.me   DoH -&gt; 104.21.87.84 / 172.67.142.133 ; host resolver -&gt; 79.101.65.65, TLS cert fails verification (unable to get local issuer certificate) -&gt; curl 000
+kinozal.guru DoH -&gt; Cloudflare (104.21.25.173 / 172.67.134.107) ; host resolver agrees
+https://kinozal.tv/   -&gt; 000 (refused)
+https://kinozal.guru/ -&gt; 302 -&gt; /login.php?m=5 (the live site)</code></pre>
+<p>UNCONFIRMED: why the host resolves <code>kinozal.me</code> to
+79.101.65.65 with an untrusted cert. A local/ISP-level redirect is one
+candidate, but it is not proven here. <code>kinozal.me</code> is
+therefore not a usable mirror from this host as measured.</p>
+<h3 id="env-reaches-the-container-names-lengths-only">3.3 Env reaches
+the container (names + lengths only)</h3>
+<pre><code>podman exec qbittorrent-proxy env | cut -d= -f1 | grep -i kinozal
+KINOZAL_COOKIES  KINOZAL_PASSWORD  KINOZAL_USERNAME
+KINOZAL_USERNAME len=12   KINOZAL_PASSWORD len=18   KINOZAL_COOKIES len=95   KINOZAL_MIRRORS len=0</code></pre>
+<h3
+id="the-live-mirror-sits-behind-a-cloudflare-check-that-scripts-cannot-pass">3.4
+The live mirror sits behind a Cloudflare check that scripts cannot
+pass</h3>
+<p>From inside the container, printing only statuses and cookie
+names:</p>
+<pre><code>POST https://kinozal.guru/takelogin.php (stored creds) -&gt; login_status 403, cookie_names []
+GET  https://kinozal.tv/...                         -&gt; URLError [Errno 111] Connection refused
+GET  kinozal.guru/browse.php anon (host curl)       -&gt; 403, body: &quot;Just a moment&quot;, &quot;challenge-platform&quot;, &quot;cloudflare&quot;
+GET  kinozal.guru/browse.php + KINOZAL_COOKIES, 2 UAs -&gt; status 403, rows 0, cf_challenge True, logout False (both)
+GET  kinozal.guru/browse.php via aiohttp (the real client) -&gt; status 403, cf True</code></pre>
+<h3
+id="the-cookie-file-presence-age-mode-and-kinozal-cookie-names-only">3.5
+The cookie file: presence, age, mode, and kinozal cookie NAMES only</h3>
+<pre><code>-rw------- 1 milosvasic milosvasic 90258 2026-09-22 10:05:00 +0200 /home/milosvasic/Downloads/cookies_kinozal.txt
+.kinozal.guru uid                    expires=2027-09-19T11:57:18Z
+.kinozal.guru pass                   expires=2027-09-19T11:57:18Z
+.kinozal.guru u_eb3299ed2c           expires=2026-08-15T22:00:00Z   (expired)
+.kinozal.guru eb3299ed2c_blockTimer  expires=2026-08-15T12:07:17Z   (expired)
+.kinozal.guru eb3299ed2c_delayCount  expires=2026-08-15T12:07:21Z   (expired)
+(no cf_clearance cookie for any kinozal domain)
+env KINOZAL_COOKIES cookie names: eb3299ed2c_blockTimer u_eb3299ed2c uid pass eb3299ed2c_delayCount</code></pre>
+<p>Findings: - The file is mode 0600, but it is a <strong>whole-browser
+export</strong>: 643 cookie rows across many unrelated domains (yandex,
+rutracker, github, semgrep, …). Only 5 rows are kinozal.
+<code>scripts/load-tracker-cookies.sh</code> filtered correctly: the
+container var contains only the kinozal names. Even so, it is worth the
+operator’s attention that a full browser jar sits under the kinozal
+filename. - The operator’s session is scoped to
+<strong><code>.kinozal.guru</code></strong>, which confirms that
+<code>kinozal.guru</code> is the domain the operator actually uses. -
+<strong>No code consumes <code>KINOZAL_COOKIES</code>.</strong>
+<code>grep -rn KINOZAL_COOKIES download-proxy/src plugins scripts/load-tracker-cookies.sh</code>
+returns 0 matches. The autoload puts the variable into the container,
+and nothing reads it. The kinozal leg only does a username/password
+POST. Even if the variable were consumed, §3.4 shows the cookies alone
+do not pass the Cloudflare check. - The test’s <code>ubuntu</code> query
+was unrelated to all of this. The failure happens before any search is
+sent.</p>
+<h2 id="code-fix-strict-tdd-for-defect-b">4. Code fix (strict TDD) for
+defect B</h2>
+<p>Files touched: -
+<code>download-proxy/src/merge_service/search.py</code>:
+<code>_search_kinozal</code>’s <code>except</code> branch now stashes
+<code>_last_public_tracker_diag["kinozal"] = {error_type: &lt;exception class&gt;, error: "Kinozal request failed: &lt;msg&gt;", ...}</code>.
+This reuses the orchestrator’s own exception format
+(<code>_search_one</code>) and adds no new vocabulary. It deliberately
+does not call <code>_classify_plugin_stderr</code>: the message contains
+<code>ssl:</code>, so that classifier would mislabel it as
+<code>tls_failure</code>. - NEW
+<code>tests/unit/merge_service/test_bob235_kinozal_connect_failure_diagnostic.py</code>:
+2 RED/GREEN tests (the diagnostic is set; it is not mislabelled as TLS)
+plus a negative control (a healthy round trip stashes no diagnostic and
+records a session).</p>
+<p>RED (pre-fix code):</p>
+<pre><code>FAILED ...::TestKinozalTransportFailureSetsDiagnostic::test_diagnostic_is_not_misclassified_as_tls
+FAILED ...::TestKinozalTransportFailureSetsDiagnostic::test_connect_failure_stashes_non_empty_diagnostic
+&gt;       assert diag is not None, &quot;a kinozal transport failure must not be reported as a silent empty result (BOB-235)&quot;
+2 failed, 1 passed in 0.42s</code></pre>
+<p>GREEN (post-fix):</p>
+<pre><code>bob235 + bob178 + bob177 + test_private_tracker_search: 48 passed in 2.78s
+tests/unit/merge_service (full): 1092 passed, 1 warning in 140.04s
+tests/unit/test_merge_trackers.py + test_private_tracker_search.py: 49 passed in 3.89s
+ruff check (both files): All checks passed!</code></pre>
+<p>Effect of the fix, once the container picks it up: the kinozal chip
+will read
+<code>status=error, error_type=ClientConnectorError, error="Kinozal request failed: Cannot connect to host kinozal.tv:443 ..."</code>
+instead of the false-null. The live test will <strong>still
+FAIL</strong>, correctly, because kinozal cannot be reached. The message
+contains none of the test’s transient markers, so it is not converted
+into a skip.</p>
+<p><strong>Not live yet.</strong> Per the task constraints, the stack
+was not restarted. The fix reaches the running service only after
+<code>./start.sh --reload-python</code>, which is an operator or
+conductor step.</p>
+<p>Mirror sites not changed (outside this item’s scope, recorded
+honestly): the rutracker, nnmclub and iptorrents search legs may have
+the same log-only <code>except</code> shape. They were not audited here.
+A shared helper would follow the §11.4.251 pattern that BOB-177 already
+applied to the HTTP-status guard.</p>
+<h2 id="operator-action-required-nothing-below-was-done-by-the-agent">5.
+Operator action required (nothing below was done by the agent)</h2>
+<ol type="1">
+<li><strong>Choose kinozal’s reachable domain.</strong>
+<code>kinozal.tv</code> publishes 127.0.0.1. Either:
+<ul>
+<li><ol type="a">
+<li>set <code>KINOZAL_MIRRORS=https://kinozal.guru</code> in
+<code>.env</code>, then run <code>./start.sh --recreate</code>; or</li>
+</ol></li>
+<li>(b) decide that the <code>trackers.py</code> roster primary should
+change from <code>kinozal.tv</code> to <code>kinozal.guru</code>. That
+code change also affects <code>search.py:1258</code>,
+<code>plugins/kinozal.py:157</code> and
+<code>.env.example:82</code>.</li>
+</ul>
+<strong>(a) alone does not fix the test</strong>, because of step
+2.</li>
+<li><strong>Decide on a Cloudflare challenge strategy for
+<code>kinozal.guru</code>.</strong> Every non-browser client gets a 403
+“Just a moment” page, even with a valid session. Options:
+<ul>
+<li><ol type="i">
+<li>run a challenge solver (e.g. FlareSolverr; it is referenced only in
+<code>NO_PROXY</code>, and no such service exists);</li>
+</ol></li>
+<li>(ii) export a <code>cf_clearance</code> cookie from the browser and
+make <code>_search_kinozal</code> consume <code>KINOZAL_COOKIES</code>.
+Such a cookie is bound to the user-agent and IP address and expires
+quickly, and the code currently ignores that variable;</li>
+<li>(iii) route kinozal through Jackett’s kinozal indexer;</li>
+<li>(iv) accept kinozal as operator-blocked and have the live test skip
+on a recognised challenge marker. That would need the diagnostic to
+carry a <code>upstream_captcha</code>-class token for a Cloudflare 403,
+which is a separate change.</li>
+</ul>
+Which option is right is an operator decision (§11.4.66).</li>
+<li><strong>Credential validity stays UNKNOWN</strong> until step 1 and
+step 2 get a request past the challenge to <code>takelogin.php</code>.
+Do not rotate the credentials based on this failure.</li>
+<li>(Hygiene, optional) Re-export
+<code>~/Downloads/cookies_kinozal.txt</code> with only the kinozal
+cookies. The current file is a full browser jar (643 rows, including
+rutracker/yandex/github sessions).</li>
+</ol>
+<h2 id="honest-gaps">6. Honest gaps</h2>
+<ul>
+<li>Whether the stored kinozal username/password still work:
+<strong>UNKNOWN</strong> (see §5.3).</li>
+<li>When <code>kinozal.tv</code> began publishing 127.0.0.1:
+<strong>UNKNOWN</strong>. The Issues history was not searched for a
+last-known-good kinozal live pass.</li>
+<li>Why <code>kinozal.me</code> resolves locally to a different IP with
+an untrusted cert: <strong>UNCONFIRMED</strong> (§3.2).</li>
+<li>The fix has unit evidence only. Runtime evidence on the live
+container is <strong>PENDING</strong> a <code>--reload-python</code>
+(not performed, per constraints).</li>
+</ul>
+</body>
+</html>

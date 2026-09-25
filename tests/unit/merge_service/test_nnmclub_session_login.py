@@ -121,6 +121,13 @@ class _FakeResp:
         self.cookies = _FakeCookies(cookies or {})
         self._body = body
         self.status = status
+        # BOB-179: complete the aiohttp.ClientResponse contract -- a real
+        # response always carries `.history` (empty tuple, no redirect) and
+        # `.url`. `_detect_session_expired_redirect` (Gap B) reads both.
+        # Same stub-reconciliation discipline as the `status` completion
+        # above, not a weakened guard (§11.4.120).
+        self.history = ()
+        self.url = ""
 
     async def __aenter__(self):
         return self

@@ -46,6 +46,14 @@ import uuid
 import pytest
 import requests
 
+from tests.integration.merge_api_auth import (
+    MergeTokenSession,
+    assert_token_usable,
+    qbit_delete_confirmed,
+    qbit_snapshot_hashes,
+    resolve_api_token,
+)
+
 # pyproject.toml's global `--timeout=60` is tuned for fast unit-style tests.
 # Bringing up (or waiting for) a real multi-container docker-compose stack
 # from cold — the exact thing `merge_url`/`qbit_url` below may have to do —
@@ -91,8 +99,28 @@ def qbit_url(request: pytest.FixtureRequest) -> str:
 
 
 @pytest.fixture(scope="module")
-def session() -> requests.Session:
-    return requests.Session()
+def api_token(merge_url: str) -> str:
+    """The merge service's ``BOBA_API_TOKEN`` (env, else repo ``.env``).
+
+    FAILS loudly — never skips — when the live service demands a token that
+    is absent or rejected (BOB-234). Never printed (§11.4.10)."""
+    token, source = resolve_api_token()
+    assert_token_usable(merge_url, token, source)
+    return token
+
+
+@pytest.fixture(scope="module")
+def session(merge_url: str, api_token: str) -> requests.Session:
+    """Session that sends ``X-Boba-Token`` to the merge service (BOB-234).
+
+    The live service arms ``BOBA_API_TOKEN`` (BOB-197), so its mutating routes
+    (hooks, magnet, download) answer 401 without it. The token comes from the
+    environment or the repo ``.env`` and is attached ONLY to merge-service
+    URLs automatically (the only time it reaches the :7186 qBittorrent proxy
+    is the explicit, verified torrent cleanup, which that proxy requires). If
+    the service demands a token that is absent or wrong, the ``api_token``
+    fixture FAILS loudly — never skips. The value is never printed (§11.4.10)."""
+    return MergeTokenSession(merge_url, api_token)
 
 
 def _qbit_login(qbit_url: str, session: requests.Session) -> None:
@@ -493,7 +521,7 @@ class TestDownloadEndpoint:
         assert resp.status_code == 422
         assert "download_urls" in resp.text
 
-    def test_download_magnet_added_to_real_qbittorrent(self, merge_url, qbit_url, session):
+    def test_download_magnet_added_to_real_qbittorrent(self, merge_url, qbit_url, session, api_token):
         """A syntactically-valid magnet (random infohash — no real swarm
         needed for qBittorrent to accept the add) really reaches the real
         qBittorrent instance through the real download-proxy code path.
@@ -501,6 +529,8 @@ class TestDownloadEndpoint:
         """
         random_hash = uuid.uuid4().hex + uuid.uuid4().hex[:8]  # 40 hex chars
         magnet = f"magnet:?xt=urn:btih:{random_hash}&dn=itest-{random_hash[:8]}"
+        # Baseline BEFORE the add: cleanup deletes only `after - before`.
+        before = qbit_snapshot_hashes(session, qbit_url, api_token)
 
         resp = session.post(
             f"{merge_url}/api/v1/download",
@@ -518,12 +548,12 @@ class TestDownloadEndpoint:
             assert data["results"][0]["status"] == "added"
         finally:
             # Cleanup: remove the torrent (+ any fetched files) from the
-            # real qBittorrent instance so the test leaves it quiescent.
-            session.post(
-                f"{qbit_url}/api/v2/torrents/delete",
-                data={"hashes": random_hash.lower(), "deleteFiles": "true"},
-                timeout=15,
-            )
+            # real qBittorrent instance so the test leaves it quiescent
+            # (§11.4.14). The :7186 proxy gates torrents/delete with the same
+            # BOBA_API_TOKEN, and the previous unauthenticated, unchecked
+            # delete got 401 and silently left the torrent behind (observed
+            # live 2026-09-23, BOB-234) — so send the token and PROVE removal.
+            qbit_delete_confirmed(session, qbit_url, random_hash, api_token, before)
 
 
 # ---------------------------------------------------------------------------

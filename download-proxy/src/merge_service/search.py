@@ -445,6 +445,86 @@ def _classify_upstream_http_status(status: int, body_sample: str = "") -> dict[s
     }
 
 
+def _detect_session_expired_redirect(
+    tracker_name: str,
+    requested_url: str,
+    history: tuple[Any, ...] | list[Any] | None,
+    final_url: Any,
+    final_status: int | None = None,
+) -> dict[str, Any] | None:
+    """Detect a session-expiry redirect chain (BOB-179 Gap B).
+
+    WHY THIS EXISTS (BOB-172 independent review, Gap B, 2026-08-23 --
+    docs/qa/BOB-172/fix_evidence_20260822.log). All five private-tracker
+    search GETs use aiohttp's default ``allow_redirects=True``. A session
+    cookie that has expired mid-search is answered with a 302 to the
+    tracker's login page, which itself renders as an ordinary HTTP 200 --
+    the exact response `_classify_upstream_http_status` is CORRECT to treat
+    as usable (a 2xx is a usable response, full stop; that function's own
+    docstring says so and must keep saying so, per §11.4.201(1) -- widening
+    its status-code trigger to fire on body markers would risk the
+    over-fire its negative controls exist to prevent). The login page then
+    parses to zero rows, and the caller sees `status=empty, error=None` --
+    the BOB-172 false-null, reached via a THIRD route (Gap A being the
+    second) that the HTTP-status guard structurally cannot see, because the
+    final response status IS 200.
+
+    THIS IS A DISTINCT DETECTOR, NOT A WIDENING of
+    `_classify_upstream_http_status`. It never inspects response bodies and
+    never changes what that function returns for any status code; it
+    inspects aiohttp's OWN redirect-chain bookkeeping (``resp.history`` /
+    ``resp.url``) -- authoritative facts about what actually happened on
+    the wire, never a body-text proxy (§11.4.201).
+
+    Returns ``None`` (no session-expiry signature) when ANY of:
+      * no redirect occurred at all (``history`` empty/falsy) -- the
+        overwhelming common case, and the negative control that matters
+        most: a legitimate 200 search-results page that happens to mention
+        the word "login" somewhere in its body must NOT trigger this, and
+        it never reaches this branch because aiohttp's own `history` is
+        empty for it;
+      * a redirect occurred but the FINAL resolved path is the same as the
+        REQUESTED path (e.g. an http -> https redirect that still lands on
+        the search endpoint) -- not a session-expiry signature;
+      * the final resolved path does not look like a login endpoint (the
+        ``login`` substring is the one marker shared by every private
+        tracker's own login endpoint name in this module: rutracker/nnmclub
+        ``login.php``, kinozal ``takelogin.php``, iptorrents
+        ``do-login.php``).
+
+    Returns a diagnostic dict, in the SAME shape
+    `_classify_upstream_http_status` already returns (§11.4.28 -- one
+    vocabulary, not a second one), when the redirect chain's final path
+    diverges from the requested path AND looks like a login endpoint.
+    """
+    if not history:
+        return None
+
+    from urllib.parse import urlparse
+
+    requested_path = urlparse(requested_url).path.lower()
+    final_str = str(final_url) if final_url is not None else ""
+    final_path = urlparse(final_str).path.lower() if final_str else ""
+
+    if not final_path or final_path == requested_path:
+        return None
+    if "login" not in final_path:
+        return None
+
+    return {
+        "error_type": "upstream_session_expired",
+        "error": (
+            f"{tracker_name} search request was redirected away from the search "
+            f"endpoint to what looks like a login page ({final_path!r}) instead "
+            "of returning search results -- the session has expired mid-search"
+        ),
+        "http_status": final_status,
+        "stderr_tail": "",
+        "deadline_hit": False,
+        "deadline_seconds": 0.0,
+    }
+
+
 @dataclass
 class TrackerSearchStat:
     """Per-tracker run-time diagnostics for a single search.
@@ -1551,11 +1631,25 @@ class SearchOrchestrator:
                 ):
                     _http_status = resp.status
                     html_content = await resp.text()
+                    _resp_history = resp.history
+                    _resp_url = resp.url
                 # BOB-172/BOB-177: read the status BEFORE parsing. A refusal
                 # body has no rows, so parsing it manufactures a zero that is
                 # indistinguishable from a genuinely empty search. See
                 # `_check_search_response`.
                 if not self._check_search_response("rutracker", _http_status, html_content):
+                    return results
+                # BOB-179 Gap B: a session-expiry redirect to the login page
+                # renders as an ordinary 200, so `_check_search_response`
+                # above is correct to pass it through -- this is a DISTINCT
+                # check on aiohttp's own redirect bookkeeping, never a
+                # widening of the status-code trigger. See
+                # `_detect_session_expired_redirect`.
+                _redirect_diag = _detect_session_expired_redirect(
+                    "rutracker", search_url, _resp_history, _resp_url, _http_status
+                )
+                if _redirect_diag is not None:
+                    self._last_public_tracker_diag["rutracker"] = _redirect_diag
                     return results
                 if len(html_content) < 1024 and "captcha" in html_content.lower():
                     self._last_public_tracker_diag["rutracker"] = {
@@ -1569,6 +1663,20 @@ class SearchOrchestrator:
                 results = self._parse_rutracker_html(html_content, base_url)
             except Exception as e:
                 logger.error(f"RuTracker search error (cookie path): {e}")
+                # BOB-179 Gap A: mirrors the kinozal fix (BOB-235) -- a
+                # transport failure here was silently swallowed (logged,
+                # then an empty `results` returned with NO diagnostic), so a
+                # DOWN rutracker was indistinguishable from a genuinely
+                # empty one. Stash the orchestrator's own exception dialect
+                # (`_search_one`: class name + message) rather than guessing
+                # a classification.
+                self._last_public_tracker_diag["rutracker"] = {
+                    "error_type": e.__class__.__name__,
+                    "error": f"RuTracker request failed (cookie path): {e}",
+                    "stderr_tail": "",
+                    "deadline_hit": False,
+                    "deadline_seconds": 0.0,
+                }
             return results
 
         username = os.getenv("RUTRACKER_USERNAME")
@@ -1629,11 +1737,24 @@ class SearchOrchestrator:
                 async with session.get(search_url, cookies=cookies) as resp:
                     _http_status = resp.status
                     html_content = await resp.text()
+                    _resp_history = resp.history
+                    _resp_url = resp.url
 
                 # BOB-172/BOB-177: same guard on the credential path -- the
                 # refusal is served to the search endpoint regardless of how
                 # we authed. See `_check_search_response`.
                 if not self._check_search_response("rutracker", _http_status, html_content):
+                    return results
+
+                # BOB-179 Gap B: same distinct redirect-to-login detector as
+                # the cookie path above -- the refusal chain is identical
+                # regardless of how we authed. See
+                # `_detect_session_expired_redirect`.
+                _redirect_diag = _detect_session_expired_redirect(
+                    "rutracker", search_url, _resp_history, _resp_url, _http_status
+                )
+                if _redirect_diag is not None:
+                    self._last_public_tracker_diag["rutracker"] = _redirect_diag
                     return results
 
                 if len(html_content) < 1024 and "captcha" in html_content.lower():
@@ -1649,6 +1770,16 @@ class SearchOrchestrator:
                 results = self._parse_rutracker_html(html_content, base_url)
         except Exception as e:
             logger.error(f"RuTracker search error: {e}")
+            # BOB-179 Gap A: mirrors the kinozal fix (BOB-235) and the
+            # cookie-path fix above -- a transport failure on the
+            # credential path was silently swallowed with no diagnostic.
+            self._last_public_tracker_diag["rutracker"] = {
+                "error_type": e.__class__.__name__,
+                "error": f"RuTracker request failed: {e}",
+                "stderr_tail": "",
+                "deadline_hit": False,
+                "deadline_seconds": 0.0,
+            }
 
         return results
 
@@ -1828,8 +1959,9 @@ class SearchOrchestrator:
                         return []
                     cookie_dict = {c.key: c.value for c in login_resp.cookies.values()}
 
+                _kinozal_search_url = f"{base_url}/browse.php"
                 async with session.get(
-                    f"{base_url}/browse.php",
+                    _kinozal_search_url,
                     params={"s": query},
                     cookies=cookie_dict,
                 ) as resp:
@@ -1840,8 +1972,20 @@ class SearchOrchestrator:
                     html = raw.decode("cp1251")
                     for c in resp.cookies.values():
                         cookie_dict[c.key] = c.value
+                    _resp_history = resp.history
+                    _resp_url = resp.url
                 # BOB-172/BOB-177: see `_check_search_response`.
                 if not self._check_search_response("kinozal", _http_status, html):
+                    return results
+
+                # BOB-179 Gap B: distinct redirect-to-login detector, never a
+                # widening of `_classify_upstream_http_status`. See
+                # `_detect_session_expired_redirect`.
+                _redirect_diag = _detect_session_expired_redirect(
+                    "kinozal", _kinozal_search_url, _resp_history, _resp_url, _http_status
+                )
+                if _redirect_diag is not None:
+                    self._last_public_tracker_diag["kinozal"] = _redirect_diag
                     return results
 
                 self._tracker_sessions["kinozal"] = {
@@ -1852,6 +1996,18 @@ class SearchOrchestrator:
             logger.info(f"Kinozal search '{query}': {len(results)} results")
         except Exception as e:
             logger.error(f"Kinozal search error: {e}")
+            # BOB-235: a transport failure (e.g. the primary domain resolving
+            # to 127.0.0.1) was reported as `status=empty, error=None` — the
+            # BOB-172/BOB-178 false-null on the exception leg. Surface it in
+            # the orchestrator's own exception dialect (`_search_one`:
+            # class name + message) instead of guessing a classification.
+            self._last_public_tracker_diag["kinozal"] = {
+                "error_type": e.__class__.__name__,
+                "error": f"Kinozal request failed: {e}",
+                "stderr_tail": "",
+                "deadline_hit": False,
+                "deadline_seconds": 0.0,
+            }
 
         return results
 
@@ -1939,19 +2095,31 @@ class SearchOrchestrator:
 
         try:
             timeout = aiohttp.ClientTimeout(total=15)
+            _nnmclub_search_url = f"{base_url}/forum/tracker.php?{urlencode({'nm': query, 'f': '-1'})}"
             async with aiohttp.ClientSession(timeout=timeout, **_tracker_session_kwargs()) as session:
                 async with session.get(
-                    f"{base_url}/forum/tracker.php?{urlencode({'nm': query, 'f': '-1'})}",
+                    _nnmclub_search_url,
                     cookies=cookie_jar,
                 ) as resp:
                     _http_status = resp.status
                     raw_bytes = await resp.read()
                     html = raw_bytes.decode("cp1251", "ignore")
+                    _resp_history = resp.history
+                    _resp_url = resp.url
                 # BOB-172/BOB-177: the identical false-null lived on every
                 # private tracker path, not just rutracker. Fixing one and
                 # leaving the siblings would leave the same silent
                 # contributor open here. See `_check_search_response`.
                 if not self._check_search_response("nnmclub", _http_status, html):
+                    return results
+                # BOB-179 Gap B: distinct redirect-to-login detector, never a
+                # widening of `_classify_upstream_http_status`. See
+                # `_detect_session_expired_redirect`.
+                _redirect_diag = _detect_session_expired_redirect(
+                    "nnmclub", _nnmclub_search_url, _resp_history, _resp_url, _http_status
+                )
+                if _redirect_diag is not None:
+                    self._last_public_tracker_diag["nnmclub"] = _redirect_diag
                     return results
                 self._tracker_sessions["nnmclub"] = {
                     "cookies": cookie_jar,
@@ -1960,6 +2128,17 @@ class SearchOrchestrator:
             results = self._parse_nnmclub_html(html, base_url)
         except Exception as e:
             logger.error(f"NNMClub search error: {e}")
+            # BOB-179 Gap A: mirrors the kinozal fix (BOB-235) -- a transport
+            # failure on nnmclub's search leg was silently swallowed with no
+            # diagnostic, making a DOWN tracker indistinguishable from a
+            # genuinely empty one.
+            self._last_public_tracker_diag["nnmclub"] = {
+                "error_type": e.__class__.__name__,
+                "error": f"NNMClub request failed: {e}",
+                "stderr_tail": "",
+                "deadline_hit": False,
+                "deadline_seconds": 0.0,
+            }
 
         return results
 
@@ -2025,6 +2204,19 @@ class SearchOrchestrator:
                 return cookie_dict
         except Exception as e:
             logger.error(f"NNMClub login error: {e}")
+            # BOB-179 Gap A: a transport failure on the LOGIN leg (used when
+            # NNMCLUB_COOKIES is unset and username/password auth is
+            # configured) was swallowed here, before it could ever reach
+            # `_search_nnmclub`'s own except clause -- the caller only saw
+            # an empty cookie jar with no diagnostic, the identical
+            # false-null one call frame deeper.
+            self._last_public_tracker_diag["nnmclub"] = {
+                "error_type": e.__class__.__name__,
+                "error": f"NNMClub login request failed: {e}",
+                "stderr_tail": "",
+                "deadline_hit": False,
+                "deadline_seconds": 0.0,
+            }
             return {}
 
     def _parse_nnmclub_html(self, html_content: str, base_url: str) -> list[SearchResult]:
@@ -2118,14 +2310,36 @@ class SearchOrchestrator:
                 ) as resp:
                     _http_status = resp.status
                     html_content = await resp.text()
+                    _resp_history = resp.history
+                    _resp_url = resp.url
 
                 # BOB-172/BOB-177: see `_check_search_response`.
                 if not self._check_search_response("iptorrents", _http_status, html_content):
                     return results
 
+                # BOB-179 Gap B: distinct redirect-to-login detector, never a
+                # widening of `_classify_upstream_http_status`. See
+                # `_detect_session_expired_redirect`.
+                _redirect_diag = _detect_session_expired_redirect(
+                    "iptorrents", search_url, _resp_history, _resp_url, _http_status
+                )
+                if _redirect_diag is not None:
+                    self._last_public_tracker_diag["iptorrents"] = _redirect_diag
+                    return results
+
                 results = self._parse_iptorrents_html(html_content, base_url)
         except Exception as e:
             logger.error(f"IPTorrents search error: {e}")
+            # BOB-179 Gap A: mirrors the kinozal fix (BOB-235) -- a transport
+            # failure here was silently swallowed with no diagnostic, making
+            # a DOWN tracker indistinguishable from a genuinely empty one.
+            self._last_public_tracker_diag["iptorrents"] = {
+                "error_type": e.__class__.__name__,
+                "error": f"IPTorrents request failed: {e}",
+                "stderr_tail": "",
+                "deadline_hit": False,
+                "deadline_seconds": 0.0,
+            }
 
         return results
 

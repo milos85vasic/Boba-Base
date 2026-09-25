@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 54
-**Last modified:** 2026-09-23T17:21:36Z
+**Revision:** 56
+**Last modified:** 2026-09-25T08:31:18Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -3306,4 +3306,50 @@ Measured 2026-09-23: ./start.sh --reload-jackett rebuilt image 38ef117ec563 and 
 **Evidence:** docs/qa/BOB-192/closure_evidence_20260923.md
 
 WHAT: the BOB-161 gate lands with 6 real fail-open skips RATCHETED rather than fixed. Ratcheting is the constitution's named brownfield default (§11.4.135/§11.4.224(E)) and this repo's own precedent, so the choice is correct - but the remediation it defers is real work that must be owned somewhere. WHY THIS ITEM EXISTS: the gate's own header asserted the 6 were 'TRACKED SEPARATELY (§11.4.197)' while no tracker row existed. The §11.4.209 independent review verified the absence and raised it as IMPORTANT-5, noting that without a row those findings are precisely the parked-unverified debt class §11.4.226(4) names - the population an operator samples and finds broken. A prose claim of being tracked is not tracking. WHAT EACH NEEDS: a skip that fires on evidence the host ANSWERED must either classify the response and FAIL on it, or take a §11.4.69 reason that is honestly derivable from the environment rather than from the response - verified against the live stack, not asserted. Two of the six sit under '# allow-skip:' markers at tests/unit/test_tracker_auth_live.py:105 and :108, which the reviewer confirmed genuinely are fail-open, so that marker must not be treated as absolution. ACCEPTANCE: all 6 remediated with RED-first evidence per §11.4.115, the gate's BASELINE ratcheted to 0, and the ratchet's monotone-decreasing property preserved throughout (§11.4.227(A)). NOTE the reviewer's MINOR-1: a count-baseline absorbs a one-out-one-in swap, so remediation progress must be checked against the finding SET, not only the count.
+
+## BOB-234 — tests/integration/test_merge_api.py mutating-route tests send no API token, so 10 of them FAIL with HTTP 401 against the live token-armed merge service
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-234/closure_evidence_20260923.md
+**Created-By:** Claude
+
+Found 2026-09-23 while remediating BOB-192: after the fail-open skips were fixed, the live run of tests/integration/test_merge_api.py gave 10 x HTTP 401 (hooks x5, magnet x3, download x2). The running merge service has BOBA_API_TOKEN set (BOB-197 mandatory auth guard), so POST /api/v1/magnet etc. answer 401 'valid API token required'; the tests build requests without the Authorization header. Each failing assert precedes any line BOB-192 changed, so HEAD fails identically: these tests were previously masked or never run against an armed service. Fix: the integration fixtures must read BOBA_API_TOKEN (env or .env, never printed, §11.4.10) and send it; when no token is available and the service demands one, FAIL loudly rather than skip. RED-first: local http.server fixture answering 401 without the header.
+
+## BOB-100 — RD2-39: Bump submodules/jackett one commit (canonical impl of RD2-09)
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-100/closure_evidence_20260925.md
+**Severity:** Low
+
+RD2-39: Bump submodules/jackett one commit (canonical impl of RD2-09)
+
+## BOB-236 — qbittorrent-proxy ignores SIGTERM and is SIGKILLed after the 10 s grace period on every restart
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-236/closure_evidence_20260925.md
+**Created-By:** Claude
+
+Observed 2026-09-23 19:45 during ./start.sh --reload-python: 'StopSignal SIGTERM failed to stop container qbittorrent-proxy in 10 seconds, resorting to SIGKILL'. The container's PID 1 does not exit on SIGTERM within the grace period, so in-flight requests, SSE streams, hooks and any pending writes are cut off instead of drained, and every restart costs the full 10 s. Root cause UNKNOWN: candidates are PID 1 being a shell wrapper (start-proxy.sh) that does not forward SIGTERM to the uvicorn/proxy children, uvicorn not handling the signal while SSE streams stay open, or a blocked event loop. Needs systematic-debugging: measure which process is PID 1 (podman top / inspect), send SIGTERM to a scratch instance and time each child's exit, then RED-first test (a container/stub that must exit within a bound on SIGTERM). Related context: BOB-137 (event-loop work), start-proxy.sh, docker-compose.yml stop_grace_period.
+
+## BOB-179 — Two adjacent tracker false-null classes remain open and must be stated as gaps, not implied closed
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-179/closure_evidence_20260925.md
+**Severity:** Medium
+**Created-By:** Claude
+**Assigned-To:** Claude
+
+WHAT: the BOB-172 independent review demonstrated two further paths that still report a refusing or unreachable tracker as an empty result. Both are PRE-EXISTING and neither is a regression from BOB-172, but the fix evidence log presents the five-site coverage without stating the boundary (11.4.194(5) requires un-analysed dimensions be explicit gaps, never silently assumed safe).
+
+GAP A -- exception before resp.status is read. Reviewer probe B, captured: a connection-refused rutracker yields status=empty, error=None, http_status=None, metadata.errors=[], metadata.status=completed. Each _search_* method swallows exceptions (except Exception: logger.error; return results) before _search_one's error handling can see them, so a tracker that is DOWN is indistinguishable from one that is genuinely empty.
+
+GAP B -- soft refusal at HTTP 200. Reviewer probe A, captured: _classify_upstream_http_status(200, <cf-chl body>) returns None, which is CORRECT by design (a 2xx is a usable response; body-marker triggering would risk the over-fire the negative controls exist to prevent). But all five search GETs use aiohttp's default allow_redirects=True, so a session-expiry 302 -> login-page-200 chain parses to zero rows and reports empty.
+
+FIX DIRECTION: Gap A needs the exception to reach a diagnostic rather than being swallowed. Gap B needs a DISTINCT detector (final-URL check or login-form marker) with its own RED -- explicitly NOT a widening of the status-code trigger.
+
+ACCEPTANCE: both gaps closed with their own REDs, or explicitly closed per 11.4.112 with evidence. Immediate sub-task: append a stated-gaps paragraph to docs/qa/BOB-172/fix_evidence_20260822.log.
 

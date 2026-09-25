@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260925</h1>
+</header>
+<h1 id="bob-179-closure-evidence">BOB-179 — closure evidence</h1>
+<p>captured: 2026-09-25 branch: main</p>
+<p>NOTE: no credential VALUE appears in this artifact or in any test
+fixture committed with it — variable NAMES only (§11.4.10). All test
+fixture values are synthetic placeholders
+(<code>test-user-not-a-real-account</code>,
+<code>test-value-not-a-real-secret</code>,
+<code>SYNTHETIC-TEST-FIXTURE-VALUE</code>), never real session
+material.</p>
+<h2 id="scope">Scope</h2>
+<p>The BOB-172 independent review (2026-08-22/23) stated two gaps in the
+five-site refusal-not-reported-as-empty fix, both explicitly
+PRE-EXISTING and neither a regression from BOB-172:</p>
+<ul>
+<li><strong>Gap A</strong> — an exception raised BEFORE
+<code>resp.status</code> is read is swallowed by each
+<code>_search_*</code> method’s <code>except Exception:</code> clause
+(<code>logger.error</code>; <code>return results</code>) before
+<code>_search_one</code>’s own error handling can observe it. A
+connection-refused / DOWN tracker was reported identically to a
+genuinely empty one: <code>status="empty"</code>,
+<code>error=None</code>, <code>http_status=None</code>.</li>
+<li><strong>Gap B</strong> — a session-expiry redirect
+(<code>302 -&gt; login page -&gt; 200</code>) parses to zero rows and
+reports empty, because <code>_classify_upstream_http_status</code>
+correctly treats any 2xx as usable and all five private-tracker search
+GETs use aiohttp’s default <code>allow_redirects=True</code>.</li>
+</ul>
+<p>Both are now CLOSED as FIXES (not §11.4.112 structurally-impossible
+classifications — the item’s own FIX DIRECTION text was correct that
+both were fixable, and no evidence emerged during investigation to the
+contrary).</p>
+<h2 id="root-cause-systematic-debugging-11.4.102">Root cause /
+systematic-debugging (§11.4.102)</h2>
+<p>Investigation confirmed both gaps genuinely present in
+<code>download-proxy/src/merge_service/search.py</code> as described,
+via direct source reading (not assumed from the prior review’s own
+words):</p>
+<ul>
+<li>Gap A: <code>_search_rutracker</code> (both the
+<code>RUTRACKER_COOKIES</code> branch and the
+<code>RUTRACKER_USERNAME</code>/<code>RUTRACKER_PASSWORD</code> branch),
+<code>_search_nnmclub</code>, and <code>_search_iptorrents</code> each
+had a bare <code>except Exception as e: logger.error(...)</code> with
+<strong>no</strong> diagnostic stash — confirmed by reading every one of
+the four methods’ exception handlers before touching any of them.
+<code>_search_kinozal</code> was the ONE exception: its except clause
+already stashed a diagnostic, added earlier this same session as the
+BOB-235 fix for the identical defect class on kinozal specifically
+(confirmed by reading the file fresh per this item’s own instruction not
+to assume prior state, since kinozal/search.py had been touched this
+session for BOB-137/BOB-235 before this item started).</li>
+<li>A SECOND call frame for the SAME defect class, not separately named
+by the review’s Gap A text, was found during investigation:
+<code>_nnmclub_login</code>’s own <code>except Exception as e:</code>
+(the login-leg helper <code>_search_nnmclub</code> delegates to when
+<code>NNMCLUB_COOKIES</code> is unset and username/password auth is
+used) also swallowed the exception with no diagnostic — and a failure
+there never reaches <code>_search_nnmclub</code>’s own except at all,
+since <code>_nnmclub_login</code> never re-raises. Closed as part of
+this item’s Gap A fix (see FIX below).</li>
+<li>Gap B: confirmed all five private-tracker search GETs
+(<code>_search_rutracker</code> cookie path,
+<code>_search_rutracker</code> credential path,
+<code>_search_kinozal</code>’s <code>browse.php</code> GET,
+<code>_search_nnmclub</code>’s <code>tracker.php</code> GET,
+<code>_search_iptorrents</code>’s <code>/t</code> GET) call
+<code>session.get(...)</code> with no <code>allow_redirects</code>
+keyword — aiohttp’s default is <code>True</code>. Confirmed
+<code>_classify_upstream_http_status</code>’s own docstring and
+behaviour (<code>if 200 &lt;= status &lt; 300: return None</code>) is
+correct by design and was left untouched.</li>
+</ul>
+<h2 id="fix">FIX</h2>
+<h3 id="gap-a">Gap A</h3>
+<p>Each of the four affected <code>except Exception:</code> clauses now
+stashes:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">self</span>._last_public_tracker_diag[<span class="op">&lt;</span>tracker<span class="op">&gt;</span>] <span class="op">=</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;error_type&quot;</span>: e.<span class="va">__class__</span>.<span class="va">__name__</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;error&quot;</span>: <span class="ss">f&quot;&lt;Tracker&gt; request failed[: &lt;leg&gt;]: </span><span class="sc">{</span>e<span class="sc">}</span><span class="ss">&quot;</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;stderr_tail&quot;</span>: <span class="st">&quot;&quot;</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;deadline_hit&quot;</span>: <span class="va">False</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;deadline_seconds&quot;</span>: <span class="fl">0.0</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>— the EXACT dialect the BOB-235 kinozal fix (this session, prior to
+BOB-179) established for this defect class, reused verbatim rather than
+inventing a second one (§11.4.28). Applied at:</p>
+<ol type="1">
+<li><code>_search_rutracker</code> — cookie-path except
+(<code>RuTracker request failed (cookie path): ...</code>)</li>
+<li><code>_search_rutracker</code> — credential-path except
+(<code>RuTracker request failed: ...</code>)</li>
+<li><code>_search_nnmclub</code> — search-leg except
+(<code>NNMClub request failed: ...</code>)</li>
+<li><code>_nnmclub_login</code> — login-leg except
+(<code>NNMClub login request failed: ...</code>) — the additional call
+frame found during investigation</li>
+<li><code>_search_iptorrents</code> — except
+(<code>IPTorrents request failed: ...</code>)</li>
+</ol>
+<p><code>_search_kinozal</code> was already fixed (BOB-235) and is
+unchanged by this item.</p>
+<h3 id="gap-b">Gap B</h3>
+<p>A new function,
+<code>_detect_session_expired_redirect(tracker_name, requested_url, history, final_url, final_status=None)</code>,
+added immediately after <code>_classify_upstream_http_status</code> in
+<code>search.py</code>:</p>
+<ul>
+<li>Returns <code>None</code> (no session-expiry signature) when
+<code>history</code> is empty/falsy — the overwhelming common case, and
+the one that matters most: it means NO redirect occurred, so a
+legitimate 200 search-results page that happens to mention the word
+“login” somewhere in its body never reaches any further check in this
+function at all.</li>
+<li>Returns <code>None</code> when a redirect DID occur but the final
+resolved path equals the requested path (e.g. an http→https upgrade
+landing back on the same search endpoint).</li>
+<li>Returns <code>None</code> when the final resolved path does not
+contain the substring <code>"login"</code> (the marker shared by every
+one of this module’s own login endpoints).</li>
+<li>Otherwise returns a diagnostic dict in the SAME shape
+<code>_classify_upstream_http_status</code> already returns (§11.4.28),
+with <code>error_type: "upstream_session_expired"</code>.</li>
+</ul>
+<p>It is a <strong>DISTINCT</strong> detector — it inspects only
+<code>resp.history</code>/<code>resp.url</code> (authoritative
+aiohttp-level facts about what happened on the wire), never a body-text
+proxy, and it is <strong>NOT</strong> a widening of
+<code>_classify_upstream_http_status</code>’s status-code trigger: that
+function’s own code, docstring, and test coverage are byte-for-byte
+unchanged by this item (<code>diff</code>-verified — see the RED/GREEN
+section below, where the negative-control tests pinning
+<code>_classify_upstream_http_status</code>’s existing behaviour stay
+green throughout).</p>
+<p>Wired in at all five search-GET call sites, immediately AFTER
+<code>_check_search_response</code> (which correctly passes the response
+through — it’s a 2xx) and BEFORE the row parser runs, capturing
+<code>resp.history</code> and <code>resp.url</code> while still inside
+the <code>async with</code> block (matching this file’s own existing
+convention for capturing <code>resp.status</code>).</p>
+<h3 id="stub-reconciliation-11.4.120">Stub reconciliation
+(§11.4.120)</h3>
+<p>Five sibling unit-test files’ fake aiohttp-response stubs modelled an
+INCOMPLETE aiohttp contract — no <code>.history</code>/<code>.url</code>
+attributes — and started raising <code>AttributeError</code> once the
+Gap B wiring read them (an <code>AttributeError</code> inside the
+<code>try</code> block, itself then caught and diagnosed by the Gap A
+fix — which is how the incompleteness surfaced, rather than a silent
+skip). Per the SAME reconciliation discipline this log’s earlier BOB-172
+section already establishes (“the stub was wrong; the guard is right” —
+completing an aiohttp-contract field on a stub is not weakening a test,
+and making the PRODUCT code tolerate a missing attribute via
+<code>getattr(..., default)</code> was rejected there for a §11.4.252
+fail-open reason that applies identically here):</p>
+<ul>
+<li><code>tests/unit/merge_service/test_bob172_tracker_http_error_not_empty.py</code>
+— <code>_FakeResponse.__init__</code> gained
+<code>self.history = ()</code> / <code>self.url = ""</code>.</li>
+<li><code>tests/unit/merge_service/test_bob177_guard_wiring_collapse.py</code>
+— <code>_FakeResp.__init__</code>, same two lines.</li>
+<li><code>tests/unit/merge_service/test_bob178_kinozal_login_status_diagnostic.py</code>
+— <code>_FakeResp.__init__</code>, same two lines.</li>
+<li><code>tests/unit/merge_service/test_bob235_kinozal_connect_failure_diagnostic.py</code>
+— <code>_FakeResp.__init__</code>, same two lines.</li>
+<li><code>tests/unit/merge_service/test_nnmclub_session_login.py</code>
+— <code>_FakeResp</code> already carried the BOB-172-era
+<code>status</code>-completion comment; extended with the identical
+<code>.history</code>/<code>.url</code> completion.</li>
+</ul>
+<p>ZERO assertions were touched in any of the five files.</p>
+<h2
+id="red-observed-before-the-fix-5-wiring-call-sites-except-clause">RED —
+observed BEFORE the fix (5 wiring call-sites + except-clause</h2>
+<p>diagnostics temporarily reverted;
+<code>_detect_session_expired_redirect</code> left defined but unwired,
+so it could not fire)</p>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/merge_service/test_bob179_stated_gaps_closure.py \
+    -q --import-mode=importlib -p no:randomly
+
+FAILED ...TestGapAConnectionRefusedSetsDiagnostic::test_rutracker_cookie_path
+FAILED ...TestGapAConnectionRefusedSetsDiagnostic::test_rutracker_credential_path
+FAILED ...TestGapAConnectionRefusedSetsDiagnostic::test_nnmclub_search_leg_with_explicit_cookies
+FAILED ...TestGapAConnectionRefusedSetsDiagnostic::test_nnmclub_login_leg_with_username_password
+FAILED ...TestGapAConnectionRefusedSetsDiagnostic::test_iptorrents
+FAILED ...TestGapBRedirectToLoginSetsDiagnostic::test_rutracker_cookie_path
+FAILED ...TestGapBRedirectToLoginSetsDiagnostic::test_rutracker_credential_path
+FAILED ...TestGapBRedirectToLoginSetsDiagnostic::test_kinozal
+FAILED ...TestGapBRedirectToLoginSetsDiagnostic::test_nnmclub
+FAILED ...TestGapBRedirectToLoginSetsDiagnostic::test_iptorrents
+10 failed, 8 passed in 1.39s</code></pre>
+<p>Every failure is <code>AssertionError: ... diag is None</code> —
+exactly the BOB-172/BOB-172-review false-null signature the item names.
+The 8 that passed pre-fix are, by construction, the two negative-control
+classes (§11.4.201(1) — must be green both before AND after) plus the 4
+isolated <code>_detect_session_expired_redirect</code> unit tests, which
+exercise the function directly and do not depend on any call-site
+wiring.</p>
+<p>Method: the fix’s 5 wiring call-sites and the 5 except-clause
+diagnostic stashes were reverted to their pre-BOB-179 text via the exact
+inverse of each edit applied (verified byte-identical to the intended
+pre-fix state by inspection of each reverted block); the file still
+compiled (<code>py_compile</code>) throughout. After capturing the RED
+run above, the fix was restored and a <code>diff</code> against a
+pre-revert backup copy of the file confirmed byte-identical restoration
+— no drift between the RED experiment and the shipped fix.</p>
+<h2
+id="green-after-the-fix-restored-diff-confirmed-identical-to-the">GREEN
+— after the fix (restored, diff-confirmed identical to the</h2>
+<p>intended shipped state)</p>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/merge_service/test_bob179_stated_gaps_closure.py \
+    -q --import-mode=importlib -p no:randomly
+
+18 passed in 1.28s</code></pre>
+<h2
+id="negative-controls-11.4.2011-mandatory-the-over-fire-direction">Negative
+controls (§11.4.201(1), mandatory — the over-fire direction)</h2>
+<p>Both gap classes carry their own, both green before AND after the
+fix:</p>
+<ul>
+<li><strong>Gap A</strong>:
+<code>TestGapANegativeControlHealthyRoundTripStashesNothing</code> — a
+healthy round-trip through the rutracker credential path and through
+<code>_nnmclub_login</code>’s own username/password login leg (the two
+NEW call frames this item’s fix touches) stashes NO diagnostic. The
+three other call frames (rutracker cookie path, kinozal, iptorrents) are
+already covered by the pre-existing sibling negative controls in
+<code>test_bob177_guard_wiring_collapse.py</code> /
+<code>test_bob235_kinozal_connect_failure_diagnostic.py</code>, whose
+healthy-path behaviour this item does not change.</li>
+<li><strong>Gap B</strong>: <code>TestGapBNegativeControls</code> —
+<ol type="a">
+<li><code>test_legitimate_200_mentioning_login_in_body_is_not_flagged</code>:
+a real 200 response with NO redirect (<code>resp.history</code> empty)
+whose body text merely mentions the word “login” must NOT be flagged —
+proves the detector keys on aiohttp’s redirect bookkeeping, never a body
+scan;</li>
+<li><code>test_redirect_that_lands_back_on_the_search_endpoint_is_not_flagged</code>:
+a redirect DID occur but the final path equals the requested search path
+— not a session-expiry signature, must NOT be flagged.</li>
+</ol></li>
+</ul>
+<p>A guard that over-fired on either negative control would be a WORSE
+defect than the false-null being fixed (§11.4.201(1)) — it would report
+a healthy, working search as an error.</p>
+<h2 id="full-relevant-suite-post-fix">Full relevant suite
+(post-fix)</h2>
+<pre><code>$ .venv/bin/python -m pytest tests/unit/merge_service/ \
+    tests/unit/test_merge_trackers.py tests/unit/test_private_tracker_search.py \
+    -q --import-mode=importlib -p no:randomly
+
+1159 passed in 160.66s (0:02:40)</code></pre>
+<p><code>ruff check</code> on every file this item touched
+(<code>search.py</code> + the 6 test files): all checks passed.</p>
+<h2 id="files-changed">Files changed</h2>
+<ul>
+<li><code>download-proxy/src/merge_service/search.py</code> —
+<code>_detect_session_expired_redirect</code> added; Gap A
+diagnostic-stashing added to <code>_search_rutracker</code> (both
+branches), <code>_search_nnmclub</code>, <code>_nnmclub_login</code>,
+<code>_search_iptorrents</code>; Gap B detector wired into all five
+private-tracker search-GET sites.</li>
+<li><code>tests/unit/merge_service/test_bob179_stated_gaps_closure.py</code>
+— new, 18 tests (this item’s own RED/GREEN + negative controls +
+detector-unit coverage).</li>
+<li><code>tests/unit/merge_service/test_bob172_tracker_http_error_not_empty.py</code>,
+<code>test_bob177_guard_wiring_collapse.py</code>,
+<code>test_bob178_kinozal_login_status_diagnostic.py</code>,
+<code>test_bob235_kinozal_connect_failure_diagnostic.py</code>,
+<code>test_nnmclub_session_login.py</code> — stub reconciliation only
+(<code>.history = ()</code> / <code>.url = ""</code> added to each
+file’s fake-response stub); zero assertions touched.</li>
+<li><code>docs/qa/BOB-172/fix_evidence_20260822.log</code> — stated-gaps
+closure paragraph appended (both gaps marked CLOSED, summary of the fix
+and proof, pointer to this file for full detail).</li>
+<li><code>docs/qa/BOB-179/closure_evidence_20260925.md</code> — this
+file.</li>
+</ul>
+<h2 id="not-closed-by-this-item-out-of-scope-unchanged">Not closed by
+this item (out of scope, unchanged)</h2>
+<ul>
+<li>BOB-177, BOB-178, BOB-180 — cited in the 2026-08-23 stated-gaps note
+as “also tracked from the same review, and likewise not closed by this
+change” at the time; BOB-177 and BOB-178 have since been closed
+separately (visible in <code>docs/Fixed.md</code>) — BOB-179 did not
+touch or re-verify either. BOB-180 status was not investigated by this
+item.</li>
+</ul>
+</body>
+</html>

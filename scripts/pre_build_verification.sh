@@ -1786,6 +1786,15 @@ else
     # mutation-test fixture L71 for the exclude-list confirmation).
     DANGER_ROOTS=(. download-proxy/src plugins scripts qBitTorrent-go frontend/src cmd/boba-ctl)
     DANGER_HITS=0; DANGER_SCANNED=0; DANGER_DETAIL=()
+    # BOB-191: DANGER_UNANALYSED tracks files of an UNANALYSED extension
+    # (go/rs/rb/c — see the gate's own §11.4.191/§11.4.6 registry) that were
+    # enumerated but have NO idiom-matching analyser. This is read on EVERY
+    # root, unconditionally of ${_drc} — the gate exits 0 for this case (it
+    # is an honest coverage gap, not a hit, so it must not block the build),
+    # so a check gated on "${_drc} -ne 0" would never see it at all, and the
+    # exact "matcher hole prints green" defect this fix closes at the gate
+    # layer would simply resurface one layer up, here, unfixed.
+    DANGER_UNANALYSED=0; DANGER_UNANALYSED_DETAIL=()
     for _dr in "${DANGER_ROOTS[@]}"; do
         [[ -d "${PROJECT_ROOT}/${_dr}" ]] || continue
         DANGER_SCANNED=$((DANGER_SCANNED + 1))
@@ -1809,12 +1818,32 @@ else
             DANGER_DETAIL+=("${_dr}:${_dn:-?}")
             grep -aE '^❌.* at .*:[0-9]+' "${_dlog}" | sed 's/^/        /' | sed -n '1,6p'
         fi
+        # Matched on the gate's own field-structured NOTE line ("N file(s) of
+        # an UNANALYSED extension"), never on the ⚠ glyph alone (the same
+        # glyph also prefixes unrelated degraded-mode/WAIVED notes) —
+        # §11.4.201(9) field-identity, applied the same way as the FAIL count
+        # extraction just above.
+        _du="$(grep -aoE 'NOTE — [0-9]+ file\(s\) of an UNANALYSED extension' "${_dlog}" | grep -oE '[0-9]+' || true)"
+        if [[ -n "${_du:-}" && "${_du}" -gt 0 ]]; then
+            DANGER_UNANALYSED=$((DANGER_UNANALYSED + _du))
+            DANGER_UNANALYSED_DETAIL+=("${_dr}:${_du}")
+        fi
         rm -f "${_dlog}"
     done
-    if [[ "${DANGER_HITS}" -eq 0 ]]; then
+    if [[ "${DANGER_HITS}" -eq 0 && "${DANGER_UNANALYSED}" -eq 0 ]]; then
         pass "CM-DANGEROUS-COMBINATION-FAIL-CLOSED: no fail-open anti-pattern across ${DANGER_SCANNED} first-party source root(s)"
+    elif [[ "${DANGER_HITS}" -eq 0 ]]; then
+        # Zero HITS, but NOT the same claim as "clean" — some of those roots
+        # (e.g. qBitTorrent-go, cmd/boba-ctl) are Go, and this gate has no
+        # fail-open analyser for Go/Rust/Ruby/C yet (BOB-191). Reported as an
+        # honest coverage gap, never folded into the "no fail-open
+        # anti-pattern" PASS line above.
+        echo "  WARN: CM-DANGEROUS-COMBINATION-FAIL-CLOSED — 0 hit(s), but ${DANGER_UNANALYSED} file(s) UNANALYSED (no idiom-matching analyser for go/rs/rb/c) across ${DANGER_UNANALYSED_DETAIL[*]} — UNKNOWN fail-open posture for those files, NOT a clean scan (ADVISORY, non-blocking per §11.4.234; §11.4.6/§11.4.201(6)/BOB-191)"
     else
         echo "  WARN: CM-DANGEROUS-COMBINATION-FAIL-CLOSED — ${DANGER_HITS} fail-open hit(s) across ${DANGER_DETAIL[*]} (ADVISORY, non-blocking per §11.4.234; un-triaged §11.4.252 backlog, see the block comment)"
+        if [[ "${DANGER_UNANALYSED}" -gt 0 ]]; then
+            echo "        also ${DANGER_UNANALYSED} file(s) UNANALYSED (no idiom-matching analyser for go/rs/rb/c) across ${DANGER_UNANALYSED_DETAIL[*]} — UNKNOWN fail-open posture for those files (§11.4.6/BOB-191)"
+        fi
     fi
 fi
 

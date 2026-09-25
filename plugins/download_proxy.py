@@ -25,6 +25,7 @@ import logging
 import re
 import ipaddress
 import hmac
+import threading
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -938,7 +939,28 @@ class DownloadHandler(BaseHTTPRequestHandler):
                 pass
 
 
-def run_server():
+def run_server(shutdown_event: "threading.Event | None" = None):
+    """Start the ``ThreadingHTTPServer`` and block until it stops.
+
+    BOB-236 root cause: ``serve_forever()`` blocks this thread
+    indefinitely, and only ``httpd.shutdown()`` -- documented by
+    ``socketserver.BaseServer`` as safe to call from a DIFFERENT thread
+    while ``serve_forever()`` is running elsewhere -- makes it return.
+    The previous implementation called that only on
+    ``KeyboardInterrupt``, which CPython never raises on a non-main
+    thread. ``main.py`` always runs this function on a background
+    daemon thread, so no signal delivered to the process ever stopped
+    it: ``proxy_thread.join(timeout=5)`` in ``main.py`` unconditionally
+    consumed its full 5s budget on every shutdown, which -- combined
+    with the equally-unstoppable FastAPI/uvicorn thread's own 5s join
+    -- pushed total shutdown past the container's 10s SIGTERM grace
+    period and forced a SIGKILL on every restart.
+
+    ``shutdown_event``, when supplied, is watched on a small daemon
+    thread; the moment it is set, ``httpd.shutdown()`` is called, which
+    makes ``serve_forever()`` return within one polling interval
+    (default 0.5s) instead of never.
+    """
     server_address = ("", PROXY_PORT)
     httpd = ThreadingHTTPServer(server_address, DownloadHandler)
 
@@ -948,6 +970,18 @@ def run_server():
     logger.info(f"qBittorrent backend: http://{QBITTORRENT_HOST}:{QBITTORRENT_PORT}")
     logger.info(f"Supported trackers: {_supported_tracker_names()}")
     logger.info("=" * 60)
+
+    if shutdown_event is not None:
+
+        def _watch_for_shutdown() -> None:
+            shutdown_event.wait()
+            httpd.shutdown()
+
+        threading.Thread(
+            target=_watch_for_shutdown,
+            name="download-proxy-shutdown-watcher",
+            daemon=True,
+        ).start()
 
     try:
         httpd.serve_forever()

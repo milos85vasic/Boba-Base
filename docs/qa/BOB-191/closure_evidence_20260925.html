@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>closure_evidence_20260925</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">closure_evidence_20260925</h1>
+</header>
+<h1 id="bob-191-unanalysed-extension-registry-closure-evidence">BOB-191
+— UNANALYSED-extension registry: closure evidence</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-09-25T00:00:00Z <strong>Status:</strong> fix implemented + tested +
+live-scanned; item NOT closed in DB (per dispatch instructions)
+<strong>Scope:</strong> BOB-191 (fail-open scanner MATCHER hole blind to
+enumerated non-catch languages) <strong>Authority:</strong> §11.4.6,
+§11.4.102, §11.4.115, §11.4.201(6)/(7)(b), §11.4.224, §11.4.250,
+§11.4.252</p>
+<hr />
+<h2
+id="critical-correction-to-the-dispatch-prompt-11.4.6-stated-up-front">0.
+Critical correction to the dispatch prompt (§11.4.6, stated up
+front)</h2>
+<p>The dispatch prompt named
+<code>scripts/pre_build/cm_no_fail_open_skip_analyzer.py</code> /
+<code>scripts/pre_build/check_cm_no_fail_open_skip.sh</code> /
+<code>tests/pre_build/test_check_cm_no_fail_open_skip.sh</code> as “the
+CM-NO-FAIL-OPEN-SKIP gate” for BOB-191. <strong>This is a different gate
+for a different anchor.</strong> Reading BOB-191’s own stored DB
+description (queried first, in full, per the dispatch instructions)
+shows the gate it actually concerns is
+<code>constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh</code>
+— the <strong>CM-DANGEROUS-COMBINATION-FAIL-CLOSED</strong> gate for
+<strong>§11.4.252</strong>, driven by invariant 39 at
+<code>scripts/pre_build_verification.sh:1761</code> (line numbers as of
+this session, pre-edit; BOB-191’s own round-2 investigation evidence
+doc,
+<code>docs/qa/BOB-191/scanner_blindness_investigation_20260826.md</code>,
+independently confirms this and additionally notes that
+<code>check_cm_no_fail_open_skip.sh</code> did not exist on any branch
+as of 2026-08-26).</p>
+<p><code>cm_no_fail_open_skip_analyzer.py</code> is real and does exist
+(it was added after 2026-08-26, for <strong>BOB-161</strong>, an
+unrelated defect: it AST-scans <strong>test files</strong> for
+<code>pytest.skip</code>/<code>ab_skip</code> calls that convert an
+ANSWERED sink-side response into a skip, per §11.4.69 — a Python/shell,
+test-corpus-only concern). It has no relationship to BOB-191’s
+production-code, multi-language, §11.4.252 scope and was <strong>not
+modified</strong> by this session — touching it would have conflated two
+orthogonal defects under one item.</p>
+<p>All work below targets the gate BOB-191’s own DB record actually
+names.</p>
+<h2 id="the-5-languages-and-what-the-live-gate-does-with-each">1. The 5
+languages, and what the live gate does with each</h2>
+<p>BOB-191’s stored round-2 investigation table lists
+<code>(go/rs/rb/c/h)</code> as the blind bucket (5 tokens) without
+empirically settling whether the C++ family
+(<code>cc</code>/<code>cpp</code>/<code>h</code>/<code>hpp</code>) is
+genuinely blind or merely grouped loosely with <code>c</code>. This
+session re-ran the control-needle methodology live, against the CURRENT
+gate, on ALL FIVE candidates, including the one the prior investigation
+did not settle:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Extension</th>
+<th>Needle planted</th>
+<th>Live gate verdict (before this fix)</th>
+<th>Structurally blind?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.go</code></td>
+<td>empty <code>if err != nil {}</code> +
+<code>_ = riskyOp()</code></td>
+<td><code>✅ PASS — no ... found</code> (rc=0)</td>
+<td><strong>YES</strong></td>
+</tr>
+<tr>
+<td><code>.rs</code></td>
+<td><code>let _ = risky_op()</code> + <code>Err(_) =&gt; {}</code></td>
+<td><code>✅ PASS — no ... found</code> (rc=0)</td>
+<td><strong>YES</strong></td>
+</tr>
+<tr>
+<td><code>.rb</code></td>
+<td><code>rescue StandardError</code> + comment-only body</td>
+<td><code>✅ PASS — no ... found</code> (rc=0)</td>
+<td><strong>YES</strong></td>
+</tr>
+<tr>
+<td><code>.c</code></td>
+<td>ignored return + empty <code>if (ret != 0) {}</code></td>
+<td><code>✅ PASS — no ... found</code> (rc=0)</td>
+<td><strong>YES</strong></td>
+</tr>
+<tr>
+<td><code>.cpp</code></td>
+<td>genuine empty
+<code>catch (const std::exception&amp; e) {}</code></td>
+<td><code>❌ FAIL — swallowed exception ... :5</code> (rc=1)</td>
+<td><strong>NO — already caught</strong></td>
+</tr>
+<tr>
+<td><code>.h</code> (C-style content)</td>
+<td>same C-style empty-if shape as <code>.c</code></td>
+<td><code>✅ PASS — no ... found</code> (rc=0)</td>
+<td>content-dependent, same as <code>.c</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Finding, corrected from BOB-191’s own imprecise “5” figure
+(§11.4.6/§11.4.226 — new evidence stated, not silently overriding the
+prior record):</strong> the gate’s shape-A matcher
+(<code>grep -nE 'catch[[:space:]]*\([^)]*\)[[:space:]]*\{'</code>) runs
+over <strong>every</strong> enumerated extension, unconditioned by
+extension — it is not gated to a subset. It is genuinely idiom-correct
+for C++ (<code>catch (...) {</code> <strong>is</strong> real C++ syntax)
+and the live needle proves it fires correctly on C++. It cannot
+structurally match Go/Rust/Ruby/C, whose native error-handling idioms
+contain no <code>catch</code> keyword at all. <code>.h</code> is
+extension-ambiguous (a C header vs. a C++ header) and its outcome is
+<strong>content-dependent</strong>, exactly like <code>.c</code> — not a
+fifth structurally-blind extension in its own right.</p>
+<p><strong>Precisely four language families are structurally blind by
+construction: Go, Rust, Ruby, C.</strong> C++
+(<code>cc</code>/<code>cpp</code>/<code>h</code>/<code>hpp</code>) is
+NOT blind and was correctly left uncovered by the new registry (see §3,
+negative control L91).</p>
+<h2 id="live-repo-scope-check-before-deciding-the-fix-shape">2. Live
+repo scope check (before deciding the fix shape)</h2>
+<pre><code>$ for ext in go rs rb c cc cpp h hpp; do
+    find . -prune-excludes... -name &quot;*.${ext}&quot; | wc -l
+  done
+go:  124 files
+rs:  0 files
+rb:  0 files
+c:   0 files
+cc:  0 files
+cpp: 0 files
+h:   0 files
+hpp: 0 files</code></pre>
+<p>Go is the <strong>only</strong> blind language with real code in this
+repo (124 files, mostly <code>qBitTorrent-go</code>, the language of
+<code>qbittorrent-proxy-go</code> and <code>boba-jackett</code> — the
+service owning encrypted tracker credentials on port 7189, per BOB-191’s
+own IMPACT statement). Rust/Ruby/C/C++ have <strong>zero</strong> files
+anywhere in the first-party tree today.</p>
+<p>This matches the dispatch’s own stated fallback path: for a blind
+language with genuinely zero code today, extend the analyzer’s SCOPE so
+a FUTURE violation is caught, even with nothing to fix today. It also
+matches BOB-191’s own round-2 remediation direction (§8 point 1 of the
+investigation doc): <em>“Analyser registry with an UNANALYSED verdict
+(the single structural fix) … Do this before any Go arm.”</em> —
+explicitly ordered BEFORE any semantic Go checker, because a naive regex
+Go arm would immediately reproduce BOB-189 (fail-CLOSED guards flagged
+as fail-open) in a new language (§11.4.250: the tower is the
+diagnostic). Writing a real, call-site-aware Go analyser (go/ast or
+errcheck/staticcheck-based) is out of scope for this item as filed and
+remains explicitly deferred future work.</p>
+<h2 id="the-fix-an-unanalysed-extension-registry-red-green">3. The fix:
+an UNANALYSED-extension registry (RED → GREEN)</h2>
+<h3 id="red-before-fix-this-session-against-git-show-head...">RED
+(before fix, this session, against <code>git show HEAD:...</code>)</h3>
+<pre><code>$ bash &lt;pre-fix gate&gt; --root &lt;go-only fixture&gt; --quiet
+✅ CM-DANGEROUS-COMBINATION-FAIL-CLOSED: PASS — no swallowed-exception, silent-default-return or credential-default-to-literal anti-patterns found (§11.4.252)
+rc=0</code></pre>
+<p>(identical for <code>.rs</code>/<code>.rb</code>/<code>.c</code>
+fixtures — no “UNANALYSED” concept existed; the marker string is absent
+by construction; the bare unqualified clean-PASS sentence IS
+present.)</p>
+<h3 id="green-after-fix">GREEN (after fix)</h3>
+<pre><code>$ bash &lt;fixed gate&gt; --root &lt;go-only fixture&gt; --quiet
+⚠ CM-DANGEROUS-COMBINATION-FAIL-CLOSED: NOTE — 1 file(s) of an UNANALYSED extension (go rs rb c) were enumerated but have NO idiom-matching fail-open analyser (...) -- sample: .../needle.go. This is reported as UNKNOWN, never as a clean scan, for this extension&#39;s fail-open posture (§11.4.6/§11.4.201(6)/§11.4.250). ...
+✅ CM-DANGEROUS-COMBINATION-FAIL-CLOSED: PASS (PARTIAL COVERAGE) — no swallowed-exception, silent-default-return or credential-default-to-literal anti-patterns found among the ANALYSED files; 1 UNANALYSED file(s) reported above, NOT included in this clean claim (§11.4.252)
+rc=0</code></pre>
+<h3
+id="what-changed-constitutionscriptsgatescm_dangerous_combination_fail_closed.sh">What
+changed
+(<code>constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh</code>)</h3>
+<ol type="1">
+<li>New consumer-overridable env var
+<code>DANGEROUS_COMBO_UNANALYSED_EXT</code> (default
+<code>go rs rb c</code>), matching the existing
+<code>DANGEROUS_COMBO_EXT</code> / <code>DANGEROUS_COMBO_EXCLUDE</code>
+override pattern (§11.4.28/§11.4.35).</li>
+<li><code>is_unanalysed_ext()</code> classifies each enumerated file;
+the main scan loop tallies <code>unanalysed_hits</code> + a bounded
+(first 10) sample list.</li>
+<li>The final verdict block now has three branches, not two:
+<ul>
+<li>real hits present → unchanged FAIL (rc=1).</li>
+<li>zero hits, but UNANALYSED files present → new
+<code>⚠ ... NOTE</code> line + a <code>PASS (PARTIAL COVERAGE)</code>
+line that explicitly excludes the unanalysed files from the clean claim
+(rc=0, still advisory/non-blocking — matches this same gate’s own
+existing <code>topology_unsupported</code> SKIP-on-exit-0
+precedent).</li>
+<li>zero hits, zero UNANALYSED files → unchanged, original, unqualified
+<code>PASS</code> line (byte-identical wording to before this fix).</li>
+</ul></li>
+<li><code>HEADER_LINES</code> (used by <code>--help</code>) bumped from
+565 → 579 to match the header text added; re-verified against the
+mutation suite’s own P13 self-probe (<code>HEADER_LINES</code> names a
+comment line whose next line is empty).</li>
+<li>Header docs (<code>Environment overrides</code>,
+<code>Exit codes</code>) updated in the same change (§11.4.18).</li>
+</ol>
+<h3
+id="what-changed-constitutionscriptsgatescm_dangerous_combination_fail_closed_mutation_test.sh">What
+changed
+(<code>constitution/scripts/gates/cm_dangerous_combination_fail_closed_mutation_test.sh</code>)</h3>
+<p>New helper <code>expect_output_not_contains</code> (the negative twin
+of the existing <code>expect_output_contains</code>, same capture-first
+discipline per §11.4.201(12)).</p>
+<p>New section “96. BOB-191: the UNANALYSED-extension registry”,
+fixtures L87-L93 (17 new assertions):</p>
+<ul>
+<li><strong>L87 (Go), L88 (Rust), L89 (Ruby), L90 (C)</strong> — each:
+(a) gate still exits 0 (advisory, never blocks), (b) output CONTAINS
+“UNANALYSED extension”,
+(c) output does NOT contain the bare unqualified clean-PASS
+sentence.</li>
+<li><strong>L91 NEGATIVE CONTROL</strong> — C++ (<code>.cpp</code>) with
+a genuine empty catch block is STILL caught (rc=1) and is NEVER reported
+UNANALYSED — proves the registry was not over-broadened to swallow a
+working analyser.</li>
+<li><strong>L92 NEGATIVE CONTROL</strong> — a plain, fully-analysed
+clean Python root NEVER prints the UNANALYSED marker, and DOES print the
+plain unqualified clean-PASS sentence — proves the new branch is reached
+only when genuinely warranted.</li>
+<li><strong>L93</strong> — a REAL Python hit alongside an unanalysed Go
+file in the SAME root still FAILs (rc=1) — proves the new branch can
+never mask a genuine finding.</li>
+</ul>
+<h3 id="full-suite-result">Full suite result</h3>
+<pre><code>$ bash constitution/scripts/gates/cm_dangerous_combination_fail_closed_mutation_test.sh
+...
+✅ META PASS — CM-DANGEROUS-COMBINATION-FAIL-CLOSED FAILs-on-mutation AND PASSes-on-clean for every fixture (§1.1 proof holds)
+META_EXIT=0</code></pre>
+<p>206/206 assertions green (189 pre-existing + 17 new), 0 failures. The
+pre-existing 189 assertions were re-run unmodified before AND after the
+fix with identical results — no regression to any existing detection
+shape (swallowed exception, silent-default-return, credential-default,
+BOB-189 call-site discrimination, contextlib.suppress family, etc).</p>
+<h2
+id="caller-level-fix-scriptspre_build_verification.sh-invariant-39">4.
+Caller-level fix (<code>scripts/pre_build_verification.sh</code>,
+invariant 39)</h2>
+<p>The gate fix alone was not sufficient to close the loop end-to-end:
+invariant 39’s own caller only inspected the gate’s log when its exit
+code was non-zero, and the new UNANALYSED branch deliberately still
+exits 0 (it is an honest gap, not a hit — matching this gate’s own
+precedent for <code>topology_unsupported</code>). Left unchanged,
+invariant 39 would have kept printing <em>“no fail-open anti-pattern
+across N first-party source root(s)”</em> for a root that is 100%
+UNANALYSED — reproducing BOB-191’s own “matcher hole prints green”
+defect one layer up, in the actual pre-build report an operator
+reads.</p>
+<p>Fixed: invariant 39 now reads every root’s log unconditionally for
+the gate’s <code>NOTE — N file(s) of an UNANALYSED extension</code> line
+(matched on structure per §11.4.201(9) field-identity, not on the bare ⚠
+glyph, which also prefixes unrelated degraded-mode/WAIVED notes),
+tallies <code>DANGER_UNANALYSED</code>, and the final message now has
+three branches (hits+unanalysed / zero-hits-with-unanalysed /
+genuinely-clean), verified live via an isolated harness (below) before
+touching the real 57-invariant script.</p>
+<h2 id="live-full-repo-scan-post-fix-real-danger_roots">5. Live
+full-repo scan (post-fix, real <code>DANGER_ROOTS</code>)</h2>
+<pre><code>DANGER_ROOTS=(. download-proxy/src plugins scripts qBitTorrent-go frontend/src cmd/boba-ctl)</code></pre>
+<table>
+<thead>
+<tr>
+<th>Root</th>
+<th>Real hits (❌ FAIL)</th>
+<th>UNANALYSED files</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.</code> (depth 1)</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>download-proxy/src</code></td>
+<td>25</td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>plugins</code></td>
+<td>32</td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>scripts</code></td>
+<td>2</td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>qBitTorrent-go</code></td>
+<td><strong>0</strong></td>
+<td><strong>117</strong></td>
+</tr>
+<tr>
+<td><code>frontend/src</code></td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>cmd/boba-ctl</code></td>
+<td><strong>0</strong></td>
+<td><strong>4</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Invariant-39 final summary line (verified via isolated
+harness against the real <code>DANGER_ROOTS</code>, not the full
+57-invariant script — see §4):</strong></p>
+<pre><code>WARN: CM-DANGEROUS-COMBINATION-FAIL-CLOSED — 59 fail-open hit(s) across download-proxy/src:25 plugins:32 scripts:2 (ADVISORY, non-blocking per §11.4.234; un-triaged §11.4.252 backlog, see the block comment)
+        also 121 file(s) UNANALYSED (no idiom-matching analyser for go/rs/rb/c) across qBitTorrent-go:117 cmd/boba-ctl:4 — UNKNOWN fail-open posture for those files (§11.4.6/BOB-191)</code></pre>
+<p><strong>The 59-hit Python backlog (25+32+2) is PRE-EXISTING and
+UNCHANGED by this session</strong> — it is the same un-triaged §11.4.252
+backlog invariant 39’s own block comment already names as advisory,
+first surfaced 2026-08-20, entirely outside BOB-191’s scope. <strong>Not
+touched, not silently fixed</strong> — per the dispatch instructions, no
+product code beyond the gate itself was modified.</p>
+<p><strong>121 files (117 in <code>qBitTorrent-go</code> + 4 in
+<code>cmd/boba-ctl</code>) are the newly-honest UNANALYSED
+count.</strong> This session’s fix reports ZERO new FAIL findings in Go
+— it does not add a Go-specific fail-open detector (see §2: that is
+explicitly deferred, out of scope, and would itself need call-site
+semantic analysis to avoid reproducing BOB-189 in Go). It converts a
+false “0 hits = clean” into an honest “0 hits, coverage unknown for N
+files”.</p>
+<p><strong>Separately, and NOT acted on in this session:</strong>
+BOB-191’s own round-2 investigation doc already found and filed two REAL
+Go defects in
+<code>qBitTorrent-go/internal/jackettapi/credentials.go</code> (a
+credential-DELETE endpoint that discards the <code>.env</code>-delete
+error and still returns <code>204 No Content</code>, and an UPSERT
+compensating-rollback whose own rollback error is discarded) as a
+<strong>separate tracked item, BOB-204</strong> — per §11.4.214
+(distinct-but-similar, do not merge) and per this session’s own dispatch
+instruction (“if so, do NOT silently fix product code beyond the gate
+itself without flagging it clearly”). Flagged here, not touched.</p>
+<h2 id="anti-bluff-provenance-11.4.511.4.6911.4.2">6. Anti-bluff
+provenance (§11.4.5/§11.4.69/§11.4.2)</h2>
+<ul>
+<li>Every “NOT SEEN” claim above is a live gate invocation, output
+pasted, not paraphrased.</li>
+<li>The C++ (<code>.cpp</code>) result — the one genuine open question
+left by BOB-191’s own prior investigation — was independently
+re-measured, not assumed from the stored “(go/rs/rb/c/h)” shorthand; the
+correction is stated with its own live evidence, not silently
+substituted (§11.4.6/§11.4.226).</li>
+<li>RED was captured against the actual pre-fix bytes via
+<code>git show HEAD:scripts/gates/cm_dangerous_combination_fail_closed.sh</code>
+(read-only; a concurrent process held
+<code>.git/modules/constitution/index.lock</code> at the time, so
+<code>git stash</code> was deliberately avoided rather than
+force-clearing a lock that might belong to a live operation — §11.4.180
+only reaps PROVABLY-dead locks).</li>
+<li><code>bash -n</code> clean on all three touched files;
+<code>HEADER_LINES</code> re-verified against the mutation suite’s own
+P13 self-probe logic, not merely eyeballed.</li>
+<li>The invariant-39 caller change was verified via an isolated harness
+extracting the exact block (not a guess at its behaviour) before being
+treated as correct, in all three branch cases (hits+unanalysed,
+zero-hits-with-unanalysed, genuinely-clean).</li>
+<li>All scratch fixtures lived under the session scratchpad
+(<code>/tmp/claude-1000/.../scratchpad/bob191_needles</code>) or
+<code>/tmp</code>, never inside the repository; all were removed at the
+end of the session (§11.4.14).</li>
+<li>No repo file was committed or pushed; the item was not closed in the
+DB — both per the dispatch instructions.</li>
+</ul>
+</body>
+</html>
