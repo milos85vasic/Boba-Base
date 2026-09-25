@@ -69,6 +69,16 @@ cmd_enumerate() {
         esac
     done
 
+    case "$surface" in
+        blocked)
+            # FR-007: honestly report every Operator-blocked item's specific,
+            # observable unblock condition -- NEVER collapse to a bare count.
+            print_info "Operator-blocked items (id|unblock_condition):"
+            count_blocked_with_conditions
+            return 0
+            ;;
+    esac
+
     local backlog="" gates="" escapes=""
     [[ "$surface" == "all" || "$surface" == "backlog" ]] && backlog="$(count_backlog_open)"
     [[ "$surface" == "all" || "$surface" == "gates" ]] && gates="$(count_gates_unimplemented)"
@@ -100,4 +110,11 @@ main() {
     esac
 }
 
+
+count_blocked_with_conditions() {
+    sqlite3 -separator '|' "$WORKABLE_ITEMS_DB" \
+        "SELECT i.atm_id, b.unblock_condition FROM items i
+         JOIN operator_block_details b ON b.atm_id = i.atm_id
+         WHERE i.status = 'Operator-blocked';"
+}
 main "$@"
