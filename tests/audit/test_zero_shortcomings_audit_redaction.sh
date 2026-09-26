@@ -83,6 +83,23 @@ redact_case "Cookie request header" 'Cookie: bb_session=SEKRET8; cf=SEKRET9' 'SE
 redact_case "spaced separator" 'password = SEKRET7' 'SEKRET7' 'password'
 redact_case "space-separated CLI flag" 'tool --api-key SEKRET10 --verbose' 'SEKRET10' '--api-key'
 
+# BOB-248 review misses (fixture values, never real secrets): a fat-arrow
+# separator, a password glued to a mysql-family -p flag, and a URL-encoded
+# `=` / `:` separator.
+redact_case "fat-arrow separator (Perl/Ruby hash style)" 'db_password => SEKRETFA' 'SEKRETFA' 'db_password'
+redact_case "fat-arrow without spaces" 'db_password=>SEKRETFB' 'SEKRETFB' 'db_password'
+redact_case "mysql -p with the password glued to the flag" 'mysql -uroot -pSEKRETMY dbname' 'SEKRETMY' 'mysql -uroot -p'
+redact_case "mysqldump -p glued password" 'mysqldump -h db -pSEKRETMD --all' 'SEKRETMD' 'mysqldump'
+redact_case "URL-encoded = separator" 'curl https://h/x?key%3DSEKRETUE' 'SEKRETUE' 'key%3D'
+redact_case "URL-encoded : separator" 'token%3ASEKRETUC' 'SEKRETUC' 'token%3A'
+
+# ...and none of those new separators may start redacting ordinary text.
+for plain_text in 'mkdir -p build/out' 'mysql -p prompts interactively' 'x => y' '3 passed => 0 failed' \
+                  'progress 50%3D done' 'git log -p HEAD' 'map a => b; c => d'; do
+    check "no new over-redaction: '$plain_text' passes through byte-identical" \
+        '[[ "$(audit_redact_before_write "$plain_text")" == "$plain_text" ]]'
+done
+
 multi="$(audit_redact_before_write "$(printf 'line one ok\npassword=SEKRETML\nline three ok')")"
 check "I-4 multi-line input: the credential line is redacted and other lines kept" \
     '! printf "%s" "$multi" | grep -q SEKRETML && printf "%s" "$multi" | grep -q "line three ok"'

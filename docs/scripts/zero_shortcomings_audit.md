@@ -1,7 +1,7 @@
 # `scripts/zero_shortcomings_audit.sh`
 
-**Revision:** 5
-**Last modified:** 2026-09-26T17:00:00Z
+**Revision:** 6
+**Last modified:** 2026-09-26T17:10:00Z
 
 **Purpose**: Unified enumeration, closure-evidence re-verification, and standing-check
 entry point across this project's three tracked "unfinished/gap/shortcoming" surfaces
@@ -206,8 +206,14 @@ The rules run in order, one line at a time:
 4. `Bearer <token>` / `Basic <token>` -- the token.
 5. `<keyword>["']?<sep>"double-quoted value"` -- the whole quoted value (JSON style included).
 6. The same with single quotes.
-7. `<keyword>["']?<sep>value` -- the unquoted token (sep = `:` or `=`, spaces allowed).
+7. `<keyword>["']?<sep>value` -- the unquoted token (sep = `:`, `=`, the fat arrow `=>`, or
+   the URL-encoded `%3D`/`%3A`; spaces allowed around it).
 8. A space-separated CLI flag `--<...keyword> value`.
+9. (applied right after rule 3) A password glued to a mysql-family `-p` flag
+   (`mysql -uroot -pSECRET`, also `mysqldump`, `mysqladmin`, `mysqlimport`, `mysqlshow`,
+   `mariadb`, `mariadb-dump`) -- case-sensitive, so the port flag `-P3306` is untouched, and
+   only on a line that runs such a client, so `mkdir -p dir` or `git log -p` stay intact.
+   A bare `mysql -p` (interactive prompt) has no value and is left alone.
 
 Known limits: an escaped quote inside a quoted value (`"a\"b"`) ends the match early; a
 secret split across lines, a secret with no recognisable keyword before it (a bare token or

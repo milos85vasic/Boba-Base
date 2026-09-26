@@ -643,7 +643,11 @@ audit_redact_before_write() {
     #   6. the same with single quotes;
     #   7. `<keyword>["']?<sep>unquoted-token` (original rule; skips a value
     #      that starts with a quote, which 5/6 already handled);
-    #   8. a space-separated CLI flag `--<...keyword> value`.
+    #   8. a space-separated CLI flag `--<...keyword> value`;
+    #   9. (after rule 3) a password glued to a mysql-family `-p` flag
+    #      (`mysql -uroot -pSECRET`) -- case-SENSITIVE on purpose, so the
+    #      port flag `-P3306` is never touched, and only on a line that runs
+    #      a mysql-family client, so `mkdir -p dir` / `git log -p` stay intact.
     # Known limits (stated, not hidden -- see docs/scripts guide): an escaped
     # quote inside a quoted value (`"a\"b"`) ends the match early; a secret
     # split across lines, a secret with no recognisable keyword in front of
@@ -652,7 +656,10 @@ audit_redact_before_write() {
     # `key`/`token`/`bearer` favour recall: some non-secret text is
     # over-redacted rather than a secret passing through.
     local kw='(password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret|key|token|cookies)'
-    local sep="[\"']?[[:space:]]*[:=][[:space:]]*"
+    # Separators: `:`, `=`, the fat arrow `=>` (Perl/Ruby hash style) and the
+    # URL-encoded `%3D` (=) / `%3A` (:) -- the latter two were review misses
+    # (BOB-248): `db_password => x` kept `x`, `key%3DSECRET` kept `SECRET`.
+    local sep="[\"']?[[:space:]]*(=>|[:=]|%3[AaDd])[[:space:]]*"
     local r='<redacted-per-§11.4.10>'
     printf '%s' "$text" | sed -E \
         -e "s/([A-Za-z0-9_-]*cookies?${sep})(.*)/\\1${r}/I" \
@@ -660,6 +667,7 @@ audit_redact_before_write() {
         -e "s#([A-Za-z][A-Za-z0-9+.-]*://[^/:@[:space:]]+:)[^@/[:space:]]+@#\\1${r}@#g" \
         -e "s#([A-Za-z][A-Za-z0-9+.-]*://)[^/:@[:space:]]+@#\\1${r}@#g" \
         -e "s#([[:space:]]-u[[:space:]]+[^:[:space:]]+:)[^[:space:]]+#\\1${r}#g" \
+        -e "s#((^|[[:space:]/])(mysql|mysqldump|mysqladmin|mysqlimport|mysqlshow|mariadb|mariadb-dump)[[:space:]].*[[:space:]]-p)[^[:space:]<]+#\\1${r}#" \
         -e "s/((bearer|basic)[[:space:]]+)[^[:space:]\"',;<]+/\\1${r}/Ig" \
         -e "s/(${kw}${sep})\"[^\"]*\"/\\1\"${r}\"/Ig" \
         -e "s/(${kw}${sep})'[^']*'/\\1'${r}'/Ig" \
