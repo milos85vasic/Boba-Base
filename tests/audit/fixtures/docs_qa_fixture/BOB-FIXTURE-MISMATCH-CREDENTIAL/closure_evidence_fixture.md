@@ -10,3 +10,4 @@ not the standalone `audit_redact_before_write` function in isolation.
 **Command:** `echo 'BOBA_API_TOKEN=live-token-fixture-not-real'`
 **Result Summary:** RUTRACKER_PASSWORD=hunter2-recorded-fixture-not-real
 **Evidence Layer:** runtime
+**Test Type:** unit

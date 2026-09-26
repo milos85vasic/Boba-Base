@@ -10,3 +10,4 @@ per the documented "no **Command:** field to re-run" contract) rather
 than silently aborting with a bare, unexplained exit 1 via the
 set -e/pipefail footgun (§11.4.201(12)) confirmed live in this exact code
 by the Task 5 implementer's own report.
+**Test Type:** unit

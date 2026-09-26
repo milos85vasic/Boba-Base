@@ -224,6 +224,16 @@ cmd_verify_closure() {
         return 2
     fi
 
+    # FR-010: every closure must DECLARE the test type its evidence exercises.
+    # `|| true`: a missing field makes grep -oP exit 1; under pipefail an
+    # unguarded assignment would abort here (§11.4.201(12)) before the -z check.
+    local declared_test_type
+    declared_test_type="$(grep -oP '(?<=\*\*Test Type:\*\* ).*' "$evidence_file" | head -1)" || true
+    if [[ -z "$declared_test_type" ]]; then
+        print_error "verify-closure: $item_id declares no **Test Type:** — FR-010 requires every closure to name which test type its evidence exercises"
+        return 2
+    fi
+
     local recorded_command recorded_summary
     # `|| true` guards against the same set -e/pipefail footgun already
     # fixed twice above for evidence_file/declared_layer (§11.4.201(12)):
