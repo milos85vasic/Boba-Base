@@ -16,6 +16,12 @@
 #   bash scripts/workable-items-export.sh                # Full regeneration
 #   bash scripts/workable-items-export.sh --check-only   # Validate without modifying
 #
+# Determinism (BOB-249): Step 1 runs the Go export with SOURCE_DATE_EPOCH pinned
+# to the tracker DB's last-commit time (caller's value wins; constant
+# 1785674948 when git history is unavailable), so re-running over an unchanged
+# DB yields byte-identical Issues/Fixed/*_Summary .docx/.pdf twins. The pin is
+# scoped to that one command. Guard: tests/unit/test_workable_items_export_deterministic.sh
+#
 # Constitution: §11.4.93 (workable-items SSOT),
 #               §11.4.65 (universal Markdown export),
 #               §11.4.106 (Docs Chain engine — actual §11.4.106 sync lives
@@ -107,10 +113,29 @@ else
         fi
     else
         # Full regeneration
-        echo "  Running: ${WORKABLE_BIN} export --db ${WORKABLE_DB} --out-dir ${PROJECT_ROOT}/docs"
+        # DETERMINISTIC TWINS (BOB-249). The Go export shells out to pandoc /
+        # weasyprint for all four tracker docs on EVERY run, and pandoc stamps
+        # the wall-clock time into each .docx (docProps/core.xml) — so every run
+        # rewrote four byte-different .docx files with zero content change.
+        # The binary lives in constitution/ (not edited here); its runPandoc()
+        # inherits our environment, so we pin SOURCE_DATE_EPOCH for THIS ONE
+        # invocation. Value: the tracker DB's last-commit time — meaningful
+        # (the date the tracker content last changed in history) and stable
+        # while nothing changes. Fallback when git/history is unavailable: the
+        # fixed constant 1785674948 (2026-08-02T12:49:08Z), the same value
+        # constitution/scripts/render/render-governance-twins.sh pins. A caller's
+        # explicit SOURCE_DATE_EPOCH wins. Scoped to the command (not exported)
+        # so Step 3's per-file derivation in generate_markdown_exports.sh is not
+        # overridden. Guarded by tests/unit/test_workable_items_export_deterministic.sh.
+        WI_EPOCH="${SOURCE_DATE_EPOCH:-}"
+        if [[ -z "${WI_EPOCH}" ]]; then
+            WI_EPOCH="$(git -C "${PROJECT_ROOT}" log -1 --format=%ct -- docs/workable_items.db 2>/dev/null || true)"
+        fi
+        WI_EPOCH="${WI_EPOCH:-1785674948}"
+        echo "  Running: SOURCE_DATE_EPOCH=${WI_EPOCH} ${WORKABLE_BIN} export --db ${WORKABLE_DB} --out-dir ${PROJECT_ROOT}/docs"
         # export writes to the current directory by default; use --out-dir
         # but also pass --out-issues/--out-fixed for explicit paths
-        "${WORKABLE_BIN}" export \
+        SOURCE_DATE_EPOCH="${WI_EPOCH}" "${WORKABLE_BIN}" export \
             --db "${WORKABLE_DB}" \
             --out-dir "${PROJECT_ROOT}/docs" \
             --out-issues "${PROJECT_ROOT}/docs/Issues.md" \
