@@ -179,8 +179,8 @@
 </header>
 <h1
 id="scriptszero_shortcomings_audit.sh"><code>scripts/zero_shortcomings_audit.sh</code></h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-09-26T08:10:00Z</p>
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-09-26T12:00:00Z</p>
 <p><strong>Purpose</strong>: Unified enumeration, closure-evidence
 re-verification, and standing-check entry point across this project’s
 three tracked “unfinished/gap/shortcoming” surfaces (open backlog items,
@@ -209,15 +209,26 @@ counts (only for the selected surface).</li>
 <code>escapes_open</code> (only the selected surfaces’ keys).</li>
 <li><code>--surface blocked</code>: lists every
 <code>Operator-blocked</code> item as <code>id|unblock_condition</code>
-(joined from <code>operator_block_details</code>), never a bare
-count.</li>
+(left-joined from <code>operator_block_details</code>, ordered by id),
+never a bare count. An <code>Operator-blocked</code> item with
+<strong>no</strong> details row, or with a blank/whitespace-only
+condition, is listed as <code>id|MISSING-UNBLOCK-CONDITION</code> (never
+dropped) and a
+<code>WARN: N Operator-blocked item(s) lack an unblock condition</code>
+line goes to stderr; the exit status stays 0 (enumerate reports
+findings, it does not gate on them).</li>
 <li><code>--sort-by-risk</code> (FR-012): prints the open backlog item
 ids ordered by reopen count descending (count of <code>Reopened</code>
 events in <code>item_history</code>), then <code>last_modified</code>
 descending, then id. With <code>--json</code> it prints a JSON array of
 ids. <strong>Only valid with
 <code>--surface backlog</code>.</strong></li>
-<li>Errors (all exit 1, message on stderr): unknown option
+<li>Errors (all exit 1, message on stderr): the tracker DB
+(backlog/blocked surfaces) is missing or unreadable
+(<code>tracker DB missing or unreadable: &lt;path&gt;</code> – checked
+before any <code>sqlite3</code> call, so a missing DB is never created
+as an empty file); <code>--surface</code> given with no value
+(<code>enumerate: --surface requires a value ...</code>); unknown option
 (<code>enumerate: unknown option: X</code>); unrecognized
 <code>--surface</code> value
 (<code>enumerate: unrecognized --surface value: 'X' (expected all|backlog|gates|escapes|blocked)</code>);
@@ -233,7 +244,12 @@ id="verify-closure-item-id---reopen-on-mismatch---require-layer-l"><code>verify-
 <p>Independently re-runs the recorded closure evidence for one item.
 Evidence is read from the first <code>closure_evidence_*.md</code>
 directly inside <code>&lt;AUDIT_QA_ROOT&gt;/&lt;item-id&gt;/</code>.
-<code>--require-layer L</code>
+<code>&lt;item-id&gt;</code> must match
+<code>^[A-Za-z0-9][A-Za-z0-9._-]*$</code> and must not contain
+<code>..</code>; anything else (a <code>/</code>, a leading
+<code>-</code> or <code>.</code>, spaces, shell metacharacters) is
+rejected with <code>invalid item id</code> before the id is used in any
+path. <code>--require-layer L</code>
 (<code>source</code>|<code>artifact</code>|<code>runtime</code>, default
 <code>runtime</code>) is the minimum evidence layer accepted; the
 evidence’s <code>**Evidence Layer:**</code> field (default
@@ -249,11 +265,23 @@ compared case-insensitively after trimming: <code>unit</code>,
 <code>integration</code>, <code>e2e</code>, <code>security</code>,
 <code>stress</code>, <code>chaos</code>, <code>scaling</code>,
 <code>ui</code>, <code>challenge</code>.</li>
-<li><code>**Command:** `&lt;command&gt;`</code> – the command to re-run
-(evaluated with <code>eval</code>).</li>
+<li><code>**Command:** `&lt;command&gt;`</code> – the command to re-run.
+It runs as <code>bash -c "&lt;command&gt;"</code> in a <strong>fresh
+process</strong> with the working directory set to the repository root
+(the one this script lives in, not the caller’s cwd) and stdin closed,
+so it does not inherit this script’s <code>set -euo pipefail</code>,
+functions or non-exported variables and gives the same result wherever
+<code>verify-closure</code> is invoked from. Exported environment
+variables are inherited, as for any child process. The command’s stderr
+is shown on the terminal only after passing through the redactor (see
+Redaction).</li>
 <li><code>**Result Summary:** &lt;text&gt;</code> – compared exactly
 against the command’s fresh stdout.</li>
 </ul>
+<p><strong>Trust model</strong>: the <code>**Command:**</code> is
+executed as arbitrary shell. Evidence files are trusted, tracked input –
+review them like code; never point <code>AUDIT_QA_ROOT</code> at
+untrusted files.</p>
 <p>Exit codes:</p>
 <table>
 <colgroup>
@@ -275,8 +303,12 @@ Summary (<code>reproduced its recorded evidence</code>).</td>
 <tr>
 <td>1</td>
 <td>Mismatch (<code>MISMATCH -- recorded '...', got '...'</code>, values
-credential-redacted before printing); or usage error: missing item id,
-unknown option.</td>
+credential-redacted before printing); or usage error: missing or invalid
+item id, unknown option, <code>--require-layer</code> with no value or a
+value other than
+<code>source</code>/<code>artifact</code>/<code>runtime</code>; or the
+evidence snapshot / a temp file could not be created (the command is
+then not run).</td>
 </tr>
 <tr>
 <td>2</td>
@@ -284,23 +316,47 @@ unknown option.</td>
 <code>--require-layer</code>; no <code>**Test Type:**</code>; invalid
 <code>**Test Type:**</code>; no <code>**Command:**</code> field.</td>
 </tr>
+<tr>
+<td>3</td>
+<td>Mismatch <strong>and</strong> <code>--reopen-on-mismatch</code> was
+given <strong>and</strong> the tracker reopen failed
+(<code>reopen FAILED for &lt;id&gt; -- the mismatch is NOT recorded in the tracker</code>).</td>
+</tr>
 </tbody>
 </table>
 <p><code>--reopen-on-mismatch</code>: on a mismatch, calls the
 <code>workable-items reopen</code> CLI
 (<code>--why test-failed --who AI</code>, evidence path = the evidence
-file) before returning 1.</p>
+file, DB = <code>WORKABLE_ITEMS_DB_OVERRIDE</code> or
+<code>docs/workable_items.db</code>) and returns 1 when it succeeds. A
+failing reopen is reported with exit 3, never swallowed.</p>
 <p>Evidence-corruption guard (FR-008): before running the recorded
 command the script snapshots (content hashes) every git-tracked file
-under <code>docs/qa/</code>; afterwards any such file changed
-<strong>outside</strong>
+under <code>docs/qa/</code> of the repository root; afterwards any such
+file <strong>modified or deleted</strong> outside
 <code>&lt;AUDIT_QA_ROOT&gt;/&lt;item-id&gt;/</code> is restored (files
 that were already dirty before the run are restored from a byte copy of
 their pre-command content, others via <code>git checkout --</code>) and
 the incident is appended to
-<code>docs/qa/zero_shortcomings_audit/&lt;run-id&gt;.log</code> with a
+<code>&lt;AUDIT_QA_ROOT&gt;/zero_shortcomings_audit/&lt;run-id&gt;.log</code>
+(or <code>$AUDIT_INCIDENT_LOG_DIR/&lt;run-id&gt;.log</code>) with a
 warning on the console. The guard never changes the exit code by
 itself.</p>
+<p>Guard limits (stated, not hidden):</p>
+<ul>
+<li>The snapshot is taken immediately before and compared immediately
+after the command. A <strong>legitimate</strong> edit made by
+<strong>another process</strong> to a tracked <code>docs/qa/</code> file
+during that window is indistinguishable from corruption and <strong>will
+be reverted</strong>. Run <code>verify-closure</code> sequentially,
+never alongside other writers of <code>docs/qa/</code>.</li>
+<li>Paths with spaces or tabs are handled; a tracked path containing a
+<strong>newline</strong> cannot be snapshotted
+(<code>git hash-object --stdin-paths</code> is newline-delimited) and is
+skipped with a <code>WARN</code> naming it.</li>
+<li>Files the command <strong>creates</strong> (untracked) and changes
+inside the item’s own evidence directory are left alone.</li>
+</ul>
 <h3 id="standing-check"><code>standing-check</code></h3>
 <p>Recurring, advisory mode; <strong>always exits 0</strong>. Runs
 <code>enumerate --json</code> for each of the <code>backlog</code>,
@@ -317,6 +373,13 @@ before any <code>sqlite3</code> call (so a missing file is never
 silently created as an empty DB) and recorded as
 <code>db_missing</code>. If redaction itself fails the line falls back
 to <code>status=degraded reason=redaction_failed</code>.</p>
+<p>In <code>scripts/pre_build_verification.sh</code> (stage
+<code>[59/59] CM-ZERO-SHORTCOMINGS-STANDING</code>) a
+<code>status=ok</code> run counts as a PASS; a
+<code>status=degraded</code> run, a non-zero exit, or a failure to
+create the stage’s temp files each print a <code>WARN</code> line and
+are <strong>not</strong> counted as a PASS. The stage never calls
+<code>fail()</code> and never changes the sweep’s exit status.</p>
 <p>Run id format: <code>YYYYMMDDTHHMMSSZ-pid&lt;PID&gt;</code>.</p>
 <h2 id="environment-overrides">Environment overrides</h2>
 <table>
@@ -355,24 +418,53 @@ to <code>status=degraded reason=redaction_failed</code>.</p>
 <td>Directory for the <code>standing-check</code> log (created if
 missing).</td>
 </tr>
+<tr>
+<td><code>AUDIT_INCIDENT_LOG_DIR</code></td>
+<td><code>&lt;AUDIT_QA_ROOT&gt;/zero_shortcomings_audit</code></td>
+<td>Directory for <code>verify-closure</code> corruption-incident
+logs.</td>
+</tr>
 </tbody>
 </table>
 <h2 id="redaction-constitution-principle-iii-11.4.10">Redaction
 (Constitution Principle III / §11.4.10)</h2>
-<p>Every value printed on a mismatch, every command quoted in a
-corruption incident, and every standing-check log line passes through
-<code>audit_redact_before_write</code>: the value half of a
-<code>keyword&lt;sep&gt;value</code> pair (sep = <code>:</code> or
-<code>=</code>) is replaced by
-<code>&lt;redacted-per-§11.4.10&gt;</code> while the keyword is kept.
-Keywords (case-insensitive): <code>password</code>, <code>passwd</code>,
-<code>secret</code>, <code>api_key</code> (also
+<p>Every value printed on a mismatch, the recorded command’s stderr,
+every command quoted in a corruption incident, and every standing-check
+log line pass through <code>audit_redact_before_write</code>. Values are
+replaced by <code>&lt;redacted-per-§11.4.10&gt;</code>; names stay
+loggable. Comparison itself uses the raw values; only what is printed or
+written is redacted. Keywords (case-insensitive, matched anywhere in a
+name, e.g. <code>RUTRACKER_PASSWORD</code>): <code>password</code>,
+<code>passwd</code>, <code>secret</code>, <code>api_key</code> (also
 <code>api-key</code>/<code>apikey</code>), <code>access_token</code>,
 <code>auth_token</code>, <code>client_secret</code>, plus the project
-extension <code>key</code>, <code>token</code>, <code>cookies</code>.
-Comparison itself uses the raw values; only what is printed or written
-is redacted. Bare <code>key</code>/<code>token</code> over-redact by
-design.</p>
+extension <code>key</code>, <code>token</code>,
+<code>cookies</code>.</p>
+<p>The rules run in order, one line at a time:</p>
+<ol type="1">
+<li><code>*_COOKIES=</code> / <code>Cookie:</code> – everything to the
+end of the line (cookie strings contain spaces).</li>
+<li><code>Authorization:</code> – everything to the end of the
+line.</li>
+<li>URL userinfo <code>scheme://user:PASSWORD@host</code> – the password
+(the user stays).</li>
+<li><code>Bearer &lt;token&gt;</code> / <code>Basic &lt;token&gt;</code>
+– the token.</li>
+<li><code>&lt;keyword&gt;["']?&lt;sep&gt;"double-quoted value"</code> –
+the whole quoted value (JSON style included).</li>
+<li>The same with single quotes.</li>
+<li><code>&lt;keyword&gt;["']?&lt;sep&gt;value</code> – the unquoted
+token (sep = <code>:</code> or <code>=</code>, spaces allowed).</li>
+<li>A space-separated CLI flag
+<code>--&lt;...keyword&gt; value</code>.</li>
+</ol>
+<p>Known limits: an escaped quote inside a quoted value
+(<code>"a\"b"</code>) ends the match early; a secret split across lines,
+a secret with no recognisable keyword before it (a bare token or base64
+blob), and a value introduced by any other separator are
+<strong>not</strong> redacted. Bare
+<code>key</code>/<code>token</code>/<code>bearer</code> favour recall,
+so some non-secret text is over-redacted by design.</p>
 <p><strong>Inputs</strong>: <code>docs/workable_items.db</code>
 (read-only), <code>constitution/scripts/gates/</code> (read-only, via
 <code>cm_gate_ledger_ratchet.sh</code>),
@@ -381,14 +473,17 @@ design.</p>
 <code>verify-closure</code>).</p>
 <p><strong>Outputs</strong>: A human-readable or <code>--json</code>
 report; <code>standing-check</code> appends one line to
-<code>docs/qa/zero_shortcomings_audit/&lt;run-id&gt;.log</code>;
-<code>verify-closure</code> appends to the same log only when the
-corruption guard reverted something.</p>
+<code>&lt;AUDIT_STANDING_LOG_DIR&gt;/&lt;run-id&gt;.log</code>;
+<code>verify-closure</code> appends to
+<code>&lt;AUDIT_QA_ROOT&gt;/zero_shortcomings_audit/&lt;run-id&gt;.log</code>
+(or <code>$AUDIT_INCIDENT_LOG_DIR</code>) only when the corruption guard
+reverted something.</p>
 <p><strong>Side-effects</strong>: None in <code>enumerate</code>.
 <code>standing-check</code> writes its log line.
 <code>verify-closure</code> executes the recorded command
-(<code>eval</code>), may revert corrupted tracked evidence files, and
-with <code>--reopen-on-mismatch</code> may call the
+(<code>bash -c</code>, fresh process, cwd = repo root), may revert
+corrupted tracked evidence files, and with
+<code>--reopen-on-mismatch</code> may call the
 <code>workable-items</code> CLI to reopen an item.</p>
 <p><strong>Dependencies</strong>: <code>sqlite3</code>,
 <code>git</code>,
@@ -397,7 +492,8 @@ with <code>--reopen-on-mismatch</code> may call the
 <code>scripts/lib/audit_*.sh</code>.</p>
 <p><strong>Cross-references</strong>:
 <code>specs/003-zero-shortcomings-audit/{spec,plan,research,data-model}.md</code>.</p>
-<p><strong>Last verified</strong>: 2026-09-26 (against the script
-source; the <code>--help</code> text itself was run).</p>
+<p><strong>Last verified</strong>: 2026-09-26 (against the script source
+and the <code>tests/audit/</code> suite; the <code>--help</code> text
+itself was run).</p>
 </body>
 </html>
