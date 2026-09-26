@@ -2574,21 +2574,40 @@ fi
 # STRICTLY ADVISORY (Human Checkpoint 4: never promote to blocking without a
 # burn-in): this stage never calls fail() and never touches FAIL_COUNT, so
 # whatever the audit prints or exits, the sweep's overall exit status is
-# unchanged (§11.4.234 always-unblocked). Only the last output line is shown;
-# the audit's output is not parsed. Self-tested by
+# unchanged (§11.4.234 always-unblocked). Only the last output line is shown.
+# The one thing parsed is the status marker: a status=degraded run is a WARN,
+# never a PASS. Self-tested by
 # tests/pre_build/test_check_cm_zero_shortcomings_standing.sh.
 echo "[59/59] CM-ZERO-SHORTCOMINGS-STANDING: three-surface audit standing-check (ADVISORY)"
-ZSC_LOG="$(mktemp)"; ZSC_RC=0
-# The standing-check writes a run log; send it to a throwaway dir so a sweep
-# never litters (or tracks) files under the real docs/qa tree.
-ZSC_LOGDIR="$(mktemp -d)"
-AUDIT_STANDING_LOG_DIR="${ZSC_LOGDIR}" timeout "${CONST_GATE_TIMEOUT}" bash "${PROJECT_ROOT}/scripts/zero_shortcomings_audit.sh" standing-check >"${ZSC_LOG}" 2>&1 || ZSC_RC=$?
-if [[ "${ZSC_RC}" -eq 0 ]]; then
-    pass "CM-ZERO-SHORTCOMINGS-STANDING: $(tail -n1 "${ZSC_LOG}" || true)"
-else
-    echo "  WARN: CM-ZERO-SHORTCOMINGS-STANDING: audit tool did not complete (exit ${ZSC_RC}) — advisory only, not blocking this sweep"
-fi
-rm -rf "${ZSC_LOG}" "${ZSC_LOGDIR}"
+zsc_standing_stage() {
+    # A degraded run (status=degraded, still exit 0 because standing-check is
+    # advisory) is printed as an explicit WARN and NOT counted as a PASS -- a
+    # measurement that could not see one of its surfaces must never inflate
+    # PASS_COUNT (§11.4.201(6)). Every branch, including a mktemp failure,
+    # returns 0 so the stage can never abort the sweep under set -e and never
+    # calls fail() (§11.4.234 always-unblocked). Unit-tested by
+    # tests/pre_build/test_check_cm_zero_shortcomings_standing.sh.
+    local log="" logdir="" rc=0 last
+    if ! log="$(mktemp 2>/dev/null)" || ! logdir="$(mktemp -d 2>/dev/null)"; then
+        echo "  WARN: CM-ZERO-SHORTCOMINGS-STANDING: could not create temp files — stage skipped, advisory only, not counted"
+        [[ -n "${log}" ]] && rm -f "${log}"
+        return 0
+    fi
+    # The standing-check writes a run log; send it to a throwaway dir so a sweep
+    # never litters (or tracks) files under the real docs/qa tree.
+    AUDIT_STANDING_LOG_DIR="${logdir}" timeout "${CONST_GATE_TIMEOUT}" bash "${PROJECT_ROOT}/scripts/zero_shortcomings_audit.sh" standing-check >"${log}" 2>&1 || rc=$?
+    last="$(tail -n1 "${log}" 2>/dev/null || true)"
+    if [[ "${rc}" -ne 0 ]]; then
+        echo "  WARN: CM-ZERO-SHORTCOMINGS-STANDING: audit tool did not complete (exit ${rc}) — advisory only, not blocking this sweep"
+    elif grep -q 'status=degraded' "${log}" 2>/dev/null; then
+        echo "  WARN: CM-ZERO-SHORTCOMINGS-STANDING: standing-check degraded — ${last} — advisory only, not counted as PASS"
+    else
+        pass "CM-ZERO-SHORTCOMINGS-STANDING: ${last}"
+    fi
+    rm -rf "${log}" "${logdir}"
+    return 0
+}
+zsc_standing_stage
 
 
 # ---------------------------------------------------------------------------

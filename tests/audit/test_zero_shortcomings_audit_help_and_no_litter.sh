@@ -14,10 +14,12 @@ for opt in --sort-by-risk --require-layer "blocked"; do
 done
 
 # Stage code must redirect the log dir to a temp dir and clean it up.
-stage="$(sed -n '/^echo "\[59\/59\]/,/^rm -rf /p' scripts/pre_build_verification.sh)"
+# The stage is the function zsc_standing_stage (its runtime branches are
+# unit-tested in tests/pre_build/test_check_cm_zero_shortcomings_standing.sh).
+stage="$(sed -n '/^zsc_standing_stage() {/,/^}/p' scripts/pre_build_verification.sh)"
 check "control: stage extraction is non-empty" '[[ -n "$stage" ]]'
-check "stage exports AUDIT_STANDING_LOG_DIR from mktemp -d" 'grep -q "AUDIT_STANDING_LOG_DIR=.*ZSC_LOGDIR" <<<"$stage" && grep -q "ZSC_LOGDIR=\"\$(mktemp -d)\"" <<<"$stage"'
-check "stage removes the temp dir" 'grep -q "^rm -rf .*ZSC_LOGDIR" <<<"$stage"'
+check "stage exports AUDIT_STANDING_LOG_DIR from mktemp -d" 'grep -q "AUDIT_STANDING_LOG_DIR=\"\${logdir}\"" <<<"$stage" && grep -q "logdir=\"\$(mktemp -d" <<<"$stage"'
+check "stage removes the temp dir" 'grep -q "rm -rf \"\${log}\" \"\${logdir}\"" <<<"$stage"'
 
 # Functional: with the override, nothing lands under the repo docs/qa dir.
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
