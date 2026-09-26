@@ -147,7 +147,7 @@ main() {
         -h|--help|"") usage; [[ "$mode" == "" ]] && return 1 || return 0 ;;
         enumerate) shift; cmd_enumerate "$@" ;;
         verify-closure) shift; cmd_verify_closure "$@" ;;
-        standing-check) shift; print_error "standing-check: not yet implemented (Task 7)"; return 2 ;;
+        standing-check) shift; cmd_standing_check "$@" ;;
         *) print_error "unknown mode: $mode"; usage; return 1 ;;
     esac
 }
@@ -481,5 +481,18 @@ audit_detect_and_revert_corruption() {
         fi
     done < <(printf '%s\n' "$snapshot" | awk '{print $1}')
     printf '%s' "$incidents"
+}
+
+cmd_standing_check() {
+    mkdir -p "$REPO_ROOT/docs/qa/zero_shortcomings_audit"
+    local run_id counts redacted_counts
+    run_id="$(audit_run_id)"
+    counts="$(cmd_enumerate --json)" || true
+    # Constitution Principle III: redact BEFORE the value touches the log file.
+    redacted_counts="$(audit_redact_before_write "$counts")" || true
+    printf '%s mode=standing-check %s\n' "$run_id" "$redacted_counts" \
+        >> "$REPO_ROOT/docs/qa/zero_shortcomings_audit/${run_id}.log"
+    print_info "standing-check ($run_id): $redacted_counts"
+    return 0
 }
 main "$@"
