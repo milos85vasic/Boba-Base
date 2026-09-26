@@ -2579,13 +2579,16 @@ fi
 # tests/pre_build/test_check_cm_zero_shortcomings_standing.sh.
 echo "[59/59] CM-ZERO-SHORTCOMINGS-STANDING: three-surface audit standing-check (ADVISORY)"
 ZSC_LOG="$(mktemp)"; ZSC_RC=0
-timeout "${CONST_GATE_TIMEOUT}" bash "${PROJECT_ROOT}/scripts/zero_shortcomings_audit.sh" standing-check >"${ZSC_LOG}" 2>&1 || ZSC_RC=$?
+# The standing-check writes a run log; send it to a throwaway dir so a sweep
+# never litters (or tracks) files under the real docs/qa tree.
+ZSC_LOGDIR="$(mktemp -d)"
+AUDIT_STANDING_LOG_DIR="${ZSC_LOGDIR}" timeout "${CONST_GATE_TIMEOUT}" bash "${PROJECT_ROOT}/scripts/zero_shortcomings_audit.sh" standing-check >"${ZSC_LOG}" 2>&1 || ZSC_RC=$?
 if [[ "${ZSC_RC}" -eq 0 ]]; then
     pass "CM-ZERO-SHORTCOMINGS-STANDING: $(tail -n1 "${ZSC_LOG}" || true)"
 else
     echo "  WARN: CM-ZERO-SHORTCOMINGS-STANDING: audit tool did not complete (exit ${ZSC_RC}) — advisory only, not blocking this sweep"
 fi
-rm -f "${ZSC_LOG}"
+rm -rf "${ZSC_LOG}" "${ZSC_LOGDIR}"
 
 
 # ---------------------------------------------------------------------------

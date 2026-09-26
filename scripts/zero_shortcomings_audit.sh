@@ -29,13 +29,21 @@ usage() {
 Usage: zero_shortcomings_audit.sh <mode> [options]
 
 Modes:
-  enumerate [--json] [--surface backlog|gates|escapes]
+  enumerate [--json] [--surface backlog|gates|escapes|blocked] [--sort-by-risk]
       Read-only. Enumerates the three tracked surfaces. See
       specs/003-zero-shortcomings-audit/contracts/cli.md for the full contract.
-  verify-closure <item-id> [--reopen-on-mismatch]
+      --surface blocked   list each Operator-blocked item with its unblock
+                          condition (id|unblock_condition) instead of counts.
+      --sort-by-risk      list open backlog item ids most-reopened first, then
+                          most recently modified; valid only with
+                          --surface backlog (rejected otherwise).
+  verify-closure <item-id> [--reopen-on-mismatch] [--require-layer <layer>]
       Independently re-runs one item's recorded closure evidence.
+      --require-layer     minimum evidence layer the closure must carry
+                          (default: runtime).
   standing-check
       The recurring, non-blocking mode wired into pre_build_verification.sh.
+      Writes its run log to $AUDIT_STANDING_LOG_DIR when set.
 
 Options:
   -h, --help    Show this help and exit.
