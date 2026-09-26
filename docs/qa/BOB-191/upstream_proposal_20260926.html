@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>upstream_proposal_20260926</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+  <meta name="x-export-source-sha256" content="e6055356e7f22272e3b229018863d47f905370092a5798e1c421842008c39fda">
+  <meta name="dcterms.modified" content="2026-08-02T12:49:08Z">
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">upstream_proposal_20260926</h1>
+</header>
+<h1
+id="bob-191-upstream-proposal-language-arms-for-the-constitution-fail-open-scanner">BOB-191
+— upstream proposal: language arms for the constitution fail-open
+scanner</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-09-26T14:45:00Z</p>
+<h2 id="status">Status</h2>
+<p>Proposal only. Nothing in <code>constitution/</code> was edited
+(canonical layer; this stream is not authorised to change it). The arms
+below run today as a consumer-side, advisory stand-in:
+<code>scripts/pre_build/check_fail_open_unanalysed_langs.sh</code>,
+called from pre-build invariant 39.</p>
+<h2 id="problem-measured">Problem (measured)</h2>
+<p><code>constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh</code>
+analyses Python (ast) and C-family <code>catch</code>. For
+<code>.go/.rs/.rb/.c</code> it reports
+<code>NOTE — N file(s) of an UNANALYSED extension</code> and
+<code>PASS (PARTIAL COVERAGE)</code>. Reproduced 2026-09-26 on a
+two-file fixture (an empty <code>if err != nil {}</code> in Go and an
+empty <code>if (rc != 0) {}</code> in C): the scanner exited 0 with the
+UNANALYSED note; the consumer arm reported both lines
+(<code>svc.go:7 GO-EMPTY-ERR-BRANCH</code>,
+<code>a.c:3 C-EMPTY-ERR-BRANCH</code>) and exited 1.</p>
+<h2 id="proposed-change-to-the-constitution-scanner">Proposed change to
+the constitution scanner</h2>
+<ol type="1">
+<li>Add <code>scripts/gates/lib/failopen_go/</code> (stdlib-only Go
+program, <code>go/ast</code>) with two rules,
+<code>GO-EMPTY-ERR-BRANCH</code> and <code>GO-SWALLOWED-PANIC</code> —
+copy of <code>boba/scripts/pre_build/failopen_go/main.go</code>.</li>
+<li>Add <code>scripts/gates/lib/failopen_lang_analyzer.py</code> with
+the Rust, Ruby and C rules — copy of
+<code>boba/scripts/pre_build/failopen_lang_analyzer.py</code>, including
+its <code>--selfcheck</code> golden-bad and golden-good snippets.</li>
+<li>In the scanner, dispatch <code>.go</code> to the Go analyser and
+<code>.rs/.rb/.c/.h</code> to the Python analyser; run each analyser’s
+control needle before scanning and exit 2 if a needle is not seen;
+remove a language from <code>DANGEROUS_COMBO_UNANALYSED_EXT</code> only
+when its analyser actually ran; keep a missing toolchain reported as
+UNANALYSED.</li>
+<li>Carry the consumer’s 15-arm test (per-language golden-bad and
+golden-good, the real <code>auth_middleware.go</code> golden-false
+fixture, comment/string golden-false, two paired mutations) into the
+constitution’s mutation suite.</li>
+</ol>
+<p>Once it lands, boba removes its stand-in and the invariant-39 arm
+(§11.4.28: the canonical copy lives in one place).</p>
+<h2 id="honest-boundary">Honest boundary</h2>
+<ul>
+<li>Only shapes fail-open by construction are reported.
+<code>if err != nil { return false }</code> is fail-closed and is not
+flagged (the §11.4.250 prediction recorded on BOB-191).</li>
+<li>A Go error discarded through the blank identifier needs type
+information and is not detected; that needs a type-aware tool (errcheck
+or staticcheck).</li>
+<li>On boba’s real roots today: 0 hits across 122 Go files and 0
+Rust/Ruby/C files. That zero covers only the two Go idioms above; it is
+not a claim that the Go code has no fail-open behaviour (BOB-204’s
+discarded delete error is a different idiom and is not seen).</li>
+</ul>
+</body>
+</html>

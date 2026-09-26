@@ -1786,12 +1786,12 @@ fi
 # its own script location, so NO --root is passed (passing boba's project
 # root would point them at a tree that does not contain their inputs and
 # manufacture a §11.4.201(1) false refusal).
-run_const_gate "33/59" "CM-CLI-AGENT-PLUGINS-WIRED"             blocking cm_cli_agent_plugins_wired.sh
-run_const_gate "34/59" "CM-MULTITRACK-ENGINE-IN-CONSTITUTION"   blocking cm_multitrack_engine_in_constitution.sh
-run_const_gate "35/59" "CM-SUBSYSTEM-SHORTCUTS"                 blocking cm_subsystem_shortcuts.sh
-run_const_gate "36/59" "CM-REPORTING-DIRECTIVES"                blocking cm_reporting_directives.sh
-run_const_gate "37/59" "CM-FEATURE-DIRECTIVE"                   blocking cm_feature_directive.sh
-run_const_gate "38/59" "CM-GATE-LEDGER-RATCHET"                 blocking cm_gate_ledger_ratchet.sh
+run_const_gate "33/62" "CM-CLI-AGENT-PLUGINS-WIRED"             blocking cm_cli_agent_plugins_wired.sh
+run_const_gate "34/62" "CM-MULTITRACK-ENGINE-IN-CONSTITUTION"   blocking cm_multitrack_engine_in_constitution.sh
+run_const_gate "35/62" "CM-SUBSYSTEM-SHORTCUTS"                 blocking cm_subsystem_shortcuts.sh
+run_const_gate "36/62" "CM-REPORTING-DIRECTIVES"                blocking cm_reporting_directives.sh
+run_const_gate "37/62" "CM-FEATURE-DIRECTIVE"                   blocking cm_feature_directive.sh
+run_const_gate "38/62" "CM-GATE-LEDGER-RATCHET"                 blocking cm_gate_ledger_ratchet.sh
 
 # --- Invariant 39: CM-DANGEROUS-COMBINATION-FAIL-CLOSED (§11.4.252, ADVISORY) ---
 # Refuses fail-open shapes (swallowed exceptions, credentials defaulting to a
@@ -1905,6 +1905,30 @@ else
             echo "        also ${DANGER_UNANALYSED} file(s) UNANALYSED (no idiom-matching analyser for go/rs/rb/c) across ${DANGER_UNANALYSED_DETAIL[*]} — UNKNOWN fail-open posture for those files (§11.4.6/BOB-191)"
         fi
     fi
+    # BOB-191 consumer-side arm for the UNANALYSED languages: a go/ast Go
+    # detector plus Rust/Ruby/C detectors that report ONLY shapes fail-open by
+    # construction, each proven seeing by a built-in control needle before it
+    # scans (a blind analyser exits 2, never a clean 0). STRICTLY ADVISORY —
+    # never calls fail(), never touches FAIL_COUNT (§11.4.234). Canonical home
+    # is the constitution scanner (upstream proposal: docs/qa/BOB-191/).
+    FOL_GATE="${PROJECT_ROOT}/scripts/pre_build/check_fail_open_unanalysed_langs.sh"
+    if [[ -f "${FOL_GATE}" ]]; then
+        _fol_roots=()
+        for _dr in "${DANGER_ROOTS[@]}"; do
+            [[ "${_dr}" == "." ]] && continue
+            [[ -d "${PROJECT_ROOT}/${_dr}" ]] && _fol_roots+=("${PROJECT_ROOT}/${_dr}")
+        done
+        _fol_log="$(mktemp)"; _fol_rc=0
+        timeout "${CONST_GATE_TIMEOUT}" bash "${FOL_GATE}" "${_fol_roots[@]}" >"${_fol_log}" 2>&1 || _fol_rc=$?
+        case "${_fol_rc}" in
+            0) echo "  INFO: go/rs/rb/c fail-open arm — $(tail -n1 "${_fol_log}")" ;;
+            1) echo "  WARN: go/rs/rb/c fail-open arm — $(tail -n1 "${_fol_log}") (ADVISORY, BOB-191)"
+               grep -E ': (GO|RS|RB|C)-[A-Z-]+ ' "${_fol_log}" | sed "s|${PROJECT_ROOT}/||" | sed 's/^/        /' | sed -n '1,8p' ;;
+            *) echo "  WARN: go/rs/rb/c fail-open arm could not run cleanly (exit ${_fol_rc}) — those languages remain UNKNOWN, not clean (ADVISORY, BOB-191)"
+               sed 's/^/        /' "${_fol_log}" | sed -n '1,6p' ;;
+        esac
+        rm -f "${_fol_log}"
+    fi
 fi
 
 # --- Invariant 40: CM-ORACLE-STRATEGY-NAMED-AND-INDEPENDENT (§11.4.245, ADVISORY) ---
@@ -1924,7 +1948,7 @@ fi
 # §11.4.234 forbids. The count is printed on every run so the gap cannot be
 # forgotten; promote to BLOCKING once the operator picks an adoption path
 # (immediate floor / monotone-decrease ratchet / changed-tests-only).
-run_const_gate "40/59" "CM-ORACLE-STRATEGY-NAMED-AND-INDEPENDENT" advisory \
+run_const_gate "40/62" "CM-ORACLE-STRATEGY-NAMED-AND-INDEPENDENT" advisory \
     cm_oracle_strategy_named_and_independent.sh --root "${PROJECT_ROOT}/tests" --quiet
 
 # --- Invariant 41: CM-OPENDESIGN-UI-SYSTEM (§11.4.162/§11.4.190, ADVISORY) ---
@@ -1985,8 +2009,8 @@ fi
 #      test_instrumentation_blocking to real marker paths.
 #   43 CM-VERSION-INCREMENT-ON-DEPLOY (§11.4.235(B)) needs an append-only
 #      deploy ledger TSV of <version_id><TAB><artifact_fingerprint> rows.
-run_const_gate "42/59" "CM-BUILD-ON-SOURCE-PROVEN-NOT-TEST-SIDE" blocking cm_build_on_source_proven_not_test_side.sh
-run_const_gate "43/59" "CM-VERSION-INCREMENT-ON-DEPLOY"          blocking cm_version_increment_on_deploy.sh
+run_const_gate "42/62" "CM-BUILD-ON-SOURCE-PROVEN-NOT-TEST-SIDE" blocking cm_build_on_source_proven_not_test_side.sh
+run_const_gate "43/62" "CM-VERSION-INCREMENT-ON-DEPLOY"          blocking cm_version_increment_on_deploy.sh
 
 # --- Invariant 44: CM-HEALTHCHECK-COVERS-SERVED-PORTS (§11.4.201/§11.4.254) ---
 # Every container healthcheck must probe EVERY port its service actually
