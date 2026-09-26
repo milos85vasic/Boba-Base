@@ -50,14 +50,26 @@ add_item T-EQA   'Queued'      '2026-06-01 00:00:00'
 add_item T-CLOSED 'Fixed (→ Fixed.md)' '2026-09-02 00:00:00'; add_reopen T-CLOSED; add_reopen T-CLOSED; add_reopen T-CLOSED
 add_item T-OBS   'Obsolete'    '2026-09-03 00:00:00'; add_reopen T-OBS
 
+# FR-012 tertiary key: equal reopens and equal last_modified -> the MORE SEVERE
+# item first (case-insensitive: the live tracker mixes "Critical"/"critical"),
+# before the id tie-break. Ids are chosen so id order would be the reverse.
+add_sev() { # id severity last_modified
+    sqlite3 "$db" "INSERT INTO items (atm_id,type,status,severity,title,description,last_modified)
+        VALUES ('$1','Bug','Queued','$2','t','d','$3');"
+}
+add_sev T-SEVA-LOW  'Low'      '2026-04-01 00:00:00'
+add_sev T-SEVB-MED  'medium'   '2026-04-01 00:00:00'
+add_sev T-SEVC-HIGH 'High'     '2026-04-01 00:00:00'
+add_sev T-SEVD-CRIT 'critical' '2026-04-01 00:00:00'
+
 export WORKABLE_ITEMS_DB_OVERRIDE="$db"
-expected="T-OLD2 T-TIE2 T-TIE1 T-NEW0 T-EQA T-EQB"   # hand-written ground truth
+expected="T-OLD2 T-TIE2 T-TIE1 T-NEW0 T-EQA T-EQB T-SEVD-CRIT T-SEVC-HIGH T-SEVB-MED T-SEVA-LOW"   # hand-written ground truth
 
 out="$(bash scripts/zero_shortcomings_audit.sh enumerate --surface backlog --sort-by-risk)"
 got="$(printf '%s\n' "$out" | tr '\n' ' ' | sed 's/ $//')"
 printf '  got: %s\n' "$got"
 
-check "order is reopens DESC, then last_modified DESC, then atm_id (hand-written expected)" \
+check "order is reopens DESC, then last_modified DESC, then severity, then atm_id (hand-written expected)" \
     '[[ "$got" == "$expected" ]]'
 check "an older item with 2 reopens outranks a newer item with 0 (not a last_modified-only sort)" \
     '[[ "$(printf "%s\n" "$out" | head -1)" == "T-OLD2" ]]'
@@ -74,7 +86,9 @@ check "--sort-by-risk with the default (all) surface also exits non-zero" '[[ "$
 
 json="$(bash scripts/zero_shortcomings_audit.sh enumerate --surface backlog --sort-by-risk --json)"
 check "--json on backlog emits a JSON array in the same risk order" \
-    '[[ "$json" == "[\"T-OLD2\",\"T-TIE2\",\"T-TIE1\",\"T-NEW0\",\"T-EQA\",\"T-EQB\"]" ]]'
+    '[[ "$json" == "[\"T-OLD2\",\"T-TIE2\",\"T-TIE1\",\"T-NEW0\",\"T-EQA\",\"T-EQB\",\"T-SEVD-CRIT\",\"T-SEVC-HIGH\",\"T-SEVB-MED\",\"T-SEVA-LOW\"]" ]]'
+check "FR-012 severity is the tertiary key: critical before high before medium before low at equal reopens and date" \
+    'grep -q "T-SEVD-CRIT T-SEVC-HIGH T-SEVB-MED T-SEVA-LOW" <<<"$got"'
 
 unset WORKABLE_ITEMS_DB_OVERRIDE
 printf 'test_zero_shortcomings_audit_risk_order: %d passed, %d failed\n' "$pass" "$fail"

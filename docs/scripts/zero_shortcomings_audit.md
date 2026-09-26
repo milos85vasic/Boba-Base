@@ -1,7 +1,7 @@
 # `scripts/zero_shortcomings_audit.sh`
 
-**Revision:** 6
-**Last modified:** 2026-09-26T17:10:00Z
+**Revision:** 7
+**Last modified:** 2026-09-26T17:20:00Z
 
 **Purpose**: Unified enumeration, closure-evidence re-verification, and standing-check
 entry point across this project's three tracked "unfinished/gap/shortcoming" surfaces
@@ -29,13 +29,18 @@ Read-only. `S` is one of `all` (default), `backlog`, `gates`, `escapes`, `blocke
   `escapes_open` (only the selected surfaces' keys).
 - `--surface blocked`: lists every `Operator-blocked` item as `id|unblock_condition`
   (left-joined from `operator_block_details`, ordered by id), never a bare count. An
-  `Operator-blocked` item with **no** details row, or with a blank/whitespace-only
-  condition, is listed as `id|MISSING-UNBLOCK-CONDITION` (never dropped) and a
+  `Operator-blocked` item with **no** details row, or with a blank condition (only
+  spaces, tabs, newlines or carriage returns), is listed as `id|MISSING-UNBLOCK-CONDITION`
+  (never dropped). Every item is listed **once**: when it has more than one details row (a
+  legacy table without the primary key, or the item stored twice in `items`) its distinct
+  non-blank conditions are joined with ` ; `, and a line break inside a condition becomes a
+  space. A
   `WARN: N Operator-blocked item(s) lack an unblock condition` line goes to stderr; the
   exit status stays 0 (enumerate reports findings, it does not gate on them).
 - `--sort-by-risk` (FR-012): prints the open backlog item ids ordered by reopen count
   descending (count of `Reopened` events in `item_history`), then `last_modified`
-  descending, then id. With `--json` it prints a JSON array of ids. **Only valid with
+  descending, then severity (case-insensitive: `critical`, then `high`/`major`/`important`,
+  then `medium`, then `low`/`minor`, then anything else or empty), then id. With `--json` it prints a JSON array of ids. **Only valid with
   `--surface backlog`.**
 - Enumeration failure (exit 1, message on stderr): the tracker DB (backlog/blocked
   surfaces) is missing or unreadable (`tracker DB missing or unreadable: <path>` -- checked

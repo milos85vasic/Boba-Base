@@ -69,6 +69,41 @@ check "the defect count is announced on stderr" \
 check "enumerate --surface blocked never prints a bare number with nothing else (SC-006)" \
     '! printf "%s" "$data" | grep -qE "^[0-9]+$"'
 
+# BOB-248: a condition made only of tabs/newlines is as blank as one made of
+# spaces (SQLite trim() strips only spaces by default), and an item that has
+# more than one details row (a legacy table without the PRIMARY KEY, or the
+# same item stored twice in items) is listed ONCE, never double-printed.
+db2="$tmp/w2.db"
+sqlite3 "$db2" "CREATE TABLE items(atm_id TEXT, type TEXT, status TEXT, title TEXT, description TEXT,
+                                   current_location TEXT, representation TEXT);
+CREATE TABLE operator_block_details(atm_id TEXT, what TEXT, why_exhausted_alternatives TEXT,
+                                    unblock_condition TEXT, who TEXT);
+INSERT INTO items VALUES('T-TABNL','Bug','Operator-blocked','t','d','Issues','section');
+INSERT INTO operator_block_details VALUES('T-TABNL','w','y',char(9)||char(10)||char(13)||' ',NULL);
+INSERT INTO items VALUES('T-DUP','Bug','Operator-blocked','t','d','Issues','section');
+INSERT INTO items VALUES('T-DUP','Bug','Operator-blocked','t','d','Issues','table');
+INSERT INTO operator_block_details VALUES('T-DUP','w','y','Operator provides the key',NULL);
+INSERT INTO operator_block_details VALUES('T-DUP','w','y','Operator provides the key',NULL);
+INSERT INTO operator_block_details VALUES('T-DUP','w','y','   ',NULL);
+INSERT INTO items VALUES('T-TWO','Bug','Operator-blocked','t','d','Issues','section');
+INSERT INTO operator_block_details VALUES('T-TWO','w','y','Condition A',NULL);
+INSERT INTO operator_block_details VALUES('T-TWO','w','y','Condition B',NULL);"
+set +e
+out2="$(WORKABLE_ITEMS_DB_OVERRIDE="$db2" bash scripts/zero_shortcomings_audit.sh enumerate --surface blocked 2>"$tmp/err2")"
+rc2=$?
+set -e
+data2="$(printf '%s\n' "$out2" | grep -v '\[INFO\]' || true)"
+expected2="T-DUP|Operator provides the key
+T-TABNL|MISSING-UNBLOCK-CONDITION
+T-TWO|Condition A ; Condition B"   # hand-written ground truth
+printf '  got (tab/newline + duplicates):\n%s\n' "$data2"
+check "tab/newline-only condition is MISSING and every item is listed once (hand-written expected)" \
+    '[[ "$rc2" -eq 0 && "$data2" == "$expected2" ]]'
+check "each blocked item id appears exactly once" \
+    '[[ "$(printf "%s\n" "$data2" | cut -d"|" -f1 | sort | uniq -d)" == "" ]]'
+check "only the tab/newline item is counted as lacking a condition" \
+    'grep -q "1 Operator-blocked item(s) lack an unblock condition" "$tmp/err2"'
+
 # m1: a missing DB must fail loud and must NOT be created by sqlite3.
 missing="$tmp/does-not-exist.db"
 for surf in blocked backlog; do

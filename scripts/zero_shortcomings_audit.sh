@@ -236,15 +236,27 @@ count_blocked_with_conditions() {
     # Output is "id|condition", one row per item, ordered by id. The number
     # of MISSING rows is announced on stderr; the exit status stays 0
     # because enumerate reports findings rather than gating on them.
+    #
+    # BOB-248 hardening: SQLite trim() strips only spaces by default, so a
+    # condition made of tabs/newlines read as a real condition -- the trim set
+    # below is space, tab, LF and CR. And an item with more than one details
+    # row (a table without the PRIMARY KEY, or the item stored twice in items)
+    # is listed ONCE: its distinct non-blank conditions are joined with " ; ",
+    # and embedded line breaks become spaces so every item stays one line.
+    local ws="' '||char(9)||char(10)||char(13)"
     local rows missing
     rows="$(sqlite3 -separator '|' "$WORKABLE_ITEMS_DB" \
-        "SELECT DISTINCT i.atm_id,
-                CASE WHEN b.unblock_condition IS NULL OR trim(b.unblock_condition) = ''
-                     THEN 'MISSING-UNBLOCK-CONDITION'
-                     ELSE b.unblock_condition END
+        "SELECT i.atm_id,
+                coalesce((SELECT group_concat(c, ' ; ')
+                          FROM (SELECT DISTINCT replace(replace(trim(b.unblock_condition, ${ws}), char(10), ' '), char(13), ' ') AS c
+                                FROM operator_block_details b
+                                WHERE b.atm_id = i.atm_id
+                                  AND trim(coalesce(b.unblock_condition, ''), ${ws}) <> ''
+                                ORDER BY c)),
+                         'MISSING-UNBLOCK-CONDITION')
          FROM items i
-         LEFT JOIN operator_block_details b ON b.atm_id = i.atm_id
          WHERE i.status = 'Operator-blocked'
+         GROUP BY i.atm_id
          ORDER BY i.atm_id;")" || return 1
     [[ -n "$rows" ]] && printf '%s\n' "$rows"
     missing="$(printf '%s\n' "$rows" | grep -c '|MISSING-UNBLOCK-CONDITION$' || true)"
