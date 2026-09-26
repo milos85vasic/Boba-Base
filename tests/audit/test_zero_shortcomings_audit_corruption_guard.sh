@@ -43,6 +43,26 @@ check "the corrupted file was reverted to its committed content" \
 check "the legitimate new file inside the item's own dir was left alone" \
     '[[ -f docs/qa/BOB-THIS-ITEM/new_file.md ]]'
 
+# Review finding 1 (Critical): a file that was ALREADY dirty (uncommitted
+# legitimate work) before the command ran must be restored to its PRE-COMMAND
+# bytes, never to HEAD, or the operator's uncommitted work is destroyed.
+echo "UNCOMMITTED LEGIT WORK" > docs/qa/BOB-OTHER-ITEM/closure_evidence.md
+backup="$(mktemp -d)"
+snapshot2="$(audit_snapshot_tracked_evidence "$backup")"
+echo "CORRUPT" > docs/qa/BOB-OTHER-ITEM/closure_evidence.md
+audit_detect_and_revert_corruption "$snapshot2" "docs/qa/BOB-THIS-ITEM" "$backup" >/dev/null
+check "a pre-dirty file is restored to its pre-command content, not HEAD" \
+    '[[ "$(cat docs/qa/BOB-OTHER-ITEM/closure_evidence.md)" == "UNCOMMITTED LEGIT WORK" ]]'
+rm -rf "$backup"
+
 cd - >/dev/null
+
+# Review finding 2 (Important): a FAILING recorded command must not abort
+# verify-closure before the guard's detect step runs.
+mkdir -p tests/audit/fixtures/docs_qa_fixture/BOB-FIXTURE-CMD-FAILS
+fail_out="$(AUDIT_QA_ROOT=tests/audit/fixtures/docs_qa_fixture bash scripts/zero_shortcomings_audit.sh verify-closure BOB-FIXTURE-CMD-FAILS 2>&1)" || true
+check "a failing recorded command still reaches the comparison (guard not skipped)" \
+    'printf "%s" "$fail_out" | grep -q "MISMATCH"'
+
 printf 'test_zero_shortcomings_audit_corruption_guard: %d passed, %d failed\n' "$pass" "$fail"
 [[ "$fail" -eq 0 ]]

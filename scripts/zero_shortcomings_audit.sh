@@ -241,16 +241,23 @@ cmd_verify_closure() {
     # than silently absorbed -- never allowed to block the closure check
     # itself, since a corrupted OTHER item's evidence is a separate finding
     # from whether THIS item's own recorded command still reproduces.
-    local corruption_snapshot
-    corruption_snapshot="$(audit_snapshot_tracked_evidence)"
+    local corruption_snapshot corruption_backup
+    corruption_backup="$(mktemp -d)"
+    corruption_snapshot="$(audit_snapshot_tracked_evidence "$corruption_backup")"
 
     local fresh_summary
-    fresh_summary="$(eval "$recorded_command")"
+    # `|| true`: a non-zero exit from the recorded command must NOT abort
+    # this function under set -e before the corruption guard's detect step
+    # runs (review finding 2) -- the commands most likely to corrupt evidence
+    # are also the most likely to fail. A failing command yields a partial
+    # summary that then MISMATCHes, which is the correct outcome.
+    fresh_summary="$(eval "$recorded_command")" || true
 
     local guard_repo_root own_evidence_dir corruption_incidents
     guard_repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || guard_repo_root="$REPO_ROOT"
     own_evidence_dir="${AUDIT_QA_ROOT#"$guard_repo_root"/}/$item_id"
-    corruption_incidents="$(audit_detect_and_revert_corruption "$corruption_snapshot" "$own_evidence_dir")"
+    corruption_incidents="$(audit_detect_and_revert_corruption "$corruption_snapshot" "$own_evidence_dir" "$corruption_backup")" || true
+    rm -rf "$corruption_backup"
     if [[ -n "$corruption_incidents" ]]; then
         local run_log_dir="$REPO_ROOT/docs/qa/zero_shortcomings_audit"
         mkdir -p "$run_log_dir"
@@ -371,8 +378,21 @@ audit_redact_before_write() {
 # working directory inside this repo, where `git rev-parse --show-toplevel`
 # resolves to the same path $REPO_ROOT already does.
 audit_snapshot_tracked_evidence() {
+    local backup_dir="${1:-}"
     local repo_root
     repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || repo_root="$REPO_ROOT"
+    # Task 6 review finding 1 (Critical): a file that is ALREADY modified vs
+    # HEAD holds uncommitted legitimate work; `git checkout --` restores from
+    # HEAD and would destroy it. Save a byte copy of every already-dirty file
+    # so detect can restore the PRE-COMMAND bytes instead.
+    if [[ -n "$backup_dir" ]]; then
+        local d
+        while IFS= read -r d; do
+            [[ -f "$repo_root/$d" ]] || continue
+            mkdir -p "$backup_dir/$(dirname "$d")"
+            cp -p "$repo_root/$d" "$backup_dir/$d"
+        done < <(git -C "$repo_root" diff --name-only -- 'docs/qa' 2>/dev/null || true)
+    fi
     # One batched `git hash-object --stdin-paths` process for the whole set
     # (a per-file subprocess was measured at ~2m31s over this repo's 1511
     # tracked docs/qa files, twice per closure check). Files listed by
@@ -411,7 +431,7 @@ audit_snapshot_tracked_evidence() {
 # `grep -F "^literal string"` measurably never matches that same literal
 # string with the caret stripped.
 audit_detect_and_revert_corruption() {
-    local snapshot="$1" own_dir="$2"
+    local snapshot="$1" own_dir="$2" backup_dir="${3:-}"
     local repo_root
     repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || repo_root="$REPO_ROOT"
     local incidents=""
@@ -424,7 +444,11 @@ audit_detect_and_revert_corruption() {
         before="$(printf '%s\n' "$snapshot" | awk -v path="$f" '$1 == path { print $2; exit }')"
         after="$(git -C "$repo_root" hash-object "$repo_root/$f")"
         if [[ -n "$before" && "$before" != "$after" ]]; then
-            git -C "$repo_root" checkout -- "$f"
+            if [[ -n "$backup_dir" && -f "$backup_dir/$f" ]]; then
+                cp -p "$backup_dir/$f" "$repo_root/$f"
+            else
+                git -C "$repo_root" checkout -- "$f"
+            fi
             incidents+="$f"$'\n'
         fi
     done < <(printf '%s\n' "$snapshot" | awk '{print $1}')
