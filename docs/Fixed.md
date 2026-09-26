@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 67
-**Last modified:** 2026-09-25T17:12:26Z
+**Revision:** 68
+**Last modified:** 2026-09-26T15:11:04Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -3720,4 +3720,27 @@ scripts/git_hooks/pre-commit (tracked source; installed to .git/hooks/pre-commit
 **Assigned-To:** AI
 
 Discovered 2026-09-25 by the pre-build sweep's own CM-GITIGNORE-SWALLOW-GUARD gate (§11.4.201(6), BOB-212 pattern), during the 003-zero-shortcomings-audit feature's setup phase. What: 4 genuine first-party files under .specify/extensions/superspec/scripts/ — e2e-agent-claude.sh (19458 bytes), e2e-smoke.sh (8757 bytes), validate-extension-metadata.py (5888 bytes), validate-release-archive.py (7053 bytes), all dated Aug 31 2026 — are untracked by git (confirmed via 'git ls-files --error-unmatch': did not match any file(s) known to git) and are BLOCKED from ever being staged by the broad directory-level ignore rule at .gitignore:218 (.specify/extensions/superspec/). Root cause investigation needed: .gitignore:218's own comment states the WHOLE directory is ignored because it is 'the vendored superspec extension checkout' that 'carries its OWN .git (gitdir pointer)... and DUPLICATES the root superspec submodule' — but these 4 specific files look like genuine first-party CI/e2e/validation tooling, not vendored upstream content, and predate today's session (Aug 31 mtime). Per §11.4.124 (investigate-before-remove) and §11.4.122 (no silent removal without operator decision), this needs git-history investigation (was there ever a commit touching these paths? are they meant to ship with this project or are they truly part of the vendored nested checkout and should stay ignored?) before either (a) carving a negation exception into .gitignore for exactly these 4 files, or (b) confirming they are genuinely disposable vendored artifacts and documenting that explicitly. Acceptance: CM-GITIGNORE-SWALLOW-GUARD passes clean (0 findings) OR the 4 files are explicitly, evidence-backed classified as vendored-and-correctly-ignored with that classification recorded in the .gitignore comment itself.
+
+## BOB-249 — CM-BASH-UNIT-TESTS-EXECUTED fails: something rewrites tracked export twins while the bash suite runs
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-249/closure_evidence_20260926.md
+**Severity:** Important
+**Created-By:** AI
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-09-26T12:19:46Z
+**Reported-By:** AI
+
+**What (the report, verbatim):**
+Found while running the deferred long gate after merging feature 003 (zero-shortcomings audit). Pre-existing: reproduced identically at the merge-base, so it is not caused by that feature. It keeps the long gate red independently of the separate gate-ledger debt (BOB-237), so BOBA_SYNC_SKIP_CI=1 cannot be retired until both are fixed.
+
+**Affected scope / file-scope manifest:**
+scripts/pre_build_verification.sh invariant 30 (CM-BASH-UNIT-TESTS-EXECUTED); the writer of docs/Issues.*, docs/Fixed.*, docs/*_Summary.*, README.* and docs/qa/BOB-*/closure_evidence_*.docx export twins
+
+**Reproduction / context:**
+Run 'ionice -c 3 nice -n 19 bash scripts/pre_build_verification.sh' on a clean tree. Invariant 30 FAILs: 'N tracked file(s) mtime-moved while the bash suite ran' and the rewritten files show as modified in git status (byte changes only in the generated .docx/.html/.pdf twins; the Markdown sources are unchanged). Measured 2026-09-26: at merge-base 120fd78 (old constitution pin 25980c1) 15 files moved (README, Fixed, Fixed_Summary, Issues, Issues_Summary twins); at main 88767fc 18 files moved (adds docx twins of several docs/qa closure evidence files and the quickstart evidence). Restoring the files with git checkout makes the tree clean again. Running six export-related tests from tests/unit one at a time (test_docx_export, test_export_pdf_charset_integrity, test_export_staleness_oracle, test_generate_markdown_exports_path_arg, test_pre_build_workable_items_invariant, test_update_readme_doc_links_no_duplication) did NOT move the files, so the writer is UNCONFIRMED. Earlier commit ea8ffed documents a similar side effect attributed to workable-items-export.sh, which is a resemblance not a diagnosis.
+
+**Acceptance criteria:**
+Root cause of the writer is identified with captured evidence (bisect the bash suite and the sweep stages that run before invariant 30, with a control needle proving the mtime instrument sees a known write); the writer either stops touching tracked twins during the sweep or writes only when sources changed (idempotent, byte-stable output); a test fails against the current behaviour and passes after; a full pre_build sweep on a clean tree leaves git status clean and invariant 30 PASS.
 

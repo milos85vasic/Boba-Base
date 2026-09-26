@@ -190,7 +190,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td>Bug</td>
 <td>Fixed (→ Fixed.md)</td>
-<td>116</td>
+<td>117</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -215,7 +215,7 @@ the SQLite single-source-of-truth (§11.4.53).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>208</strong></td>
+<td><strong>209</strong></td>
 </tr>
 </tbody>
 </table>
@@ -3775,132 +3775,43 @@ OK<code>ran repeatedly against a DB simultaneously holding 30+ live violations o
 fixed<code>) before an unrelated self-audit caught it — on a DB that ALREADY held 30 historical instances of the same mistake from earlier sessions. A CLI-level guard would have refused every one of those 34 calls at the moment they were made, instead of requiring a human/agent to remember to audit for it afterward.  SCOPE: constitution/scripts/workable-items/ (Go source) — a UNIVERSAL, constitution-submodule-owned tool, per §11.4.17. Landing a real fix here needs the §11.4.26 fetch/merge/push-to-all-upstreams workflow, same as BOB-191's gate fix this session, NOT boba's own commit-push-all.sh.  ACCEPTANCE: (1)</code>workable-items
 close –status
 <word><code>refuses when &lt;word&gt;'s implied Type-mapping does not match the target item's actual Type, printing the correct word to use; (2) same for</code>update
-–status<code>; (3)</code>validate` gains a new invariant scanning every
-Fixed-location item for a Type/Status mismatch per the closed §11.4.33
-mapping, FAILing (not silently passing) on any hit; (4) each of (1)-(3)
-ships a paired §1.1 mutation proving the check is load-bearing (a
-neutered version of the check must let a known-bad Type/Status pair
-through); (5) the Obsolete status is correctly treated as valid for ANY
-Type (it is not part of the type-specific mapping) so the new check does
-not false-positive on legitimately Obsolete-closed items. DISCOVERY
-CHANNEL (§11.4.238): found by the conductor’s own repeated, self-caught
-instances of the mistake this session, generalised into BOB-239 (the
-bulk-correction), now split into this item (the mechanical prevention)
-per BOB-239’s own acceptance criterion 2/3.</td>
-</tr>
-<tr>
-<td>206</td>
-<td>—</td>
-<td>Completed (→ Fixed.md)</td>
-<td>Task</td>
-<td>—</td>
-<td>BOB-241 — BOB-234 added a mandatory api_token pytest-fixture
-parameter to
-TestDownloadEndpoint.test_download_magnet_added_to_real_qbittorrent in
-tests/integration/test_merge_api.py (for authenticated cleanup-delete).
-A separate unit test file, test_bob192_fail_open_skip_remediation.py,
-reuses that method’s body via a direct plain-function call (bypassing
-pytest fixture injection) and was never updated for the new positional
-arg, causing a TypeError discovered via a full bulk pytest run (5033
-tests, seed 12345) plus isolated reproduction. Not the same defect as
-BOB-192 (fail-open-skip remediation) despite living in a file named
-after it – distinct root cause, distinct fix. Fixed this session by
-passing a placeholder token string at the call site (the mock server
-performs zero token validation) – see
-docs/qa/BOB-192/test_wiring_fix_20260925.md for full RED/GREEN
-evidence.</td>
-</tr>
-<tr>
-<td>207</td>
-<td>Critical</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>Bug</td>
-<td>—</td>
-<td>BOB-244 — Discovered 2026-09-25 by the pre-build sweep’s own
-CM-GITIGNORE-SWALLOW-GUARD gate (§11.4.201(6), BOB-212 pattern), during
-the 003-zero-shortcomings-audit feature’s setup phase. What: 4 genuine
-first-party files under .specify/extensions/superspec/scripts/ —
-e2e-agent-claude.sh (19458 bytes), e2e-smoke.sh (8757 bytes),
-validate-extension-metadata.py (5888 bytes), validate-release-archive.py
-(7053 bytes), all dated Aug 31 2026 — are untracked by git (confirmed
-via ‘git ls-files –error-unmatch’: did not match any file(s) known to
-git) and are BLOCKED from ever being staged by the broad directory-level
-ignore rule at .gitignore:218 (.specify/extensions/superspec/). Root
-cause investigation needed: .gitignore:218’s own comment states the
-WHOLE directory is ignored because it is ‘the vendored superspec
-extension checkout’ that ‘carries its OWN .git (gitdir pointer)… and
-DUPLICATES the root superspec submodule’ — but these 4 specific files
-look like genuine first-party CI/e2e/validation tooling, not vendored
-upstream content, and predate today’s session (Aug 31 mtime). Per
-§11.4.124 (investigate-before-remove) and §11.4.122 (no silent removal
-without operator decision), this needs git-history investigation (was
-there ever a commit touching these paths? are they meant to ship with
-this project or are they truly part of the vendored nested checkout and
-should stay ignored?) before either (a) carving a negation exception
-into .gitignore for exactly these 4 files, or (b) confirming they are
-genuinely disposable vendored artifacts and documenting that explicitly.
-Acceptance: CM-GITIGNORE-SWALLOW-GUARD passes clean (0 findings) OR the
-4 files are explicitly, evidence-backed classified as
-vendored-and-correctly-ignored with that classification recorded in the
-.gitignore comment itself.</td>
-</tr>
-<tr>
-<td>208</td>
-<td>Medium</td>
-<td>Fixed (→ Fixed.md)</td>
-<td>Bug</td>
-<td>—</td>
-<td>BOB-245 — scripts/git_hooks/pre-commit (tracked source; installed to
-.git/hooks/pre-commit by scripts/install_git_hooks.sh) did a naive,
-unscoped grep for the literal string MUTATED (and two sibling markers)
-across EVERY staged file, with zero ability to distinguish a genuine
-leftover mutation-test artifact in shipped production code from
-legitimate prose in docs/QA-evidence files or legitimate comments in
-test sources that correctly and intentionally describe this project’s
-own MANDATORY paired §1.1 mutation-testing methodology (e.g. the
-standard phrasing GREEN on the UNMUTATED sandbox copy, RED on the
-MUTATED sandbox copy). Confirmed real false-positive instances that
-blocked an otherwise-clean commit this session:
-docs/qa/BOB-187/closure_evidence_20260925.md line 83 (+ .html twin line
-271) - prose describing an UNMUTATED sandbox reproduction;
-docs/qa/BOB-196/closure_evidence_20260925.md line 232 (+ .html twin line
-461) - a documented shell variable name MUTATED_RC=1 inside a code-fence
-describing a reproduction script;
-tests/unit/test_ownership_precondition.sh lines 642 and 677 - comments
-GREEN on the UNMUTATED sandbox copy / RED on the MUTATED sandbox copy, a
-FRESH escape target. FIX: adopted the same scope-restriction technique
-already proven in the sibling gate
-scripts/pre_build/check_cm_no_production_mutation_residue.sh - the hook
-now filters the staged-file list to only first-party PRODUCTION source
-roots (download-proxy, qBitTorrent-go, scripts, plugins,
-webui-bridge.py) of a scannable type (.sh/.bash/.py/.go), explicitly
-excluding tests/, docs/, qa-results/, scratchpad/, constitution/,
-submodules/, challenges/, mutants/, and vendored/build-output
-directories, via new _pc_is_excluded_path / _pc_is_scannable_type /
-_pc_is_production_path helper functions. Self-avoidance
-(string-concatenated marker tokens, and this hook’s own new comments
-avoiding literal marker spelling) preserved. No fenced waiver escape was
-added (judged unnecessary for this simpler hook; documented in-source
-why, with a pointer to the sibling gate’s guardrails:allow mechanism as
-the extension point if ever needed). TESTS: new hermetic test
-tests/hooks/test_pre_commit_mutation_scope.sh drives the real invocation
-path against a throwaway mktemp -d git repo (never the real project
-repo) - Test 1/1b prove the RED-then-GREEN fix (legitimate
-marker-containing prose under docs/ and tests/ now exits 0), Test 2 is a
-negative control proving a genuine residue-shaped marker staged under
-scripts/ (a production root) still exits 1 and names the offending file,
-Test 3 proves a clean file still exits 0. All 7 assertions PASS. A
-paired §1.1 mutation (commenting out the _pc_is_production_path
-scope-gate call, restoring pre-fix unscoped behaviour) was manually
-applied and confirmed to flip Tests 1 and 1b to FAIL (5 passed, 2
-failed), then the mutation was reverted and GREEN (7/7) was re-confirmed
-- proving the test genuinely catches a regression to the pre-fix
-behaviour. VERIFICATION: reinstalled the fixed hook via
-scripts/install_git_hooks.sh, staged the original 5 flagged files, ran
-the installed .git/hooks/pre-commit directly, confirmed exit 0 with no
-false-positive output, then git restore –staged those 5 files (they
-belong to separate, already-in-flight work and were not committed by
-this fix).</td>
+–status<code>; (3)</code>validate<code>gains a new invariant scanning every Fixed-location item for a Type/Status mismatch per the closed §11.4.33 mapping, FAILing (not silently passing) on any hit; (4) each of (1)-(3) ships a paired §1.1 mutation proving the check is load-bearing (a neutered version of the check must let a known-bad Type/Status pair through); (5) the Obsolete status is correctly treated as valid for ANY Type (it is not part of the type-specific mapping) so the new check does not false-positive on legitimately Obsolete-closed items.  DISCOVERY CHANNEL (§11.4.238): found by the conductor's own repeated, self-caught instances of the mistake this session, generalised into BOB-239 (the bulk-correction), now split into this item (the mechanical prevention) per BOB-239's own acceptance criterion 2/3. | | 206 | — | Completed (→ Fixed.md) | Task | — | BOB-241 — BOB-234 added a mandatory api_token pytest-fixture parameter to TestDownloadEndpoint.test_download_magnet_added_to_real_qbittorrent in tests/integration/test_merge_api.py (for authenticated cleanup-delete). A separate unit test file, test_bob192_fail_open_skip_remediation.py, reuses that method's body via a direct plain-function call (bypassing pytest fixture injection) and was never updated for the new positional arg, causing a TypeError discovered via a full bulk pytest run (5033 tests, seed 12345) plus isolated reproduction. Not the same defect as BOB-192 (fail-open-skip remediation) despite living in a file named after it -- distinct root cause, distinct fix. Fixed this session by passing a placeholder token string at the call site (the mock server performs zero token validation) -- see docs/qa/BOB-192/test_wiring_fix_20260925.md for full RED/GREEN evidence. | | 207 | Critical | Fixed (→ Fixed.md) | Bug | — | BOB-244 — Discovered 2026-09-25 by the pre-build sweep's own CM-GITIGNORE-SWALLOW-GUARD gate (§11.4.201(6), BOB-212 pattern), during the 003-zero-shortcomings-audit feature's setup phase. What: 4 genuine first-party files under .specify/extensions/superspec/scripts/ — e2e-agent-claude.sh (19458 bytes), e2e-smoke.sh (8757 bytes), validate-extension-metadata.py (5888 bytes), validate-release-archive.py (7053 bytes), all dated Aug 31 2026 — are untracked by git (confirmed via 'git ls-files --error-unmatch': did not match any file(s) known to git) and are BLOCKED from ever being staged by the broad directory-level ignore rule at .gitignore:218 (.specify/extensions/superspec/). Root cause investigation needed: .gitignore:218's own comment states the WHOLE directory is ignored because it is 'the vendored superspec extension checkout' that 'carries its OWN .git (gitdir pointer)... and DUPLICATES the root superspec submodule' — but these 4 specific files look like genuine first-party CI/e2e/validation tooling, not vendored upstream content, and predate today's session (Aug 31 mtime). Per §11.4.124 (investigate-before-remove) and §11.4.122 (no silent removal without operator decision), this needs git-history investigation (was there ever a commit touching these paths? are they meant to ship with this project or are they truly part of the vendored nested checkout and should stay ignored?) before either (a) carving a negation exception into .gitignore for exactly these 4 files, or (b) confirming they are genuinely disposable vendored artifacts and documenting that explicitly. Acceptance: CM-GITIGNORE-SWALLOW-GUARD passes clean (0 findings) OR the 4 files are explicitly, evidence-backed classified as vendored-and-correctly-ignored with that classification recorded in the .gitignore comment itself. | | 208 | Medium | Fixed (→ Fixed.md) | Bug | — | BOB-245 — scripts/git_hooks/pre-commit (tracked source; installed to .git/hooks/pre-commit by scripts/install_git_hooks.sh) did a naive, unscoped grep for the literal string MUTATED (and two sibling markers) across EVERY staged file, with zero ability to distinguish a genuine leftover mutation-test artifact in shipped production code from legitimate prose in docs/QA-evidence files or legitimate comments in test sources that correctly and intentionally describe this project's own MANDATORY paired §1.1 mutation-testing methodology (e.g. the standard phrasing GREEN on the UNMUTATED sandbox copy, RED on the MUTATED sandbox copy). Confirmed real false-positive instances that blocked an otherwise-clean commit this session: docs/qa/BOB-187/closure_evidence_20260925.md line 83 (+ .html twin line 271) - prose describing an UNMUTATED sandbox reproduction; docs/qa/BOB-196/closure_evidence_20260925.md line 232 (+ .html twin line 461) - a documented shell variable name MUTATED_RC=1 inside a code-fence describing a reproduction script; tests/unit/test_ownership_precondition.sh lines 642 and 677 - comments GREEN on the UNMUTATED sandbox copy / RED on the MUTATED sandbox copy, a FRESH escape target. FIX: adopted the same scope-restriction technique already proven in the sibling gate scripts/pre_build/check_cm_no_production_mutation_residue.sh - the hook now filters the staged-file list to only first-party PRODUCTION source roots (download-proxy, qBitTorrent-go, scripts, plugins, webui-bridge.py) of a scannable type (.sh/.bash/.py/.go), explicitly excluding tests/, docs/, qa-results/, scratchpad/, constitution/, submodules/, challenges/, mutants/, and vendored/build-output directories, via new _pc_is_excluded_path / _pc_is_scannable_type / _pc_is_production_path helper functions. Self-avoidance (string-concatenated marker tokens, and this hook's own new comments avoiding literal marker spelling) preserved. No fenced waiver escape was added (judged unnecessary for this simpler hook; documented in-source why, with a pointer to the sibling gate's guardrails:allow mechanism as the extension point if ever needed). TESTS: new hermetic test tests/hooks/test_pre_commit_mutation_scope.sh drives the real invocation path against a throwaway mktemp -d git repo (never the real project repo) - Test 1/1b prove the RED-then-GREEN fix (legitimate marker-containing prose under docs/ and tests/ now exits 0), Test 2 is a negative control proving a genuine residue-shaped marker staged under scripts/ (a production root) still exits 1 and names the offending file, Test 3 proves a clean file still exits 0. All 7 assertions PASS. A paired §1.1 mutation (commenting out the _pc_is_production_path scope-gate call, restoring pre-fix unscoped behaviour) was manually applied and confirmed to flip Tests 1 and 1b to FAIL (5 passed, 2 failed), then the mutation was reverted and GREEN (7/7) was re-confirmed - proving the test genuinely catches a regression to the pre-fix behaviour. VERIFICATION: reinstalled the fixed hook via scripts/install_git_hooks.sh, staged the original 5 flagged files, ran the installed .git/hooks/pre-commit directly, confirmed exit 0 with no false-positive output, then git restore --staged those 5 files (they belong to separate, already-in-flight work and were not committed by this fix). | | 209 | Important | Fixed (→ Fixed.md) | Bug | — | BOB-249 — **Reported-Via:** §11.4.202 reporting directive</code>bug`
+on 2026-09-26T12:19:46Z <strong>Reported-By:</strong> AI <strong>What
+(the report, verbatim):</strong> Found while running the deferred long
+gate after merging feature 003 (zero-shortcomings audit). Pre-existing:
+reproduced identically at the merge-base, so it is not caused by that
+feature. It keeps the long gate red independently of the separate
+gate-ledger debt (BOB-237), so BOBA_SYNC_SKIP_CI=1 cannot be retired
+until both are fixed. <strong>Affected scope / file-scope
+manifest:</strong> scripts/pre_build_verification.sh invariant 30
+(CM-BASH-UNIT-TESTS-EXECUTED); the writer of docs/Issues.<em>,
+docs/Fixed.</em>, docs/*_Summary.<em>, README.</em> and
+docs/qa/BOB-<em>/closure_evidence_</em>.docx export twins
+<strong>Reproduction / context:</strong> Run ‘ionice -c 3 nice -n 19
+bash scripts/pre_build_verification.sh’ on a clean tree. Invariant 30
+FAILs: ‘N tracked file(s) mtime-moved while the bash suite ran’ and the
+rewritten files show as modified in git status (byte changes only in the
+generated .docx/.html/.pdf twins; the Markdown sources are unchanged).
+Measured 2026-09-26: at merge-base 120fd78 (old constitution pin
+25980c1) 15 files moved (README, Fixed, Fixed_Summary, Issues,
+Issues_Summary twins); at main 88767fc 18 files moved (adds docx twins
+of several docs/qa closure evidence files and the quickstart evidence).
+Restoring the files with git checkout makes the tree clean again.
+Running six export-related tests from tests/unit one at a time
+(test_docx_export, test_export_pdf_charset_integrity,
+test_export_staleness_oracle, test_generate_markdown_exports_path_arg,
+test_pre_build_workable_items_invariant,
+test_update_readme_doc_links_no_duplication) did NOT move the files, so
+the writer is UNCONFIRMED. Earlier commit ea8ffed documents a similar
+side effect attributed to workable-items-export.sh, which is a
+resemblance not a diagnosis. <strong>Acceptance criteria:</strong> Root
+cause of the writer is identified with captured evidence (bisect the
+bash suite and the sweep stages that run before invariant 30, with a
+control needle proving the mtime instrument sees a known write); the
+writer either stops touching tracked twins during the sweep or writes
+only when sources changed (idempotent, byte-stable output); a test fails
+against the current behaviour and passes after; a full pre_build sweep
+on a clean tree leaves git status clean and invariant 30 PASS.</td>
 </tr>
 </tbody>
 </table>

@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 133
-**Last modified:** 2026-09-26T13:50:14Z
+**Revision:** 134
+**Last modified:** 2026-09-26T15:11:04Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -598,28 +598,6 @@ See final review of feature 003.
 **Acceptance criteria:**
 Each listed follow-up is either implemented with a RED-first test or closed with an evidence-backed reason.
 
-## BOB-249 — CM-BASH-UNIT-TESTS-EXECUTED fails: something rewrites tracked export twins while the bash suite runs
-
-**Status:** Queued
-**Type:** Bug
-**Severity:** Important
-**Created-By:** AI
-
-**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-09-26T12:19:46Z
-**Reported-By:** AI
-
-**What (the report, verbatim):**
-Found while running the deferred long gate after merging feature 003 (zero-shortcomings audit). Pre-existing: reproduced identically at the merge-base, so it is not caused by that feature. It keeps the long gate red independently of the separate gate-ledger debt (BOB-237), so BOBA_SYNC_SKIP_CI=1 cannot be retired until both are fixed.
-
-**Affected scope / file-scope manifest:**
-scripts/pre_build_verification.sh invariant 30 (CM-BASH-UNIT-TESTS-EXECUTED); the writer of docs/Issues.*, docs/Fixed.*, docs/*_Summary.*, README.* and docs/qa/BOB-*/closure_evidence_*.docx export twins
-
-**Reproduction / context:**
-Run 'ionice -c 3 nice -n 19 bash scripts/pre_build_verification.sh' on a clean tree. Invariant 30 FAILs: 'N tracked file(s) mtime-moved while the bash suite ran' and the rewritten files show as modified in git status (byte changes only in the generated .docx/.html/.pdf twins; the Markdown sources are unchanged). Measured 2026-09-26: at merge-base 120fd78 (old constitution pin 25980c1) 15 files moved (README, Fixed, Fixed_Summary, Issues, Issues_Summary twins); at main 88767fc 18 files moved (adds docx twins of several docs/qa closure evidence files and the quickstart evidence). Restoring the files with git checkout makes the tree clean again. Running six export-related tests from tests/unit one at a time (test_docx_export, test_export_pdf_charset_integrity, test_export_staleness_oracle, test_generate_markdown_exports_path_arg, test_pre_build_workable_items_invariant, test_update_readme_doc_links_no_duplication) did NOT move the files, so the writer is UNCONFIRMED. Earlier commit ea8ffed documents a similar side effect attributed to workable-items-export.sh, which is a resemblance not a diagnosis.
-
-**Acceptance criteria:**
-Root cause of the writer is identified with captured evidence (bisect the bash suite and the sweep stages that run before invariant 30, with a control needle proving the mtime instrument sees a known write); the writer either stops touching tracked twins during the sweep or writes only when sources changed (idempotent, byte-stable output); a test fails against the current behaviour and passes after; a full pre_build sweep on a clean tree leaves git status clean and invariant 30 PASS.
-
 ## BOB-250 — Export oracle and generator hardening follow-ups from the BOB-249 fix reviews
 
 **Status:** Queued
@@ -641,4 +619,26 @@ See the two independent reviews of the BOB-249 fix (afe5d1f, a630935, 74e5b6f, e
 
 **Acceptance criteria:**
 Each item is either fixed with a RED-first test that fails before and passes after, plus a paired control proving the generator still regenerates on a real content change, a missing twin and a charset-fragment file and rewrites 0 twins after a fresh checkout, or closed with an evidence-backed reason; an independent review approves the combined change; the full pre-build sweep stays at no new failures with CM-BASH-UNIT-TESTS-EXECUTED passing.
+
+## BOB-251 — pre-push hook fails silently when its temporary worktree cannot be created (tmpfs full)
+
+**Status:** Queued
+**Type:** Bug
+**Severity:** Important
+**Created-By:** AI
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-09-26T15:11:04Z
+**Reported-By:** AI
+
+**What (the report, verbatim):**
+Found while pushing the BOB-249 hardening commits. A guard that fails without saying why is a constitution 11.4.201 concern: the operator sees only a generic push failure and cannot tell a broken environment from a rejected push. Root cause in this instance was the session's own scratch copies filling the tmpfs; the fix belongs in the hook, which should report the failing step.
+
+**Affected scope / file-scope manifest:**
+.git/hooks/pre-push (installed copy) and whatever tracked script installs it; git push via scripts/commit-push-all.sh
+
+**Reproduction / context:**
+Fill /tmp (tmpfs) so a full worktree of HEAD cannot be written (or make git worktree add fail for any reason), then git push. The hook runs 'git worktree add "$WORKTREE" HEAD >/dev/null 2>&1' under 'set -euo pipefail' with all output suppressed, so it aborts with no message; git prints only 'error: failed to push some refs'. Observed 2026-09-26: /tmp was at 80% and a worktree add of HEAD failed with 'unable to write file' and 'Could not reset index file to revision HEAD'; pushes to github and gitlab failed silently for three commits until the scratch space was freed.
+
+**Acceptance criteria:**
+The hook prints an explicit, actionable message naming the failing step and the cause (worktree creation failed, with the underlying git error and free space of the temp directory) before exiting non-zero; it honours TMPDIR and falls back or fails loudly; a test simulates a failing worktree add (shim or read-only temp dir) and asserts the message is printed and the exit status is non-zero, and a control asserts a healthy environment still passes; the hook cleans up any partially created worktree registration (git worktree prune).
 

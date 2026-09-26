@@ -946,69 +946,59 @@ check_cm_test_mock_pid_patched_when_real_pid were not reached before the
 probe budget expired. HYPOTHESIS REFUTED, recorded so nobody re-walks
 it: an earlier revision of this item speculated that
 check_cm_plugin_count’s 90s timeout was caused by walking worktrees. It
-is NOT. That gate’s find is scoped to $PLUGINS_DIR
-(check_cm_plugin_count.sh:224), so worktrees are outside its walk
-entirely. Its slowness is real - still running past 54s on a re-measure
-- but has a different, still-unidentified cause and belongs to its own
-item, not this one. ACCEPTANCE: every tree-walking gate either prunes
-agent scratch or is proven immune by measurement, each with a paired
-mutation. NOTE the asymmetry that bounds the risk: a stale worktree can
-only ADD findings to a security-relevant scan (killpg,
-mutation-residue), never remove them - so the exposure is false refusal
-and eroded trust, not a missed defect.</td>
-</tr>
-<tr>
-<td>BOB-211</td>
-<td>Bug</td>
-<td>Queued</td>
-<td>minor</td>
-<td>STATUS: LATENT on this host (measured: all six declared locations
-sit on ONE btrfs mount, fully ownership-expressive) and OPERATOR-GATED
-for verification. Retained from the dismissed BOB-206 rather than
-discarded with it, because the scenario is well-founded elsewhere: the
-declared mount is a udisks auto-mounted REMOVABLE NVMe, so another
-operator’s portable drive being exFAT or NTFS is entirely ordinary. TWO
-RESIDUALS: (1) REPAIR-LAYER DIAGNOSIS. On a uid-flattening mount whose
-flattened uid is NOT the operator, probe_location correctly REFUSES
-(verified: uid=0 and uid=100999 both refuse). But it then hands
-ownership_repair.sh a chown that will return EPERM, and nothing in the
-repair path is fstype-aware — so the operator sees a permission failure
-whose real remedy is a REMOUNT OPTION, which no message says. Reasoned,
-NOT proven: the shim used to verify BOB-206 models the stat READ, not
-the chown WRITE, and cannot settle whether chown actually fails. (2)
-MODE CONTRACT. vfat flattens MODE via fmask/dmask, so the preserve_mode:
-true / 600 contract on .env and config/boba.db would be silently
-unenforceable there. §11.4.10-adjacent: a credential file believed to be
-600 that is world-readable by mount option is a leak the mode check
-cannot see. WHY OPERATOR-GATED: a genuine end-to-end RED needs a real
-uid-flattening mount. The privilege-free route is bindfs -u <uid> (FUSE;
+is NOT. That gate’s find is scoped to <span
+class="math inline">$PLUGINS_DIR (check_cm_plugin_count.sh:224), so
+worktrees are outside its walk entirely. Its slowness is real - still
+running past 54s on a re-measure - but has a different,
+still-unidentified cause and belongs to its own item, not this one.
+ACCEPTANCE: every tree-walking gate either prunes agent scratch or is
+proven immune by measurement, each with a paired mutation. NOTE the
+asymmetry that bounds the risk: a stale worktree can only ADD findings
+to a security-relevant scan (killpg, mutation-residue), never remove
+them - so the exposure is false refusal and eroded trust, not a missed
+defect. |
+| BOB-211 | Bug | Queued | minor | STATUS: LATENT on this host
+(measured: all six declared locations sit on ONE btrfs mount, fully
+ownership-expressive) and OPERATOR-GATED for verification. Retained from
+the dismissed BOB-206 rather than discarded with it, because the
+scenario is well-founded elsewhere: the declared mount is a udisks
+auto-mounted REMOVABLE NVMe, so another operator's portable drive being
+exFAT or NTFS is entirely ordinary.  TWO RESIDUALS: (1) REPAIR-LAYER
+DIAGNOSIS. On a uid-flattening mount whose flattened uid is NOT the
+operator, probe_location correctly REFUSES (verified: uid=0 and
+uid=100999 both refuse). But it then hands ownership_repair.sh a chown
+that will return EPERM, and nothing in the repair path is fstype-aware —
+so the operator sees a permission failure whose real remedy is a REMOUNT
+OPTION, which no message says. Reasoned, NOT proven: the shim used to
+verify BOB-206 models the stat READ, not the chown WRITE, and cannot
+settle whether chown actually fails. (2) MODE CONTRACT. vfat flattens
+MODE via fmask/dmask, so the preserve_mode: true / 600 contract on .env
+and config/boba.db would be silently unenforceable there.
+§11.4.10-adjacent: a credential file believed to be 600 that is
+world-readable by mount option is a leak the mode check cannot see.  WHY
+OPERATOR-GATED: a genuine end-to-end RED needs a real uid-flattening
+mount. The privilege-free route is bindfs -u &lt;uid&gt; (FUSE;
 fusermount IS present and user_allow_other IS set) — but bindfs is
 ABSENT on this host, as are mkfs.vfat and losetup. So verification needs
 either a bindfs install or a privileged loopback mount. Neither was
 attempted (§11.4.21 — high-blast-radius host mutation is
-operator-gated). ALSO RECORDED: NO test anywhere exercises a
+operator-gated).  ALSO RECORDED: NO test anywhere exercises a
 uid-flattening filesystem —
 vfat/exfat/ntfs/flatten/loopback/mkfs/losetup/bindfs/fusermount all
 measure 0 across the three ownership test files, needle-proven
-(probe_location = 3 hits through the same instrument). ACCEPTANCE: (1)
+(probe_location = 3 hits through the same instrument).  ACCEPTANCE: (1)
 operator decides whether to install bindfs or provide a privileged
 loopback so the RED can be built; (2) if verified, the repair path gains
 fstype-aware diagnosis naming the remount remedy; (3) the mode contract
 either detects mode-flattening mounts and refuses, or documents honestly
-that it cannot be enforced there. DISCOVERY CHANNEL (§11.4.238):
-retained residual from the BOB-206 verification stream.</td>
-</tr>
-<tr>
-<td>BOB-219</td>
-<td>Bug</td>
-<td>In progress</td>
-<td>major</td>
-<td>WHAT, conductor-verified: docs/guides/tracker-credentials.md is
-TRACKED. Its §11.4.65-mandated export twins
-docs/guides/tracker-credentials.html and .pdf both EXIST ON DISK, are
-NOT tracked, and ARE ignored — matched by the .gitignore
-<em>credentials</em> deny-all at :31. The .md is rescued by an explicit
-allowlist entry at :38; nobody added entries for the twins. WHY IT IS A
+that it cannot be enforced there.  DISCOVERY CHANNEL (§11.4.238):
+retained residual from the BOB-206 verification stream. |
+| BOB-219 | Bug | In progress | major | WHAT, conductor-verified:
+docs/guides/tracker-credentials.md is TRACKED. Its §11.4.65-mandated
+export twins docs/guides/tracker-credentials.html and .pdf both EXIST ON
+DISK, are NOT tracked, and ARE ignored — matched by the .gitignore
+*credentials* deny-all at :31. The .md is rescued by an explicit
+allowlist entry at :38; nobody added entries for the twins.  WHY IT IS A
 LIVE VIOLATION AND NOT A HYPOTHETICAL: §11.4.65 requires every in-scope
 Markdown document to carry synchronized .html/.pdf siblings, and
 §11.4.212 requires every §11.4.65-scope doc to be reachable from the
@@ -1016,11 +1006,11 @@ README. Two artifacts that exist locally but can never be committed are,
 from any fresh clone, ABSENT — so every clone of this repository has a
 tracker-credentials guide with no exports, while the authoring host
 looks complete. The divergence is invisible on the machine that would
-notice it. WHY NOBODY SAW IT: this is a §11.4.201(6) FALSE-NULL of the
+notice it.  WHY NOBODY SAW IT: this is a §11.4.201(6) FALSE-NULL of the
 BOB-212 class. git status never listed the twins, so no gate and no
 author had a signal. The blind instrument and the clean tree return the
-identical quiet zero. ANOTHER INSTANCE OF THE SAME MECHANISM, filed here
-rather than separately because it is one fix:
+identical quiet zero.  ANOTHER INSTANCE OF THE SAME MECHANISM, filed
+here rather than separately because it is one fix:
 docs/qa/BOB-124/evidence/loginctl_user_state.txt is swallowed by *_user*
 at .gitignore:~55 and is therefore uncommitted §11.4.83 QA evidence. Its
 SIBLINGS IN THE SAME DIRECTORY — user1000_grepped.log,
@@ -1028,413 +1018,313 @@ user_scope_events_head.log, user_service_lifecycle.log — ARE tracked,
 saved only by the robust glob negation !docs/qa/**/*.log. That one file
 is lost purely because it is .txt rather than .log. The pattern is
 exact: robust glob negations hold; per-file and per-extension rescues
-leak. ACCEPTANCE: (1) both twins become trackable and are committed
+leak.  ACCEPTANCE: (1) both twins become trackable and are committed
 alongside their .md; (2) the BOB-124 .txt evidence likewise; (3)
 whichever BOB-212 fix direction is chosen, it MUST cover these — a fix
 that closes the future-swallow while leaving these three artifacts
 permanently uncommittable has addressed the mechanism and not the
 damage; (4) a check that a tracked .md in §11.4.65 scope has COMMITTABLE
-twins, so this class cannot recur silently. DISCOVERY CHANNEL
+twins, so this class cannot recur silently.  DISCOVERY CHANNEL
 (§11.4.238): found by the BOB-212 blast-radius sweep — and only on its
 SECOND pass. The first pass filtered by a source-extension set that
 omitted .pdf, which hid this finding entirely; the agent re-ran with no
 extension filter over all 420 non-artifact paths and recorded the blind
 spot rather than shipping the first number. Worth keeping: an extension
 allowlist is itself a false-null generator, which is the same shape as
-the defect being investigated. === ROUND-2 PARTIAL CLOSURE, MEASURED
+the defect being investigated.  === ROUND-2 PARTIAL CLOSURE, MEASURED
 2026-09-25 — criterion 1 already done, criterion 2 unsatisfiable,
-criteria 3+4 done ONLY for the .md-export-twin class === Independently
-re-verified via <code>git check-ignore -v</code> on all three named
-artifacts: CRITERION 1 (tracker-credentials.{html,pdf} twins
-committable) — ALREADY DONE, pre-dating this round: commit 9f6f517
-already added <code>!docs/guides/tracker-credentials.{html,pdf}</code>
-rescue lines (.gitignore:49-54); both are tracked and clean. Nothing to
-do. CRITERION 2 (BOB-124 loginctl_user_state.txt trackable) — CLOSED AS
-UNSATISFIABLE. The file does not exist on disk, has ZERO trace in
-<code>git log --all --diff-filter=A -- "*loginctl_user_state*"</code>,
-and is absent from the entire working tree. Its .log siblings in the
-same directory ARE tracked (rescued by the existing
-<code>!docs/qa/**/*.log</code> negation), confirming the file was lost
-purely by having a .txt extension, exactly as the original report
-claimed — but there is no recovery path and no legitimate way to “make
-it trackable” without fabricating QA evidence, which is itself an
-anti-bluff violation. This criterion is permanently closed, not
-deferred. CRITERION 3 (general mechanism preventing recurrence) —
-PARTIALLY closed. A new guard (see criterion 4) closes the class
-criterion 1 exemplified: a TRACKED .md file whose §11.4.65 export twin
-is gitignore-swallowed. It does NOT close the class criterion 2
+criteria 3+4 done ONLY for the .md-export-twin class ===  Independently
+re-verified via `git check-ignore -v` on all three named artifacts:
+CRITERION 1 (tracker-credentials.{html,pdf} twins committable) — ALREADY
+DONE, pre-dating this round: commit 9f6f517 already added
+`!docs/guides/tracker-credentials.{html,pdf}` rescue lines
+(.gitignore:49-54); both are tracked and clean. Nothing to
+do.  CRITERION 2 (BOB-124 loginctl_user_state.txt trackable) — CLOSED AS
+UNSATISFIABLE. The file does not exist on disk, has ZERO trace in `git
+log --all --diff-filter=A -- "*loginctl_user_state*"`, and is absent
+from the entire working tree. Its .log siblings in the same directory
+ARE tracked (rescued by the existing `!docs/qa/**/*.log` negation),
+confirming the file was lost purely by having a .txt extension, exactly
+as the original report claimed — but there is no recovery path and no
+legitimate way to "make it trackable" without fabricating QA evidence,
+which is itself an anti-bluff violation. This criterion is permanently
+closed, not deferred.  CRITERION 3 (general mechanism preventing
+recurrence) — PARTIALLY closed. A new guard (see criterion 4) closes the
+class criterion 1 exemplified: a TRACKED .md file whose §11.4.65 export
+twin is gitignore-swallowed. It does NOT close the class criterion 2
 exemplified: a NON-.md QA-evidence file (any extension) swallowed by an
-unrelated gitignore pattern. Extending the existing
-<code>!docs/qa/**/*.log</code> negation to also cover <code>.txt</code>
-was concretely measured this round and PROVEN UNSAFE for this project:
-<code>.gitignore</code> documents <code>cookies_*.txt</code> as this
-repo’s own secret-file naming convention, and a scratch-tree experiment
-confirmed a <code>.txt</code>-wide rescue would also un-ignore
-<code>cookies_rutracker.txt</code> / <code>RUTRACKER_session.txt</code>
-/ <code>my_password.txt</code> — real credential-shaped files already
-relying on that exact pattern staying broad. This candidate fix is now
-closed off with evidence rather than left for a future session to
-re-attempt and re-measure. THE REMAINING GAP: a general mechanism for “a
-QA-evidence file legitimately meant to be tracked gets silently
-swallowed by a broad secret-shaped-filename gitignore pattern,
-distinguished from an actual secret file” remains genuinely open — it
-needs a smarter signal than file extension (e.g. content-sniffing, or an
-explicit per-file allowlist-on-creation discipline) that this round did
-not attempt to design, since inventing one hastily risked exactly the
-credential-leak class the constraint exists to prevent. CRITERION 4 (a
-check exists) — DONE for the .md-export-twin class. New gate
-<code>scripts/pre_build/check_md_export_twins_committable.sh</code> +
+unrelated gitignore pattern. Extending the existing `!docs/qa/**/*.log`
+negation to also cover `.txt` was concretely measured this round and
+PROVEN UNSAFE for this project: `.gitignore` documents `cookies_*.txt`
+as this repo's own secret-file naming convention, and a scratch-tree
+experiment confirmed a `.txt`-wide rescue would also un-ignore
+`cookies_rutracker.txt` / `RUTRACKER_session.txt` / `my_password.txt` —
+real credential-shaped files already relying on that exact pattern
+staying broad. This candidate fix is now closed off with evidence rather
+than left for a future session to re-attempt and re-measure. THE
+REMAINING GAP: a general mechanism for "a QA-evidence file legitimately
+meant to be tracked gets silently swallowed by a broad
+secret-shaped-filename gitignore pattern, distinguished from an actual
+secret file" remains genuinely open — it needs a smarter signal than
+file extension (e.g. content-sniffing, or an explicit per-file
+allowlist-on-creation discipline) that this round did not attempt to
+design, since inventing one hastily risked exactly the credential-leak
+class the constraint exists to prevent.  CRITERION 4 (a check exists) —
+DONE for the .md-export-twin class. New gate
+`scripts/pre_build/check_md_export_twins_committable.sh` +
 self-validated test
-<code>tests/pre_build/test_check_md_export_twins_committable.sh</code>
-(7 arms: RED, GREEN, 2 golden-FALSE, fail-closed x3, real-repo run, §1.1
-paired mutation — all independently re-run and confirmed passing by the
+`tests/pre_build/test_check_md_export_twins_committable.sh` (7 arms:
+RED, GREEN, 2 golden-FALSE, fail-closed x3, real-repo run, §1.1 paired
+mutation — all independently re-run and confirmed passing by the
 conductor). Wired into scripts/pre_build_verification.sh as invariant
 58/58 (CM-MD-EXPORT-TWINS-COMMITTABLE), mirroring the sibling
 CM-GITIGNORE-SWALLOW-GUARD (BOB-212) pattern exactly — BLOCKING, not
-advisory, since it is a pure tree-scan needing no live stack. REMAINING
+advisory, since it is a pure tree-scan needing no live stack.  REMAINING
 WORK TO FULLY CLOSE THIS ITEM: design and implement the criterion-3
-residual — a mechanism distinguishing “a legitimate QA-evidence file
-lost to a secret-shaped gitignore pattern” from “an actual secret
-correctly caught by that pattern” — without narrowing the existing
+residual — a mechanism distinguishing "a legitimate QA-evidence file
+lost to a secret-shaped gitignore pattern" from "an actual secret
+correctly caught by that pattern" — without narrowing the existing
 credential-protecting globs. Until then this item stays Queued; criteria
-1/2/4 are genuinely done, criterion 3 is genuinely partial. EVIDENCE:
+1/2/4 are genuinely done, criterion 3 is genuinely partial.  EVIDENCE:
 docs/qa/BOB-219/closure_evidence_20260925.md (full command transcripts:
 before/after git check-ignore, the .txt-wide-rescue safety experiment,
-7-arm test output, standalone gate invocation against the real
-repo).</td>
-</tr>
-<tr>
-<td>BOB-231</td>
-<td>Task</td>
-<td>Queued</td>
-<td>Major</td>
-<td>BOB-227 measured 3 of 4 artifacts of the CM-LAN-ROUTES-AUTHENTICATED
-gate untracked in git; criterion 1 (commit them) was already resolved by
-an unrelated prior commit before this session, closed 2026-09-23.
-Criterion 2 was NOT addressed: ‘a gate asserting that every executable a
-pre-build invariant invokes is itself tracked’ – a general mechanism
-preventing this whole CLASS of defect (a pre-build gate’s own
-implementation files shipping untracked, invisible to a fresh clone, no
-committed baseline for round-over-round diffs) from recurring for ANY
-future gate, not merely this one. ACCEPTANCE: (1) enumerate every file
-path scripts/pre_build_verification.sh invokes (via bash/timeout/python3
-calls to scripts under scripts/pre_build/, plus every
-tests/pre_build/<em>.sh and tests/hooks/</em>.sh it runs) – likely via a
+7-arm test output, standalone gate invocation against the real repo). |
+| BOB-231 | Task | Queued | Major | BOB-227 measured 3 of 4 artifacts of
+the CM-LAN-ROUTES-AUTHENTICATED gate untracked in git; criterion 1
+(commit them) was already resolved by an unrelated prior commit before
+this session, closed 2026-09-23. Criterion 2 was NOT addressed: 'a gate
+asserting that every executable a pre-build invariant invokes is itself
+tracked' -- a general mechanism preventing this whole CLASS of defect (a
+pre-build gate's own implementation files shipping untracked, invisible
+to a fresh clone, no committed baseline for round-over-round diffs) from
+recurring for ANY future gate, not merely this one. ACCEPTANCE: (1)
+enumerate every file path scripts/pre_build_verification.sh invokes (via
+bash/timeout/python3 calls to scripts under scripts/pre_build/, plus
+every tests/pre_build/*.sh and tests/hooks/*.sh it runs) -- likely via a
 static grep/parse of pre_build_verification.sh itself, or a runtime
 trace; (2) assert every one of those paths is git-tracked (git ls-files
-–error-unmatch); (3) wire this as a new pre-build invariant so a future
+--error-unmatch); (3) wire this as a new pre-build invariant so a future
 untracked gate implementation is caught immediately, not discovered
 independently weeks later; (4) a RED test creating an untracked fake
 gate-invocation target and asserting the new check fails on it, GREEN
 once the mechanism exists and the fake target is either removed or
-tracked.</td>
-</tr>
-<tr>
-<td>BOB-235</td>
-<td>Bug</td>
-<td>Operator-blocked</td>
-<td>—</td>
-<td>Live kinozal credential test reports authenticated=False,
-status=‘empty’, error=’’ (found 2026-09-23). ROOT CAUSES
-(docs/qa/BOB-235/investigation_20260923.md): (A) operator/environment:
-kinozal.tv publishes A record 127.0.0.1 (host, container, DoH
-Cloudflare+Google all agree; rutracker.org resolves normally as
-control), KINOZAL_MIRRORS is empty so search.py falls back to
-kinozal.tv; the live mirror kinozal.guru answers every non-browser
-client with a Cloudflare 403 ‘Just a moment’ challenge (login POST,
+tracked. |
+| BOB-235 | Bug | Operator-blocked | — | Live kinozal credential test
+reports authenticated=False, status='empty', error='' (found
+2026-09-23). ROOT CAUSES (docs/qa/BOB-235/investigation_20260923.md):
+(A) operator/environment: kinozal.tv publishes A record 127.0.0.1 (host,
+container, DoH Cloudflare+Google all agree; rutracker.org resolves
+normally as control), KINOZAL_MIRRORS is empty so search.py falls back
+to kinozal.tv; the live mirror kinozal.guru answers every non-browser
+client with a Cloudflare 403 'Just a moment' challenge (login POST,
 curl, aiohttp, operator cookies with two user-agents; no cf_clearance
 cookie; KINOZAL_COOKIES is loaded into the container but no code reads
 it). (B) code defect FIXED under TDD (RED 2 failed/1 passed, GREEN 19
-passed): _search_kinozal’s except branch only logged and stashed no
+passed): _search_kinozal's except branch only logged and stashed no
 diagnostic, so the chip read empty with error=None; it now stashes
-error_type + ‘Kinozal request failed: <msg>’. Needs ./start.sh
-–reload-python to be live. Credential validity is UNKNOWN (no request
+error_type + 'Kinozal request failed: &lt;msg&gt;'. Needs ./start.sh
+--reload-python to be live. Credential validity is UNKNOWN (no request
 ever reached a login endpoint) - do not rotate credentials on this
 evidence. Operator-Block-Details: WHAT: choose (1) reachable domain -
-set KINOZAL_MIRRORS=https://kinozal.guru + ./start.sh –recreate, or
+set KINOZAL_MIRRORS=https://kinozal.guru + ./start.sh --recreate, or
 change the roster primary in trackers.py; (2) how to pass the Cloudflare
 challenge - FlareSolverr (not deployed), cf_clearance cookie + code that
-actually reads KINOZAL_COOKIES, Jackett’s kinozal indexer, or mark
+actually reads KINOZAL_COOKIES, Jackett's kinozal indexer, or mark
 kinozal operator-blocked; (3) optionally re-export a kinozal-only cookie
 file. WHY: every agent-reachable path was exhausted - DNS, mirrors,
 login POST, cookies, env propagation all measured. UNBLOCK CONDITION:
 the live test authenticates or the operator marks kinozal unsupported.
-WHO: repository operator.</td>
-</tr>
-<tr>
-<td>BOB-237</td>
-<td>Bug</td>
-<td>Queued</td>
-<td>high</td>
-<td>WHAT: CM-GATE-LEDGER-RATCHET (§11.4.227(A)) FAILED the pre-build
-sweep during this session’s batch-15 commit attempt: unimplemented=414
-exceeds the checked-in baseline=403 in
+WHO: repository operator. |
+| BOB-237 | Bug | Queued | high | WHAT: CM-GATE-LEDGER-RATCHET
+(§11.4.227(A)) FAILED the pre-build sweep during this session's batch-15
+commit attempt: unimplemented=414 exceeds the checked-in baseline=403 in
 constitution/scripts/gates/gate_ledger_baseline.txt. This is a HARD,
 blocking FAIL (unlike the other gate findings surfaced in the same
-sweep, which are all explicitly ADVISORY/non-blocking per §11.4.234).
-INVESTIGATION (§11.4.102): the four newest anchors this session’s
-constitution pull brought in (§11.4.268 tamper-evident evidence chain,
-§11.4.269 critic/consensus advisory-only ban, §11.4.270
+sweep, which are all explicitly ADVISORY/non-blocking per
+§11.4.234).  INVESTIGATION (§11.4.102): the four newest anchors this
+session's constitution pull brought in (§11.4.268 tamper-evident
+evidence chain, §11.4.269 critic/consensus advisory-only ban, §11.4.270
 dependency-existence-verdict register, §11.4.271 waiver mechanism) were
 checked FIRST as the likely cause, since they are the most recently
 landed (2026-08-26) and each names several recommended mechanism gates
-in its own text. RULED OUT: every one of those gates’ names
+in its own text. RULED OUT: every one of those gates' names
 (CM-CRITIC-CONSENSUS-ADVISORY-ONLY,
 CM-DEPENDENCY-EXISTENCE-VERDICT-REGISTER,
 CM-EVIDENCE-CHAIN-ANCHOR-CATCHES-RECOMPUTE-AND-TRUNCATION,
 CM-EVIDENCE-CHAIN-DELETE-REORDER-DETECTED,
 CM-EVIDENCE-CHAIN-INCOMPLETE-VERIFICATION-REFUSES,
 CM-WAIVER-ROSTERED-EXPIRY-TRACKED) is already correctly registered
-DEFERRED against an OWED-GATE-NNN tracked item, and each anchor’s own
+DEFERRED against an OWED-GATE-NNN tracked item, and each anchor's own
 §11.4.227(B) propagation gate is IMPLEMENTED. So this batch of new
-anchors did NOT introduce the ratchet violation. The full ledger run
+anchors did NOT introduce the ratchet violation.  The full ledger run
 (docs/qa/BOB-237/unimplemented_gates_snapshot_20260925.txt, 414 lines,
-captured verbatim from
-<code>bash constitution/scripts/gates/cm_gate_ledger_ratchet.sh</code>)
-shows the total current state is 414 UNIMPLEMENTED + 121 IMPLEMENTED +
-73 DEFERRED. The checked-in baseline (403) was last legitimately bumped
-by commit 34e42f0 (“cite the §11.4.209 gate rename, bump baseline
-397-&gt;403”) — some point after that, the unimplemented count grew to
-414 (11 more) without a matching baseline bump or deferral registration
-for the newly-named gates, across one or more subsequent anchor-landing
-rounds in the constitution submodule. This is accumulated UNIVERSAL
-governance-corpus debt, not something introduced by any boba-side edit
-in this session (confirmed:
-<code>git diff eba38e8..HEAD -- constitution/scripts/gates/gate_ledger_baseline.txt</code>
-inside the constitution submodule is empty — the baseline file itself
-was never touched across the two merges this session performed). WHY
-DEFERRED RATHER THAN FIXED HERE: identifying which of the 414
-unimplemented names are the specific 11 that pushed past baseline, and
-then either implementing 11 gates’ worth of real UNIVERSAL gate-code or
-registering 11 proper OWED-GATE-NNN deferrals with tracked-item
-citations, is itself real engineering work scoped to the constitution
-submodule (universal, not project-specific per §11.4.17) — it is not a
-boba-project fix and doing it hastily mid-session, unrelated to this
-session’s actual mandate (Jackett incorporation + backlog triage), risks
-exactly the kind of rushed, unreviewed governance-corpus edit
-§11.4.209’s Fable-xhigh review requirement exists to prevent.
-ACCEPTANCE: (1) a future session (or the constitution’s own maintainers)
-triages the 414-line snapshot against the 403 baseline to identify the
-specific unaccounted gate names; (2) each is either implemented,
-registered as a proper OWED-GATE-NNN deferral, or (if genuinely retired)
-cited in constitution/scripts/gates/gate_ledger_removals.tsv; (3) the
-constitution submodule’s baseline is re-bumped with a citation once
-accounted, following the same pattern as commit 34e42f0; (4) boba’s own
+captured verbatim from `bash
+constitution/scripts/gates/cm_gate_ledger_ratchet.sh`) shows the total
+current state is 414 UNIMPLEMENTED + 121 IMPLEMENTED + 73 DEFERRED. The
+checked-in baseline (403) was last legitimately bumped by commit 34e42f0
+("cite the §11.4.209 gate rename, bump baseline 397-&gt;403") — some
+point after that, the unimplemented count grew to 414 (11 more) without
+a matching baseline bump or deferral registration for the newly-named
+gates, across one or more subsequent anchor-landing rounds in the
+constitution submodule. This is accumulated UNIVERSAL governance-corpus
+debt, not something introduced by any boba-side edit in this session
+(confirmed: `git diff eba38e8..HEAD --
+constitution/scripts/gates/gate_ledger_baseline.txt` inside the
+constitution submodule is empty — the baseline file itself was never
+touched across the two merges this session performed).  WHY DEFERRED
+RATHER THAN FIXED HERE: identifying which of the 414 unimplemented names
+are the specific 11 that pushed past baseline, and then either
+implementing 11 gates' worth of real UNIVERSAL gate-code or registering
+11 proper OWED-GATE-NNN deferrals with tracked-item citations, is itself
+real engineering work scoped to the constitution submodule (universal,
+not project-specific per §11.4.17) — it is not a boba-project fix and
+doing it hastily mid-session, unrelated to this session's actual mandate
+(Jackett incorporation + backlog triage), risks exactly the kind of
+rushed, unreviewed governance-corpus edit §11.4.209's Fable-xhigh review
+requirement exists to prevent.  ACCEPTANCE: (1) a future session (or the
+constitution's own maintainers) triages the 414-line snapshot against
+the 403 baseline to identify the specific unaccounted gate names; (2)
+each is either implemented, registered as a proper OWED-GATE-NNN
+deferral, or (if genuinely retired) cited in
+constitution/scripts/gates/gate_ledger_removals.tsv; (3) the
+constitution submodule's baseline is re-bumped with a citation once
+accounted, following the same pattern as commit 34e42f0; (4) boba's own
 pinned constitution pointer is then re-synced and this item closed with
-the passing CM-GATE-LEDGER-RATCHET re-run as evidence. DISPOSITION FOR
-THIS SESSION’S COMMIT: per §11.4.234(D) (the commit/push mechanism MUST
+the passing CM-GATE-LEDGER-RATCHET re-run as evidence.  DISPOSITION FOR
+THIS SESSION'S COMMIT: per §11.4.234(D) (the commit/push mechanism MUST
 always be able to complete; a failing gate is skippable ONLY via an
 explicit recorded deferral flag, with the skip recorded in the commit
-message so the debt stays tracked, never forgotten), this session’s
+message so the debt stays tracked, never forgotten), this session's
 batch-15 commit used the sanctioned skip (BOBA_SYNC_SKIP_CI=1), citing
 this tracked item BOB-237, rather than silently bypassing or spending
 unbounded effort resolving an inherited universal-corpus debt
-mid-session. DISCOVERY CHANNEL (§11.4.238): found by boba’s own
+mid-session.  DISCOVERY CHANNEL (§11.4.238): found by boba's own
 pre-build sweep (scripts/pre_build_verification.sh, invariant 38/57)
 during a routine session commit — the automated gate itself is the
-discoverer, exactly as §11.4.238 requires.</td>
-</tr>
-<tr>
-<td>BOB-242</td>
-<td>Task</td>
-<td>Queued</td>
-<td>—</td>
-<td>BOB-223 closed the incentive inversion where writing a
-§11.4.18-mandated docs/scripts/<name>.md companion doc tripped invariant
-16 while the mandate requiring the doc to exist (CM-SCRIPT-DOCS-SYNC)
-has zero implementation, and the doc’s required §11.4.44 revision header
-(CM-DOC-REVISION-HEADER-PRESENT) is likewise unenforced outside one
-unrelated ledger file. Both are now registered as explicit GATE-DEBT
-REGISTER deferrals in scripts/pre_build_verification.sh, satisfying
-§11.4.227(A)’s bar for now, but the underlying mandates remain
-unenforced. This item implements BOTH: (1) walk every <em>.sh/</em>.bash
-under scripts/, require a docs/scripts/<name>.md companion (24 of 36
-currently lack one per BOB-151’s own count), verify same-commit-or-newer
-mtime per §11.4.18’s literal text; (2) require every in-scope companion
-doc to carry <strong>Revision:</strong>/<strong>Last modified:</strong>
-per §11.4.44. Both need an operator brownfield-adoption decision
-(§11.4.224(E)/§11.4.66 – immediate hard floor vs. monotone-decrease
-ratchet vs. changed-files-only), a paired §1.1 mutation each, and – once
-landed – removal of both DEFERRED: lines from the GATE-DEBT REGISTER in
-scripts/pre_build_verification.sh. Duplicate-of/originating-from:
-BOB-223, BOB-151. Also recommend adding two rows to
-constitution/scripts/gates/gate_ledger_deferrals.tsv (the constitution
-submodule’s own canonical §11.4.227(A) deferral ledger) once this new
-item’s ID is known.</td>
-</tr>
-<tr>
-<td>BOB-243</td>
-<td>Bug</td>
-<td>Queued</td>
-<td>—</td>
-<td>Discovered by a full 58-invariant pre_build_verification.sh sweep
-(2026-09-25) run during BOB-223 closure verification: invariant 56
-(CM-GITIGNORE-SWALLOW-GUARD, §11.4.201(6), BOB-212) reports 4
-first-party source files silently ignored:
+discoverer, exactly as §11.4.238 requires. |
+| BOB-242 | Task | Queued | — | BOB-223 closed the incentive inversion
+where writing a §11.4.18-mandated docs/scripts/&lt;name&gt;.md companion
+doc tripped invariant 16 while the mandate requiring the doc to exist
+(CM-SCRIPT-DOCS-SYNC) has zero implementation, and the doc's required
+§11.4.44 revision header (CM-DOC-REVISION-HEADER-PRESENT) is likewise
+unenforced outside one unrelated ledger file. Both are now registered as
+explicit GATE-DEBT REGISTER deferrals in
+scripts/pre_build_verification.sh, satisfying §11.4.227(A)'s bar for
+now, but the underlying mandates remain unenforced. This item implements
+BOTH: (1) walk every *.sh/*.bash under scripts/, require a
+docs/scripts/&lt;name&gt;.md companion (24 of 36 currently lack one per
+BOB-151's own count), verify same-commit-or-newer mtime per §11.4.18's
+literal text; (2) require every in-scope companion doc to carry
+**Revision:**/**Last modified:** per §11.4.44. Both need an operator
+brownfield-adoption decision (§11.4.224(E)/§11.4.66 -- immediate hard
+floor vs. monotone-decrease ratchet vs. changed-files-only), a paired
+§1.1 mutation each, and -- once landed -- removal of both DEFERRED:
+lines from the GATE-DEBT REGISTER in scripts/pre_build_verification.sh.
+Duplicate-of/originating-from: BOB-223, BOB-151. Also recommend adding
+two rows to constitution/scripts/gates/gate_ledger_deferrals.tsv (the
+constitution submodule's own canonical §11.4.227(A) deferral ledger)
+once this new item's ID is known. |
+| BOB-243 | Bug | Queued | — | Discovered by a full 58-invariant
+pre_build_verification.sh sweep (2026-09-25) run during BOB-223 closure
+verification: invariant 56 (CM-GITIGNORE-SWALLOW-GUARD, §11.4.201(6),
+BOB-212) reports 4 first-party source files silently ignored:
 .specify/extensions/superspec/scripts/e2e-agent-claude.sh,
 .specify/extensions/superspec/scripts/e2e-smoke.sh,
 .specify/extensions/superspec/scripts/validate-extension-metadata.py,
-.specify/extensions/superspec/scripts/validate-release-archive.py – all
+.specify/extensions/superspec/scripts/validate-release-archive.py -- all
 blocked by the broad .gitignore:218 rule
-‘.specify/extensions/superspec/’. Unrelated to BOB-223’s own scope; a
-genuinely new finding, not previously tracked. Remedy per the gate’s own
+'.specify/extensions/superspec/'. Unrelated to BOB-223's own scope; a
+genuinely new finding, not previously tracked. Remedy per the gate's own
 remediation text: either rename/relocate the files so no .gitignore rule
 matches them, or add an explicit ! negation for them in .gitignore, then
 re-run the guard. Investigate first per §11.4.6/§11.4.124 whether the
-broad .specify/extensions/superspec/ ignore rule was intentional
-(e.g. to exclude a vendored/generated subtree) before narrowing it,
-since a careless negation could re-expose something the rule was
-deliberately protecting.</td>
-</tr>
-<tr>
-<td>BOB-246</td>
-<td>Bug</td>
-<td>In progress</td>
-<td>Critical</td>
-<td>Discovered 2026-09-25 by a subagent implementing
-003-zero-shortcomings-audit Task 1, independently reproduced in
-isolation. scripts/commit-push-all.sh’s argument parser stops reading
-flags at the first non-flag token; when –scope <path> flags are placed
-AFTER the commit-message positional argument (exactly as tasks.md’s own
-Step 5 template shows for every task in the 003-zero-shortcomings-audit
-plan, e.g. “bash scripts/commit-push-all.sh "<message>" –scope <path>”),
-the –scope flags are silently swallowed as if they were part of the
+broad .specify/extensions/superspec/ ignore rule was intentional (e.g.
+to exclude a vendored/generated subtree) before narrowing it, since a
+careless negation could re-expose something the rule was deliberately
+protecting. |
+| BOB-246 | Bug | In progress | Critical | Discovered 2026-09-25 by a
+subagent implementing 003-zero-shortcomings-audit Task 1, independently
+reproduced in isolation. scripts/commit-push-all.sh's argument parser
+stops reading flags at the first non-flag token; when --scope
+&lt;path&gt; flags are placed AFTER the commit-message positional
+argument (exactly as tasks.md's own Step 5 template shows for every task
+in the 003-zero-shortcomings-audit plan, e.g. "bash
+scripts/commit-push-all.sh \"&lt;message&gt;\" --scope &lt;path&gt;"),
+the --scope flags are silently swallowed as if they were part of the
 message, no error or warning is emitted, and the script falls through to
 its unconditional/unscoped git add -A path. Real-world consequence
 (2026-09-25): following that exact template ordering caused a scoped
-Task-1 commit to instead sweep in 5 files – the intended 2, a sibling
-task’s 2 legitimate-but-not-yet-reviewed files, and a
+Task-1 commit to instead sweep in 5 files -- the intended 2, a sibling
+task's 2 legitimate-but-not-yet-reviewed files, and a
 DELIBERATELY-uncommitted, known-broken/hanging test file
 (tests/ddos/test_sse_stream_stress_chaos.py, see BOB-097 diary
-entry_id=16) – and PUSH all of it to two remote git hosts before the
+entry_id=16) -- and PUSH all of it to two remote git hosts before the
 mistake was caught. No data was lost, nothing was force-pushed, but a
 silent full-tree-sweep on a routine commit is a serious safety gap in a
-script this project’s own constitution names as the ONLY sanctioned
-commit path. Root cause: the parser’s flag/positional-arg interleaving
+script this project's own constitution names as the ONLY sanctioned
+commit path. Root cause: the parser's flag/positional-arg interleaving
 logic assumes flags always precede the message and never validates that
 assumption or warns when scope flags appear post-message. Remediation:
-(1) make the parser accept –scope flags in ANY position relative to the
+(1) make the parser accept --scope flags in ANY position relative to the
 message (getopts-style two-pass parsing, or explicit
 flag-then-positional-then-more-flags handling), OR (2) at minimum,
 detect scope-flag-shaped tokens appearing after the first positional
 argument and REFUSE with a loud error rather than silently falling back
-to git add -A – a parser that cannot tell ‘no –scope given, unscoped
-commit intended’ apart from ‘–scope given but in the wrong position’ is
+to git add -A -- a parser that cannot tell 'no --scope given, unscoped
+commit intended' apart from '--scope given but in the wrong position' is
 itself a §11.4.201(1) false-negative-class defect. (3) Audit and fix
-tasks.md’s own Step 5 example ordering across every task (flags before
+tasks.md's own Step 5 example ordering across every task (flags before
 the message, matching the working pattern used successfully elsewhere
 this session) so the plan itself does not keep tripping this bug for
-every future task implementer.</td>
-</tr>
-<tr>
-<td>BOB-247</td>
-<td>Task</td>
-<td>Queued</td>
-<td>Important</td>
-<td><strong>Reported-Via:</strong> §11.4.202 reporting directive
-<code>task</code> on 2026-09-26T08:51:37Z <strong>Reported-By:</strong>
-AI <strong>What (the report, verbatim):</strong> Found by the final
-whole-branch review of feature 003: SC-005 is not met. The mechanism
-exists (verify-closure, risk order) but nothing drives it over closed
-items on a recurring basis. <strong>Affected scope / file-scope
-manifest:</strong> scripts/zero_shortcomings_audit.sh
-cmd_standing_check; specs/003-zero-shortcomings-audit SC-005
-<strong>Reproduction / context:</strong> Reintroduce a previously fixed
-defect whose closure evidence exists; standing-check reports only counts
-(backlog/gates/escapes) and never re-runs closed items’ recorded
-commands, so the regression is not detected. <strong>Acceptance
-criteria:</strong> standing-check (or a sibling recurring mode)
-periodically re-runs verify-closure over a risk-ordered sample of closed
-items and records any mismatch as a finding without blocking; a test
-reintroduces a fixed defect in a temp DB and proves it is flagged.</td>
-</tr>
-<tr>
-<td>BOB-248</td>
-<td>Task</td>
-<td>Queued</td>
-<td>Minor</td>
-<td><strong>Reported-Via:</strong> §11.4.202 reporting directive
-<code>task</code> on 2026-09-26T08:52:13Z <strong>Reported-By:</strong>
-AI <strong>What (the report, verbatim):</strong> Deferred by ruling:
-FR-011 audit_dispatch_bounded is defined but never called; FR-010 only
-checks one declared Test Type, not that every applicable type was used;
-FR-012 risk order ignores the severity column; blocked-surface trim()
-ignores tab/newline-only conditions and duplicate details rows
-double-print; redactor over-redacts ordinary text and misses db_password
-=&gt; x, mysql -pSECRET, URL-encoded values; BASH_ENV can reach the
-fresh verify-closure process; the exit code 1 is shared between mismatch
-and usage/internal refusals (contract debt); the [59/59] stage’s
-degraded WARN branch is proven at unit level only, never in a live
-sweep. <strong>Affected scope / file-scope manifest:</strong>
-scripts/zero_shortcomings_audit.sh; specs/003-zero-shortcomings-audit
-<strong>Reproduction / context:</strong> See final review of feature
-003. <strong>Acceptance criteria:</strong> Each listed follow-up is
-either implemented with a RED-first test or closed with an
-evidence-backed reason.</td>
-</tr>
-<tr>
-<td>BOB-249</td>
-<td>Bug</td>
-<td>Queued</td>
-<td>Important</td>
-<td><strong>Reported-Via:</strong> §11.4.202 reporting directive
-<code>bug</code> on 2026-09-26T12:19:46Z <strong>Reported-By:</strong>
-AI <strong>What (the report, verbatim):</strong> Found while running the
-deferred long gate after merging feature 003 (zero-shortcomings audit).
-Pre-existing: reproduced identically at the merge-base, so it is not
-caused by that feature. It keeps the long gate red independently of the
-separate gate-ledger debt (BOB-237), so BOBA_SYNC_SKIP_CI=1 cannot be
-retired until both are fixed. <strong>Affected scope / file-scope
-manifest:</strong> scripts/pre_build_verification.sh invariant 30
-(CM-BASH-UNIT-TESTS-EXECUTED); the writer of docs/Issues.<em>,
-docs/Fixed.</em>, docs/*_Summary.<em>, README.</em> and
-docs/qa/BOB-<em>/closure_evidence_</em>.docx export twins
-<strong>Reproduction / context:</strong> Run ‘ionice -c 3 nice -n 19
-bash scripts/pre_build_verification.sh’ on a clean tree. Invariant 30
-FAILs: ‘N tracked file(s) mtime-moved while the bash suite ran’ and the
-rewritten files show as modified in git status (byte changes only in the
-generated .docx/.html/.pdf twins; the Markdown sources are unchanged).
-Measured 2026-09-26: at merge-base 120fd78 (old constitution pin
-25980c1) 15 files moved (README, Fixed, Fixed_Summary, Issues,
-Issues_Summary twins); at main 88767fc 18 files moved (adds docx twins
-of several docs/qa closure evidence files and the quickstart evidence).
-Restoring the files with git checkout makes the tree clean again.
-Running six export-related tests from tests/unit one at a time
-(test_docx_export, test_export_pdf_charset_integrity,
-test_export_staleness_oracle, test_generate_markdown_exports_path_arg,
-test_pre_build_workable_items_invariant,
-test_update_readme_doc_links_no_duplication) did NOT move the files, so
-the writer is UNCONFIRMED. Earlier commit ea8ffed documents a similar
-side effect attributed to workable-items-export.sh, which is a
-resemblance not a diagnosis. <strong>Acceptance criteria:</strong> Root
-cause of the writer is identified with captured evidence (bisect the
-bash suite and the sweep stages that run before invariant 30, with a
-control needle proving the mtime instrument sees a known write); the
-writer either stops touching tracked twins during the sweep or writes
-only when sources changed (idempotent, byte-stable output); a test fails
-against the current behaviour and passes after; a full pre_build sweep
-on a clean tree leaves git status clean and invariant 30 PASS.</td>
-</tr>
-<tr>
-<td>BOB-250</td>
-<td>Task</td>
-<td>Queued</td>
-<td>Minor</td>
-<td><strong>Reported-Via:</strong> §11.4.202 reporting directive
-<code>task</code> on 2026-09-26T13:50:14Z <strong>Reported-By:</strong>
-AI <strong>What (the report, verbatim):</strong> Filed at the operator’s
-request after invariant 30 (CM-BASH-UNIT-TESTS-EXECUTED) passed on a
-quiet tree: sweep 54 passed, 1 failed (only the gate-ledger debt
-BOB-237). Fixes are being developed in scratch clones as patches
-(streams A oracle parser, B generator, C badges plus merge-history
-measurement) and are applied only after review. <strong>Affected scope /
-file-scope manifest:</strong> scripts/lib/export_staleness.sh;
-scripts/generate_markdown_exports.sh; scripts/compute-badges.sh and
-their tests <strong>Reproduction / context:</strong> See the two
-independent reviews of the BOB-249 fix (afe5d1f, a630935, 74e5b6f,
-e47346b). Items: (1) rename/copy branch of the porcelain -z parser
-untested; (2) git log still C-quotes tab/quote/newline/backslash paths
-so a clean file with such a name falls back to mtime; (3) awk
+every future task implementer. |
+| BOB-247 | Task | Queued | Important | **Reported-Via:** §11.4.202
+reporting directive `task` on 2026-09-26T08:51:37Z **Reported-By:**
+AI  **What (the report, verbatim):** Found by the final whole-branch
+review of feature 003: SC-005 is not met. The mechanism exists
+(verify-closure, risk order) but nothing drives it over closed items on
+a recurring basis.  **Affected scope / file-scope manifest:**
+scripts/zero_shortcomings_audit.sh cmd_standing_check;
+specs/003-zero-shortcomings-audit SC-005  **Reproduction / context:**
+Reintroduce a previously fixed defect whose closure evidence exists;
+standing-check reports only counts (backlog/gates/escapes) and never
+re-runs closed items' recorded commands, so the regression is not
+detected.  **Acceptance criteria:** standing-check (or a sibling
+recurring mode) periodically re-runs verify-closure over a risk-ordered
+sample of closed items and records any mismatch as a finding without
+blocking; a test reintroduces a fixed defect in a temp DB and proves it
+is flagged. |
+| BOB-248 | Task | Queued | Minor | **Reported-Via:** §11.4.202
+reporting directive `task` on 2026-09-26T08:52:13Z **Reported-By:**
+AI  **What (the report, verbatim):** Deferred by ruling: FR-011
+audit_dispatch_bounded is defined but never called; FR-010 only checks
+one declared Test Type, not that every applicable type was used; FR-012
+risk order ignores the severity column; blocked-surface trim() ignores
+tab/newline-only conditions and duplicate details rows double-print;
+redactor over-redacts ordinary text and misses db_password =&gt; x,
+mysql -pSECRET, URL-encoded values; BASH_ENV can reach the fresh
+verify-closure process; the exit code 1 is shared between mismatch and
+usage/internal refusals (contract debt); the [59/59] stage's degraded
+WARN branch is proven at unit level only, never in a live
+sweep.  **Affected scope / file-scope manifest:**
+scripts/zero_shortcomings_audit.sh;
+specs/003-zero-shortcomings-audit  **Reproduction / context:** See final
+review of feature 003.  **Acceptance criteria:** Each listed follow-up
+is either implemented with a RED-first test or closed with an
+evidence-backed reason. |
+| BOB-250 | Task | Queued | Minor | **Reported-Via:** §11.4.202
+reporting directive `task` on 2026-09-26T13:50:14Z **Reported-By:**
+AI  **What (the report, verbatim):** Filed at the operator's request
+after invariant 30 (CM-BASH-UNIT-TESTS-EXECUTED) passed on a quiet tree:
+sweep 54 passed, 1 failed (only the gate-ledger debt BOB-237). Fixes are
+being developed in scratch clones as patches (streams A oracle parser, B
+generator, C badges plus merge-history measurement) and are applied only
+after review.  **Affected scope / file-scope manifest:**
+scripts/lib/export_staleness.sh; scripts/generate_markdown_exports.sh;
+scripts/compute-badges.sh and their tests  **Reproduction / context:**
+See the two independent reviews of the BOB-249 fix (afe5d1f, a630935,
+74e5b6f, e47346b). Items: (1) rename/copy branch of the porcelain -z
+parser untested; (2) git log still C-quotes tab/quote/newline/backslash
+paths so a clean file with such a name falls back to mtime; (3) awk
 portability of the NUL parser (busybox awk truncates at the first NUL);
 (4) a history-stale pair whose regeneration yields identical bytes stays
 stale forever; (5) a corrupted twin with a newer mtime is never healed
@@ -1443,14 +1333,42 @@ fails; (7) adding *.docx to the history pathspec can change
 merge-history verdicts at merges resolved from mixed sides (3 of 120
 fuzzed histories, none on the real repo); (8) a symlinked README
 pointing outside the repo was classified in-repo and the
-write-temp-then-mv replaced the link. <strong>Acceptance
-criteria:</strong> Each item is either fixed with a RED-first test that
-fails before and passes after, plus a paired control proving the
-generator still regenerates on a real content change, a missing twin and
-a charset-fragment file and rewrites 0 twins after a fresh checkout, or
-closed with an evidence-backed reason; an independent review approves
-the combined change; the full pre-build sweep stays at no new failures
-with CM-BASH-UNIT-TESTS-EXECUTED passing.</td>
+write-temp-then-mv replaced the link.  **Acceptance criteria:** Each
+item is either fixed with a RED-first test that fails before and passes
+after, plus a paired control proving the generator still regenerates on
+a real content change, a missing twin and a charset-fragment file and
+rewrites 0 twins after a fresh checkout, or closed with an
+evidence-backed reason; an independent review approves the combined
+change; the full pre-build sweep stays at no new failures with
+CM-BASH-UNIT-TESTS-EXECUTED passing. |
+| BOB-251 | Bug | Queued | Important | **Reported-Via:** §11.4.202
+reporting directive `bug` on 2026-09-26T15:11:04Z **Reported-By:**
+AI  **What (the report, verbatim):** Found while pushing the BOB-249
+hardening commits. A guard that fails without saying why is a
+constitution 11.4.201 concern: the operator sees only a generic push
+failure and cannot tell a broken environment from a rejected push. Root
+cause in this instance was the session's own scratch copies filling the
+tmpfs; the fix belongs in the hook, which should report the failing
+step.  **Affected scope / file-scope manifest:** .git/hooks/pre-push
+(installed copy) and whatever tracked script installs it; git push via
+scripts/commit-push-all.sh  **Reproduction / context:** Fill /tmp
+(tmpfs) so a full worktree of HEAD cannot be written (or make git
+worktree add fail for any reason), then git push. The hook runs 'git
+worktree add "$</span>WORKTREE” HEAD &gt;/dev/null 2&gt;&amp;1’ under
+‘set -euo pipefail’ with all output suppressed, so it aborts with no
+message; git prints only ‘error: failed to push some refs’. Observed
+2026-09-26: /tmp was at 80% and a worktree add of HEAD failed with
+‘unable to write file’ and ‘Could not reset index file to revision
+HEAD’; pushes to github and gitlab failed silently for three commits
+until the scratch space was freed. <strong>Acceptance criteria:</strong>
+The hook prints an explicit, actionable message naming the failing step
+and the cause (worktree creation failed, with the underlying git error
+and free space of the temp directory) before exiting non-zero; it
+honours TMPDIR and falls back or fails loudly; a test simulates a
+failing worktree add (shim or read-only temp dir) and asserts the
+message is printed and the exit status is non-zero, and a control
+asserts a healthy environment still passes; the hook cleans up any
+partially created worktree registration (git worktree prune).</td>
 </tr>
 </tbody>
 </table>
