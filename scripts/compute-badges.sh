@@ -65,6 +65,29 @@ while [[ $# -gt 0 ]]; do
         *) echo "compute-badges.sh: unknown argument: $1" >&2; exit 64 ;;
     esac
 done
+# _realpath_file <file>: fully resolved real path (symlinks in the file AND its
+# directories, `..`, relative). Prints nothing when it cannot be resolved (the
+# caller then treats the target as NOT in-repo: conservative, no export).
+_realpath_file() {
+    local f="$1" out=""
+    if command -v realpath >/dev/null 2>&1; then out="$(realpath -e -- "$f" 2>/dev/null)" || out=""
+    elif readlink -f / >/dev/null 2>&1; then out="$(readlink -f -- "$f" 2>/dev/null)" || out=""
+    elif command -v python3 >/dev/null 2>&1; then out="$(python3 -c 'import os,sys;print(os.path.realpath(sys.argv[1]))' "$f" 2>/dev/null)" || out=""
+    fi
+    printf '%s' "$out"
+}
+
+# Write THROUGH symlinks (BOB-249 M7): the rewrite below is write-temp-then-mv,
+# which would REPLACE a symlinked README/TESTING with a regular file in the repo
+# and leave the real target untouched. Resolve to the real file up front so the
+# file that is modified, and later classified in-repo vs fixture, is one and the
+# same. An unresolvable path is left as given (the not-found handling stays).
+for _v in README TESTING_MD; do
+    if [[ -L "${!_v}" ]]; then
+        _r="$(_realpath_file "${!_v}")"
+        [[ -n "${_r}" ]] && printf -v "${_v}" '%s' "${_r}"
+    fi
+done
 
 # ---------------------------------------------------------------------------
 # §11.4.6 no-guessing: resolve a real python interpreter the same way
@@ -620,8 +643,11 @@ _EXPORT_TARGETS=()
 for _t in "${README}" "${TESTING_MD}"; do
     [[ -f "${_t}" ]] || continue
     _abs="$(cd "$(dirname "${_t}")" && pwd -P)/$(basename "${_t}")"
+    # Classify by the FULLY resolved real path of the FILE: resolving only the
+    # dirname misses a symlinked FILE whose target is outside the repo.
+    _real="$(_realpath_file "${_t}")"
     _root_p="$(cd "${ROOT_DIR}" && pwd -P)"
-    if [[ "${_abs}" == "${_root_p}/"* ]]; then
+    if [[ -n "${_real}" && "${_real}" == "${_root_p}/"* ]]; then
         _EXPORT_TARGETS+=("${_abs}")
     else
         echo "compute-badges.sh: export skipped for ${_t} (outside ${ROOT_DIR} — a fixture, not a repo document)"

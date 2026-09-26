@@ -1,7 +1,7 @@
 # scripts/compute-badges.sh — §11.4.259 machine-derived README badge regenerator
 
-**Revision:** 2
-**Last modified:** 2026-09-26T13:08:22Z
+**Revision:** 3
+**Last modified:** 2026-09-26T14:26:37Z
 **Status:** active
 **Item:** BOB-118 (§11.4.6 bluff audit — task-ad3205a9)
 
@@ -86,6 +86,10 @@ A target passed with `--readme` / `--testing-md` that resolves **outside**
 the repository root is a test fixture: its export is skipped and the skip is
 printed. If no in-repo target was modified, the export step is skipped and
 says so. A failed export stays a loud, non-fatal warning.
+A symlinked `README`/`TESTING_MD` is written **through** the link at its real
+target (never replaced by a regular file), and its export is skipped when that
+real target lies outside the repository (guard:
+`tests/unit/test_compute_badges_realpath_scope.sh`).
 
 Before this, the export step ran the generator with **no** argument — a full
 sweep of root + `docs/` + `scripts/` of the real tree on every run, including
