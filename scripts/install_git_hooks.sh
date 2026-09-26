@@ -1,4 +1,19 @@
 #!/usr/bin/env bash
+# scripts/install_git_hooks.sh — install the tracked git hooks.
+#
+# Purpose:  copy scripts/git_hooks/{pre-commit,pre-push,commit-msg,post-commit}
+#           into .git/hooks/ and make them executable. core.hooksPath is not
+#           used, so git runs these installed copies; re-run this script after
+#           any change to a file in scripts/git_hooks/ to refresh them.
+# Usage:    bash scripts/install_git_hooks.sh   (from inside the repository)
+# Inputs:   none (repository root from git rev-parse --show-toplevel)
+# Outputs:  one line per installed hook
+# Side-effects: overwrites the four managed hooks in .git/hooks/; creates the
+#           bypass-audit trail and audit log there if missing (mode 600).
+# Dependencies: bash, git, cp, chmod.
+# Cross-references: docs/scripts/install_git_hooks.md,
+#           tests/hooks/test_pre_push_hook.sh (installs via a copy of this
+#           script in a sandbox and checks the result byte-for-byte).
 set -euo pipefail
 
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$(cd "$(dirname "$0")/.." && pwd)")

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>install_git_hooks</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <meta name="x-export-source-sha256" content="80b03f6ff4a5239b77c63a0863a5939afea39838fed4b5594819c515614f4772">
+  <meta name="dcterms.modified" content="2026-08-02T12:49:08Z">
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">install_git_hooks</h1>
+</header>
+<h1
+id="scriptsinstall_git_hooks.sh-and-scriptsgit_hooks-the-tracked-git-hooks">scripts/install_git_hooks.sh
+and scripts/git_hooks/ — the tracked git hooks</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-09-26T16:33:51Z <strong>Status:</strong> active
+<strong>Item:</strong> BOB-251 (pre-push hook failed silently when its
+temporary worktree could not be created)</p>
+<h2 id="overview">Overview</h2>
+<p>The project keeps its git hooks as tracked files in
+<code>scripts/git_hooks/</code> and installs them with
+<code>scripts/install_git_hooks.sh</code>, which copies each of them
+into <code>.git/hooks/</code> and makes it executable.
+<code>core.hooksPath</code> is not used, so what git actually runs is
+the <strong>installed copy</strong>, not the tracked source. A change to
+a hook source reaches a checkout only when the installer is run in that
+checkout.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Hook</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pre-commit</code></td>
+<td>§11.4.75: refuses a commit that stages a mutation marker into a
+first-party production source file (<code>download-proxy/</code>,
+<code>qBitTorrent-go/</code>, <code>scripts/</code>,
+<code>plugins/</code>, <code>webui-bridge.py</code>;
+<code>.sh</code>/<code>.bash</code>/<code>.py</code>/<code>.go</code>;
+tests, docs, QA evidence and vendored trees excluded).</td>
+</tr>
+<tr>
+<td><code>pre-push</code></td>
+<td>§11.4.75 at push time: runs the pre-commit rules against the content
+being pushed, so a marker committed with <code>--no-verify</code> is
+still caught.</td>
+</tr>
+<tr>
+<td><code>commit-msg</code></td>
+<td>Requires a <code>Bypass-rationale:</code> footer when a bypass
+marker file is present.</td>
+</tr>
+<tr>
+<td><code>post-commit</code></td>
+<td>Appends a line per commit to the §11.4.75 audit log and runs the
+forensic capture helper.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>bash, git, df.</li>
+<li>Run from inside the repository (the installer resolves the
+repository root with <code>git rev-parse --show-toplevel</code>).</li>
+</ul>
+<h2 id="usage-examples">Usage examples</h2>
+<p>Install or refresh every hook in the current checkout:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/install_git_hooks.sh</span></code></pre></div>
+<p>Confirm that the installed copies match the tracked sources:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> h <span class="kw">in</span> pre-commit pre-push commit-msg post-commit<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cmp</span> <span class="at">-s</span> <span class="st">&quot;scripts/git_hooks/</span><span class="va">$h</span><span class="st">&quot;</span> <span class="st">&quot;.git/hooks/</span><span class="va">$h</span><span class="st">&quot;</span> <span class="kw">&amp;&amp;</span> <span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$h</span><span class="st"> current&quot;</span> <span class="kw">||</span> <span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$h</span><span class="st"> STALE&quot;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div>
+<p>A refresh is needed after any commit that changes a file in
+<code>scripts/git_hooks/</code>. The installer overwrites the four hooks
+it manages and nothing else; it creates the bypass-audit and audit-log
+files only if they do not exist.</p>
+<h2 id="how-the-pre-push-check-works">How the pre-push check works</h2>
+<p>git calls <code>pre-push &lt;remote&gt; &lt;url&gt;</code> with one
+line per ref on stdin:
+<code>&lt;local ref&gt; &lt;local sha&gt; &lt;remote ref&gt; &lt;remote sha&gt;</code>.
+For each line the hook:</p>
+<ol type="1">
+<li>skips deletions (a local sha of all zeros);</li>
+<li>lists the commits being pushed —
+<code>&lt;remote sha&gt;..&lt;local sha&gt;</code> when the remote tip
+is known locally, otherwise everything reachable from the local sha that
+is not on any remote-tracking ref (new branches);</li>
+<li>collects the files those commits add, copy, modify or rename;</li>
+<li>hands that list to the installed <code>pre-commit</code> hook in
+revision mode (<code>BOBA_HOOK_CHECK_REV=&lt;local sha&gt;</code>, file
+list on stdin), which reads each file from the pushed tip with
+<code>git ls-tree</code> / <code>git show</code> and applies the same
+scope rules and patterns it applies at commit time.</li>
+</ol>
+<p>A marker that was added and removed again before the pushed tip does
+not block; a file deleted by a later pushed commit is skipped.</p>
+<p>The hook reads git objects only. It creates no worktree, no index and
+no temporary file, so a full or read-only <code>$TMPDIR</code> cannot
+affect it.</p>
+<h3 id="exit-codes">Exit codes</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Nothing to object to; the push proceeds.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Marker(s) found in content being pushed; each file and line is
+listed.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>A step could not complete. The push is refused and the report names
+the step, prints the git error, and shows the free space of the git
+directory and of <code>$TMPDIR</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Example of a failure report:</p>
+<pre><code>pre-push: FAILED at step &#39;list commits to push (…)&#39; — the push was NOT checked and is refused.
+  git error: error: unable to write file
+  free space:
+    git dir /home/…/.git: 120G free of 900G (87% used, mount /home)
+    TMPDIR /tmp: 6.1G free of 16G (61% used, mount /tmp)
+  Remediation: free disk space or fix the git error above, then push again.</code></pre>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li><strong>pre-commit not installed.</strong> The pre-push hook prints
+a note naming the installer and lets the push proceed (unchanged
+behaviour, now visible).</li>
+<li><strong>Only one of the two hooks refreshed.</strong> Revision mode
+lives in <code>pre-commit</code>; an old <code>pre-commit</code> ignores
+<code>BOBA_HOOK_CHECK_REV</code> and checks the staged set instead. The
+installer always installs both together.</li>
+<li><strong>Remote tip not present locally</strong> (for example the
+remote moved and the push will be rejected as non-fast-forward): the
+hook falls back to “not on any remote-tracking ref”, which checks at
+least as much.</li>
+<li><strong>Path names containing newlines</strong> are not supported by
+either hook (the file lists are newline-separated).</li>
+</ul>
+<h2 id="internal-behaviour-what-changed-in-bob-251">Internal behaviour —
+what changed in BOB-251</h2>
+<p>The previous <code>pre-push</code> created
+<code>git worktree add "$WORKTREE" HEAD</code> in a
+<code>mktemp -d</code> directory, with all output discarded, under
+<code>set -e</code>. When <code>/tmp</code> was full the worktree could
+not be written (<code>unable to write file</code>,
+<code>Could not reset index file to revision HEAD</code>), the hook
+stopped without a word, and git printed only
+<code>failed to push some refs</code>; three pushes failed this way on
+2026-09-26. The same hook ran <code>pre-commit</code> inside the fresh
+worktree, where nothing is staged, so the §11.4.75 check it claimed to
+enforce passed for every push: a marker committed with
+<code>--no-verify</code> was pushed without objection.</p>
+<h2 id="anti-bluff-verification">Anti-bluff verification</h2>
+<p><code>tests/hooks/test_pre_push_hook.sh</code> builds throwaway
+repositories whose only remote is a local bare repository, installs the
+hooks with a copy of the installer, and pushes for real:</p>
+<ul>
+<li>the installer produces a byte-identical, executable
+<code>.git/hooks/pre-push</code>;</li>
+<li>a clean push succeeds (control); a docs-only marker and a marker
+removed before the tip do not block;</li>
+<li>a production-file marker committed with <code>--no-verify</code>
+blocks the push, also on a brand-new branch; deletions pass;</li>
+<li>an unwritable <code>$TMPDIR</code> does not break a healthy
+push;</li>
+<li>with a <code>git</code> shim that fails like a full disk, a failing
+<code>git worktree add</code> cannot break the hook, and failing object
+reads give a named, non-zero, disk-space-carrying report instead of
+silence.</li>
+</ul>
+<p>Against the previous hook sources it fails 6 of 12 checks (silent
+failures and the vacuous check); against the current sources it passes
+12 of 12. Three paired mutations (silencing the failure report, dropping
+revision mode, treating an unreadable file as absent) each turn it red.
+<code>tests/hooks/test_pre_commit_mutation_scope.sh</code> covers the
+pre-commit scope rules and still passes 7 of 7.</p>
+<h2 id="related-scripts">Related scripts</h2>
+<ul>
+<li><code>scripts/commit-push-all.sh</code> — its push stage runs
+through this hook (<code>docs/scripts/commit-push-all.md</code>).</li>
+<li><code>scripts/pre_build/check_cm_no_production_mutation_residue.sh</code>
+— the pre-build gate using the same scope technique.</li>
+<li><code>scripts/hooks/auto-commit-forensic-capture.sh</code> — called
+by <code>post-commit</code>.</li>
+</ul>
+<p><strong>Last verified:</strong> 2026-09-26 (hook tests 12/12 and 7/7
+in mktemp sandboxes).</p>
+</body>
+</html>

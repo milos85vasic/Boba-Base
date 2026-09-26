@@ -92,29 +92,66 @@ _pc_is_production_path() {
   return 0
 }
 
-STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
+# ── Two modes, one rule set (BOB-251) ─────────────────────────────────
+# Default: the staged set, read from the working tree (commit time).
+# Revision mode: BOBA_HOOK_CHECK_REV=<commit> with the candidate file list
+#   on stdin, one path per line; content is read from that commit's tree
+#   with git plumbing. The pre-push hook uses this mode so the check it
+#   enforces at push time is THIS hook's scope and patterns, never a copy,
+#   and needs no worktree or temporary directory.
+#   Exit 2 = a git read failed (reported, never treated as "no marker").
+CHECK_REV="${BOBA_HOOK_CHECK_REV:-}"
+
+if [ -n "$CHECK_REV" ]; then
+  STAGED=$(cat)
+else
+  STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
+fi
 
 if [ -z "$STAGED" ]; then
   exit 0
 fi
 
+_pc_read_error() {
+  echo "pre-commit: cannot read '$1' at revision $CHECK_REV: $2" >&2
+  exit 2
+}
+
 violations=0
 
 while IFS= read -r file; do
-  [ -f "$file" ] || continue
+  [ -n "$file" ] || continue
   _pc_is_production_path "$file" || continue
+  if [ -n "$CHECK_REV" ]; then
+    # Deleted by a later commit in the range -> nothing to scan at the tip.
+    # A failing ls-tree is an error, not an absence (§11.4.201(6)).
+    if ! present=$(git ls-tree --name-only "$CHECK_REV" -- "$file" 2>&1); then
+      _pc_read_error "$file" "$present"
+    fi
+    [ -n "$present" ] || continue
+    if ! content=$(git show "$CHECK_REV:$file" 2>&1); then
+      _pc_read_error "$file" "$content"
+    fi
+  else
+    [ -f "$file" ] || continue
+    content=$(cat -- "$file")
+  fi
   for pattern in "${MUTATION_PATTERNS[@]}"; do
-    if grep -n "$pattern" "$file" >/dev/null 2>&1; then
+    if printf '%s\n' "$content" | grep -n "$pattern" >/dev/null 2>&1; then
       echo "CONSTITUTION-§11.4.75: mutation marker '$pattern' found in $file"
-      grep -n "$pattern" "$file"
+      printf '%s\n' "$content" | grep -n "$pattern"
       violations=$((violations + 1))
     fi
   done
 done <<< "$STAGED"
 
 if [ "$violations" -gt 0 ]; then
-  echo "CONSTITUTION-§11.4.75: commit blocked — $violations mutation marker(s) detected."
-  echo "Use 'git commit --no-verify' only with a Bypass-rationale footer."
+  if [ -n "$CHECK_REV" ]; then
+    echo "CONSTITUTION-§11.4.75: $violations mutation marker(s) detected in revision $CHECK_REV."
+  else
+    echo "CONSTITUTION-§11.4.75: commit blocked — $violations mutation marker(s) detected."
+    echo "Use 'git commit --no-verify' only with a Bypass-rationale footer."
+  fi
   exit 1
 fi
 

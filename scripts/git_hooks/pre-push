@@ -1,21 +1,121 @@
 #!/usr/bin/env bash
-set -euo pipefail
+# scripts/git_hooks/pre-push — §11.4.75 mutation-marker check at push time.
+#
+# Purpose:
+#   Refuse a push whose commits bring a §11.4.75 mutation marker into a
+#   first-party production file, using the SAME scope rules and patterns as
+#   the pre-commit hook (it runs that hook in revision mode rather than
+#   duplicating its rules). This catches markers committed with
+#   `git commit --no-verify`.
+#
+# Usage:   installed as .git/hooks/pre-push by scripts/install_git_hooks.sh;
+#          git runs it as: pre-push <remote-name> <remote-url>
+# Inputs:  stdin lines "<local ref> <local sha> <remote ref> <remote sha>"
+# Outputs: nothing on success; on refusal or error a report on stderr
+# Exit:    0 = push may proceed
+#          1 = marker found (the offending files are listed)
+#          2 = a step could not complete (named, with the git error and the
+#              free space of the git directory and of $TMPDIR)
+# Side-effects: none. Reads git objects only: no worktree, no index, no
+#   temporary files, so a full or read-only temp directory cannot break it.
+# Dependencies: bash, git, df; the sibling pre-commit hook.
+# Cross-references: docs/scripts/install_git_hooks.md,
+#   tests/hooks/test_pre_push_hook.sh, BOB-251.
+#
+# History (BOB-251): the previous version created a `git worktree add` of
+# HEAD in a mktemp directory with all output discarded under `set -e`. When
+# /tmp was full the worktree could not be written, the hook died without a
+# word, and git printed only "failed to push some refs". It also ran the
+# pre-commit hook inside that fresh worktree, where nothing is staged, so
+# the check it claimed to enforce always passed. This version reports every
+# failure and checks the content that is actually being pushed.
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TEMP_DIR=$(mktemp -d)
-trap 'rm -rf "$TEMP_DIR"' EXIT
+set -uo pipefail
 
-WORKTREE="$TEMP_DIR/worktree"
-git worktree add "$WORKTREE" HEAD >/dev/null 2>&1
-trap 'git worktree remove "$WORKTREE" >/dev/null 2>&1; rm -rf "$TEMP_DIR"' EXIT
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+COMMIT_HOOK="${HOOK_DIR}/pre-commit"
+REMOTE_NAME="${1:-?}"
 
-COMMIT_HOOK="${SCRIPT_DIR}/pre-commit"
-if [ -x "$COMMIT_HOOK" ]; then
-  cd "$WORKTREE"
-  if ! "$COMMIT_HOOK"; then
-    echo "CONSTITUTION-§11.4.75: push blocked — pre-commit checks would fail on HEAD."
-    exit 1
-  fi
+_disk_report() {
+    local gd
+    gd="$(git rev-parse --absolute-git-dir 2>/dev/null || echo .git)"
+    local label path line
+    echo "  free space:" >&2
+    for label in "git dir" "TMPDIR"; do
+        if [ "$label" = "git dir" ]; then path="$gd"; else path="${TMPDIR:-/tmp}"; fi
+        line="$(df -h -P "$path" 2>/dev/null | awk 'NR==2 {printf "%s free of %s (%s used, mount %s)", $4, $2, $5, $6}')"
+        echo "    $label $path: ${line:-df unavailable}" >&2
+    done
+}
+
+# _step_failed <step> <git error text> <exit code>
+_step_failed() {
+    echo "pre-push: FAILED at step '$1' — the push was NOT checked and is refused." >&2
+    echo "  git error: ${2:-<no output>}" >&2
+    _disk_report
+    echo "  Remediation: free disk space or fix the git error above, then push again." >&2
+    exit "${3:-2}"
+}
+
+_is_zero_sha() { case "$1" in *[!0]*) return 1 ;; *) return 0 ;; esac; }
+
+if [ ! -x "$COMMIT_HOOK" ]; then
+    echo "pre-push: NOTE — $COMMIT_HOOK is not installed/executable; the §11.4.75 push check is skipped." >&2
+    echo "          Run: bash scripts/install_git_hooks.sh" >&2
+    exit 0
 fi
 
+blocked=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+    [ -n "${local_sha:-}" ] || continue
+    _is_zero_sha "$local_sha" && continue      # branch/tag deletion
+
+    # Commits being pushed: everything reachable from local_sha that the
+    # remote does not already have.
+    if ! _is_zero_sha "${remote_sha:-0}" && git cat-file -e "${remote_sha}^{commit}" 2>/dev/null; then
+        range_desc="${remote_sha}..${local_sha}"
+        if ! commits=$(git rev-list "$local_sha" "^$remote_sha" 2>&1); then
+            _step_failed "list commits to push ($range_desc)" "$commits"
+        fi
+    else
+        # New ref, or the remote tip is unknown locally: everything not on
+        # any remote-tracking ref.
+        range_desc="${local_sha} not on any remote-tracking ref"
+        if ! commits=$(git rev-list "$local_sha" --not --remotes 2>&1); then
+            _step_failed "list commits to push ($range_desc)" "$commits"
+        fi
+    fi
+    [ -n "$commits" ] || continue
+
+    files=""
+    while IFS= read -r c; do
+        [ -n "$c" ] || continue
+        if ! changed=$(git diff-tree --no-commit-id --name-only -r --root --diff-filter=ACMR "$c" 2>&1); then
+            _step_failed "list files changed by commit $c" "$changed"
+        fi
+        files+="${changed}"$'\n'
+    done <<<"$commits"
+    files="$(printf '%s' "$files" | sort -u)"
+    [ -n "$files" ] || continue
+
+    out=$(printf '%s\n' "$files" | BOBA_HOOK_CHECK_REV="$local_sha" "$COMMIT_HOOK" 2>&1)
+    rc=$?
+    case "$rc" in
+        0) ;;
+        1)
+            echo "CONSTITUTION-§11.4.75: push of $local_ref to $REMOTE_NAME/$remote_ref blocked —" >&2
+            echo "  mutation marker(s) in content being pushed ($range_desc):" >&2
+            printf '%s\n' "$out" | sed 's/^/    /' >&2
+            blocked=1
+            ;;
+        *)
+            _step_failed "scan pushed files at $local_sha with the pre-commit rules" "$out" 2
+            ;;
+    esac
+done
+
+if [ "$blocked" -ne 0 ]; then
+    echo "  Remediation: remove the marker(s) in a new commit, then push again." >&2
+    exit 1
+fi
 exit 0
