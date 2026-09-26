@@ -114,4 +114,31 @@ else
     fail "locally-edited source with older export NOT reported stale"
 fi
 
+# ---- Case 6: NEGATIVE CONTROL for .docx (BOB-249). The history pathspec once
+# listed only *.md/*.html/*.pdf, so a .docx had no history entry and fell back
+# to mtime — the checkout-order false positive again, for every docx twin.
+mkdir -p c6 && printf 'v1\n' > c6/g.md && printf 'PK-docx-v1\n' > c6/g.docx
+git add -A >/dev/null && git commit -qm "c6 in sync (docx)"
+touch -d '2020-01-01 00:00:01' c6/g.docx
+touch -d '2020-01-01 00:00:02' c6/g.md      # .docx older, like a checkout
+_reset_oracle_cache
+if export_is_stale "$FIX/c6/g.md" "$FIX/c6/g.docx" "$FIX"; then
+    fail "NEGATIVE CONTROL: in-sync .docx reported STALE purely from checkout mtime order"
+else
+    pass "in-sync .docx with checkout-order mtimes is NOT reported stale"
+fi
+
+# ---- Case 7: TEETH for .docx — source committed after its docx, docx mtime ahead.
+mkdir -p c7 && printf 'v1\n' > c7/h.md && printf 'PK-docx-v1\n' > c7/h.docx
+git add -A >/dev/null && git commit -qm "c7 in sync (docx)"
+printf 'v2 changed\n' > c7/h.md
+git add -A >/dev/null && git commit -qm "c7 source-only update"
+touch -d '2031-01-01 00:00:00' c7/h.docx
+_reset_oracle_cache
+if export_is_stale "$FIX/c7/h.md" "$FIX/c7/h.docx" "$FIX"; then
+    pass "history-stale .docx detected despite its newer mtime"
+else
+    fail "history-stale .docx reported FRESH (oracle blind to docx history)"
+fi
+
 finish

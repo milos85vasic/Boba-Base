@@ -245,8 +245,8 @@
 <h1
 id="scriptsgenerate_markdown_exports.sh-the-11.4.65-document-twin-exporter">scripts/generate_markdown_exports.sh
 — the §11.4.65 document-twin exporter</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-09-01T16:20:00Z <strong>Status:</strong> active</p>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-09-26T12:54:43Z <strong>Status:</strong> active</p>
 <h2 id="overview">Overview</h2>
 <p><code>scripts/generate_markdown_exports.sh</code> is the project’s
 canonical §11.4.65 exporter. For every in-scope <code>*.md</code> source
@@ -387,13 +387,89 @@ from a blind instrument is indistinguishable from a clean corpus).</p>
 staleness rule</h2>
 <p>Re-running is a no-op: a second run over unchanged sources rewrites
 nothing and leaves every twin byte-identical.</p>
-<p>Staleness is <strong>not</strong> mtime alone. An <code>.html</code>
-that exists and is mtime-fresh but declares <strong>no charset</strong>
-is treated as STALE and regenerated, because such a file is a
-pre-BOB-169 charset-less fragment that would otherwise persist forever
-and keep re-baking mojibake into any PDF rendered from it. PDF staleness
-additionally keys on the <code>.html</code> (the PDF is derived from
-it), so healing the HTML half cannot leave a corrupt PDF behind.</p>
+<h3
+id="staleness-uses-the-same-oracle-as-the-pre-build-gate-bob-249">Staleness
+uses the same oracle as the pre-build gate (BOB-249)</h3>
+<p>The writer decides whether a twin is stale with
+<code>scripts/lib/export_staleness.sh</code> — the <strong>same</strong>
+content-history oracle <code>CM-MARKDOWN-EXPORT-SYNC</code> (pre-build
+invariant 16) uses, so writer and gate agree on what “stale” means:</p>
+<table>
+<colgroup>
+<col style="width: 83%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>twin missing</td>
+<td>stale</td>
+</tr>
+<tr>
+<td><code>.md</code> (or twin) locally edited / untracked</td>
+<td>stale when the twin’s mtime is older (mtime is meaningful here)</td>
+</tr>
+<tr>
+<td>both committed and clean</td>
+<td>stale only when the <code>.md</code>’s last-touching commit is more
+recent than the twin’s (git history, never mtime)</td>
+</tr>
+<tr>
+<td>file outside any git work tree, or the lib missing next to the
+script</td>
+<td>plain mtime fallback, announced on stderr when the lib is
+missing</td>
+</tr>
+</tbody>
+</table>
+<p>Why not mtime: a fresh <code>git checkout</code> writes
+<code>x.docx</code> and <code>x.html</code> <strong>before</strong>
+<code>x.md</code> (path order), so on a scratch clone 226 of 456
+<code>.md</code> files were strictly newer than their <code>.docx</code>
+and 42 than their <code>.html</code>. The old mtime-only writer rewrote
+all 310 of those twins with zero content change. With the oracle the
+same fresh checkout rewrites <strong>0</strong>, while a real content
+edit of a <code>.md</code> still regenerates all three twins.</p>
+<h3 id="byte-stable-output-source_date_epoch">Byte-stable output
+(SOURCE_DATE_EPOCH)</h3>
+<p>pandoc stamps the wall-clock time into every <code>.docx</code>
+(<code>docProps/core.xml</code>), so each regeneration used to be a
+byte-different file. The script now exports
+<code>SOURCE_DATE_EPOCH</code> per file before rendering:</p>
+<ul>
+<li>the <code>.md</code>’s last-commit time
+(<code>git log -1 --format=%ct -- &lt;md&gt;</code>), so the stamp is a
+property of the source history, identical in every clone;</li>
+<li><code>1785674948</code> (2026-08-02T12:49:08Z, the value
+<code>constitution/scripts/render/render-governance-twins.sh</code>
+pins) for a never-committed <code>.md</code>;</li>
+<li>a <code>SOURCE_DATE_EPOCH</code> the caller already exported
+wins.</li>
+</ul>
+<p>Regenerating identical content twice now yields a byte-identical
+<code>.docx</code>. <code>weasyprint</code> 69.0 PDFs were already
+byte-stable (measured); HTML from <code>pandoc --standalone</code>
+carries no timestamp. <strong>Limit:</strong> a twin rendered while its
+<code>.md</code> is still uncommitted carries the <em>previous</em>
+commit’s time; a forced re-render after that <code>.md</code> is
+committed carries the new one. Output is deterministic per (content,
+history), not per content alone.</p>
+<h3 id="the-charset-self-heal-rule">The charset self-heal rule</h3>
+<p>Staleness is <strong>not</strong> history alone. An
+<code>.html</code> that exists and is mtime-fresh but declares
+<strong>no charset</strong> is treated as STALE and regenerated, because
+such a file is a pre-BOB-169 charset-less fragment that would otherwise
+persist forever and keep re-baking mojibake into any PDF rendered from
+it. PDF staleness additionally keys on the <code>.html</code> (the PDF
+is derived from it), so healing the HTML half cannot leave a corrupt PDF
+behind. An HTML regenerated in the <strong>current</strong> run always
+re-derives its PDF explicitly: the oracle caches the working-tree state
+once per run, so to it a just-rewritten HTML still looks clean.</p>
 <h2 id="internal-behaviour-worth-knowing">Internal behaviour worth
 knowing</h2>
 <h3
@@ -441,7 +517,14 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> tests/unit/test_export_pdf_charset_integrity.sh</span>
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># DOCX shape + idempotency</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> tests/unit/test_docx_export.sh</span></code></pre></div>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> tests/unit/test_docx_export.sh</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># checkout-order touch rewrites nothing; content edit / missing twin /</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># charset fragment still regenerate; docx + pdf byte-stable</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> tests/unit/test_generate_markdown_exports_content_staleness.sh</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="co"># the shared staleness oracle (incl. .docx history)</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> tests/unit/test_export_staleness_oracle.sh</span></code></pre></div>
 <p>When checking a heading survived into the HTML, match against a
 <strong>whitespace-normalized</strong> stream, not lines: pandoc
 hard-wraps its HTML at ~72 columns, so a heading routinely spans a
@@ -457,13 +540,15 @@ baseline.</li>
 deliberately narrow CONTINUATION-only regen; see its own guide for why
 it does not call this.</li>
 <li><code>scripts/lib/export_staleness.sh</code> — the staleness oracle
-used by pre-build.</li>
+shared by this script and the pre-build gate.</li>
 <li><code>tests/unit/test_export_pdf_charset_integrity.sh</code> — the
 paired §1.1 guard.</li>
 </ul>
-<p><strong>Last verified:</strong> 2026-09-01 — full run over nine
-changed documents produced 27 twins; charset gate PASS (355/355
-declaring a charset, baseline 0); PDF charset-integrity, DOCX, and
-staleness-oracle guards all PASS.</p>
+<p><strong>Last verified:</strong> 2026-09-26 — fresh scratch-clone
+checkout of <code>docs/</code> + <code>README.*</code> (456
+<code>.md</code>): 310 twins rewritten before the fix, 0 after; a
+control edit still regenerated its three twins. Content-staleness,
+oracle, DOCX, PDF charset-integrity and path-argument guards all
+PASS.</p>
 </body>
 </html>

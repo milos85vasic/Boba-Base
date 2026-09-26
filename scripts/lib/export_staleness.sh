@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# export_staleness.sh — decide whether a generated export sibling (.html/.pdf)
-# is STALE relative to its .md source, for CM-MARKDOWN-EXPORT-SYNC (§11.4.65).
+# export_staleness.sh — decide whether a generated export sibling (.html/.pdf/.docx)
+# is STALE relative to its .md source, for CM-MARKDOWN-EXPORT-SYNC (§11.4.65)
+# AND for the writer, scripts/generate_markdown_exports.sh (BOB-249: writer and
+# gate must share one definition of "stale").
 #
 # WHY NOT PLAIN MTIME (measured 2026-08-20, this repo):
 #   Git does NOT preserve mtimes, and on checkout ".html" sorts BEFORE ".md",
@@ -55,6 +57,12 @@ _export_build_maps() {
     # ordinal of each path's last-touching commit (0 = most recent).
     # One git log pass; `git log` is newest-first, so the FIRST time a path
     # appears is its most recent change.
+    # '*.docx' is in the pathspec (BOB-249): without it a .docx had no history
+    # entry and fell back to mtime, so every docx twin was "stale" after a fresh
+    # checkout. Adding a pattern only inserts more commits into the walk; the
+    # relative order of any two commits (and same-commit equality) is unchanged,
+    # so every existing .html/.pdf verdict is identical (verified over the real
+    # repo: 77 stale pairs before and after, same list).
     # NOTE: the format MUST carry a placeholder. `--format='C'` (a bare
     # literal) makes git emit NOTHING AT ALL with --name-only — measured, the
     # map came back empty and every pair silently fell back to mtime, which
@@ -65,7 +73,7 @@ _export_build_maps() {
     while IFS=$'\t' read -r p t; do
         [[ -n "$p" ]] && _EXPORT_HIST_CT["$p"]="$t"
     done < <(
-        cd "$root" 2>/dev/null && git log --format='C%ct' --name-only -- '*.md' '*.html' '*.pdf' 2>/dev/null \
+        cd "$root" 2>/dev/null && git log --format='C%ct' --name-only -- '*.md' '*.html' '*.pdf' '*.docx' 2>/dev/null \
         | awk '/^C[0-9]+$/{i++;next} NF&&!(($0) in s){s[$0]=i; print $0"\t"i}'
     )
 

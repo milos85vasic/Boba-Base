@@ -1,7 +1,7 @@
 # scripts/generate_markdown_exports.sh — the §11.4.65 document-twin exporter
 
-**Revision:** 1
-**Last modified:** 2026-09-01T16:20:00Z
+**Revision:** 2
+**Last modified:** 2026-09-26T12:54:43Z
 **Status:** active
 
 ## Overview
@@ -89,12 +89,58 @@ from a clean corpus).
 Re-running is a no-op: a second run over unchanged sources rewrites nothing
 and leaves every twin byte-identical.
 
-Staleness is **not** mtime alone. An `.html` that exists and is mtime-fresh
+### Staleness uses the same oracle as the pre-build gate (BOB-249)
+
+The writer decides whether a twin is stale with
+`scripts/lib/export_staleness.sh` — the **same** content-history oracle
+`CM-MARKDOWN-EXPORT-SYNC` (pre-build invariant 16) uses, so writer and gate
+agree on what "stale" means:
+
+| Situation                                   | Verdict |
+|---------------------------------------------|---------|
+| twin missing                                | stale   |
+| `.md` (or twin) locally edited / untracked  | stale when the twin's mtime is older (mtime is meaningful here) |
+| both committed and clean                    | stale only when the `.md`'s last-touching commit is more recent than the twin's (git history, never mtime) |
+| file outside any git work tree, or the lib missing next to the script | plain mtime fallback, announced on stderr when the lib is missing |
+
+Why not mtime: a fresh `git checkout` writes `x.docx` and `x.html` **before**
+`x.md` (path order), so on a scratch clone 226 of 456 `.md` files were
+strictly newer than their `.docx` and 42 than their `.html`. The old
+mtime-only writer rewrote all 310 of those twins with zero content change.
+With the oracle the same fresh checkout rewrites **0**, while a real content
+edit of a `.md` still regenerates all three twins.
+
+### Byte-stable output (SOURCE_DATE_EPOCH)
+
+pandoc stamps the wall-clock time into every `.docx` (`docProps/core.xml`),
+so each regeneration used to be a byte-different file. The script now
+exports `SOURCE_DATE_EPOCH` per file before rendering:
+
+- the `.md`'s last-commit time (`git log -1 --format=%ct -- <md>`), so the
+  stamp is a property of the source history, identical in every clone;
+- `1785674948` (2026-08-02T12:49:08Z, the value
+  `constitution/scripts/render/render-governance-twins.sh` pins) for a
+  never-committed `.md`;
+- a `SOURCE_DATE_EPOCH` the caller already exported wins.
+
+Regenerating identical content twice now yields a byte-identical `.docx`.
+`weasyprint` 69.0 PDFs were already byte-stable (measured); HTML from
+`pandoc --standalone` carries no timestamp. **Limit:** a twin rendered while
+its `.md` is still uncommitted carries the *previous* commit's time; a forced
+re-render after that `.md` is committed carries the new one. Output is
+deterministic per (content, history), not per content alone.
+
+### The charset self-heal rule
+
+Staleness is **not** history alone. An `.html` that exists and is mtime-fresh
 but declares **no charset** is treated as STALE and regenerated, because such
 a file is a pre-BOB-169 charset-less fragment that would otherwise persist
 forever and keep re-baking mojibake into any PDF rendered from it. PDF
 staleness additionally keys on the `.html` (the PDF is derived from it), so
-healing the HTML half cannot leave a corrupt PDF behind.
+healing the HTML half cannot leave a corrupt PDF behind. An HTML regenerated
+in the **current** run always re-derives its PDF explicitly: the oracle caches
+the working-tree state once per run, so to it a just-rewritten HTML still
+looks clean.
 
 ## Internal behaviour worth knowing
 
@@ -138,6 +184,13 @@ bash tests/unit/test_export_pdf_charset_integrity.sh
 
 # DOCX shape + idempotency
 bash tests/unit/test_docx_export.sh
+
+# checkout-order touch rewrites nothing; content edit / missing twin /
+# charset fragment still regenerate; docx + pdf byte-stable
+bash tests/unit/test_generate_markdown_exports_content_staleness.sh
+
+# the shared staleness oracle (incl. .docx history)
+bash tests/unit/test_export_staleness_oracle.sh
 ```
 
 When checking a heading survived into the HTML, match against a
@@ -152,9 +205,11 @@ that `&` is correctly emitted as `&amp;`.
   script's output; reads a monotone-decreasing ratchet baseline.
 - `scripts/regenerate-continuation-exports.sh` — deliberately narrow
   CONTINUATION-only regen; see its own guide for why it does not call this.
-- `scripts/lib/export_staleness.sh` — the staleness oracle used by pre-build.
+- `scripts/lib/export_staleness.sh` — the staleness oracle shared by this
+  script and the pre-build gate.
 - `tests/unit/test_export_pdf_charset_integrity.sh` — the paired §1.1 guard.
 
-**Last verified:** 2026-09-01 — full run over nine changed documents produced
-27 twins; charset gate PASS (355/355 declaring a charset, baseline 0); PDF
-charset-integrity, DOCX, and staleness-oracle guards all PASS.
+**Last verified:** 2026-09-26 — fresh scratch-clone checkout of `docs/` +
+`README.*` (456 `.md`): 310 twins rewritten before the fix, 0 after; a
+control edit still regenerated its three twins. Content-staleness, oracle,
+DOCX, PDF charset-integrity and path-argument guards all PASS.

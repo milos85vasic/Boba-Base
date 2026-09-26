@@ -4,8 +4,7 @@
 #
 # DOCX export (BOB-011) is produced directly from the markdown via
 # `pandoc -f markdown -t docx`; it shares the same file-discovery scope
-# and the same "only regenerate when .md is newer than the sibling"
-# idempotency rule as HTML/PDF.
+# and the same staleness rule as HTML/PDF.
 #
 # Usage:
 #   bash scripts/generate_markdown_exports.sh                # full in-scope sweep
@@ -20,6 +19,9 @@
 #                  would churn the CM-EXPORT-CHARSET-VALID ratchet baseline).
 #   $BOBA_EXPORT_PYTHON (optional)  Interpreter to use for the python-markdown
 #                  leg. Absent -> auto-resolved (see PY_MD below).
+#   $SOURCE_DATE_EPOCH (optional)   When exported by the caller it pins every
+#                  render's timestamp. Absent -> derived per file from the .md's
+#                  last-commit time (constant 1785674948 for untracked files).
 #
 # Outputs:
 #   <name>.html  always (pandoc --standalone, or python-markdown + charset head)
@@ -33,10 +35,18 @@
 #   NEVER emits a blank or placeholder file: a leg that cannot run writes nothing.
 #
 # Side-effects: writes .html/.pdf/.docx siblings next to each source .md.
-# Idempotent: only regenerates when the source is newer than its sibling (plus
-#             the charset self-heal rule documented in convert_file below).
+# Idempotent: regenerates a twin only when it is STALE per
+#             scripts/lib/export_staleness.sh — the same oracle the pre-build
+#             gate uses (missing twin; locally-edited source newer than twin;
+#             or, for committed files, the .md's last commit more recent than
+#             the twin's). A pure mtime difference (touch, checkout order)
+#             never regenerates. Plus the charset self-heal rule in convert_file.
+#             Output is byte-stable: SOURCE_DATE_EPOCH is pinned per file.
+#             Dependencies: git (for the oracle; outside a work tree -> mtime).
 #
 # Cross-references: docs/scripts/generate_markdown_exports.md (companion guide),
+#   scripts/lib/export_staleness.sh (shared staleness oracle),
+#   tests/unit/test_generate_markdown_exports_content_staleness.sh (BOB-249 guard),
 #   scripts/pre_build/check_cm_export_charset_valid.sh (the gate over its output),
 #   tests/unit/test_export_pdf_charset_integrity.sh (the paired §1.1 guard).
 #
@@ -101,11 +111,93 @@ if command -v pandoc &>/dev/null; then
     HAS_PANDOC_DOCX=true
 fi
 
+# STALENESS ORACLE — the SAME one the gate uses (BOB-249).
+# The writer used to decide staleness with plain mtime (`$md -nt $twin`) while
+# CM-MARKDOWN-EXPORT-SYNC (invariant 16) uses the content-history ordinal oracle
+# below. A fresh checkout writes x.docx and x.html BEFORE x.md (path order), so
+# measured on a scratch clone 226 of 455 .md files were strictly newer than their
+# .docx and 34 than their .html: the writer rewrote them all with zero content
+# change. Sharing the oracle makes writer and gate agree on what "stale" means:
+# a clean (committed) source is judged by git history, a locally-edited or
+# untracked one by mtime, a missing twin is always stale.
+# The lib is resolved next to THIS script. When absent (a test copying only this
+# file into a sandbox) or when a file is not inside a git work tree, we fall back
+# to plain mtime — the oracle's own documented "unresolvable" rule — and say so
+# on stderr, never silently (§11.4.201(6)).
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HAS_ORACLE=false
+if [[ -f "${SCRIPT_DIR}/lib/export_staleness.sh" ]]; then
+    # shellcheck source=scripts/lib/export_staleness.sh
+    source "${SCRIPT_DIR}/lib/export_staleness.sh"
+    HAS_ORACLE=true
+else
+    echo "WARN: ${SCRIPT_DIR}/lib/export_staleness.sh not found — staleness falls back to plain mtime" >&2
+fi
+
+# Deterministic timestamp for generated exports (BOB-249). pandoc stamps the
+# wall-clock time into docx docProps/core.xml, so every regeneration was a
+# byte-different .docx even with zero content change. SOURCE_DATE_EPOCH is the
+# reproducible-builds knob pandoc honours (the same one
+# constitution/scripts/render/render-governance-twins.sh pins). We derive it PER
+# FILE from the .md's last-commit time, so the stamp is a property of the source
+# history, identical in every clone. Untracked (never-committed) sources get a
+# fixed, content-independent constant: 1785674948 = 2026-08-02T12:49:08Z, the
+# value the governance renderer uses. An explicitly exported SOURCE_DATE_EPOCH
+# from the caller wins (standard reproducible-builds convention).
+# Limit (documented, not hidden): a twin generated while its .md is dirty carries
+# the PREVIOUS commit's time; once that .md is committed a forced regeneration
+# carries the new commit's time — deterministic per (content, history) pair, not
+# per content alone. The staleness oracle does not force such regenerations.
+# weasyprint 69.0 PDFs are already byte-stable (measured); the export is applied
+# to it anyway at no cost.
+DEFAULT_SOURCE_DATE_EPOCH=1785674948
+CALLER_SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-}"
+
+declare -A _ROOT_OF_DIR=()
+# repo_root_of <abs_dir> -> physical git toplevel, or "" when not in a work tree.
+repo_root_of() {
+    local d="$1"
+    if [[ -z "${_ROOT_OF_DIR[$d]+x}" ]]; then
+        _ROOT_OF_DIR[$d]="$(git -C "$d" rev-parse --show-toplevel 2>/dev/null || true)"
+    fi
+    printf '%s' "${_ROOT_OF_DIR[$d]}"
+}
+
+# is_stale <source> <twin> <root> — 0 = stale. Oracle when available + rooted,
+# else plain mtime (missing twin is always stale).
+is_stale() {
+    local src="$1" twin="$2" root="$3"
+    [[ -f "$twin" ]] || return 0
+    if $HAS_ORACLE && [[ -n "$root" ]]; then
+        export_is_stale "$src" "$twin" "$root"
+        return $?
+    fi
+    [[ "$src" -nt "$twin" ]]
+}
+
+# source_epoch <abs_md> <root> -> SOURCE_DATE_EPOCH value for this file.
+source_epoch() {
+    local md="$1" root="$2" ct=""
+    if [[ -n "$CALLER_SOURCE_DATE_EPOCH" ]]; then printf '%s' "$CALLER_SOURCE_DATE_EPOCH"; return; fi
+    if [[ -n "$root" ]]; then
+        ct="$(git -C "$root" log -1 --format=%ct -- "${md#"${root}/"}" 2>/dev/null || true)"
+    fi
+    printf '%s' "${ct:-$DEFAULT_SOURCE_DATE_EPOCH}"
+}
+
 convert_file() {
-    local md="$1"
+    # Absolute, physical path: the oracle keys on "<root>/<rel>" and git's
+    # toplevel is physical, so a relative or symlinked argument must be
+    # normalised first or every lookup would miss (and fall back to mtime).
+    local md
+    md="$(cd "$(dirname "$1")" && pwd -P)/$(basename "$1")"
     local html="${md%.md}.html"
     local pdf="${md%.md}.pdf"
     local docx="${md%.md}.docx"
+    local root html_regenerated=false
+    root="$(repo_root_of "$(dirname "$md")")"
+    export SOURCE_DATE_EPOCH
+    SOURCE_DATE_EPOCH="$(source_epoch "$md" "$root")"
 
     # Generate HTML
     # STALENESS IS NOT ONLY mtime (BOB-169 review, finding F7 + acceptance (c)).
@@ -115,7 +207,8 @@ convert_file() {
     # reviewer). Measured 2026-08-23: 303 such fragments, 302 of them mtime-fresh.
     # Treat "HTML exists but declares no charset" as STALE so the corpus self-heals
     # on the next run instead of requiring a manual sweep.
-    if [[ ! -f "$html" || "$md" -nt "$html" ]] || ! grep -qiE '<meta[^>]+charset' "$html" 2>/dev/null; then
+    if is_stale "$md" "$html" "$root" || ! grep -qiE '<meta[^>]+charset' "$html" 2>/dev/null; then
+        html_regenerated=true
         mkdir -p "$(dirname "$html")"
         HTML_MISSING=$((HTML_MISSING + 1))
 
@@ -158,7 +251,12 @@ open(sys.argv[2], 'w', encoding='utf-8').write(out)
         # measures HTML only, so after a bulk run the gate would report full
         # compliance while 288 corrupt PDFs remained with nothing measuring them —
         # a visible defect turned invisible, a §11.4 PASS-bluff at the metric layer.
-        if [[ ! -f "$pdf" || "$md" -nt "$pdf" || "$html" -nt "$pdf" ]]; then
+        # html_regenerated is checked explicitly: the oracle caches the
+        # working-tree dirty set once per run, so an HTML rewritten moments ago
+        # in THIS run still reads "clean" to it — without this flag a healed
+        # charset fragment would leave its corrupt PDF in place (guarded by T4 of
+        # tests/unit/test_generate_markdown_exports_content_staleness.sh).
+        if $html_regenerated || is_stale "$md" "$pdf" "$root" || is_stale "$html" "$pdf" "$root"; then
             mkdir -p "$(dirname "$pdf")"
             PDF_MISSING=$((PDF_MISSING + 1))
             weasyprint "$html" "$pdf" 2>/dev/null && PDF_GENERATED=$((PDF_GENERATED + 1)) || true
@@ -167,7 +265,7 @@ open(sys.argv[2], 'w', encoding='utf-8').write(out)
 
     # Generate DOCX directly from the markdown via pandoc if available.
     if $HAS_PANDOC_DOCX; then
-        if [[ ! -f "$docx" || "$md" -nt "$docx" ]]; then
+        if is_stale "$md" "$docx" "$root"; then
             mkdir -p "$(dirname "$docx")"
             DOCX_MISSING=$((DOCX_MISSING + 1))
             pandoc -f markdown -t docx -o "$docx" "$md" 2>/dev/null && DOCX_GENERATED=$((DOCX_GENERATED + 1)) || true
