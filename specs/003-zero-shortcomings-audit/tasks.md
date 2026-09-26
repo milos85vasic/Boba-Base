@@ -96,7 +96,7 @@ isolation — each gets its test added to the task that owns the relevant code:
   `YYYYMMDDTHHMMSSZ-pid<PID>` string to stdout (matching this project's existing
   `run_id` convention already used across `docs/qa/**/`).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```bash
 cat > tests/audit/test_audit_run_id.sh <<'EOF'
@@ -133,12 +133,12 @@ EOF
 chmod +x tests/audit/test_audit_run_id.sh
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `mkdir -p tests/audit scripts/lib && bash tests/audit/test_audit_run_id.sh`
 Expected: FAIL — `scripts/lib/audit_run_id.sh: No such file or directory`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```bash
 cat > scripts/lib/audit_run_id.sh <<'EOF'
@@ -154,12 +154,12 @@ EOF
 chmod +x scripts/lib/audit_run_id.sh
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `bash tests/audit/test_audit_run_id.sh`
 Expected: `test_audit_run_id: 2 passed, 0 failed`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 bash scripts/commit-push-all.sh --scope scripts/lib/audit_run_id.sh --scope tests/audit/test_audit_run_id.sh \
@@ -194,7 +194,7 @@ both required before ANY user story's enumeration or dispatch logic can run.
   `AUDIT_RESOURCE_CEILING_PCT=40`, and the function `audit_dispatch_bounded()` which
   wraps a command with `nice`/`ionice` per data-model.md's `ExecutionPolicy` entity.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```bash
 cat > tests/audit/test_audit_execution_policy.sh <<'EOF'
@@ -235,12 +235,12 @@ EOF
 chmod +x tests/audit/test_audit_execution_policy.sh
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bash tests/audit/test_audit_execution_policy.sh`
 Expected: FAIL — `scripts/lib/audit_execution_policy.sh: No such file or directory`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```bash
 cat > scripts/lib/audit_execution_policy.sh <<'EOF'
@@ -270,12 +270,12 @@ EOF
 chmod +x scripts/lib/audit_execution_policy.sh
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `bash tests/audit/test_audit_execution_policy.sh`
 Expected: `test_audit_execution_policy: 5 passed, 0 failed`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 bash scripts/commit-push-all.sh --scope scripts/lib/audit_execution_policy.sh --scope tests/audit/test_audit_execution_policy.sh \
@@ -301,7 +301,7 @@ bash scripts/commit-push-all.sh --scope scripts/lib/audit_execution_policy.sh --
   `channel != automated-helixqa` and NO non-empty `**escape-audit:**` field
   (data-model.md's `CoverageEscapeRecord` validation rule).
 
-- [ ] **Step 1: Write the failing tests + fixtures**
+- [x] **Step 1: Write the failing tests + fixtures**
 
 ```bash
 mkdir -p tests/audit/fixtures
@@ -404,12 +404,12 @@ EOF
 chmod +x tests/audit/test_audit_ledger_parser.sh
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bash tests/audit/test_audit_ledger_parser.sh`
 Expected: FAIL — `scripts/lib/audit_ledger_parser.sh: No such file or directory`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```bash
 cat > scripts/lib/audit_ledger_parser.sh <<'EOF'
@@ -498,12 +498,12 @@ EOF
 chmod +x scripts/lib/audit_ledger_parser.sh
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `bash tests/audit/test_audit_ledger_parser.sh`
 Expected: `test_audit_ledger_parser: 5 passed, 0 failed`
 
-- [ ] **Step 5: `[REVIEW]` Paired §1.1 mutation — prove the counts are load-bearing**
+- [x] **Step 5: `[REVIEW]` Paired §1.1 mutation — prove the counts are load-bearing**
 
 ```bash
 cp scripts/lib/audit_ledger_parser.sh /tmp/audit_ledger_parser_mutated.sh
@@ -518,7 +518,7 @@ rm -f /tmp/audit_ledger_parser_mutated.sh
 Record this mutation's output in the task's commit message per this project's own
 §1.1 discipline — it is the evidence the real (unmutated) test is not a bluff.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 bash scripts/commit-push-all.sh --scope scripts/lib/audit_ledger_parser.sh --scope tests/audit/test_audit_ledger_parser.sh --scope tests/audit/fixtures/ \
@@ -561,7 +561,7 @@ directions (quickstart.md Step 1).
 - Produces: the `enumerate` CLI mode per `contracts/cli.md` — human-readable by default,
   `--json` emits `{"backlog_open": N, "gates_unimplemented": N, "escapes_open": N}`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```bash
 cat > tests/audit/test_zero_shortcomings_audit_enumerate.sh <<'EOF'
@@ -610,12 +610,12 @@ EOF
 chmod +x tests/audit/test_zero_shortcomings_audit_enumerate.sh
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_enumerate.sh`
 Expected: FAIL — `scripts/zero_shortcomings_audit.sh: No such file or directory`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```bash
 cat > scripts/zero_shortcomings_audit.sh <<'EOF'
@@ -726,12 +726,12 @@ EOF
 chmod +x scripts/zero_shortcomings_audit.sh
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_enumerate.sh`
 Expected: `test_zero_shortcomings_audit_enumerate: 4 passed, 0 failed`
 
-- [ ] **Step 5: Write the companion doc (§11.4.18) and regenerate export twins**
+- [x] **Step 5: Write the companion doc (§11.4.18) and regenerate export twins**
 
 ```bash
 cat > docs/scripts/zero_shortcomings_audit.md <<'EOF'
@@ -762,7 +762,7 @@ EOF
 bash scripts/workable-items-export.sh
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --scope docs/scripts/zero_shortcomings_audit.md --scope docs/scripts/zero_shortcomings_audit.html --scope docs/scripts/zero_shortcomings_audit.pdf --scope docs/scripts/zero_shortcomings_audit.docx --scope tests/audit/test_zero_shortcomings_audit_enumerate.sh \
@@ -791,7 +791,7 @@ Task 5 creates it, so it cannot be done here without a forward reference.)
   and its `operator_block_details.unblock_condition` (never just a bare count — FR-007's
   "specific, observable condition" requirement, and spec.md SC-006).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```bash
 cat > tests/audit/test_zero_shortcomings_audit_blocked_surface.sh <<'EOF'
@@ -825,12 +825,12 @@ EOF
 chmod +x tests/audit/test_zero_shortcomings_audit_blocked_surface.sh
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_blocked_surface.sh`
 Expected: FAIL — `--surface blocked` is not yet a recognized value in `cmd_enumerate`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```bash
 sed -i '$ d' scripts/zero_shortcomings_audit.sh
@@ -850,17 +850,17 @@ Extend `cmd_enumerate`'s `case` statement (the `--surface` option handling) to a
 `blocked` branch that calls `count_blocked_with_conditions` and prints its output
 directly — never collapsing it to a bare count, per FR-007.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_blocked_surface.sh`
 Expected: `test_zero_shortcomings_audit_blocked_surface: 2 passed, 0 failed`
 
-- [ ] **Step 5: Re-run Task 4's test to confirm no regression**
+- [x] **Step 5: Re-run Task 4's test to confirm no regression**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_enumerate.sh`
 Expected: `test_zero_shortcomings_audit_enumerate: 4 passed, 0 failed` (unchanged)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --scope tests/audit/test_zero_shortcomings_audit_blocked_surface.sh \
@@ -894,7 +894,7 @@ cross-item side effect is detected and reverted.
 - Produces: `cmd_verify_closure <item-id> [--reopen-on-mismatch]` per `contracts/cli.md`
   — exit `0` (match), `1` (mismatch), `2` (no evidence file found for that item).
 
-- [ ] **Step 1: Write the failing test + fixtures**
+- [x] **Step 1: Write the failing test + fixtures**
 
 ```bash
 mkdir -p tests/audit/fixtures/docs_qa_fixture/BOB-FIXTURE-MATCH
@@ -962,13 +962,13 @@ EOF
 chmod +x tests/audit/test_zero_shortcomings_audit_verify_closure.sh
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_verify_closure.sh`
 Expected: FAIL — `verify-closure: not yet implemented (Task 5)`, all three checks fail
 (the placeholder always exits 2).
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 **Ordering constraint** (caught in self-review): `scripts/zero_shortcomings_audit.sh`
 always ends with the line `main "$@"` as its LAST line (Task 4). Every later task that
@@ -1060,17 +1060,17 @@ final line) from
 `verify-closure) shift; print_error "verify-closure: not yet implemented (Task 5)"; return 2 ;;`
 to `verify-closure) shift; cmd_verify_closure "$@" ;;`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_verify_closure.sh`
 Expected: `test_zero_shortcomings_audit_verify_closure: 3 passed, 0 failed`
 
-- [ ] **Step 5: Re-run Task 4's enumerate test to confirm no regression**
+- [x] **Step 5: Re-run Task 4's enumerate test to confirm no regression**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_enumerate.sh`
 Expected: `test_zero_shortcomings_audit_enumerate: 4 passed, 0 failed` (unchanged)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --scope tests/audit/test_zero_shortcomings_audit_verify_closure.sh --scope tests/audit/fixtures/docs_qa_fixture/ \
@@ -1101,7 +1101,7 @@ which does not exist before Task 5 creates it.
   never be silently assumed to already meet the strict default; it is deliberately
   the layer most likely to be caught refused until someone labels it correctly.
 
-- [ ] **Step 1: Write the failing test + fixtures**
+- [x] **Step 1: Write the failing test + fixtures**
 
 ```bash
 mkdir -p tests/audit/fixtures/docs_qa_fixture/BOB-FIXTURE-LAYER-OK
@@ -1161,13 +1161,13 @@ EOF
 chmod +x tests/audit/test_zero_shortcomings_audit_evidence_layer.sh
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_evidence_layer.sh`
 Expected: FAIL — both fixtures currently pass through `cmd_verify_closure` identically
 (the layer field is not yet read), so `weak_rc` is `0`, not `2`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Modify `cmd_verify_closure` (Task 5) in place — add near its top, after option parsing:
 
@@ -1212,12 +1212,12 @@ And, immediately after `evidence_file` is confirmed to exist (before the
     fi
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_evidence_layer.sh`
 Expected: `test_zero_shortcomings_audit_evidence_layer: 2 passed, 0 failed`
 
-- [ ] **Step 5: Re-run Task 5's own test to confirm no regression**
+- [x] **Step 5: Re-run Task 5's own test to confirm no regression**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_verify_closure.sh`
 Expected: `test_zero_shortcomings_audit_verify_closure: 3 passed, 0 failed` (unchanged —
@@ -1233,7 +1233,7 @@ refused with exit `2` unless Task 5's fixture is updated in this step to add
 green afterward — this cross-task fixture dependency is exactly the kind of thing this
 step's re-run exists to catch.)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --scope tests/audit/test_zero_shortcomings_audit_evidence_layer.sh --scope tests/audit/fixtures/docs_qa_fixture/ \
@@ -1266,7 +1266,7 @@ verification command.
   `§11.4.10.A` leak-audit already defines — never a second, independently-invented
   pattern set (§11.4.251).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```bash
 cat > tests/audit/test_zero_shortcomings_audit_redaction.sh <<'EOF'
@@ -1310,12 +1310,12 @@ EOF
 chmod +x tests/audit/test_zero_shortcomings_audit_redaction.sh
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_redaction.sh`
 Expected: FAIL — `audit_redact_before_write: command not found`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 First, locate this project's EXISTING §11.4.10.A leak-audit pattern set (never invent a
 second one):
@@ -1362,19 +1362,19 @@ which creates `cmd_standing_check` calling `audit_redact_before_write` (already 
 from THIS task) on its own log-line write from the start — never written unredacted even
 transiently.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_redaction.sh`
 Expected: `test_zero_shortcomings_audit_redaction: 4 passed, 0 failed`
 
-- [ ] **Step 5: `[REVIEW]` Re-run every prior task's own test suite**
+- [x] **Step 5: `[REVIEW]` Re-run every prior task's own test suite**
 
 Run: `for f in tests/audit/test_zero_shortcomings_audit_*.sh; do bash "$f"; done`
 Expected: zero regressions across every test written by Tasks 4 through 5B — this step
 requires review before merge, since redaction wrapping touches shared output paths
 every later task's own test also exercises.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --scope tests/audit/test_zero_shortcomings_audit_redaction.sh \
@@ -1396,7 +1396,7 @@ bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --sco
   verification command; corruption incidents are appended to
   `docs/qa/zero_shortcomings_audit/<run-id>.log`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 This test reproduces the EXACT incident class this feature's design is modeled on
 (research.md §5, the real `docs/qa/BOB-109/*.json` incident): a command that, as a side
@@ -1456,12 +1456,12 @@ EOF
 chmod +x tests/audit/test_zero_shortcomings_audit_corruption_guard.sh
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_corruption_guard.sh`
 Expected: FAIL — `audit_snapshot_tracked_evidence: command not found`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Same ordering constraint as Task 5 (`main "$@"` must stay last):
 
@@ -1506,12 +1506,12 @@ EOF
 echo 'main "$@"' >> scripts/zero_shortcomings_audit.sh
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_corruption_guard.sh`
 Expected: `test_zero_shortcomings_audit_corruption_guard: 3 passed, 0 failed`
 
-- [ ] **Step 5: `[REVIEW]` Wire the guard into `verify-closure`**
+- [x] **Step 5: `[REVIEW]` Wire the guard into `verify-closure`**
 
 Modify `cmd_verify_closure` (Task 5) so it snapshots before `eval "$recorded_command"`
 and calls `audit_detect_and_revert_corruption` after, appending any incident to
@@ -1519,7 +1519,7 @@ and calls `audit_detect_and_revert_corruption` after, appending any incident to
 step requires review before merge, per `plan.md`'s Review Gates — it runs on every
 future closure, so a defect here could itself corrupt evidence.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --scope tests/audit/test_zero_shortcomings_audit_corruption_guard.sh \
@@ -1545,7 +1545,7 @@ real extension to `enumerate`.
   ordered by `reopens_count` DESC, `last_modified` DESC (the exact predicate
   research.md §7 names), instead of the default surface-count-only output.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```bash
 cat > tests/audit/test_zero_shortcomings_audit_risk_order.sh <<'EOF'
@@ -1583,12 +1583,12 @@ EOF
 chmod +x tests/audit/test_zero_shortcomings_audit_risk_order.sh
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_risk_order.sh`
 Expected: FAIL — `--sort-by-risk` is not yet a recognized option.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Extend `cmd_enumerate`'s option parsing to accept `--sort-by-risk`, and add:
 
@@ -1609,12 +1609,12 @@ Wire the `--sort-by-risk` flag in `cmd_enumerate` so, when set together with
 `--surface backlog`, it calls `list_backlog_risk_ordered` and prints its output instead
 of the plain count.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_risk_order.sh`
 Expected: `test_zero_shortcomings_audit_risk_order: 1 passed, 0 failed`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --scope tests/audit/test_zero_shortcomings_audit_risk_order.sh \
@@ -1647,7 +1647,7 @@ the analysis found.
   item's nature remains the ongoing, judgment-driven backlog-closure work `plan.md`
   already scopes (T-POLISH-4), not something this mechanism can or should infer.
 
-- [ ] **Step 1: Write the failing test + fixture**
+- [x] **Step 1: Write the failing test + fixture**
 
 ```bash
 mkdir -p tests/audit/fixtures/docs_qa_fixture/BOB-FIXTURE-NO-TEST-TYPE
@@ -1693,13 +1693,13 @@ EOF
 chmod +x tests/audit/test_zero_shortcomings_audit_test_type_declared.sh
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_test_type_declared.sh`
 Expected: FAIL — the fixture currently passes through `cmd_verify_closure` (rc=0), since
 no test-type check exists yet.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Modify `cmd_verify_closure`, immediately after the Task 5B evidence-layer check, insert:
 
@@ -1720,12 +1720,12 @@ Modify `cmd_verify_closure`, immediately after the Task 5B evidence-layer check,
     fi
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_test_type_declared.sh`
 Expected: `test_zero_shortcomings_audit_test_type_declared: 1 passed, 0 failed`
 
-- [ ] **Step 5: `[REVIEW]` Re-run Tasks 5, 5B, and 5C's own fixtures — add the now-required field**
+- [x] **Step 5: `[REVIEW]` Re-run Tasks 5, 5B, and 5C's own fixtures — add the now-required field**
 
 This new requirement affects every EARLIER fixture. Update
 `BOB-FIXTURE-MATCH`, `BOB-FIXTURE-MISMATCH`, `BOB-FIXTURE-LAYER-OK` to each add a
@@ -1743,7 +1743,7 @@ forced an update to an earlier task's fixtures (the first was Task 5B on Task 5'
 fixtures) — confirming this class of cross-task interaction is being caught
 systematically, not accidentally.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --scope tests/audit/test_zero_shortcomings_audit_test_type_declared.sh --scope tests/audit/fixtures/docs_qa_fixture/ \
@@ -1771,7 +1771,7 @@ never-tracked gate name does not spuriously move the reported count.
 - Produces: `cmd_standing_check` — equivalent to `cmd_enumerate --json`, plus appending
   one `AuditRunRecord` line to `docs/qa/zero_shortcomings_audit/<run-id>.log`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```bash
 cat > tests/audit/test_zero_shortcomings_audit_standing_check.sh <<'EOF'
@@ -1815,12 +1815,12 @@ EOF
 chmod +x tests/audit/test_zero_shortcomings_audit_standing_check.sh
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_standing_check.sh`
 Expected: FAIL — `standing-check: not yet implemented (Task 7)`
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Same ordering constraint as Tasks 5–6:
 
@@ -1852,12 +1852,12 @@ Then edit `main()`'s `standing-check` case line from
 `standing-check) shift; print_error "standing-check: not yet implemented (Task 7)"; return 2 ;;`
 to `standing-check) shift; cmd_standing_check "$@" ;;`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `bash tests/audit/test_zero_shortcomings_audit_standing_check.sh`
 Expected: `test_zero_shortcomings_audit_standing_check: 2 passed, 0 failed`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --scope tests/audit/test_zero_shortcomings_audit_standing_check.sh \
@@ -1886,7 +1886,7 @@ bash scripts/commit-push-all.sh --scope scripts/zero_shortcomings_audit.sh --sco
   per Task 7's `cmd_standing_check` always returning 0 and per Human Checkpoint 4 in
   `plan.md`).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```bash
 cat > tests/pre_build/test_check_cm_zero_shortcomings_standing.sh <<'EOF'
@@ -1924,12 +1924,12 @@ EOF
 chmod +x tests/pre_build/test_check_cm_zero_shortcomings_standing.sh
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `bash tests/pre_build/test_check_cm_zero_shortcomings_standing.sh`
 Expected: FAIL — the sweep's output contains no mention of the new stage yet.
 
-- [ ] **Step 3: Locate the exact insertion point and add the invariant**
+- [x] **Step 3: Locate the exact insertion point and add the invariant**
 
 ```bash
 # Re-derive the CURRENT total — do not assume it is 58 (F1: this file may have
@@ -1963,19 +1963,19 @@ keep the total consistent (this project's own established convention, confirmed 
 BOB-196's earlier fix this session, where the total count is printed as part of each
 invariant's own label) — using the ACTUAL discovered values, never hardcoded literals.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `bash tests/pre_build/test_check_cm_zero_shortcomings_standing.sh`
 Expected: `test_check_cm_zero_shortcomings_standing: 2 passed, 0 failed`
 
-- [ ] **Step 5: `[REVIEW]` Run the FULL pre-build sweep to confirm zero regressions**
+- [x] **Step 5: `[REVIEW]` Run the FULL pre-build sweep to confirm zero regressions**
 
 Run: `bash scripts/pre_build_verification.sh`
 Expected: identical pass/fail shape to the pre-Task-8 baseline, plus the new advisory
 stage's output — this step requires review before merge per `plan.md`'s Human
 Checkpoint 4 (never promote to blocking without a burn-in period first).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 bash scripts/commit-push-all.sh --scope scripts/pre_build_verification.sh --scope tests/pre_build/test_check_cm_zero_shortcomings_standing.sh \
@@ -1989,13 +1989,13 @@ in full.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T-POLISH-1 `[P]` Run `quickstart.md` end-to-end (all 4 steps) against the real
+- [x] T-POLISH-1 `[P]` Run `quickstart.md` end-to-end (all 4 steps) against the real
       repository state and paste the actual terminal output into
       `docs/qa/003-zero-shortcomings-audit/quickstart_run_<date>.md`, per Principle XII
       (no self-certification words without pasted evidence).
-- [ ] T-POLISH-2 `[P]` `bash -n scripts/zero_shortcomings_audit.sh scripts/lib/audit_*.sh`
+- [x] T-POLISH-2 `[P]` `bash -n scripts/zero_shortcomings_audit.sh scripts/lib/audit_*.sh`
       — syntax check every new file (Principle VI).
-- [ ] T-POLISH-3 Run the full `tests/audit/` suite together and confirm the aggregate
+- [x] T-POLISH-3 Run the full `tests/audit/` suite together and confirm the aggregate
       pass count matches the sum of every task's individual expected count above (no
       cross-test interference).
 - [ ] T-POLISH-4 `[SUBAGENT]` Begin Story 2's ongoing backlog-closure work: dispatch the
@@ -2005,7 +2005,8 @@ in full.
       discipline (research.md §8) — this is the START of the ongoing Story 2 backlog
       work `plan.md` scopes as continuing beyond this task list's own mechanism-building
       scope.
-- [ ] T-POLISH-5 Update `README.md`'s doc-link section (§11.4.57/§11.4.212) to include
+      Deferred as a separate ongoing effort, decided after the final review.
+- [x] T-POLISH-5 Update `README.md`'s doc-link section (§11.4.57/§11.4.212) to include
       `docs/scripts/zero_shortcomings_audit.md` and this feature's `specs/` directory.
 
 ---
