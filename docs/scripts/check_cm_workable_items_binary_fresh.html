@@ -237,6 +237,8 @@
     code span.vs { color: #4070a0; } /* VerbatimString */
     code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
+  <meta name="x-export-source-sha256" content="4adf3f9bc17a5ef1ea8ca7385c1d0729e30307ce3a38a1f123999ac1816bea14">
+  <meta name="dcterms.modified" content="2026-08-25T19:56:57Z">
 </head>
 <body>
 <header id="title-block-header">
@@ -244,13 +246,21 @@
 </header>
 <h1
 id="check_cm_workable_items_binary_fresh.sh">check_cm_workable_items_binary_fresh.sh</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-08-25T20:55:00Z</p>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-09-26T13:05:00Z</p>
 <h2 id="overview">Overview</h2>
 <p>Gate <code>CM-WORKABLE-ITEMS-BINARY-FRESH</code> (pre-build invariant
 52). Proves the <strong>shipped, git-tracked</strong>
 <code>workable-items</code> binary matches the Go sources it was built
 from.</p>
+<h2 id="status-update-2026-09-26">Status update (2026-09-26)</h2>
+<p>Invariant 17 no longer picks a binary from disk: it builds from
+source on every run through
+<code>scripts/pre_build/build_workable_items_from_source.sh</code> (the
+BOB-188 operator decision, build on demand). The candidate loop
+described below is history. This gate remains as defence-in-depth,
+because other callers still use the shipped binary for as long as it
+exists.</p>
 <h2 id="why-this-exists">Why this exists</h2>
 <p><code>constitution/scripts/workable-items/bin/workable-items</code>
 is not a stray build output — it is <strong>deliberately

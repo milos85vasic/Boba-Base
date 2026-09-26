@@ -1,13 +1,21 @@
 # check_cm_workable_items_binary_fresh.sh
 
-**Revision:** 1
-**Last modified:** 2026-08-25T20:55:00Z
+**Revision:** 2
+**Last modified:** 2026-09-26T13:05:00Z
 
 ## Overview
 
 Gate `CM-WORKABLE-ITEMS-BINARY-FRESH` (pre-build invariant 52). Proves the
 **shipped, git-tracked** `workable-items` binary matches the Go sources it was
 built from.
+
+## Status update (2026-09-26)
+
+Invariant 17 no longer picks a binary from disk: it builds from source on every
+run through `scripts/pre_build/build_workable_items_from_source.sh` (the BOB-188
+operator decision, build on demand). The candidate loop described below is
+history. This gate remains as defence-in-depth, because other callers still use
+the shipped binary for as long as it exists.
 
 ## Why this exists
 

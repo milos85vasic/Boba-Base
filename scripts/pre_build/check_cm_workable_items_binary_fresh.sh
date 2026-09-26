@@ -7,6 +7,13 @@
 # distribution artifact, and a distribution artifact can go STALE against the
 # source it was built from — which is exactly what BOB-188 was.
 #
+# STATUS UPDATE (2026-09-26): invariant 17 no longer resolves a binary from disk
+# at all — it builds from source every run via
+# scripts/pre_build/build_workable_items_from_source.sh (BOB-188 operator
+# decision: build on demand). The loop described below is HISTORY. This gate
+# stays as defence-in-depth: the shipped binary is still consumed by other
+# callers (report_item.sh, zero_shortcomings_audit.sh) for as long as it exists.
+#
 # WHY THIS GATE EXISTS (the forensic, so nobody deletes it as ceremony):
 #   pre_build_verification.sh invariant 17 resolves the binary through a
 #   candidate loop whose FIRST entry is bin/workable-items. That file is TRACKED

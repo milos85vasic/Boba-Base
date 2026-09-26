@@ -598,44 +598,32 @@ fi
 
 # --- Invariant 17: CM-WORKABLE-ITEMS-VALIDATE (§11.4.93/§11.4.95) ---
 echo "[17/59] CM-WORKABLE-ITEMS-VALIDATE: workable-items validate (§11.4.93/§11.4.95)"
-# Binary resolution chain (matches constitution/scripts/reporting/report_item.sh
-# and scripts/docs_chain.sh): env override -> committed constitution copy ->
-# on-demand `go build`. HISTORY, and why the ORDER of this loop matters:
-# on 2026-08-08 the naive "bin/workable-items" path did NOT exist and this
-# invariant silently SKIPPED on every pre-build run (see
-# tests/unit/test_docs_chain_binary_resolution.sh for the sibling guard on
-# docs_chain.sh's identical bug). That is no longer true and the stale comment
-# saying so is what let BOB-188 hide: bin/ now holds two GIT-TRACKED, executable
-# binaries that are deliberately SHIPPED so consumers inheriting the constitution
-# by reference can run the tool without a Go toolchain. Being tracked, they win
-# this loop on every fresh clone — so a shipped binary that drifts behind its
-# source silently downgrades this gate to whatever that older build could see.
-# Measured 2026-08-25: the tracked binary was six days stale and contained
-# NEITHER "refusing to set terminal status" NOR "Issues-location item has
-# TERMINAL status" (0 hits each, against 34 needle hits for "workable-items" in
-# the same binary — the zeros were real absences, not a blind read). Invariant 52
-# (CM-WORKABLE-ITEMS-BINARY-FRESH) now makes that drift impossible.
-WORKABLE_BINARY="${WORKABLE_ITEMS_BIN:-}"
-if [[ -n "${WORKABLE_BINARY}" ]]; then
-    case "${WORKABLE_BINARY}" in
-        /*) : ;;
-        *) WORKABLE_BINARY="${PROJECT_ROOT}/${WORKABLE_BINARY}" ;;
-    esac
+# Binary resolution — BUILD ON DEMAND (BOB-188 operator decision, 2026-08-26,
+# §11.4.66, recorded on the item as consumer DATA per §11.4.35).
+# HISTORY, so nobody restores the old loop: this used to resolve through a
+# candidate loop (env override -> constitution bin/workable-items -> sibling
+# ./workable-items -> go build). bin/ holds GIT-TRACKED binaries, so on every
+# fresh clone the shipped binary WON the loop, and the gate ran whatever that
+# older build could see. Measured 2026-08-25: the shipped binary was six days
+# stale and lacked the terminal-status guards its own source had (0 hits each
+# for "refusing to set terminal status" / "Issues-location item has TERMINAL
+# status", against a control needle the same strings(1) path saw) — so ten
+# mis-located rows passed this gate. The operator chose BUILD FROM SOURCE, or
+# REFUSE when Go is absent: no binary already on disk is trusted, the env
+# override is gone (it was a second door for a stale binary), and a missing
+# toolchain is a FAIL, never a silent SKIP (§11.4.201(11)). Staleness is now
+# structurally impossible. Invariant 52 (CM-WORKABLE-ITEMS-BINARY-FRESH) stays
+# as defence-in-depth for as long as a shipped binary exists on disk.
+WORKABLE_BINARY=""
+WI_BUILD_RC=0
+WI_BUILD_ERR="$(mktemp)"
+WORKABLE_BINARY="$(bash "${PROJECT_ROOT}/scripts/pre_build/build_workable_items_from_source.sh" 2>"${WI_BUILD_ERR}")" || WI_BUILD_RC=$?
+if [[ "${WI_BUILD_RC}" -ne 0 ]]; then
+    WORKABLE_BINARY=""
+    fail "CM-WORKABLE-ITEMS-VALIDATE: cannot build workable-items from source (exit ${WI_BUILD_RC}; 3 = Go toolchain absent) — refusing rather than trusting a binary on disk (BOB-188)"
+    sed 's/^/        /' "${WI_BUILD_ERR}"
 fi
-if [[ -z "${WORKABLE_BINARY}" || ! -x "${WORKABLE_BINARY}" ]]; then
-    WI_SRC="${PROJECT_ROOT}/constitution/scripts/workable-items"
-    for cand in "${WI_SRC}/bin/workable-items" "${WI_SRC}/workable-items" "${PROJECT_ROOT}/bin/workable-items"; do
-        if [[ -x "${cand}" ]]; then WORKABLE_BINARY="${cand}"; break; fi
-    done
-fi
-if [[ -z "${WORKABLE_BINARY}" || ! -x "${WORKABLE_BINARY}" ]]; then
-    if command -v go >/dev/null 2>&1; then
-        WI_BUILD="$(mktemp -d)/workable-items"
-        if ( cd "${PROJECT_ROOT}/constitution/scripts/workable-items" && go build -o "${WI_BUILD}" ./cmd/workable-items ) >/dev/null 2>&1; then
-            WORKABLE_BINARY="${WI_BUILD}"
-        fi
-    fi
-fi
+rm -f "${WI_BUILD_ERR}"
 WORKABLE_DB="${PROJECT_ROOT}/docs/workable_items.db"
 if [[ -n "${WORKABLE_BINARY}" && -x "${WORKABLE_BINARY}" ]] && [[ -f "${WORKABLE_DB}" ]]; then
     if "${WORKABLE_BINARY}" validate --db "${WORKABLE_DB}"; then
@@ -657,9 +645,13 @@ if [[ -n "${WORKABLE_BINARY}" && -x "${WORKABLE_BINARY}" ]] && [[ -f "${WORKABLE
             fail "workable-items diff: DB and Markdown have DIVERGED (run 'workable-items sync md-to-db' or 'db-to-md' to reconcile)"
         fi
     fi
-else
-    echo "  SKIP: workable-items binary or DB not present — skipping invariant 17"
+elif [[ -n "${WORKABLE_BINARY}" ]]; then
+    echo "  SKIP: docs/workable_items.db not present — skipping invariant 17"
 fi
+# Remove ONLY the resolver's own mktemp dir (boba-wi-build.*), never a guessed path.
+case "${WORKABLE_BINARY}" in
+    */boba-wi-build.*/workable-items) rm -rf "$(dirname "${WORKABLE_BINARY}")" ;;
+esac
 
 # --- Invariant 18: CM-WORKABLE-ITEMS-EXPORT-VALIDATE (§11.4.93/§11.4.65) ---
 # NOTE: DOCS_CHAIN variable name is retained to preserve backward-compatibility

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>build_workable_items_from_source</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <meta name="x-export-source-sha256" content="57aaf845f58b5bd8e2a3fb16bf210837a2685527c12ddcacf2e6dfaa7ee05753">
+  <meta name="dcterms.modified" content="2026-08-02T12:49:08Z">
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">build_workable_items_from_source</h1>
+</header>
+<h1
+id="build_workable_items_from_source.sh">build_workable_items_from_source.sh</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-09-26T13:00:00Z</p>
+<h2 id="overview">Overview</h2>
+<p><code>scripts/pre_build/build_workable_items_from_source.sh</code>
+builds the <code>workable-items</code> binary from its
+<strong>current</strong> Go source and prints the path of the freshly
+built file. It never returns a binary that already exists on disk.
+Pre-build invariant 17 (<code>CM-WORKABLE-ITEMS-VALIDATE</code>)
+resolves its binary through this script.</p>
+<h2 id="why-this-exists">Why this exists</h2>
+<p>Invariant 17 used to resolve its binary through a candidate loop
+whose first entry was the git-tracked
+<code>constitution/scripts/workable-items/bin/workable-items</code>. A
+tracked binary wins that loop on every fresh clone, so the gate ran
+whatever an older build could see. On 2026-08-25 the shipped binary was
+six days behind its source and lacked the terminal-status guards the
+source had, so ten mis-located tracker rows passed the gate
+(BOB-188).</p>
+<p>The operator decision recorded on BOB-188 (2026-08-26) is
+<strong>build on demand</strong>: build from source, or refuse when the
+Go toolchain is absent. Because this script builds fresh on every call,
+a stale binary cannot be selected at all.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Go on <code>PATH</code> (the same toolchain the
+<code>qBitTorrent-go</code> backend already needs).</li>
+<li>A C compiler for cgo (the tool links
+<code>github.com/mattn/go-sqlite3</code>).</li>
+<li>The <code>constitution</code> submodule checked out.</li>
+</ul>
+<h2 id="usage">Usage</h2>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">bin</span><span class="op">=</span><span class="st">&quot;</span><span class="va">$(</span><span class="fu">bash</span> scripts/pre_build/build_workable_items_from_source.sh<span class="va">)</span><span class="st">&quot;</span> <span class="kw">||</span> <span class="va">rc</span><span class="op">=</span><span class="va">$?</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;</span><span class="va">$bin</span><span class="st">&quot;</span> validate <span class="at">--db</span> docs/workable_items.db</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> <span class="at">-rf</span> <span class="st">&quot;</span><span class="va">$(</span><span class="fu">dirname</span> <span class="st">&quot;</span><span class="va">$bin</span><span class="st">&quot;</span><span class="va">)</span><span class="st">&quot;</span>      <span class="co"># the caller owns cleanup</span></span></code></pre></div>
+<p>Override the source directory (used by the test fixture):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">BOBA_WI_SRC_DIR</span><span class="op">=</span>/path/to/workable-items <span class="fu">bash</span> scripts/pre_build/build_workable_items_from_source.sh</span></code></pre></div>
+<h2 id="exit-codes">Exit codes</h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>Built; the absolute path of the binary is on stdout</td>
+</tr>
+<tr>
+<td>1</td>
+<td><code>go build</code> failed — no path printed</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Source directory missing, or it has no
+<code>cmd/workable-items</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>REFUSED — Go is not on <code>PATH</code>; no binary on disk is used
+instead</td>
+</tr>
+</tbody>
+</table>
+<h2 id="edge-cases">Edge cases</h2>
+<ul>
+<li>A compile error never falls back to an older binary: exit 1 with
+nothing on stdout.</li>
+<li>A missing toolchain is a refusal (exit 3), and invariant 17 turns it
+into a FAIL, not a silent SKIP.</li>
+<li>The binary lives in a <code>mktemp -d</code> directory named
+<code>boba-wi-build.*</code>; invariant 17 removes only a directory
+matching that name.</li>
+</ul>
+<h2 id="internal-behaviour">Internal behaviour</h2>
+<p>Resolve the source directory, check for <code>go</code>,
+<code>go build -o &lt;tmpdir&gt;/workable-items ./cmd/workable-items</code>,
+verify the output is an executable file, print its path. A warm Go build
+cache makes a rebuild take about two seconds (measured 2026-09-26).</p>
+<h2 id="related-scripts">Related scripts</h2>
+<ul>
+<li><code>scripts/pre_build/check_cm_workable_items_binary_fresh.sh</code>
+— invariant 52, fingerprint check on the shipped binary, kept as
+defence-in-depth for as long as a shipped binary exists on disk.</li>
+<li><code>tests/pre_build/test_build_workable_items_from_source.sh</code>
+— RED/GREEN cases, a negative control that replays the old candidate
+loop, and a paired mutation.</li>
+</ul>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-09-26 —
+<code>bash tests/pre_build/test_build_workable_items_from_source.sh</code>
+reported 6 passed, 0 failed.</p>
+</body>
+</html>
