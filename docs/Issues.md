@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 129
-**Last modified:** 2026-09-25T17:12:26Z
+**Revision:** 131
+**Last modified:** 2026-09-26T08:52:13Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -553,4 +553,48 @@ Discovered by a full 58-invariant pre_build_verification.sh sweep (2026-09-25) r
 **Assigned-To:** AI
 
 Discovered 2026-09-25 by a subagent implementing 003-zero-shortcomings-audit Task 1, independently reproduced in isolation. scripts/commit-push-all.sh's argument parser stops reading flags at the first non-flag token; when --scope <path> flags are placed AFTER the commit-message positional argument (exactly as tasks.md's own Step 5 template shows for every task in the 003-zero-shortcomings-audit plan, e.g. "bash scripts/commit-push-all.sh \"<message>\" --scope <path>"), the --scope flags are silently swallowed as if they were part of the message, no error or warning is emitted, and the script falls through to its unconditional/unscoped git add -A path. Real-world consequence (2026-09-25): following that exact template ordering caused a scoped Task-1 commit to instead sweep in 5 files -- the intended 2, a sibling task's 2 legitimate-but-not-yet-reviewed files, and a DELIBERATELY-uncommitted, known-broken/hanging test file (tests/ddos/test_sse_stream_stress_chaos.py, see BOB-097 diary entry_id=16) -- and PUSH all of it to two remote git hosts before the mistake was caught. No data was lost, nothing was force-pushed, but a silent full-tree-sweep on a routine commit is a serious safety gap in a script this project's own constitution names as the ONLY sanctioned commit path. Root cause: the parser's flag/positional-arg interleaving logic assumes flags always precede the message and never validates that assumption or warns when scope flags appear post-message. Remediation: (1) make the parser accept --scope flags in ANY position relative to the message (getopts-style two-pass parsing, or explicit flag-then-positional-then-more-flags handling), OR (2) at minimum, detect scope-flag-shaped tokens appearing after the first positional argument and REFUSE with a loud error rather than silently falling back to git add -A -- a parser that cannot tell 'no --scope given, unscoped commit intended' apart from '--scope given but in the wrong position' is itself a §11.4.201(1) false-negative-class defect. (3) Audit and fix tasks.md's own Step 5 example ordering across every task (flags before the message, matching the working pattern used successfully elsewhere this session) so the plan itself does not keep tripping this bug for every future task implementer.
+
+## BOB-247 — Zero-shortcomings audit: standing-check must re-verify closed items (SC-005)
+
+**Status:** Queued
+**Type:** Task
+**Severity:** Important
+**Created-By:** AI
+
+**Reported-Via:** §11.4.202 reporting directive `task` on 2026-09-26T08:51:37Z
+**Reported-By:** AI
+
+**What (the report, verbatim):**
+Found by the final whole-branch review of feature 003: SC-005 is not met. The mechanism exists (verify-closure, risk order) but nothing drives it over closed items on a recurring basis.
+
+**Affected scope / file-scope manifest:**
+scripts/zero_shortcomings_audit.sh cmd_standing_check; specs/003-zero-shortcomings-audit SC-005
+
+**Reproduction / context:**
+Reintroduce a previously fixed defect whose closure evidence exists; standing-check reports only counts (backlog/gates/escapes) and never re-runs closed items' recorded commands, so the regression is not detected.
+
+**Acceptance criteria:**
+standing-check (or a sibling recurring mode) periodically re-runs verify-closure over a risk-ordered sample of closed items and records any mismatch as a finding without blocking; a test reintroduces a fixed defect in a temp DB and proves it is flagged.
+
+## BOB-248 — Zero-shortcomings audit: deferred review follow-ups (FR-010/011/012, minor hardening)
+
+**Status:** Queued
+**Type:** Task
+**Severity:** Minor
+**Created-By:** AI
+
+**Reported-Via:** §11.4.202 reporting directive `task` on 2026-09-26T08:52:13Z
+**Reported-By:** AI
+
+**What (the report, verbatim):**
+Deferred by ruling: FR-011 audit_dispatch_bounded is defined but never called; FR-010 only checks one declared Test Type, not that every applicable type was used; FR-012 risk order ignores the severity column; blocked-surface trim() ignores tab/newline-only conditions and duplicate details rows double-print; redactor over-redacts ordinary text and misses db_password => x, mysql -pSECRET, URL-encoded values; BASH_ENV can reach the fresh verify-closure process; the exit code 1 is shared between mismatch and usage/internal refusals (contract debt); the [59/59] stage's degraded WARN branch is proven at unit level only, never in a live sweep.
+
+**Affected scope / file-scope manifest:**
+scripts/zero_shortcomings_audit.sh; specs/003-zero-shortcomings-audit
+
+**Reproduction / context:**
+See final review of feature 003.
+
+**Acceptance criteria:**
+Each listed follow-up is either implemented with a RED-first test or closed with an evidence-backed reason.
 
