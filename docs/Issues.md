@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 132
-**Last modified:** 2026-09-26T12:19:46Z
+**Revision:** 133
+**Last modified:** 2026-09-26T13:50:14Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -619,4 +619,26 @@ Run 'ionice -c 3 nice -n 19 bash scripts/pre_build_verification.sh' on a clean t
 
 **Acceptance criteria:**
 Root cause of the writer is identified with captured evidence (bisect the bash suite and the sweep stages that run before invariant 30, with a control needle proving the mtime instrument sees a known write); the writer either stops touching tracked twins during the sweep or writes only when sources changed (idempotent, byte-stable output); a test fails against the current behaviour and passes after; a full pre_build sweep on a clean tree leaves git status clean and invariant 30 PASS.
+
+## BOB-250 — Export oracle and generator hardening follow-ups from the BOB-249 fix reviews
+
+**Status:** Queued
+**Type:** Task
+**Severity:** Minor
+**Created-By:** AI
+
+**Reported-Via:** §11.4.202 reporting directive `task` on 2026-09-26T13:50:14Z
+**Reported-By:** AI
+
+**What (the report, verbatim):**
+Filed at the operator's request after invariant 30 (CM-BASH-UNIT-TESTS-EXECUTED) passed on a quiet tree: sweep 54 passed, 1 failed (only the gate-ledger debt BOB-237). Fixes are being developed in scratch clones as patches (streams A oracle parser, B generator, C badges plus merge-history measurement) and are applied only after review.
+
+**Affected scope / file-scope manifest:**
+scripts/lib/export_staleness.sh; scripts/generate_markdown_exports.sh; scripts/compute-badges.sh and their tests
+
+**Reproduction / context:**
+See the two independent reviews of the BOB-249 fix (afe5d1f, a630935, 74e5b6f, e47346b). Items: (1) rename/copy branch of the porcelain -z parser untested; (2) git log still C-quotes tab/quote/newline/backslash paths so a clean file with such a name falls back to mtime; (3) awk portability of the NUL parser (busybox awk truncates at the first NUL); (4) a history-stale pair whose regeneration yields identical bytes stays stale forever; (5) a corrupted twin with a newer mtime is never healed (no content check); (6) html_regenerated flag set even when the html leg fails; (7) adding *.docx to the history pathspec can change merge-history verdicts at merges resolved from mixed sides (3 of 120 fuzzed histories, none on the real repo); (8) a symlinked README pointing outside the repo was classified in-repo and the write-temp-then-mv replaced the link.
+
+**Acceptance criteria:**
+Each item is either fixed with a RED-first test that fails before and passes after, plus a paired control proving the generator still regenerates on a real content change, a missing twin and a charset-fragment file and rewrites 0 twins after a fresh checkout, or closed with an evidence-backed reason; an independent review approves the combined change; the full pre-build sweep stays at no new failures with CM-BASH-UNIT-TESTS-EXECUTED passing.
 
