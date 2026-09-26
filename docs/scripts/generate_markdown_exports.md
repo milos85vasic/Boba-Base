@@ -1,7 +1,7 @@
 # scripts/generate_markdown_exports.sh — the §11.4.65 document-twin exporter
 
-**Revision:** 2
-**Last modified:** 2026-09-26T12:54:43Z
+**Revision:** 3
+**Last modified:** 2026-09-26T13:27:53Z
 **Status:** active
 
 ## Overview
@@ -117,7 +117,7 @@ so each regeneration used to be a byte-different file. The script now
 exports `SOURCE_DATE_EPOCH` per file before rendering:
 
 - the `.md`'s last-commit time (`git log -1 --format=%ct -- <md>`), so the
-  stamp is a property of the source history, identical in every clone;
+  stamp is a property of the source history, identical in every FULL-history clone (a shallow clone stamps the boundary commit time);
 - `1785674948` (2026-08-02T12:49:08Z, the value
   `constitution/scripts/render/render-governance-twins.sh` pins) for a
   never-committed `.md`;

@@ -141,4 +141,71 @@ else
     fail "history-stale .docx reported FRESH (oracle blind to docx history)"
 fi
 
+# ---- Case 8 (BOB-249 review I1): a source whose path contains a SPACE, edited
+# locally. `git status --porcelain` C-quotes such paths (` M "d 8/a b.md"`), so a
+# whitespace-splitting parser yielded `b.md"` and the edit was invisible: the
+# history ordinals said "fresh" and a real local edit was never regenerated.
+mkdir -p "c8/sp ace" && printf 'v1\n' > "c8/sp ace/a b.md" && printf '<p>v1</p>\n' > "c8/sp ace/a b.html"
+git add -A >/dev/null && git commit -qm "c8 in sync (spaced path)"
+touch -d '2020-01-01 00:00:01' "c8/sp ace/a b.html"
+printf 'v2 edited locally, uncommitted\n' > "c8/sp ace/a b.md"
+_reset_oracle_cache
+if export_is_stale "$FIX/c8/sp ace/a b.md" "$FIX/c8/sp ace/a b.html" "$FIX"; then
+    pass "locally-edited SPACED-path source with older export reported stale"
+else
+    fail "locally-edited spaced-path source reported FRESH (porcelain C-quoting false negative, I1)"
+fi
+
+# ---- Case 9: non-ASCII filename (porcelain octal-quotes it unless -z).
+mkdir -p c9 && printf 'v1\n' > "c9/Ünï cödé.md" && printf '<p>v1</p>\n' > "c9/Ünï cödé.html"
+git add -A >/dev/null && git commit -qm "c9 in sync (non-ascii)"
+touch -d '2020-01-01 00:00:01' "c9/Ünï cödé.html"
+printf 'v2 edited locally\n' > "c9/Ünï cödé.md"
+_reset_oracle_cache
+if export_is_stale "$FIX/c9/Ünï cödé.md" "$FIX/c9/Ünï cödé.html" "$FIX"; then
+    pass "locally-edited NON-ASCII-path source reported stale"
+else
+    fail "locally-edited non-ASCII-path source reported FRESH (I1)"
+fi
+
+# ---- Case 9b: history lookup for a non-ASCII CLEAN pair must resolve by name
+# (core.quotePath): history-stale pair with identical mtimes must be detected.
+mkdir -p c9b && printf 'v1\n' > "c9b/Ünï.md" && printf '<p>v1</p>\n' > "c9b/Ünï.html"
+git add -A >/dev/null && git commit -qm "c9b in sync"
+printf 'v2\n' > "c9b/Ünï.md"; git add -A >/dev/null && git commit -qm "c9b source-only"
+touch -d '2031-01-01 00:00:00' "c9b/Ünï.md" "c9b/Ünï.html"
+_reset_oracle_cache
+if export_is_stale "$FIX/c9b/Ünï.md" "$FIX/c9b/Ünï.html" "$FIX"; then
+    pass "history-stale NON-ASCII clean pair detected via history"
+else
+    fail "history-stale non-ASCII clean pair reported FRESH (quotePath blind history)"
+fi
+
+# ---- Case 10: staged RENAME (uncommitted) then edited. -z emits two path
+# fields for R/C entries; both must be parsed without desyncing.
+mkdir -p c10 && printf 'v1\n' > "c10/old name.md" && printf '<p>v1</p>\n' > "c10/old name.html"
+git add -A >/dev/null && git commit -qm "c10 in sync"
+git mv "c10/old name.md" "c10/new name.md" && git mv "c10/old name.html" "c10/new name.html"
+printf 'v2 edited after rename\n' > "c10/new name.md"
+touch -d '2020-01-01 00:00:01' "c10/new name.html"
+_reset_oracle_cache
+if export_is_stale "$FIX/c10/new name.md" "$FIX/c10/new name.html" "$FIX"; then
+    pass "renamed-uncommitted + edited source reported stale"
+else
+    fail "renamed-uncommitted source reported FRESH"
+fi
+
+# ---- Case 11: CONTROL — an UNEDITED spaced-path source stays FRESH (no
+# spurious regeneration), with checkout-order mtimes.
+mkdir -p "c11/sp ace" && printf 'v1\n' > "c11/sp ace/c d.md" && printf '<p>v1</p>\n' > "c11/sp ace/c d.html"
+git add -A >/dev/null && git commit -qm "c11 in sync (spaced, unedited)"
+touch -d '2020-01-01 00:00:01' "c11/sp ace/c d.html"
+touch -d '2020-01-01 00:00:02' "c11/sp ace/c d.md"
+_reset_oracle_cache
+if export_is_stale "$FIX/c11/sp ace/c d.md" "$FIX/c11/sp ace/c d.html" "$FIX"; then
+    fail "CONTROL: unedited spaced-path pair reported STALE (spurious regeneration)"
+else
+    pass "unedited spaced-path pair stays fresh"
+fi
+
 finish

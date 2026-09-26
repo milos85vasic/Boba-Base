@@ -34,7 +34,8 @@
 #                                         be ordered by them (reproduced in a
 #                                         fixture). Ordinals order correctly
 #                                         regardless, and are identical in
-#                                         every clone. §11.4.86 spirit, no
+#                                         every FULL-history clone (a shallow
+#                                         clone truncates the walk). §11.4.86 spirit, no
 #                                         mtime anywhere.
 #   * anything unresolvable            -> fall back to mtime, never silently
 #                                         "fresh" (§11.4.201(6): a blind zero
@@ -73,14 +74,24 @@ _export_build_maps() {
     while IFS=$'\t' read -r p t; do
         [[ -n "$p" ]] && _EXPORT_HIST_CT["$p"]="$t"
     done < <(
-        cd "$root" 2>/dev/null && git log --format='C%ct' --name-only -- '*.md' '*.html' '*.pdf' '*.docx' 2>/dev/null \
+        cd "$root" 2>/dev/null && git -c core.quotePath=false log --format='C%ct' --name-only -- '*.md' '*.html' '*.pdf' '*.docx' 2>/dev/null \
         | awk '/^C[0-9]+$/{i++;next} NF&&!(($0) in s){s[$0]=i; print $0"\t"i}'
     )
 
-    # working-tree-dirty set (one git status pass)
-    while IFS= read -r line; do
-        [[ -n "$line" ]] && _EXPORT_DIRTY["$line"]=1
-    done < <( cd "$root" 2>/dev/null && git status --porcelain --untracked-files=all 2>/dev/null | awk '{print $NF}' )
+    # working-tree-dirty set (one git status pass).
+    # `-z` is load-bearing (BOB-249 review I1): plain --porcelain C-quotes any
+    # path with a space or non-ASCII byte (` M "d/a b.md"`), and a whitespace
+    # split then yields `b.md"`, so the edit was invisible and history said
+    # "fresh". -z output is NUL-delimited, unquoted: `XY <path>\0`, and for a
+    # rename/copy `XY <to>\0<from>\0` (two path fields — the second has no XY
+    # prefix). Both paths are marked dirty.
+    local dp
+    while IFS= read -r -d '' dp; do
+        [[ -n "$dp" ]] && _EXPORT_DIRTY["$dp"]=1
+    done < <(
+        cd "$root" 2>/dev/null && git status --porcelain -z --untracked-files=all 2>/dev/null \
+        | awk 'BEGIN{RS="\0"; ORS="\0"} skip{print; skip=0; next} {x=substr($0,1,1); y=substr($0,2,1); print substr($0,4); if (x ~ /[RC]/ || y ~ /[RC]/) skip=1}'
+    )
 }
 
 export_is_stale() {

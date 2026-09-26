@@ -140,7 +140,9 @@ fi
 # reproducible-builds knob pandoc honours (the same one
 # constitution/scripts/render/render-governance-twins.sh pins). We derive it PER
 # FILE from the .md's last-commit time, so the stamp is a property of the source
-# history, identical in every clone. Untracked (never-committed) sources get a
+# history, identical in every FULL-history clone (in a shallow clone
+# `git log -1 -- <md>` returns the boundary commit's time, so the stamp differs;
+# measured 1790428767 full vs 1790428777 shallow). Untracked (never-committed) sources get a
 # fixed, content-independent constant: 1785674948 = 2026-08-02T12:49:08Z, the
 # value the governance renderer uses. An explicitly exported SOURCE_DATE_EPOCH
 # from the caller wins (standard reproducible-builds convention).
@@ -180,7 +182,7 @@ source_epoch() {
     local md="$1" root="$2" ct=""
     if [[ -n "$CALLER_SOURCE_DATE_EPOCH" ]]; then printf '%s' "$CALLER_SOURCE_DATE_EPOCH"; return; fi
     if [[ -n "$root" ]]; then
-        ct="$(git -C "$root" log -1 --format=%ct -- "${md#"${root}/"}" 2>/dev/null || true)"
+        ct="$(git -C "$root" -c core.quotePath=false log -1 --format=%ct -- "${md#"${root}/"}" 2>/dev/null || true)"
     fi
     printf '%s' "${ct:-$DEFAULT_SOURCE_DATE_EPOCH}"
 }

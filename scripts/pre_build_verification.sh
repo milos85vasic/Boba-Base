@@ -565,7 +565,7 @@ while IFS= read -r -d '' md; do
     # WARNING (not failure) for missing .docx siblings
     docx_sib="${md%.md}.docx"
     if [[ ! -f "${docx_sib}" ]]; then
-        export_docx_warnings+=("${rel%.md}.docx missing (gitignored per BOB-011)")
+        export_docx_warnings+=("${rel%.md}.docx missing (tracked twin absent; WARN only)")
     fi
 done < <(
     find "${PROJECT_ROOT}" -maxdepth 1 -name '*.md' -type f -print0
@@ -573,7 +573,7 @@ done < <(
 )
 
 if [[ "${#export_docx_warnings[@]}" -gt 0 ]]; then
-    echo "  WARN: ${#export_docx_warnings[@]} missing .docx sibling(s) (gitignored per BOB-011)"
+    echo "  WARN: ${#export_docx_warnings[@]} missing .docx sibling(s) (tracked twin absent; WARN only)"
     for w in "${export_docx_warnings[@]}"; do
         echo "        - ${w}"
     done

@@ -245,8 +245,8 @@
 <h1
 id="scriptsgenerate_markdown_exports.sh-the-11.4.65-document-twin-exporter">scripts/generate_markdown_exports.sh
 — the §11.4.65 document-twin exporter</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-09-26T12:54:43Z <strong>Status:</strong> active</p>
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-09-26T13:27:53Z <strong>Status:</strong> active</p>
 <h2 id="overview">Overview</h2>
 <p><code>scripts/generate_markdown_exports.sh</code> is the project’s
 canonical §11.4.65 exporter. For every in-scope <code>*.md</code> source
@@ -444,7 +444,8 @@ byte-different file. The script now exports
 <ul>
 <li>the <code>.md</code>’s last-commit time
 (<code>git log -1 --format=%ct -- &lt;md&gt;</code>), so the stamp is a
-property of the source history, identical in every clone;</li>
+property of the source history, identical in every FULL-history clone (a
+shallow clone stamps the boundary commit time);</li>
 <li><code>1785674948</code> (2026-08-02T12:49:08Z, the value
 <code>constitution/scripts/render/render-governance-twins.sh</code>
 pins) for a never-committed <code>.md</code>;</li>
