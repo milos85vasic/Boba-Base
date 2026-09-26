@@ -126,7 +126,9 @@ arm "B2 fail-closed: not a git repository" 2 "not a git repository" "${GATE}" "$
 # M1 paired mutation: neuter the tracked check.
 MUT="${TMP}/mutated_gate.sh"
 sed 's/ls-files --error-unmatch -- /ls-files -- /g' "${GATE}" > "${MUT}"
-if cmp -s "${MUT}" "${GATE}"; then
+if [[ ! -f "${GATE}" ]] || ! grep -qF "UNTRACKED INVOKED EXECUTABLE" <<<"$(bash "${GATE}" "${R1_REPO}" 2>&1)"; then
+    echo "  FAIL  M1 precondition: the unmutated gate does not report R1, so the mutation proves nothing"; FAIL=$((FAIL+1))
+elif cmp -s "${MUT}" "${GATE}"; then
     echo "  FAIL  M1 mutation sed did not change the gate copy"; FAIL=$((FAIL+1))
 else
     out="$(bash "${MUT}" "${R1_REPO}" 2>&1)"; rc=$?
