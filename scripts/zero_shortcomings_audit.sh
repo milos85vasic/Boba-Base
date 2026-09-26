@@ -24,6 +24,14 @@ WORKABLE_ITEMS_DB="${WORKABLE_ITEMS_DB_OVERRIDE:-$REPO_ROOT/docs/workable_items.
 GATE_LEDGER_SCRIPT="${GATE_LEDGER_SCRIPT_OVERRIDE:-$REPO_ROOT/constitution/scripts/gates/cm_gate_ledger_ratchet.sh}"
 COVERAGE_ESCAPE_LEDGER="$REPO_ROOT/docs/QA_DISCOVERY_LEDGER.md"
 
+# Exit-code contract (specs/003-zero-shortcomings-audit/contracts/cli.md).
+# Usage and internal refusals are deliberately DIFFERENT from the genuine
+# mismatch code 1, so a caller can tell "the defect is back" from "the tool
+# was misused or could not run" without parsing the message.
+AUDIT_EXIT_USAGE=4      # bad mode/option/value, invalid item id
+AUDIT_EXIT_INTERNAL=5   # the tool refused to run (mktemp, snapshot, lock busy)
+AUDIT_EXIT_TIMEOUT=6    # the recorded command exceeded its bound: inconclusive
+
 usage() {
     cat <<'USAGE'
 Usage: zero_shortcomings_audit.sh <mode> [options]
@@ -46,13 +54,28 @@ Modes:
                           source|artifact|runtime (default: runtime).
       --reopen-on-mismatch
                           reopen the item in the tracker on a mismatch.
-      Exit: 0 match, 1 mismatch (or usage error), 2 no/insufficient
-      evidence, 3 mismatch but the tracker reopen FAILED.
+      The command runs niced (nice/ionice), without BASH_ENV/ENV, bounded
+      by $AUDIT_VERIFY_COMMAND_TIMEOUT seconds when set, and only while
+      holding the per-repository FR-011 lock ($AUDIT_VERIFY_LOCK_FILE,
+      waiting up to $AUDIT_VERIFY_LOCK_WAIT seconds, default 60).
+      Exit: 0 match, 1 mismatch, 2 no/insufficient evidence, 3 mismatch but
+      the tracker reopen FAILED, 4 usage error / invalid id, 5 internal
+      refusal (mktemp, snapshot, lock held by another run), 6 the recorded
+      command timed out (inconclusive).
       Corruption incidents are logged under $AUDIT_QA_ROOT/zero_shortcomings_audit
       (or $AUDIT_INCIDENT_LOG_DIR when set).
-  standing-check
+  standing-check [--reverify N]
       The recurring, non-blocking mode wired into pre_build_verification.sh.
-      Writes its run log to $AUDIT_STANDING_LOG_DIR when set.
+      Counts the three surfaces AND re-runs verify-closure (never reopening)
+      over the N highest-risk CLOSED items whose evidence records a command
+      (default N=$AUDIT_REVERIFY_DEFAULT or 2; 0 disables). Each command is
+      bounded by $AUDIT_REVERIFY_ITEM_TIMEOUT (150 s) and an item starts only
+      if it fits in $AUDIT_REVERIFY_BUDGET (210 s). A mismatch, timeout,
+      invalid evidence or refusal marks the run status=degraded. Always
+      exits 0 once its arguments are valid. Writes its run log to
+      $AUDIT_STANDING_LOG_DIR when set.
+
+Usage errors in any mode exit 4.
 
 Options:
   -h, --help    Show this help and exit.
@@ -64,15 +87,24 @@ count_backlog_open() {
         "SELECT count(*) FROM items WHERE status NOT LIKE '%(→ Fixed.md)' AND status != 'Obsolete';"
 }
 
+# audit_severity_rank_sql <column> — an SQL expression ranking the tracker's
+# free-text severity column (case-insensitive; the live tracker mixes
+# "Critical"/"critical", "High"/"Major"/"Important", ...): 0 critical,
+# 1 high|major|important, 2 medium, 3 low|minor, 4 anything else or NULL.
+audit_severity_rank_sql() {
+    printf "CASE lower(trim(coalesce(%s,''))) WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'major' THEN 1 WHEN 'important' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 WHEN 'minor' THEN 3 ELSE 4 END" "$1"
+}
+
 list_backlog_risk_ordered() {
-    # FR-012: reopens DESC then last_modified DESC. items has no reopens_count
-    # column; the count is derived from item_history 'Reopened' events. The open
-    # predicate is identical to count_backlog_open above.
+    # FR-012: reopens DESC, then last_modified DESC, then severity (most
+    # severe first), then atm_id. items has no reopens_count column; the count
+    # is derived from item_history 'Reopened' events. The open predicate is
+    # identical to count_backlog_open above.
     sqlite3 "$WORKABLE_ITEMS_DB" \
         "SELECT i.atm_id FROM items i
          WHERE i.status NOT LIKE '%(→ Fixed.md)' AND i.status != 'Obsolete'
          ORDER BY (SELECT count(*) FROM item_history h WHERE h.atm_id = i.atm_id AND h.event_type = 'Reopened') DESC,
-                  i.last_modified DESC, i.atm_id;"
+                  i.last_modified DESC, $(audit_severity_rank_sql i.severity), i.atm_id;"
 }
 
 count_gates_unimplemented() {
@@ -112,11 +144,11 @@ cmd_enumerate() {
                 # set -u "unbound variable" abort.
                 if [[ $# -lt 2 || -z "$2" ]]; then
                     print_error "enumerate: --surface requires a value (all|backlog|gates|escapes|blocked)"
-                    return 1
+                    return "$AUDIT_EXIT_USAGE"
                 fi
                 surface="$2"; shift 2 ;;
             --sort-by-risk) sort_by_risk=true; shift ;;
-            *) print_error "enumerate: unknown option: $1"; return 1 ;;
+            *) print_error "enumerate: unknown option: $1"; return "$AUDIT_EXIT_USAGE" ;;
         esac
     done
 
@@ -138,7 +170,7 @@ cmd_enumerate() {
             # of the chain's final statement propagated silently through
             # set -e with zero explanatory output. Fail loud, by name.
             print_error "enumerate: unrecognized --surface value: '$surface' (expected all|backlog|gates|escapes|blocked)"
-            return 1
+            return "$AUDIT_EXIT_USAGE"
             ;;
     esac
 
@@ -149,7 +181,7 @@ cmd_enumerate() {
     if [[ "$sort_by_risk" == "true" ]]; then
         if [[ "$surface" != "backlog" ]]; then
             print_error "enumerate: --sort-by-risk applies only to --surface backlog (got '$surface')"
-            return 1
+            return "$AUDIT_EXIT_USAGE"
         fi
         if [[ "$json" == "true" ]]; then
             # JSON array of atm_ids in risk order.
@@ -185,11 +217,12 @@ cmd_enumerate() {
 main() {
     local mode="${1:-}"
     case "$mode" in
-        -h|--help|"") usage; [[ "$mode" == "" ]] && return 1 || return 0 ;;
+        -h|--help) usage; return 0 ;;
+        "") usage; return "$AUDIT_EXIT_USAGE" ;;
         enumerate) shift; cmd_enumerate "$@" ;;
         verify-closure) shift; cmd_verify_closure "$@" ;;
         standing-check) shift; cmd_standing_check "$@" ;;
-        *) print_error "unknown mode: $mode"; usage; return 1 ;;
+        *) print_error "unknown mode: $mode"; usage; return "$AUDIT_EXIT_USAGE" ;;
     esac
 }
 
@@ -234,13 +267,54 @@ audit_require_db() {
 
 AUDIT_QA_ROOT="${AUDIT_QA_ROOT:-$REPO_ROOT/docs/qa}"
 
+# audit_find_evidence_file <item-id> — prints the item's closure evidence file
+# (the lexically last closure_evidence_*.md, so the choice is deterministic
+# when more than one exists), or nothing when there is none.
+audit_find_evidence_file() {
+    local qa_root_abs f last=""
+    qa_root_abs="$(cd "$AUDIT_QA_ROOT" 2>/dev/null && pwd -P)" || qa_root_abs="$AUDIT_QA_ROOT"
+    for f in "$qa_root_abs/$1"/closure_evidence_*.md; do
+        [[ -f "$f" ]] && last="$f"
+    done
+    printf '%s' "$last"
+}
+
+# audit_take_verify_lock — FR-011 serialization of closure checks. Opens the
+# per-repository lock file on a fresh descriptor and holds it for the rest of
+# this process. Returns non-zero (after naming the reason) when the lock
+# cannot be opened or is held by another verify-closure.
+audit_take_verify_lock() {
+    if ! command -v flock >/dev/null 2>&1; then
+        print_warning "verify-closure: flock(1) not available -- FR-011 serialization is NOT enforced on this host"
+        return 0
+    fi
+    local repo_key lock_file wait="${AUDIT_VERIFY_LOCK_WAIT:-60}"
+    if [[ ! "$wait" =~ ^[0-9]+$ ]]; then
+        print_error "verify-closure: AUDIT_VERIFY_LOCK_WAIT must be a non-negative integer (got '$wait')"
+        return 1
+    fi
+    repo_key="$(printf '%s' "$REPO_ROOT" | cksum | cut -d' ' -f1)"
+    lock_file="${AUDIT_VERIFY_LOCK_FILE:-${TMPDIR:-/tmp}/zero_shortcomings_audit_verify_${repo_key}.lock}"
+    # Brace-scoped so the side redirection never leaks into the caller's
+    # shell (§11.4.67(6)); the descriptor itself is meant to stay open.
+    if ! { exec {AUDIT_VERIFY_LOCK_FD}>>"$lock_file"; } 2>/dev/null; then
+        print_error "verify-closure: cannot open the FR-011 lock file $lock_file"
+        return 1
+    fi
+    if ! flock -w "$wait" "$AUDIT_VERIFY_LOCK_FD"; then
+        print_error "verify-closure: another verify-closure holds $lock_file -- refusing to run a second corruption guard over the same tree (FR-011)"
+        return 1
+    fi
+    return 0
+}
+
 cmd_verify_closure() {
     local item_id="${1:-}"
     local reopen_on_mismatch=false
     local require_layer="runtime"
     if [[ -z "$item_id" ]]; then
         print_error "verify-closure: an item id is required"
-        return 1
+        return "$AUDIT_EXIT_USAGE"
     fi
     # m3: the id is used to build a filesystem path below, so validate it
     # BEFORE any path use: [A-Za-z0-9._-] only, starting with a letter or
@@ -248,7 +322,7 @@ cmd_verify_closure() {
     # never containing `..` or `/`.
     if [[ ! "$item_id" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ || "$item_id" == *..* ]]; then
         print_error "verify-closure: invalid item id '$item_id' (allowed: ^[A-Za-z0-9][A-Za-z0-9._-]*\$, no '..' or '/')"
-        return 1
+        return "$AUDIT_EXIT_USAGE"
     fi
     shift
     while [[ $# -gt 0 ]]; do
@@ -257,15 +331,15 @@ cmd_verify_closure() {
             --require-layer)
                 if [[ $# -lt 2 || -z "$2" ]]; then
                     print_error "verify-closure: --require-layer requires a value (source|artifact|runtime)"
-                    return 1
+                    return "$AUDIT_EXIT_USAGE"
                 fi
                 require_layer="$2"; shift 2 ;;
-            *) print_error "verify-closure: unknown option: $1"; return 1 ;;
+            *) print_error "verify-closure: unknown option: $1"; return "$AUDIT_EXIT_USAGE" ;;
         esac
     done
     case "$require_layer" in
         source|artifact|runtime) ;;
-        *) print_error "verify-closure: unrecognized --require-layer value '$require_layer' (expected source|artifact|runtime)"; return 1 ;;
+        *) print_error "verify-closure: unrecognized --require-layer value '$require_layer' (expected source|artifact|runtime)"; return "$AUDIT_EXIT_USAGE" ;;
     esac
 
     # Resolve the evidence root to an absolute path once, so neither the
@@ -274,15 +348,12 @@ cmd_verify_closure() {
     local qa_root_abs
     qa_root_abs="$(cd "$AUDIT_QA_ROOT" 2>/dev/null && pwd -P)" || qa_root_abs="$AUDIT_QA_ROOT"
 
-    # `|| true` guards against `find` exiting non-zero when the target
-    # directory does not exist at all (GNU find: "No such file or
-    # directory"); under this script's `set -euo pipefail`, an unguarded
-    # pipeline here would otherwise abort the whole script with a bare
-    # exit 1 BEFORE the `-z "$evidence_file"` check below ever runs,
-    # silently short-circuiting the deliberate "no evidence -> exit 2"
-    # contract (root-caused, not guessed, per §11.4.102/§11.4.201(12)).
+    # audit_find_evidence_file prints nothing (status 0) when the item has no
+    # evidence directory at all; the `|| true` is kept so a future failure mode
+    # of the finder still reaches the deliberate "no evidence -> exit 2"
+    # contract below instead of a bare set -e abort (§11.4.201(12)).
     local evidence_file
-    evidence_file="$(find "$qa_root_abs/$item_id" -maxdepth 1 -name 'closure_evidence_*.md' 2>/dev/null | head -1)" || true
+    evidence_file="$(audit_find_evidence_file "$item_id")" || true
     if [[ -z "$evidence_file" ]]; then
         print_error "verify-closure: no recorded evidence for $item_id under $AUDIT_QA_ROOT/$item_id"
         return 2
@@ -382,16 +453,25 @@ cmd_verify_closure() {
     local cmd_root
     cmd_root="$(git -C "$REPO_ROOT" rev-parse --show-toplevel 2>/dev/null)" || cmd_root="$REPO_ROOT"
 
+    # FR-011: two concurrent closure checks would each snapshot, run, and then
+    # REVERT the same tracked docs/qa tree -- one run's revert could undo a
+    # write the other is legitimately making. Serialize them with one lock per
+    # repository. The lock lives outside the repository (never tracked) and is
+    # released when this process exits. A busy lock is an internal refusal,
+    # never a wait-forever: AUDIT_VERIFY_LOCK_WAIT (seconds, default 60) bounds
+    # how long to wait. Without flock(1) the check runs unlocked and SAYS so.
+    audit_take_verify_lock || return "$AUDIT_EXIT_INTERNAL"
+
     local corruption_snapshot corruption_backup
-    corruption_backup="$(mktemp -d)" || { print_error "verify-closure: mktemp failed -- cannot run the corruption guard"; return 1; }
+    corruption_backup="$(mktemp -d)" || { print_error "verify-closure: mktemp failed -- cannot run the corruption guard"; return "$AUDIT_EXIT_INTERNAL"; }
     if ! corruption_snapshot="$(audit_snapshot_tracked_evidence "$corruption_backup" "$cmd_root")"; then
         rm -rf "$corruption_backup"
         print_error "verify-closure: could not snapshot tracked evidence -- refusing to run $item_id's command unguarded"
-        return 1
+        return "$AUDIT_EXIT_INTERNAL"
     fi
 
     local fresh_summary cmd_stderr
-    cmd_stderr="$(mktemp)" || { rm -rf "$corruption_backup"; print_error "verify-closure: mktemp failed"; return 1; }
+    cmd_stderr="$(mktemp)" || { rm -rf "$corruption_backup"; print_error "verify-closure: mktemp failed"; return "$AUDIT_EXIT_INTERNAL"; }
     # FR-006 (review finding I-6): run the recorded command in a FRESH bash
     # process with cwd = the repository root and stdin closed -- never
     # `eval`ed in this shell, where it would inherit set -euo pipefail, this
@@ -402,7 +482,28 @@ cmd_verify_closure() {
     # runs (review finding 2) -- the commands most likely to corrupt evidence
     # are also the most likely to fail. A failing command yields a partial
     # summary that then MISMATCHes, which is the correct outcome.
-    fresh_summary="$(cd "$cmd_root" && bash -c "$recorded_command" </dev/null 2>"$cmd_stderr")" || true
+    #
+    # The fresh process is started with BASH_ENV and ENV REMOVED: bash sources
+    # $BASH_ENV before running a non-interactive `bash -c`, so a startup file
+    # exported by the caller could otherwise rewrite the very result being
+    # verified. It runs under the ExecutionPolicy bounds (nice/ionice via
+    # audit_dispatch_bounded, Principle XIII) and, when
+    # AUDIT_VERIFY_COMMAND_TIMEOUT is set, under timeout(1) -- whose process-
+    # group kill also reaches the command's own children. A timeout is an
+    # INCONCLUSIVE result (exit 6), reported after the corruption guard below
+    # has run, never read as a match or a mismatch.
+    local -a runner=(env -u BASH_ENV -u ENV bash -c "$recorded_command")
+    local cmd_timeout="${AUDIT_VERIFY_COMMAND_TIMEOUT:-}"
+    if [[ -n "$cmd_timeout" ]]; then
+        if [[ ! "$cmd_timeout" =~ ^[1-9][0-9]*$ ]]; then
+            rm -rf "$corruption_backup" "$cmd_stderr"
+            print_error "verify-closure: AUDIT_VERIFY_COMMAND_TIMEOUT must be a positive integer of seconds (got '$cmd_timeout')"
+            return "$AUDIT_EXIT_USAGE"
+        fi
+        runner=(timeout -k 5 "$cmd_timeout" "${runner[@]}")
+    fi
+    local cmd_rc=0
+    fresh_summary="$(cd "$cmd_root" && audit_dispatch_bounded "${runner[@]}" </dev/null 2>"$cmd_stderr")" || cmd_rc=$?
     # Constitution Principle III (review finding I-4): the command's stderr
     # is shown to the operator, but only AFTER it passes through the redactor.
     if [[ -s "$cmd_stderr" ]]; then
@@ -428,6 +529,11 @@ cmd_verify_closure() {
             printf '%s' "$corruption_incidents"
         } >> "$run_log"
         print_warning "verify-closure: $item_id's command corrupted $(printf '%s' "$corruption_incidents" | grep -c .) tracked evidence file(s) outside its own evidence dir — reverted; incident logged to $run_log"
+    fi
+
+    if [[ -n "$cmd_timeout" && ( "$cmd_rc" -eq 124 || "$cmd_rc" -eq 137 ) ]]; then
+        print_error "verify-closure: $item_id's recorded command timed out after ${cmd_timeout}s -- INCONCLUSIVE, neither a match nor a mismatch"
+        return "$AUDIT_EXIT_TIMEOUT"
     fi
 
     if [[ "$fresh_summary" == "$recorded_summary" ]]; then
@@ -685,10 +791,126 @@ audit_detect_and_revert_corruption() {
     printf '%s' "$incidents"
 }
 
+# Standing-check re-verification bounds (SC-005). The defaults keep the
+# advisory pre-build stage inside its own 300 s timeout: at most
+# AUDIT_REVERIFY_DEFAULT closed items per run, each recorded command bounded
+# by AUDIT_REVERIFY_ITEM_TIMEOUT seconds, and an item is only STARTED when its
+# full timeout still fits inside AUDIT_REVERIFY_BUDGET seconds of re-verify
+# time. The item timeout is sized from a measurement, not a guess: the one
+# closed item on the live tracker that records a command took 130 s at nice 19
+# (2026-09-26), so 150 s lets it finish instead of reading as a timeout.
+AUDIT_REVERIFY_DEFAULT="${AUDIT_REVERIFY_DEFAULT:-2}"
+AUDIT_REVERIFY_ITEM_TIMEOUT="${AUDIT_REVERIFY_ITEM_TIMEOUT:-150}"
+AUDIT_REVERIFY_BUDGET="${AUDIT_REVERIFY_BUDGET:-210}"
+
+# audit_evidence_has_command <item-id> — true when the item's closure evidence
+# file carries a re-runnable **Command:** field (the same file and the same
+# pattern verify-closure uses).
+audit_evidence_has_command() {
+    local f
+    f="$(audit_find_evidence_file "$1")" || return 1
+    [[ -n "$f" ]] || return 1
+    grep -qP '\*\*Command:\*\* `.*`' "$f"
+}
+
+# list_closed_risk_ordered — every CLOSED (…(→ Fixed.md)) item, never an
+# Obsolete one, highest risk first with the same ordering rule as the open
+# backlog (reopens DESC, last_modified DESC, severity rank, id).
+list_closed_risk_ordered() {
+    sqlite3 "$WORKABLE_ITEMS_DB" \
+        "SELECT i.atm_id FROM items i
+         WHERE i.status LIKE '%(→ Fixed.md)' AND i.status NOT LIKE 'Obsolete%'
+         GROUP BY i.atm_id
+         ORDER BY (SELECT count(*) FROM item_history h WHERE h.atm_id = i.atm_id AND h.event_type = 'Reopened') DESC,
+                  max(i.last_modified) DESC,
+                  min($(audit_severity_rank_sql i.severity)),
+                  i.atm_id;"
+}
+
+# audit_standing_reverify <max-items> — re-runs verify-closure over the
+# highest-risk closed items whose evidence records a command. Each re-run is
+# a separate, bounded verify-closure process: its own corruption guard runs,
+# its incidents are logged beside the standing log, and --reopen-on-mismatch
+# is NEVER passed (the standing mode reports; it never edits the tracker).
+# Prints ONE space-separated marker fragment; returns 1 when any re-run was
+# not a clean match (the caller turns that into status=degraded).
+audit_standing_reverify() {
+    local max="$1" logdir="$2"
+    if [[ "$max" -eq 0 ]]; then
+        printf 'reverify=off'
+        return 0
+    fi
+    local -a ids=() mismatch=() invalid=() timedout=() refused=() skipped=()
+    local id checked=0 matched=0 rc started=$SECONDS
+    local all
+    all="$(list_closed_risk_ordered)" || { printf 'reverify=failed'; return 1; }
+    while IFS= read -r id; do
+        [[ -n "$id" ]] || continue
+        [[ "${#ids[@]}" -ge "$max" ]] && break
+        audit_evidence_has_command "$id" && ids+=("$id")
+    done <<< "$all"
+    for id in "${ids[@]}"; do
+        if (( SECONDS - started + AUDIT_REVERIFY_ITEM_TIMEOUT > AUDIT_REVERIFY_BUDGET )); then
+            skipped+=("$id"); continue
+        fi
+        rc=0
+        # A fresh process per item; the recorded command inside it runs under
+        # the ExecutionPolicy bounds. The outer timeout is only a backstop (the
+        # inner one lets the corruption guard still run). A busy FR-011 lock
+        # is not waited for here (wait 0): it is recorded as a refusal so the
+        # run stays inside the pre-build stage's own timeout.
+        AUDIT_VERIFY_COMMAND_TIMEOUT="$AUDIT_REVERIFY_ITEM_TIMEOUT" AUDIT_INCIDENT_LOG_DIR="$logdir" \
+            AUDIT_VERIFY_LOCK_WAIT=0 \
+            timeout -k 5 $((AUDIT_REVERIFY_ITEM_TIMEOUT + 60)) \
+            bash "$SCRIPT_DIR/zero_shortcomings_audit.sh" verify-closure "$id" >/dev/null 2>&1 || rc=$?
+        checked=$((checked + 1))
+        case "$rc" in
+            0) matched=$((matched + 1)) ;;
+            1) mismatch+=("$id") ;;
+            2) invalid+=("$id") ;;
+            6|124|137) timedout+=("$id") ;;
+            *) refused+=("$id") ;;
+        esac
+    done
+    local out="reverify=checked:${checked},match:${matched},mismatch:${#mismatch[@]}"
+    local IFS=,
+    [[ ${#mismatch[@]} -gt 0 ]] && out+=" reverify_mismatch=${mismatch[*]}"
+    [[ ${#invalid[@]} -gt 0 ]] && out+=" reverify_invalid_evidence=${invalid[*]}"
+    [[ ${#timedout[@]} -gt 0 ]] && out+=" reverify_timeout=${timedout[*]}"
+    [[ ${#refused[@]} -gt 0 ]] && out+=" reverify_refused=${refused[*]}"
+    [[ ${#skipped[@]} -gt 0 ]] && out+=" reverify_skipped_budget=${skipped[*]}"
+    printf '%s' "$out"
+    [[ $((checked - matched + ${#skipped[@]})) -eq 0 ]]
+}
+
 cmd_standing_check() {
-    # Advisory and non-blocking by design (always exit 0), but NEVER a
-    # false-null (§11.4.201(6)): a failing sub-check is recorded as an
-    # explicit status=degraded marker, not a normal-looking line.
+    # Advisory and non-blocking by design (always exit 0 once the arguments
+    # are valid), but NEVER a false-null (§11.4.201(6)): a failing sub-check
+    # or a closed item that no longer reproduces its evidence is recorded as
+    # an explicit status=degraded marker, not a normal-looking line.
+    local reverify="$AUDIT_REVERIFY_DEFAULT"
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --reverify)
+                if [[ $# -lt 2 || ! "$2" =~ ^[0-9]+$ ]]; then
+                    print_error "standing-check: --reverify requires a non-negative integer (the number of closed items to re-verify; 0 disables)"
+                    return "$AUDIT_EXIT_USAGE"
+                fi
+                reverify="$2"; shift 2 ;;
+            *) print_error "standing-check: unknown option: $1"; return "$AUDIT_EXIT_USAGE" ;;
+        esac
+    done
+    local v
+    for v in AUDIT_REVERIFY_DEFAULT AUDIT_REVERIFY_ITEM_TIMEOUT AUDIT_REVERIFY_BUDGET; do
+        if [[ ! "${!v}" =~ ^[0-9]+$ ]]; then
+            print_error "standing-check: $v must be a non-negative integer (got '${!v}')"
+            return "$AUDIT_EXIT_USAGE"
+        fi
+    done
+    if [[ "$AUDIT_REVERIFY_ITEM_TIMEOUT" -eq 0 ]]; then
+        print_error "standing-check: AUDIT_REVERIFY_ITEM_TIMEOUT must be at least 1 second"
+        return "$AUDIT_EXIT_USAGE"
+    fi
     local logdir="${AUDIT_STANDING_LOG_DIR:-$REPO_ROOT/docs/qa/zero_shortcomings_audit}"
     mkdir -p "$logdir"
     local run_id status="ok" reasons="" failed="" body="" surface out rc
@@ -710,11 +932,25 @@ cmd_standing_check() {
         [[ -n "$out" ]] && body+="${out},"
     done
     body="{${body%,}}"
+    # SC-005: re-verify the highest-risk closed items. A closed item that no
+    # longer reproduces its recorded evidence is a finding; so is one that
+    # could not be checked (timeout, invalid evidence, refusal) -- none of
+    # those may read as a clean run.
+    local reverify_marker=""
+    if [[ -r "$WORKABLE_ITEMS_DB" ]]; then
+        if ! reverify_marker="$(audit_standing_reverify "$reverify" "$logdir")"; then
+            status="degraded"; reasons+="reverify,"
+        fi
+    elif [[ "$reverify" -gt 0 ]]; then
+        reverify_marker="reverify=skipped_db_missing"
+    fi
     local marker="status=${status}"
     if [[ "$status" == "degraded" ]]; then
-        marker+=" reason=${reasons%,} failed=${failed%,}"
+        marker+=" reason=${reasons%,}"
+        [[ -n "$failed" ]] && marker+=" failed=${failed%,}"
         print_warning "standing-check degraded (${reasons%,}) -- advisory only, exiting 0"
     fi
+    [[ -n "$reverify_marker" ]] && marker+=" ${reverify_marker}"
     local line
     # Constitution Principle III: redact BEFORE the value touches the log file.
     line="$(audit_redact_before_write "$run_id mode=standing-check $marker $body")" || line="$run_id mode=standing-check status=degraded reason=redaction_failed"

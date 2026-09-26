@@ -24,9 +24,16 @@ check "stage removes the temp dir" 'grep -q "rm -rf \"\${log}\" \"\${logdir}\"" 
 # Functional: with the override, nothing lands under the repo docs/qa dir.
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 real=docs/qa/zero_shortcomings_audit
-before="$(ls "$real" 2>/dev/null | wc -l)"
-AUDIT_STANDING_LOG_DIR="$T" bash "$SCRIPT" standing-check >/dev/null 2>&1 || true
-after="$(ls "$real" 2>/dev/null | wc -l)"
+# Count with find guarded by `|| true`: `ls` of a directory that does not
+# exist exits 2, which under set -o pipefail aborted this whole test before its
+# summary line (a FAIL-bluff from the instrument, not from the product).
+count_real() { { find "$real" -mindepth 1 -maxdepth 1 2>/dev/null || true; } | wc -l; }
+before="$(count_real)"
+# --reverify 0: closed-item re-verification would re-run real recorded
+# commands (minutes); where it writes its incident log is covered by
+# tests/audit/test_zero_shortcomings_audit_standing_reverify.sh scenario 3.
+AUDIT_STANDING_LOG_DIR="$T" bash "$SCRIPT" standing-check --reverify 0 >/dev/null 2>&1 || true
+after="$(count_real)"
 check "override dir received the log" '[[ "$(ls "$T" | wc -l)" -ge 1 ]]'
 check "repo docs/qa/zero_shortcomings_audit unchanged" '[[ "$before" -eq "$after" ]]'
 

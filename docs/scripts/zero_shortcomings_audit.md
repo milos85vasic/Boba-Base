@@ -1,7 +1,7 @@
 # `scripts/zero_shortcomings_audit.sh`
 
-**Revision:** 4
-**Last modified:** 2026-09-26T08:50:32Z
+**Revision:** 5
+**Last modified:** 2026-09-26T17:00:00Z
 
 **Purpose**: Unified enumeration, closure-evidence re-verification, and standing-check
 entry point across this project's three tracked "unfinished/gap/shortcoming" surfaces
@@ -11,7 +11,9 @@ See `specs/003-zero-shortcomings-audit/contracts/cli.md` for the full CLI contra
 **Usage**: `scripts/zero_shortcomings_audit.sh <enumerate|verify-closure|standing-check> [options]`
 
 `-h` / `--help` prints the usage text and exits 0. Running with no mode prints the usage
-and exits 1. An unknown mode prints `unknown mode: <x>` plus the usage and exits 1.
+and exits 4. An unknown mode prints `unknown mode: <x>` plus the usage and exits 4.
+**Every usage error in every mode exits 4**, so a usage refusal can never be mistaken for
+a verification mismatch (exit 1).
 (The built-in `--help` text lists every mode and option; this guide gives the full
 semantics.)
 
@@ -35,10 +37,10 @@ Read-only. `S` is one of `all` (default), `backlog`, `gates`, `escapes`, `blocke
   descending (count of `Reopened` events in `item_history`), then `last_modified`
   descending, then id. With `--json` it prints a JSON array of ids. **Only valid with
   `--surface backlog`.**
-- Errors (all exit 1, message on stderr): the tracker DB (backlog/blocked surfaces) is
-  missing or unreadable (`tracker DB missing or unreadable: <path>` -- checked before any
-  `sqlite3` call, so a missing DB is never created as an empty file);
-  `--surface` given with no value (`enumerate: --surface requires a value ...`); unknown option
+- Enumeration failure (exit 1, message on stderr): the tracker DB (backlog/blocked
+  surfaces) is missing or unreadable (`tracker DB missing or unreadable: <path>` -- checked
+  before any `sqlite3` call, so a missing DB is never created as an empty file).
+- Usage errors (exit 4, message on stderr): `--surface` given with no value (`enumerate: --surface requires a value ...`); unknown option
   (`enumerate: unknown option: X`); unrecognized `--surface` value
   (`enumerate: unrecognized --surface value: 'X' (expected all|backlog|gates|escapes|blocked)`);
   `--sort-by-risk` with any surface other than `backlog`
@@ -49,7 +51,8 @@ Read-only. `S` is one of `all` (default), `backlog`, `gates`, `escapes`, `blocke
 ### `verify-closure <item-id> [--reopen-on-mismatch] [--require-layer L]`
 
 Independently re-runs the recorded closure evidence for one item. Evidence is read from the
-first `closure_evidence_*.md` directly inside `<AUDIT_QA_ROOT>/<item-id>/`. `<item-id>` must
+lexically last `closure_evidence_*.md` directly inside `<AUDIT_QA_ROOT>/<item-id>/` (a
+deterministic choice when more than one exists). `<item-id>` must
 match `^[A-Za-z0-9][A-Za-z0-9._-]*$` and must not contain `..`; anything else (a `/`, a
 leading `-` or `.`, spaces, shell metacharacters) is rejected with `invalid item id` before
 the id is used in any path.
@@ -69,8 +72,13 @@ Required evidence-file fields:
   script lives in, not the caller's cwd) and stdin closed, so it does not inherit this
   script's `set -euo pipefail`, functions or non-exported variables and gives the same
   result wherever `verify-closure` is invoked from. Exported environment variables are
-  inherited, as for any child process. The command's stderr is shown on the terminal only
-  after passing through the redactor (see Redaction).
+  inherited, as for any child process, **except `BASH_ENV` and `ENV`, which are removed**
+  (bash would otherwise source that startup file before the command and could rewrite the
+  very result being verified). The command runs under the ExecutionPolicy bounds
+  (`audit_dispatch_bounded`: `nice -n 19`, plus `ionice -c 3` when available -- Principle
+  XIII) and, when `AUDIT_VERIFY_COMMAND_TIMEOUT` is set, under `timeout -k 5 <seconds>`,
+  whose process-group kill also reaches the command's children. The command's stderr is
+  shown on the terminal only after passing through the redactor (see Redaction).
 - `**Result Summary:** <text>` -- compared exactly against the command's fresh stdout.
 
 **Trust model**: the `**Command:**` is executed as arbitrary shell. Evidence files are
@@ -82,9 +90,20 @@ Exit codes:
 | Code | Meaning |
 |---|---|
 | 0 | The recorded command's fresh output equals the recorded Result Summary (`reproduced its recorded evidence`). |
-| 1 | Mismatch (`MISMATCH -- recorded '...', got '...'`, values credential-redacted before printing); or usage error: missing or invalid item id, unknown option, `--require-layer` with no value or a value other than `source`/`artifact`/`runtime`; or the evidence snapshot / a temp file could not be created (the command is then not run). |
+| 1 | Mismatch only (`MISMATCH -- recorded '...', got '...'`, values credential-redacted before printing). |
 | 2 | No `closure_evidence_*.md` found; declared layer below `--require-layer`; no `**Test Type:**`; invalid `**Test Type:**`; no `**Command:**` field. |
 | 3 | Mismatch **and** `--reopen-on-mismatch` was given **and** the tracker reopen failed (`reopen FAILED for <id> -- the mismatch is NOT recorded in the tracker`). |
+| 4 | Usage error: missing or invalid item id, unknown option, `--require-layer` with no value or a value other than `source`/`artifact`/`runtime`, a non-integer `AUDIT_VERIFY_COMMAND_TIMEOUT`. |
+| 5 | Internal refusal, the command is **not** run: a temp file for the guard could not be created (`mktemp failed`), the evidence snapshot failed, the FR-011 lock file could not be opened, or another `verify-closure` holds the lock (`another verify-closure holds <lock> ...`). |
+| 6 | The recorded command exceeded `AUDIT_VERIFY_COMMAND_TIMEOUT` (`timed out after Ns -- INCONCLUSIVE`): neither a match nor a mismatch. The corruption guard still ran. |
+
+FR-011 serialization: before snapshotting, `verify-closure` takes an exclusive `flock` on a
+per-repository lock file (`$AUDIT_VERIFY_LOCK_FILE`, default
+`${TMPDIR:-/tmp}/zero_shortcomings_audit_verify_<cksum of repo root>.lock`, never inside the
+repository), waiting at most `$AUDIT_VERIFY_LOCK_WAIT` seconds (default 60) and refusing
+with exit 5 after that. Two concurrent closure checks would otherwise snapshot, run and then
+revert the same tracked tree, one undoing the other's legitimate writes. Without `flock(1)`
+the check runs unlocked and prints a `WARN` saying FR-011 is not enforced on that host.
 
 `--reopen-on-mismatch`: on a mismatch, calls the `workable-items reopen` CLI
 (`--why test-failed --who AI`, evidence path = the evidence file, DB =
@@ -111,13 +130,33 @@ Guard limits (stated, not hidden):
 - Files the command **creates** (untracked) and changes inside the item's own evidence
   directory are left alone.
 
-### `standing-check`
+### `standing-check [--reverify N]`
 
-Recurring, advisory mode; **always exits 0**. Runs `enumerate --json` for each of the
-`backlog`, `gates`, `escapes` surfaces and appends one line to
-`<AUDIT_STANDING_LOG_DIR>/<run-id>.log`:
+Recurring, advisory mode; **always exits 0** once its arguments are valid (a bad option or
+a non-integer `--reverify` value exits 4). Runs `enumerate --json` for each of the
+`backlog`, `gates`, `escapes` surfaces, **re-verifies closed items** (SC-005, below) and
+appends one line to `<AUDIT_STANDING_LOG_DIR>/<run-id>.log`:
 
-`<run-id> mode=standing-check status=ok {"backlog_open":N,"gates_unimplemented":N,"escapes_open":N}`
+`<run-id> mode=standing-check status=ok reverify=checked:C,match:M,mismatch:X {"backlog_open":N,"gates_unimplemented":N,"escapes_open":N}`
+
+Closed-item re-verification (SC-005 -- a reintroduced, previously fixed defect is caught by
+one normal run, with nobody re-triggering it): the closed items (status ending in
+`(→ Fixed.md)`, never `Obsolete`) are ordered by risk -- reopen count descending, then
+`last_modified` descending, then severity, then id -- and the first `N` whose evidence file
+records a ``**Command:**`` are re-run, each as its own `verify-closure <id>` process (so its
+corruption guard runs and its incident log goes to `<AUDIT_STANDING_LOG_DIR>`). `N` is
+`--reverify N`, else `$AUDIT_REVERIFY_DEFAULT`, else **2**; `--reverify 0` disables it and
+the line says `reverify=off`. The standing mode **never** passes `--reopen-on-mismatch`: it
+reports, it never edits the tracker. Bounds: each recorded command gets
+`$AUDIT_REVERIFY_ITEM_TIMEOUT` seconds (default **150**, sized from the measured 130 s of the
+one closed item on the live tracker that records a command), an item is only started when
+that full timeout still fits in `$AUDIT_REVERIFY_BUDGET` seconds of re-verify time (default
+**210**), a busy FR-011 lock is not waited for, and an outer backstop timeout guards each
+process. Every outcome other than a clean match makes the run `status=degraded
+reason=...reverify` and adds a marker naming the items:
+`reverify_mismatch=` (the recorded result no longer reproduces -- the defect is back),
+`reverify_invalid_evidence=` (exit 2), `reverify_timeout=` (inconclusive),
+`reverify_refused=` (exit 4/5, e.g. lock busy) and `reverify_skipped_budget=`.
 
 If a sub-check fails, the line instead carries `status=degraded reason=<list> failed=<list>`
 (reasons such as `db_missing`, `<surface>_rc<N>`) and a `WARN` is printed; the JSON body then
@@ -142,6 +181,12 @@ Run id format: `YYYYMMDDTHHMMSSZ-pid<PID>`.
 | `AUDIT_QA_ROOT` | `docs/qa` | Root searched for `<item-id>/closure_evidence_*.md`. |
 | `AUDIT_STANDING_LOG_DIR` | `docs/qa/zero_shortcomings_audit` | Directory for the `standing-check` log (created if missing). |
 | `AUDIT_INCIDENT_LOG_DIR` | `<AUDIT_QA_ROOT>/zero_shortcomings_audit` | Directory for `verify-closure` corruption-incident logs. |
+| `AUDIT_VERIFY_COMMAND_TIMEOUT` | unset (no bound) | Seconds the recorded command may run; exceeding it exits 6. |
+| `AUDIT_VERIFY_LOCK_FILE` | `${TMPDIR:-/tmp}/zero_shortcomings_audit_verify_<cksum>.lock` | FR-011 lock file. |
+| `AUDIT_VERIFY_LOCK_WAIT` | `60` | Seconds to wait for the FR-011 lock before refusing (exit 5). |
+| `AUDIT_REVERIFY_DEFAULT` | `2` | Closed items `standing-check` re-verifies when `--reverify` is not given. |
+| `AUDIT_REVERIFY_ITEM_TIMEOUT` | `150` | Per-item command timeout in `standing-check`. |
+| `AUDIT_REVERIFY_BUDGET` | `210` | Re-verify time budget in `standing-check`; an item starts only if its timeout fits. |
 
 ## Redaction (Constitution Principle III / §11.4.10)
 
@@ -178,12 +223,14 @@ base64 blob), and a value introduced by any other separator are **not** redacted
 `<AUDIT_QA_ROOT>/zero_shortcomings_audit/<run-id>.log` (or `$AUDIT_INCIDENT_LOG_DIR`) only when
 the corruption guard reverted something.
 
-**Side-effects**: None in `enumerate`. `standing-check` writes its log line.
+**Side-effects**: None in `enumerate`. `standing-check` writes its log line and, through
+its `verify-closure` re-runs, executes recorded commands (never reopening anything).
 `verify-closure` executes the recorded command (`bash -c`, fresh process, cwd = repo root), may revert corrupted tracked
 evidence files, and with `--reopen-on-mismatch` may call the `workable-items` CLI to
 reopen an item.
 
-**Dependencies**: `sqlite3`, `git`, `constitution/scripts/workable-items/workable-items`,
+**Dependencies**: `sqlite3`, `git`, `timeout`, `nice` (`ionice` and `flock` optional, their
+absence is stated at run time), `constitution/scripts/workable-items/workable-items`,
 `constitution/scripts/gates/cm_gate_ledger_ratchet.sh`, and `scripts/lib/audit_*.sh`.
 
 **Cross-references**: `specs/003-zero-shortcomings-audit/{spec,plan,research,data-model}.md`.

@@ -18,9 +18,9 @@ export AUDIT_STANDING_LOG_DIR="$T/logs"
 
 # Fixture DB whose item titles carry a credential-shaped string.
 DB="$T/w.db"
-sqlite3 "$DB" "CREATE TABLE items(atm_id TEXT, status TEXT, title TEXT, last_modified TEXT);
+sqlite3 "$DB" "CREATE TABLE items(atm_id TEXT, status TEXT, severity TEXT, title TEXT, last_modified TEXT);
 CREATE TABLE item_history(atm_id TEXT, event_type TEXT);
-INSERT INTO items VALUES('X-1','Queued','RUTRACKER_PASSWORD=hunter2-fixture-not-real','2026-01-01');"
+INSERT INTO items VALUES('X-1','Queued',NULL,'RUTRACKER_PASSWORD=hunter2-fixture-not-real','2026-01-01');"
 STUB="$T/gate_ok.sh"
 printf '#!/usr/bin/env bash\necho "LEDGER: unimplemented=3"\n' > "$STUB"
 

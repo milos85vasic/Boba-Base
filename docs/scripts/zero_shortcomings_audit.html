@@ -172,6 +172,8 @@
       vertical-align: middle;
     }
   </style>
+  <meta name="x-export-source-sha256" content="9ec2d05686a27ed337185b49437c17937c7bd3039a7c139d81f1b3f8b52934b2">
+  <meta name="dcterms.modified" content="2026-09-26T08:50:53Z">
 </head>
 <body>
 <header id="title-block-header">
@@ -179,8 +181,8 @@
 </header>
 <h1
 id="scriptszero_shortcomings_audit.sh"><code>scripts/zero_shortcomings_audit.sh</code></h1>
-<p><strong>Revision:</strong> 4 <strong>Last modified:</strong>
-2026-09-26T08:50:32Z</p>
+<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
+2026-09-26T17:00:00Z</p>
 <p><strong>Purpose</strong>: Unified enumeration, closure-evidence
 re-verification, and standing-check entry point across this project’s
 three tracked “unfinished/gap/shortcoming” surfaces (open backlog items,
@@ -190,9 +192,11 @@ full CLI contract.</p>
 <p><strong>Usage</strong>:
 <code>scripts/zero_shortcomings_audit.sh &lt;enumerate|verify-closure|standing-check&gt; [options]</code></p>
 <p><code>-h</code> / <code>--help</code> prints the usage text and exits
-0. Running with no mode prints the usage and exits 1. An unknown mode
-prints <code>unknown mode: &lt;x&gt;</code> plus the usage and exits 1.
-(The built-in <code>--help</code> text lists every mode and option; this
+0. Running with no mode prints the usage and exits 4. An unknown mode
+prints <code>unknown mode: &lt;x&gt;</code> plus the usage and exits 4.
+<strong>Every usage error in every mode exits 4</strong>, so a usage
+refusal can never be mistaken for a verification mismatch (exit 1). (The
+built-in <code>--help</code> text lists every mode and option; this
 guide gives the full semantics.)</p>
 <h2 id="modes">Modes</h2>
 <h3
@@ -223,11 +227,13 @@ events in <code>item_history</code>), then <code>last_modified</code>
 descending, then id. With <code>--json</code> it prints a JSON array of
 ids. <strong>Only valid with
 <code>--surface backlog</code>.</strong></li>
-<li>Errors (all exit 1, message on stderr): the tracker DB
+<li>Enumeration failure (exit 1, message on stderr): the tracker DB
 (backlog/blocked surfaces) is missing or unreadable
 (<code>tracker DB missing or unreadable: &lt;path&gt;</code> – checked
 before any <code>sqlite3</code> call, so a missing DB is never created
-as an empty file); <code>--surface</code> given with no value
+as an empty file).</li>
+<li>Usage errors (exit 4, message on stderr): <code>--surface</code>
+given with no value
 (<code>enumerate: --surface requires a value ...</code>); unknown option
 (<code>enumerate: unknown option: X</code>); unrecognized
 <code>--surface</code> value
@@ -242,10 +248,11 @@ when the gate-ledger script prints no parseable
 <h3
 id="verify-closure-item-id---reopen-on-mismatch---require-layer-l"><code>verify-closure &lt;item-id&gt; [--reopen-on-mismatch] [--require-layer L]</code></h3>
 <p>Independently re-runs the recorded closure evidence for one item.
-Evidence is read from the first <code>closure_evidence_*.md</code>
-directly inside <code>&lt;AUDIT_QA_ROOT&gt;/&lt;item-id&gt;/</code>.
-<code>&lt;item-id&gt;</code> must match
-<code>^[A-Za-z0-9][A-Za-z0-9._-]*$</code> and must not contain
+Evidence is read from the lexically last
+<code>closure_evidence_*.md</code> directly inside
+<code>&lt;AUDIT_QA_ROOT&gt;/&lt;item-id&gt;/</code> (a deterministic
+choice when more than one exists). <code>&lt;item-id&gt;</code> must
+match <code>^[A-Za-z0-9][A-Za-z0-9._-]*$</code> and must not contain
 <code>..</code>; anything else (a <code>/</code>, a leading
 <code>-</code> or <code>.</code>, spaces, shell metacharacters) is
 rejected with <code>invalid item id</code> before the id is used in any
@@ -272,9 +279,17 @@ process</strong> with the working directory set to the repository root
 so it does not inherit this script’s <code>set -euo pipefail</code>,
 functions or non-exported variables and gives the same result wherever
 <code>verify-closure</code> is invoked from. Exported environment
-variables are inherited, as for any child process. The command’s stderr
-is shown on the terminal only after passing through the redactor (see
-Redaction).</li>
+variables are inherited, as for any child process, <strong>except
+<code>BASH_ENV</code> and <code>ENV</code>, which are removed</strong>
+(bash would otherwise source that startup file before the command and
+could rewrite the very result being verified). The command runs under
+the ExecutionPolicy bounds (<code>audit_dispatch_bounded</code>:
+<code>nice -n 19</code>, plus <code>ionice -c 3</code> when available –
+Principle
+XIII) and, when <code>AUDIT_VERIFY_COMMAND_TIMEOUT</code> is set, under
+<code>timeout -k 5 &lt;seconds&gt;</code>, whose process-group kill also
+reaches the command’s children. The command’s stderr is shown on the
+terminal only after passing through the redactor (see Redaction).</li>
 <li><code>**Result Summary:** &lt;text&gt;</code> – compared exactly
 against the command’s fresh stdout.</li>
 </ul>
@@ -302,13 +317,8 @@ Summary (<code>reproduced its recorded evidence</code>).</td>
 </tr>
 <tr>
 <td>1</td>
-<td>Mismatch (<code>MISMATCH -- recorded '...', got '...'</code>, values
-credential-redacted before printing); or usage error: missing or invalid
-item id, unknown option, <code>--require-layer</code> with no value or a
-value other than
-<code>source</code>/<code>artifact</code>/<code>runtime</code>; or the
-evidence snapshot / a temp file could not be created (the command is
-then not run).</td>
+<td>Mismatch only (<code>MISMATCH -- recorded '...', got '...'</code>,
+values credential-redacted before printing).</td>
 </tr>
 <tr>
 <td>2</td>
@@ -322,8 +332,41 @@ then not run).</td>
 given <strong>and</strong> the tracker reopen failed
 (<code>reopen FAILED for &lt;id&gt; -- the mismatch is NOT recorded in the tracker</code>).</td>
 </tr>
+<tr>
+<td>4</td>
+<td>Usage error: missing or invalid item id, unknown option,
+<code>--require-layer</code> with no value or a value other than
+<code>source</code>/<code>artifact</code>/<code>runtime</code>, a
+non-integer <code>AUDIT_VERIFY_COMMAND_TIMEOUT</code>.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Internal refusal, the command is <strong>not</strong> run: a temp
+file for the guard could not be created (<code>mktemp failed</code>),
+the evidence snapshot failed, the FR-011 lock file could not be opened,
+or another <code>verify-closure</code> holds the lock
+(<code>another verify-closure holds &lt;lock&gt; ...</code>).</td>
+</tr>
+<tr>
+<td>6</td>
+<td>The recorded command exceeded
+<code>AUDIT_VERIFY_COMMAND_TIMEOUT</code>
+(<code>timed out after Ns -- INCONCLUSIVE</code>): neither a match nor a
+mismatch. The corruption guard still ran.</td>
+</tr>
 </tbody>
 </table>
+<p>FR-011 serialization: before snapshotting,
+<code>verify-closure</code> takes an exclusive <code>flock</code> on a
+per-repository lock file (<code>$AUDIT_VERIFY_LOCK_FILE</code>, default
+<code>${TMPDIR:-/tmp}/zero_shortcomings_audit_verify_&lt;cksum of repo root&gt;.lock</code>,
+never inside the repository), waiting at most
+<code>$AUDIT_VERIFY_LOCK_WAIT</code> seconds (default 60) and refusing
+with exit 5 after that. Two concurrent closure checks would otherwise
+snapshot, run and then revert the same tracked tree, one undoing the
+other’s legitimate writes. Without <code>flock(1)</code> the check runs
+unlocked and prints a <code>WARN</code> saying FR-011 is not enforced on
+that host.</p>
 <p><code>--reopen-on-mismatch</code>: on a mismatch, calls the
 <code>workable-items reopen</code> CLI
 (<code>--why test-failed --who AI</code>, evidence path = the evidence
@@ -357,12 +400,46 @@ skipped with a <code>WARN</code> naming it.</li>
 <li>Files the command <strong>creates</strong> (untracked) and changes
 inside the item’s own evidence directory are left alone.</li>
 </ul>
-<h3 id="standing-check"><code>standing-check</code></h3>
-<p>Recurring, advisory mode; <strong>always exits 0</strong>. Runs
+<h3
+id="standing-check---reverify-n"><code>standing-check [--reverify N]</code></h3>
+<p>Recurring, advisory mode; <strong>always exits 0</strong> once its
+arguments are valid (a bad option or a non-integer
+<code>--reverify</code> value exits 4). Runs
 <code>enumerate --json</code> for each of the <code>backlog</code>,
-<code>gates</code>, <code>escapes</code> surfaces and appends one line
-to <code>&lt;AUDIT_STANDING_LOG_DIR&gt;/&lt;run-id&gt;.log</code>:</p>
-<p><code>&lt;run-id&gt; mode=standing-check status=ok {"backlog_open":N,"gates_unimplemented":N,"escapes_open":N}</code></p>
+<code>gates</code>, <code>escapes</code> surfaces, <strong>re-verifies
+closed items</strong> (SC-005, below) and appends one line to
+<code>&lt;AUDIT_STANDING_LOG_DIR&gt;/&lt;run-id&gt;.log</code>:</p>
+<p><code>&lt;run-id&gt; mode=standing-check status=ok reverify=checked:C,match:M,mismatch:X {"backlog_open":N,"gates_unimplemented":N,"escapes_open":N}</code></p>
+<p>Closed-item re-verification (SC-005 – a reintroduced, previously
+fixed defect is caught by one normal run, with nobody re-triggering it):
+the closed items (status ending in <code>(→ Fixed.md)</code>, never
+<code>Obsolete</code>) are ordered by risk – reopen count descending,
+then <code>last_modified</code> descending, then severity, then id – and
+the first <code>N</code> whose evidence file records a
+<code>**Command:**</code> are re-run, each as its own
+<code>verify-closure &lt;id&gt;</code> process (so its corruption guard
+runs and its incident log goes to
+<code>&lt;AUDIT_STANDING_LOG_DIR&gt;</code>). <code>N</code> is
+<code>--reverify N</code>, else <code>$AUDIT_REVERIFY_DEFAULT</code>,
+else <strong>2</strong>; <code>--reverify 0</code> disables it and the
+line says <code>reverify=off</code>. The standing mode
+<strong>never</strong> passes <code>--reopen-on-mismatch</code>: it
+reports, it never edits the tracker. Bounds: each recorded command gets
+<code>$AUDIT_REVERIFY_ITEM_TIMEOUT</code> seconds (default
+<strong>150</strong>, sized from the measured 130 s of the one closed
+item on the live tracker that records a command), an item is only
+started when that full timeout still fits in
+<code>$AUDIT_REVERIFY_BUDGET</code> seconds of re-verify time (default
+<strong>210</strong>), a busy FR-011 lock is not waited for, and an
+outer backstop timeout guards each process. Every outcome other than a
+clean match makes the run
+<code>status=degraded reason=...reverify</code> and adds a marker naming
+the items: <code>reverify_mismatch=</code> (the recorded result no
+longer reproduces – the defect is back),
+<code>reverify_invalid_evidence=</code> (exit 2),
+<code>reverify_timeout=</code> (inconclusive),
+<code>reverify_refused=</code> (exit 4/5, e.g. lock busy) and
+<code>reverify_skipped_budget=</code>.</p>
 <p>If a sub-check fails, the line instead carries
 <code>status=degraded reason=&lt;list&gt; failed=&lt;list&gt;</code>
 (reasons such as <code>db_missing</code>,
@@ -424,6 +501,38 @@ missing).</td>
 <td>Directory for <code>verify-closure</code> corruption-incident
 logs.</td>
 </tr>
+<tr>
+<td><code>AUDIT_VERIFY_COMMAND_TIMEOUT</code></td>
+<td>unset (no bound)</td>
+<td>Seconds the recorded command may run; exceeding it exits 6.</td>
+</tr>
+<tr>
+<td><code>AUDIT_VERIFY_LOCK_FILE</code></td>
+<td><code>${TMPDIR:-/tmp}/zero_shortcomings_audit_verify_&lt;cksum&gt;.lock</code></td>
+<td>FR-011 lock file.</td>
+</tr>
+<tr>
+<td><code>AUDIT_VERIFY_LOCK_WAIT</code></td>
+<td><code>60</code></td>
+<td>Seconds to wait for the FR-011 lock before refusing (exit 5).</td>
+</tr>
+<tr>
+<td><code>AUDIT_REVERIFY_DEFAULT</code></td>
+<td><code>2</code></td>
+<td>Closed items <code>standing-check</code> re-verifies when
+<code>--reverify</code> is not given.</td>
+</tr>
+<tr>
+<td><code>AUDIT_REVERIFY_ITEM_TIMEOUT</code></td>
+<td><code>150</code></td>
+<td>Per-item command timeout in <code>standing-check</code>.</td>
+</tr>
+<tr>
+<td><code>AUDIT_REVERIFY_BUDGET</code></td>
+<td><code>210</code></td>
+<td>Re-verify time budget in <code>standing-check</code>; an item starts
+only if its timeout fits.</td>
+</tr>
 </tbody>
 </table>
 <h2 id="redaction-constitution-principle-iii-11.4.10">Redaction
@@ -481,14 +590,17 @@ report; <code>standing-check</code> appends one line to
 (or <code>$AUDIT_INCIDENT_LOG_DIR</code>) only when the corruption guard
 reverted something.</p>
 <p><strong>Side-effects</strong>: None in <code>enumerate</code>.
-<code>standing-check</code> writes its log line.
-<code>verify-closure</code> executes the recorded command
-(<code>bash -c</code>, fresh process, cwd = repo root), may revert
-corrupted tracked evidence files, and with
+<code>standing-check</code> writes its log line and, through its
+<code>verify-closure</code> re-runs, executes recorded commands (never
+reopening anything). <code>verify-closure</code> executes the recorded
+command (<code>bash -c</code>, fresh process, cwd = repo root), may
+revert corrupted tracked evidence files, and with
 <code>--reopen-on-mismatch</code> may call the
 <code>workable-items</code> CLI to reopen an item.</p>
 <p><strong>Dependencies</strong>: <code>sqlite3</code>,
-<code>git</code>,
+<code>git</code>, <code>timeout</code>, <code>nice</code>
+(<code>ionice</code> and <code>flock</code> optional, their absence is
+stated at run time),
 <code>constitution/scripts/workable-items/workable-items</code>,
 <code>constitution/scripts/gates/cm_gate_ledger_ratchet.sh</code>, and
 <code>scripts/lib/audit_*.sh</code>.</p>

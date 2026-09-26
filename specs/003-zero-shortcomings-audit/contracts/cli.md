@@ -34,7 +34,9 @@ scripts/zero_shortcomings_audit.sh enumerate [--json] [--surface backlog|gates|e
 **Exit codes**: `0` = enumeration completed (findings, if any, are in the report body,
 never in the exit code alone — an enumeration completing with 40 open items still exits
 `0`, since `enumerate` mode never gates); `1` = enumeration itself failed to run against
-one or more surfaces (a tooling failure, distinct from "found open items").
+one or more surfaces (a tooling failure, distinct from "found open items"); `4` = usage
+error (unknown option, missing or unrecognized `--surface` value, `--sort-by-risk` outside
+`--surface backlog`).
 
 ### `verify-closure <item-id>`
 
@@ -50,14 +52,23 @@ scripts/zero_shortcomings_audit.sh verify-closure <item-id> [--reopen-on-mismatc
   mismatch is reported but the item is left as-is (dry-run mode, for investigation).
 
 **Exit codes**: `0` = re-run matched the recorded evidence; `1` = re-run did not match
-(a genuine mismatch was found) OR a usage/invalid-id/internal refusal occurred before the
-command ran (e.g. invalid `item-id`, missing option value, could not snapshot evidence) —
-callers MUST read the printed message to tell these apart; `2` = the item has no recorded
+(a genuine mismatch was found) — and nothing else; `2` = the item has no recorded
 evidence to verify against, the evidence layer is too weak, the `**Test Type:**` is
 missing/invalid, or no `**Command:**` is recorded (itself a finding — a closed item with
 no evidence is a bluff by definition); `3` = mismatch found and `--reopen-on-mismatch` was
-given but the tracker reopen itself FAILED (explicit error, never swallowed).
-Known contract debt: usage/internal refusals share exit `1` with a genuine mismatch.
+given but the tracker reopen itself FAILED (explicit error, never swallowed); `4` = usage
+refusal (missing/invalid `item-id`, unknown option, missing or unrecognized option value);
+`5` = internal refusal before the command ran (could not create the guard's temp files,
+could not snapshot the tracked evidence, could not open the FR-011 lock, or another
+`verify-closure` holds it); `6` = the recorded command exceeded
+`AUDIT_VERIFY_COMMAND_TIMEOUT` — inconclusive, never a match or a mismatch. (The former
+contract debt — usage and internal refusals sharing exit `1` with a mismatch — is closed.)
+
+Execution hygiene: the recorded command runs in a fresh `bash -c` with `BASH_ENV` and
+`ENV` removed from its environment, under the `ExecutionPolicy` bounds
+(`audit_dispatch_bounded`: `nice`/`ionice`), and only while holding a per-repository
+`flock` (FR-011), so two closure checks never snapshot, run and revert the same tracked
+tree at the same time.
 
 ### `standing-check`
 
@@ -68,10 +79,22 @@ additionally appends an `AuditRunRecord` with `mode = standing-check` to
 (per data-model.md's `AuditRunRecord` validation rule).
 
 ```text
-scripts/zero_shortcomings_audit.sh standing-check
+scripts/zero_shortcomings_audit.sh standing-check [--reverify N]
 ```
 
-**Exit codes**: initially always `0` (advisory, per plan.md's Human Checkpoint 4 —
+SC-005: besides the counts, the standing check re-runs `verify-closure` (never with
+`--reopen-on-mismatch`, so it never edits the tracker) over the `N` highest-risk CLOSED
+items whose evidence records a `**Command:**` — risk order = reopen count DESC,
+`last_modified` DESC, severity rank, id. `N` defaults to `AUDIT_REVERIFY_DEFAULT` or 2;
+`--reverify 0` disables it. Each recorded command is bounded (`AUDIT_REVERIFY_ITEM_TIMEOUT`,
+default 150 s) and an item starts only when its bound fits in `AUDIT_REVERIFY_BUDGET`
+(default 210 s), keeping the run inside the pre-build stage's 300 s timeout. A mismatch
+(`reverify_mismatch=<ids>`), invalid evidence, a timeout, a refusal or a budget skip each
+mark the run `status=degraded` — so the pre-build stage WARNs rather than counting a PASS —
+and the run still exits `0`.
+
+**Exit codes**: `4` for a usage error (unknown option, non-integer `--reverify`);
+otherwise initially always `0` (advisory, per plan.md's Human Checkpoint 4 —
 promotable to blocking only after a burn-in period confirms zero false positives); once
 promoted, exits non-zero only on a genuinely new finding not present in the previous
 recorded run (a *regression* in the zero-shortcomings state), never on the pre-existing,
