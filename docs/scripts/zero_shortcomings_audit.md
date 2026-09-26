@@ -12,8 +12,8 @@ See `specs/003-zero-shortcomings-audit/contracts/cli.md` for the full CLI contra
 
 `-h` / `--help` prints the usage text and exits 0. Running with no mode prints the usage
 and exits 1. An unknown mode prints `unknown mode: <x>` plus the usage and exits 1.
-(The built-in `--help` text lists only the mode names and `--json`/`--surface`; the flags
-below that it omits are documented from the script source.)
+(The built-in `--help` text lists every mode and option; this guide gives the full
+semantics.)
 
 ## Modes
 

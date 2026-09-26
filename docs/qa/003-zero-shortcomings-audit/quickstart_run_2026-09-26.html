@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.11" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>quickstart_run_2026-09-26</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">quickstart_run_2026-09-26</h1>
+</header>
+<h1
+id="quickstart-run-2026-09-26-003-zero-shortcomings-audit">Quickstart
+run 2026-09-26 — 003-zero-shortcomings-audit</h1>
+<p>Branch <code>003-zero-shortcomings-audit</code>, HEAD 13912ce. Output
+below is pasted verbatim from this session (ANSI colour codes stripped).
+No credential values appear; the fixtures print only variable names with
+<code>&lt;redacted-per-§11.4.10&gt;</code>.</p>
+<h2 id="step-1-enumerate-vs-three-ground-truths-real-repo">Step 1 —
+enumerate vs three ground truths (real repo)</h2>
+<pre><code>$ scripts/zero_shortcomings_audit.sh enumerate
+[INFO] Zero-shortcomings audit — enumeration (20260926T080351Z-pid2624665)
+[INFO] Open backlog items:        37
+[INFO] Unimplemented gates:       414
+[INFO] Open coverage-escapes:     0
+[rc=0]
+
+$ constitution/scripts/workable-items/workable-items validate --db docs/workable_items.db
+validate: OK — 245 items, all invariants satisfied
+[rc=0]
+
+$ sqlite3 docs/workable_items.db &quot;SELECT count(*) FROM items WHERE status NOT LIKE &#39;%(→ Fixed.md)&#39; AND status != &#39;Obsolete&#39;;&quot;
+37
+[rc=0]
+
+$ bash constitution/scripts/gates/cm_gate_ledger_ratchet.sh | grep -c UNIMPLEMENTED
+414
+$ bash constitution/scripts/gates/cm_gate_ledger_ratchet.sh | grep -v $&#39;\t&#39;
+LEDGER-FAIL: ratchet violated — unimplemented=414 exceeds checked-in baseline=403 (a CM-* gate was named with neither an implementation nor a registered deferral; ...)
+LEDGER: unimplemented=414 baseline=403 fails=1
+CM-GATE-LEDGER-RATCHET: FAIL — see LEDGER-FAIL lines above; ...
+
+$ grep -c &#39;^### &#39; docs/QA_DISCOVERY_LEDGER.md
+28
+$ grep -c &#39;\*\*new-check:\*\*&#39; docs/QA_DISCOVERY_LEDGER.md
+27</code></pre>
+<p>Reconciliation of the 28 vs 27: an awk pass over the ledger shows the
+single heading without a <code>**new-check:**</code> is
+<code>### BOB-164a</code>, whose recorded channel is
+<code>automated-helixqa</code> (the parser only counts non-automated
+entries lacking new-check as open).
+<code>enumerate --surface escapes --json</code> -&gt;
+<code>{"escapes_open":0}</code>.</p>
+<p>Result: backlog 37 == 37; gates 414 == 414; escapes 0 == 0. Note: the
+ledger-ratchet script itself exits FAIL (414 &gt; baseline 403) — that
+is the pre-existing gate-ledger finding, not caused by this feature.</p>
+<h2
+id="step-2-verify-closure-run-against-fixtures-audit_qa_roottestsauditfixturesdocs_qa_fixture-so-no-real-docsqa-item-or-docsworkable_items.db-is-touched---reopen-on-mismatch-deliberately-not-used">Step
+2 — verify-closure (run against fixtures,
+<code>AUDIT_QA_ROOT=tests/audit/fixtures/docs_qa_fixture</code>, so no
+real docs/qa item or docs/workable_items.db is touched;
+<code>--reopen-on-mismatch</code> deliberately NOT used)</h2>
+<pre><code>BOB-FIXTURE-MATCH               -&gt; [ OK ] verify-closure: BOB-FIXTURE-MATCH reproduced its recorded evidence   [rc=0]
+BOB-FIXTURE-MISMATCH            -&gt; [FAIL] ... MISMATCH — recorded &#39;5 passed, 0 failed&#39;, got &#39;3 passed, 0 failed&#39;   [rc=1]
+BOB-FIXTURE-MISMATCH-CREDENTIAL -&gt; [FAIL] ... MISMATCH — recorded &#39;RUTRACKER_PASSWORD=&lt;redacted-per-§11.4.10&gt;&#39;, got &#39;BOBA_API_TOKEN=&lt;redacted-per-§11.4.10&gt;&#39;   [rc=1]
+BOB-FIXTURE-LAYER-TOOWEAK       -&gt; [FAIL] ... declares evidence layer &#39;source&#39; but &#39;runtime&#39; is required — a lower-rigor substitute is not accepted (FR-005)   [rc=2]
+BOB-FIXTURE-NO-COMMAND          -&gt; [FAIL] ... has no **Command:** field to re-run   [rc=2]</code></pre>
+<p><code>git status --short</code> afterwards showed no new changes from
+these runs. The reopen-in-tracker half of the FR-013 negative control
+(<code>--reopen-on-mismatch</code> +
+<code>workable-items validate</code>) was NOT run: it mutates the real
+tracker DB, which this task forbids. The mismatch-detection half (exit
+1) is shown above; the reopen path is exercised only by the tests/audit
+suite (see below), not by this run.</p>
+<h2 id="step-3-evidence-corruption-guard-fr-008">Step 3 —
+evidence-corruption guard (FR-008)</h2>
+<p>SKIPPED against the real repo: the quickstart step requires running a
+closure command with a deliberate side effect on an unrelated tracked
+file, which would dirty real docs/qa items. Coverage instead comes from
+<code>tests/audit/test_zero_shortcomings_audit_corruption_guard.sh</code>
+(5 passed, 0 failed in the suite run below).</p>
+<h2 id="step-4-standing-check">Step 4 — standing-check</h2>
+<pre><code>$ AUDIT_STANDING_LOG_DIR=&lt;scratchpad&gt; scripts/zero_shortcomings_audit.sh standing-check
+[INFO] standing-check: 20260926T080556Z-pid2766901 mode=standing-check status=ok {&quot;backlog_open&quot;:37,&quot;gates_unimplemented&quot;:414,&quot;escapes_open&quot;:0}
+[rc=0]
+log file line: 20260926T080556Z-pid2766901 mode=standing-check status=ok {&quot;backlog_open&quot;:37,&quot;gates_unimplemented&quot;:414,&quot;escapes_open&quot;:0}</code></pre>
+<p>The run log was redirected to a scratch directory, so nothing was
+written under docs/qa/zero_shortcomings_audit/. The counts equal Step
+1’s.</p>
+<p>Not run: <code>scripts/pre_build_verification.sh</code> end-to-end,
+and the scratch-doc negative control. The pre-build script is
+uncommitted-modified by another concurrent agent
+(<code>git status</code>:
+<code>M scripts/pre_build_verification.sh</code>) and is a very long
+run, so only the wiring was observed: line 2582 invokes
+<code>scripts/zero_shortcomings_audit.sh standing-check</code>. That the
+stage appears in a real pre-build run is therefore UNCONFIRMED here.</p>
+<h2
+id="supporting-bash--n-t-polish-2-and-testsaudit-suite-t-polish-3">Supporting:
+<code>bash -n</code> (T-POLISH-2) and tests/audit suite
+(T-POLISH-3)</h2>
+<p><code>bash -n</code> rc=0 for scripts/zero_shortcomings_audit.sh,
+scripts/lib/audit_{execution_policy,ledger_parser,run_id}.sh and all 12
+tests/audit/test_*.sh.</p>
+<p>Suite (each file
+<code>timeout 100 nice -n 19 bash &lt;file&gt;</code>, all rc=0,
+<code>git status</code> unchanged before/after each file):</p>
+<pre><code>test_audit_execution_policy: 6 passed, 0 failed
+test_audit_ledger_parser: 5 passed, 0 failed
+test_audit_run_id: 2 passed, 0 failed
+test_zero_shortcomings_audit_blocked_surface: 2 passed, 0 failed
+test_zero_shortcomings_audit_corruption_guard: 5 passed, 0 failed
+test_zero_shortcomings_audit_enumerate: 6 passed, 0 failed
+test_zero_shortcomings_audit_evidence_layer: 2 passed, 0 failed
+test_zero_shortcomings_audit_redaction: 13 passed, 0 failed
+test_zero_shortcomings_audit_risk_order: 6 passed, 0 failed
+test_zero_shortcomings_audit_standing_check: 12 passed, 0 failed
+test_zero_shortcomings_audit_test_type_declared: 9 passed, 0 failed
+test_zero_shortcomings_audit_verify_closure: 4 passed, 0 failed</code></pre>
+<p>Aggregate 72 passed, 0 failed; per-file <code>PASS:</code> line
+counts equal each file’s own summary.</p>
+</body>
+</html>
