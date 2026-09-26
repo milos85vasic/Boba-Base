@@ -227,8 +227,42 @@ cmd_verify_closure() {
     # Review Focus item 3: compare the SEMANTIC result_summary, never raw
     # bytes — a legitimately time-varying command (a timestamp, a duration)
     # would otherwise false-positive-reopen every time (§11.4.201(1)).
+    #
+    # Task 6 (FR-008, [REVIEW] — this runs on every future closure, so a
+    # defect here could itself corrupt evidence, per plan.md's Review
+    # Gates): snapshot every git-tracked docs/qa/ evidence file BEFORE
+    # running the recorded command, then detect + revert any corruption the
+    # command causes as a side effect outside THIS item's own evidence
+    # directory. Formalizes the real BOB-109 incident this feature is
+    # modeled on (research.md §5): a diagnostic test run had a live side
+    # effect of overwriting a DIFFERENT item's tracked evidence, caught only
+    # because an operator happened to run `git status` first. Any incident
+    # is appended to docs/qa/zero_shortcomings_audit/<run-id>.log rather
+    # than silently absorbed -- never allowed to block the closure check
+    # itself, since a corrupted OTHER item's evidence is a separate finding
+    # from whether THIS item's own recorded command still reproduces.
+    local corruption_snapshot
+    corruption_snapshot="$(audit_snapshot_tracked_evidence)"
+
     local fresh_summary
     fresh_summary="$(eval "$recorded_command")"
+
+    local guard_repo_root own_evidence_dir corruption_incidents
+    guard_repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || guard_repo_root="$REPO_ROOT"
+    own_evidence_dir="${AUDIT_QA_ROOT#"$guard_repo_root"/}/$item_id"
+    corruption_incidents="$(audit_detect_and_revert_corruption "$corruption_snapshot" "$own_evidence_dir")"
+    if [[ -n "$corruption_incidents" ]]; then
+        local run_log_dir="$REPO_ROOT/docs/qa/zero_shortcomings_audit"
+        mkdir -p "$run_log_dir"
+        local run_log="$run_log_dir/$(audit_run_id).log"
+        {
+            printf '[%s] verify-closure %s: command `%s` corrupted and reverted the following tracked evidence file(s) outside %s:\n' \
+                "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$item_id" \
+                "$(audit_redact_before_write "$recorded_command")" "$own_evidence_dir"
+            printf '%s' "$corruption_incidents"
+        } >> "$run_log"
+        print_warning "verify-closure: $item_id's command corrupted $(printf '%s' "$corruption_incidents" | grep -c .) tracked evidence file(s) outside its own evidence dir — reverted; incident logged to $run_log"
+    fi
 
     if [[ "$fresh_summary" == "$recorded_summary" ]]; then
         print_success "verify-closure: $item_id reproduced its recorded evidence"
@@ -315,5 +349,85 @@ audit_redact_before_write() {
     # itself worth hardening cheaply.
     local text="${1:-}"
     printf '%s' "$text" | sed -E 's/(password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret|key|token|cookies)([[:space:]]*[:=][[:space:]]*)[^[:space:]]+/\1\2<redacted-per-§11.4.10>/Ig'
+}
+
+# audit_snapshot_tracked_evidence — prints every git-tracked path under
+# docs/qa/ paired with its current content hash, as one line per file.
+#
+# Resolves the repo root FRESH at call time via `git rev-parse
+# --show-toplevel` (falling back to the fixed $REPO_ROOT anchor only if the
+# current working directory is not inside a git worktree at all), rather
+# than using the fixed $REPO_ROOT captured when this file was sourced.
+# Root-caused during Task 6 TDD (RED-run 2, §11.4.102): $REPO_ROOT is set
+# once, from the PHYSICAL location of this script file on disk, at source
+# time -- it does not track a later `cd`. The test for this guard
+# deliberately sources this file from the real repo root and then `cd`s
+# into a disposable, throwaway git repository so it can exercise real
+# corruption-and-revert behaviour without any risk to this project's own
+# tracked evidence; with the fixed $REPO_ROOT, the guard silently inspected
+# the real boba checkout instead of that throwaway repo and could never see
+# the corruption the test injects. This also matches how this exact guard
+# behaves correctly in production: cmd_verify_closure always runs with the
+# working directory inside this repo, where `git rev-parse --show-toplevel`
+# resolves to the same path $REPO_ROOT already does.
+audit_snapshot_tracked_evidence() {
+    local repo_root
+    repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || repo_root="$REPO_ROOT"
+    # One batched `git hash-object --stdin-paths` process for the whole set
+    # (a per-file subprocess was measured at ~2m31s over this repo's 1511
+    # tracked docs/qa files, twice per closure check). Files listed by
+    # ls-files but absent from the worktree are filtered first, since
+    # --stdin-paths would abort on a missing path.
+    local paths
+    paths="$(git -C "$repo_root" ls-files 'docs/qa/**' 2>/dev/null | while IFS= read -r f; do [[ -f "$repo_root/$f" ]] && printf '%s\n' "$f"; done)" || true
+    [[ -n "$paths" ]] || return 0
+    paste -d' ' <(printf '%s\n' "$paths") \
+        <(cd "$repo_root" && printf '%s\n' "$paths" | git hash-object --stdin-paths)
+}
+
+# audit_detect_and_revert_corruption <snapshot> <own-item-evidence-dir> —
+# diffs the current tracked docs/qa/ state against <snapshot>; any changed
+# file OUTSIDE <own-item-evidence-dir> is reverted via `git checkout --` and
+# printed (one path per line) as an incident. A changed file INSIDE
+# <own-item-evidence-dir> is a legitimate write and is left untouched
+# (Review Focus item 2).
+#
+# Same fresh-repo-root resolution as audit_snapshot_tracked_evidence above,
+# for the identical reason documented there.
+#
+# The pre-command hash lookup for each file deliberately uses an exact awk
+# field match rather than `grep -F "^$f "` (root-caused during Task 6 TDD,
+# RED-run 2, §11.4.102/§11.4.201): with `-F`, grep treats its PATTERN
+# argument as a plain fixed string, so the leading `^` is searched for as a
+# LITERAL caret character rather than interpreted as a regex line-anchor --
+# the lookup can therefore never match, and `before` is always empty. Under
+# this file's `set -e`+`pipefail`, that failing pipeline produced no visible
+# error here because this whole function is itself invoked inside a `$(...)`
+# command substitution: bash's `errexit` only aborts a command substitution
+# on the failure of the LAST command executed within it, never an
+# intermediate one — so the bug silently reported "no corruption detected"
+# on every call, exactly the §11.4.201(6) false-null class this audit tool
+# exists to catch elsewhere. Confirmed directly (not guessed, §11.4.6):
+# `grep -F "^literal string"` measurably never matches that same literal
+# string with the caret stripped.
+audit_detect_and_revert_corruption() {
+    local snapshot="$1" own_dir="$2"
+    local repo_root
+    repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || repo_root="$REPO_ROOT"
+    local incidents=""
+    while IFS= read -r f; do
+        [[ -f "$repo_root/$f" ]] || continue
+        case "$f" in
+            "$own_dir"/*) continue ;;
+        esac
+        local before after
+        before="$(printf '%s\n' "$snapshot" | awk -v path="$f" '$1 == path { print $2; exit }')"
+        after="$(git -C "$repo_root" hash-object "$repo_root/$f")"
+        if [[ -n "$before" && "$before" != "$after" ]]; then
+            git -C "$repo_root" checkout -- "$f"
+            incidents+="$f"$'\n'
+        fi
+    done < <(printf '%s\n' "$snapshot" | awk '{print $1}')
+    printf '%s' "$incidents"
 }
 main "$@"
