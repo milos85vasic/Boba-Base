@@ -8,9 +8,10 @@
 # CM-DOC-REVISION-HEADER-PRESENT (§11.4.44). Per §11.4.227(A) a named gate
 # must be either IMPLEMENTED or covered by a REGISTERED DEFERRAL pointing
 # at a tracked workable item — silent absence is exactly what §11.4.227
-# forbids. This test proves the deferral marker text is present and
-# correctly worded in the real source, and that the check genuinely has
-# teeth: each mutation below corrupts a SCRATCH COPY (never the live,
+# forbids. BOB-242 (2026-09-26) IMPLEMENTED both as invariants 61/62, so
+# the DEFERRED lines were removed; this test now proves each name is
+# EITHER implemented OR deferred — never silently absent — and that the
+# check genuinely has teeth: each mutation below corrupts a SCRATCH COPY (never the live,
 # possibly-concurrently-read repo file — §11.4.84 working-tree quiescence:
 # scripts/pre_build_verification.sh is a shared choke-point actively read
 # by other concurrent invocations during multi-track development, so this
@@ -50,47 +51,66 @@ cp "${GATE_SOURCE}" "${SCRATCH}"
 cleanup() { rm -f "${SCRATCH}"; }
 trap cleanup EXIT
 
+# accounted_for <file> <gate-name> <gate-script-rel> <anchor>
+# A named gate is accounted for when it is EITHER registered as a deferral
+# (the exact DEFERRED line) OR implemented: the sweep prints its invariant
+# label, invokes its gate script by path, and that script exists. BOB-242
+# moved both gates from the first state to the second on 2026-09-26.
+accounted_for() {
+    local f="$1" name="$2" script="$3" anchor="$4"
+    if grep -qF "DEFERRED: ${name} (${anchor}) — see BOB-223" "${f}"; then return 0; fi
+    grep -qE "^echo \"\[[0-9]+/[0-9]+\] ${name}:" "${f}" \
+        && grep -qF "\${PROJECT_ROOT}/${script}" "${f}" \
+        && [[ -f "${PROJECT_ROOT}/${script}" ]]
+}
 markers_present() {  # $1 = file to check
-    grep -qF 'DEFERRED: CM-SCRIPT-DOCS-SYNC (§11.4.18) — see BOB-223' "$1" \
-        && grep -qF 'DEFERRED: CM-DOC-REVISION-HEADER-PRESENT (§11.4.44) — see BOB-223' "$1" \
+    accounted_for "$1" CM-SCRIPT-DOCS-SYNC scripts/pre_build/check_cm_script_docs_sync.sh '§11.4.18' \
+        && accounted_for "$1" CM-DOC-REVISION-HEADER-PRESENT scripts/pre_build/check_cm_doc_revision_header_present.sh '§11.4.44' \
         && grep -qF 'GATE-DEBT REGISTER' "$1" \
         && bash -n "$1"
 }
 
-# === Part (a): the REAL, live source has both markers, correctly worded ===
+# === Part (a): the REAL, live source accounts for both gates ===
 if markers_present "${GATE_SOURCE}"; then
-    pass "real source: both DEFERRED markers present, correctly worded, script syntax-clean"
+    pass "real source: both named gates are accounted for (implemented or deferred), register present, syntax-clean"
 else
-    fail "real source: expected both DEFERRED markers present — register missing or corrupted"
+    fail "real source: a named gate is neither implemented nor registered as a deferral — silent gate debt"
 fi
 
-# === Part (b): MUTATION 1 (on the SCRATCH copy only) — corrupt the
-#     CM-SCRIPT-DOCS-SYNC marker ===
+# === MUTATION 1 (scratch copy): drop the CM-SCRIPT-DOCS-SYNC invariant label ===
 cp "${GATE_SOURCE}" "${SCRATCH}"
-sed -i 's/DEFERRED: CM-SCRIPT-DOCS-SYNC (§11.4.18) — see BOB-223/DEFERRED: CM-SCRIPT-DOCS-SYNC CORRUPTED/' "${SCRATCH}"
+sed -i -E '/^echo "\[[0-9]+\/[0-9]+\] CM-SCRIPT-DOCS-SYNC:/d' "${SCRATCH}"
 if ! markers_present "${SCRATCH}"; then
-    pass "mutation 1 (scratch copy): corrupting the CM-SCRIPT-DOCS-SYNC marker line makes the check FAIL (teeth proven)"
+    pass "mutation 1 (scratch copy): removing the CM-SCRIPT-DOCS-SYNC invariant makes the check FAIL (teeth proven)"
 else
-    fail "mutation 1 (scratch copy): check still reports markers present after corruption — no teeth"
+    fail "mutation 1 (scratch copy): check still passes with CM-SCRIPT-DOCS-SYNC neither implemented nor deferred — no teeth"
 fi
 
-# === Part (c): MUTATION 2 (on the SCRATCH copy only) — corrupt the
-#     CM-DOC-REVISION-HEADER-PRESENT marker ===
+# === MUTATION 2 (scratch copy): unwire the CM-DOC-REVISION-HEADER-PRESENT gate script ===
 cp "${GATE_SOURCE}" "${SCRATCH}"
-sed -i 's/DEFERRED: CM-DOC-REVISION-HEADER-PRESENT (§11.4.44) — see BOB-223/DEFERRED: CM-DOC-REVISION-HEADER-PRESENT CORRUPTED/' "${SCRATCH}"
+sed -i 's|scripts/pre_build/check_cm_doc_revision_header_present.sh|scripts/pre_build/UNWIRED.sh|g' "${SCRATCH}"
 if ! markers_present "${SCRATCH}"; then
-    pass "mutation 2 (scratch copy): corrupting the CM-DOC-REVISION-HEADER-PRESENT marker line makes the check FAIL (teeth proven)"
+    pass "mutation 2 (scratch copy): unwiring the CM-DOC-REVISION-HEADER-PRESENT gate script makes the check FAIL (teeth proven)"
 else
-    fail "mutation 2 (scratch copy): check still reports markers present after corruption — no teeth"
+    fail "mutation 2 (scratch copy): check still passes with the header gate unwired — no teeth"
 fi
 
-# === Part (d): MUTATION 3 (on the SCRATCH copy only) — remove BOTH
-#     marker lines entirely ===
-grep -vF 'DEFERRED:' "${GATE_SOURCE}" > "${SCRATCH}"
+# === MUTATION 3 (scratch copy): remove the register block heading ===
+grep -vF 'GATE-DEBT REGISTER' "${GATE_SOURCE}" > "${SCRATCH}"
 if ! markers_present "${SCRATCH}"; then
-    pass "mutation 3 (scratch copy): removing both DEFERRED lines entirely makes the check FAIL (teeth proven)"
+    pass "mutation 3 (scratch copy): removing the GATE-DEBT REGISTER makes the check FAIL (teeth proven)"
 else
-    fail "mutation 3 (scratch copy): check still reports markers present after removal — no teeth"
+    fail "mutation 3 (scratch copy): check still passes without the register — no teeth"
+fi
+
+# === NEGATIVE CONTROL: a deferral line alone still counts as accounted for ===
+cp "${GATE_SOURCE}" "${SCRATCH}"
+sed -i -E '/^echo "\[[0-9]+\/[0-9]+\] CM-SCRIPT-DOCS-SYNC:/d' "${SCRATCH}"
+printf 'echo "  DEFERRED: CM-SCRIPT-DOCS-SYNC (§11.4.18) — see BOB-223"\n' >> "${SCRATCH}"
+if markers_present "${SCRATCH}"; then
+    pass "negative control: an unimplemented gate WITH its DEFERRED line is accepted (the register path still works)"
+else
+    fail "negative control: a correctly registered deferral is refused — the check would be a false-positive refusal"
 fi
 
 # === Final: the REAL source was never written to — re-confirm GREEN ===

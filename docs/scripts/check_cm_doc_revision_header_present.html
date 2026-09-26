@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc 3.11" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>tunnel-keepalive</title>
+  <title>check_cm_doc_revision_header_present</title>
   <style>
     /* Default styles provided by pandoc.
     ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -237,148 +237,79 @@
     code span.vs { color: #4070a0; } /* VerbatimString */
     code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
-  <meta name="x-export-source-sha256" content="7de004b7abaf82c1590d52a8af52b23fa1cab023d6e9883e82900c26c8f5f946">
-  <meta name="dcterms.modified" content="2026-06-14T13:42:25Z">
+  <meta name="x-export-source-sha256" content="a5e16faca6cd2e5cf9e85fcc004025218a530f8d0762c9544d6da89a7bdf07ba">
+  <meta name="dcterms.modified" content="2026-08-02T12:49:08Z">
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">tunnel-keepalive</h1>
+<h1 class="title">check_cm_doc_revision_header_present</h1>
 </header>
-<h1 id="tunnel-keepalive.sh">tunnel-keepalive.sh</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-09-26T13:50:00Z</p>
+<h1
+id="check_cm_doc_revision_header_present.sh">check_cm_doc_revision_header_present.sh</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-09-26T14:00:00Z</p>
 <h2 id="overview">Overview</h2>
-<p><code>scripts/tunnel-keepalive.sh</code> is a self-healing supervisor
-for the macOS podman SSH tunnel. On macOS, podman/vfkit does not forward
-the <code>network_mode: host</code> container ports to the Mac host;
-<code>scripts/ensure-macos-tunnel.sh</code> bridges that gap with an SSH
-tunnel forwarding ports <strong>7186, 7187, 7189, 9117</strong>. That
-SSH connection occasionally dies (network drop / VM hiccup), which
-silently takes the operator’s dashboard
-(<code>http://localhost:7187</code>) and the other ports offline until
-someone notices and re-runs the ensure script.</p>
-<p>This supervisor loops in the background, probes the canonical health
-port <strong>7187</strong> every ~10 seconds, and whenever it is
-unreachable re-runs <code>ensure-macos-tunnel.sh</code> to re-establish
-all four forwards — auto-healing the stack with no operator
-intervention. It logs every outage and re-establish to
-<code>qa-results/tunnel-keepalive.log</code>.</p>
-<p>It pairs with the hardening added to
-<code>ensure-macos-tunnel.sh</code> itself
-(<code>ServerAliveInterval=15</code>,
-<code>ServerAliveCountMax=3</code>,
-<code>ExitOnForwardFailure=yes</code>), which makes a dead SSH
-connection exit promptly (~45s) instead of hanging half-open — so the
-supervisor’s probe sees the outage quickly.</p>
-<h2 id="prerequisites">Prerequisites</h2>
-<ul>
-<li>macOS host running the Boba stack via podman
-(<code>podman machine</code> running, containers up).</li>
-<li><code>scripts/ensure-macos-tunnel.sh</code> present in the same
-<code>scripts/</code> directory (the (re)establish mechanism).</li>
-<li><code>bash</code>, and <code>curl</code> (preferred) or
-<code>nc</code> for the reachability probe.</li>
-</ul>
+<p>Gate <code>CM-DOC-REVISION-HEADER-PRESENT</code> (pre-build invariant
+62, BOB-242). Enforces the §11.4.44 revision header on every script
+guide under <code>docs/scripts/</code>.</p>
+<h2 id="why-this-exists">Why this exists</h2>
+<p>The constitution named this gate but only one unrelated ledger file
+was ever checked. BOB-223 registered it as gate debt; this is the
+implementation for the scope BOB-242 names. Wider §11.4.44 scope (other
+<code>docs/</code> trees) is not claimed.</p>
+<h2 id="rule">Rule</h2>
+<p>Within the first 15 lines of each guide:</p>
+<pre><code>**Revision:** &lt;positive integer&gt;
+**Last modified:** YYYY-MM-DDTHH:MM[:SS]Z</code></pre>
+<p>The timestamp must be ISO 8601 in UTC (a trailing <code>Z</code>); an
+offset such as <code>+0300</code> is refused.</p>
 <h2 id="usage">Usage</h2>
-<p>Run in the background (recommended — survives the shell):</p>
-<div class="sourceCode" id="cb1"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nohup</span> bash scripts/tunnel-keepalive.sh <span class="op">&gt;</span>/dev/null <span class="dv">2</span><span class="op">&gt;&amp;</span><span class="dv">1</span> <span class="kw">&amp;</span> <span class="bu">disown</span></span></code></pre></div>
-<p>To expose the stack on the LAN (matching a <code>0.0.0.0</code>
-tunnel), pass the bind address through — the supervisor forwards it to
-<code>ensure-macos-tunnel.sh</code>:</p>
 <div class="sourceCode" id="cb2"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="va">TUNNEL_BIND_ADDR</span><span class="op">=</span>0.0.0.0 <span class="fu">nohup</span> bash scripts/tunnel-keepalive.sh <span class="op">&gt;</span>/dev/null <span class="dv">2</span><span class="op">&gt;&amp;</span><span class="dv">1</span> <span class="kw">&amp;</span> <span class="bu">disown</span></span></code></pre></div>
-<p>Foreground (Ctrl-C to stop), useful for debugging:</p>
-<div class="sourceCode" id="cb3"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/tunnel-keepalive.sh</span></code></pre></div>
-<p>Stop the background supervisor:</p>
-<div class="sourceCode" id="cb4"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">kill</span> <span class="st">&quot;</span><span class="va">$(</span><span class="fu">cat</span> .git/.tunnel-keepalive.pid<span class="va">)</span><span class="st">&quot;</span></span></code></pre></div>
-<h3 id="environment-variables">Environment variables</h3>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> scripts/pre_build/check_cm_doc_revision_header_present.sh .</span></code></pre></div>
+<h2 id="exit-codes">Exit codes</h2>
 <table>
 <colgroup>
-<col style="width: 20%" />
-<col style="width: 32%" />
-<col style="width: 46%" />
+<col style="width: 40%" />
+<col style="width: 60%" />
 </colgroup>
 <thead>
 <tr>
-<th>Variable</th>
-<th>Default</th>
+<th>Code</th>
 <th>Meaning</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>TUNNEL_BIND_ADDR</code></td>
-<td><code>127.0.0.1</code></td>
-<td>Bind address forwarded to <code>ensure-macos-tunnel.sh</code>.</td>
+<td>0</td>
+<td>every guide has a valid header</td>
 </tr>
 <tr>
-<td><code>KEEPALIVE_INTERVAL</code></td>
-<td><code>10</code></td>
-<td>Seconds between health checks.</td>
+<td>1</td>
+<td>at least one guide is missing a field or has a malformed one (each
+is named)</td>
 </tr>
 <tr>
-<td><code>KEEPALIVE_HEALTH_PORT</code></td>
-<td><code>7187</code></td>
-<td>Port used for the reachability probe.</td>
-</tr>
-<tr>
-<td><code>KEEPALIVE_LOG</code></td>
-<td><code>&lt;project&gt;/qa-results/tunnel-keepalive.log</code></td>
-<td>Logfile path.</td>
+<td>2</td>
+<td>harness error: bad arguments, not a git repo, or zero guides
+enumerated</td>
 </tr>
 </tbody>
 </table>
-<h2 id="edge-cases">Edge cases</h2>
-<ul>
-<li><strong>Two supervisors:</strong> a pidfile
-(<code>.git/.tunnel-keepalive.pid</code>, falling back to the project
-root if <code>.git</code> is absent) makes a second instance refuse to
-start (“another supervisor is already running”). Stale pidfiles (whose
-pid is no longer alive) are reclaimed automatically.</li>
-<li><strong>Probe always against loopback:</strong> the health check
-probes <code>127.0.0.1:7187</code> regardless of
-<code>TUNNEL_BIND_ADDR</code>; the loopback address is reachable for
-both the <code>127.0.0.1</code> and <code>0.0.0.0</code> binds, so a
-LAN-exposed tunnel is still correctly monitored.</li>
-<li><strong>No probe tool:</strong> if neither <code>curl</code> nor
-<code>nc</code> is present, <code>is_up</code> fails closed (treats the
-tunnel as down) rather than falsely reporting it healthy.</li>
-<li><strong>Re-establish failure:</strong> if
-<code>ensure-macos-tunnel.sh</code> exits non-zero or 7187 is still down
-afterwards, it is logged and retried on the next cycle — the supervisor
-never gives up silently.</li>
-<li><strong>Host-safety:</strong> the loop <code>sleep</code>s between
-checks (no busy-loop); observed CPU is 0.0%.</li>
-</ul>
-<h2 id="internal-behaviour">Internal behaviour</h2>
-<ol type="1">
-<li>Resolve <code>SCRIPT_DIR</code> / <code>PROJECT_ROOT</code>; locate
-<code>ensure-macos-tunnel.sh</code>.</li>
-<li>Acquire the single-owner pidfile (or exit if a live supervisor holds
-it).</li>
-<li>Install an <code>EXIT/INT/TERM</code> trap that removes the pidfile
-(only if ours) and logs shutdown.</li>
-<li>Loop: probe <code>127.0.0.1:&lt;health-port&gt;</code>; on failure,
-run
-<code>TUNNEL_BIND_ADDR=&lt;bind&gt; bash ensure-macos-tunnel.sh</code>,
-then re-probe and log the result; <code>sleep &lt;interval&gt;</code>;
-repeat.</li>
-</ol>
+<h2 id="adoption">Adoption</h2>
+<p>Measured 2026-09-26: 1 of 45 guides failed
+(<code>tunnel-keepalive.md</code> used an offset timestamp). It was
+corrected in the same change, so the gate is a hard floor with no
+baseline.</p>
 <h2 id="related-scripts">Related scripts</h2>
 <ul>
-<li><code>scripts/ensure-macos-tunnel.sh</code> — establishes /
-re-establishes the SSH tunnel (the mechanism this supervisor invokes).
-Now hardened with SSH keepalive +
-<code>ExitOnForwardFailure</code>.</li>
+<li><code>tests/pre_build/test_check_cm_doc_revision_header_present.sh</code>
+— 12 arms.</li>
+<li><code>scripts/pre_build/check_cm_script_docs_sync.sh</code> — the
+§11.4.18 guide-existence and freshness gate.</li>
 </ul>
-<h2 id="last-verified-date">Last verified date</h2>
-<p>2026-06-14 — verified end-to-end on macOS: started the supervisor,
-killed the live tunnel ssh process (curl 7187 → <code>000</code>), and
-observed auto-reconnect within ~4s (curl 7187 → <code>200</code>), with
-the re-establish recorded in
-<code>qa-results/tunnel-keepalive.log</code>.</p>
+<h2 id="last-verified">Last verified</h2>
+<p>2026-09-26 — real tree:
+<code>OK: all 45 guides under docs/scripts/ carry a §11.4.44 revision header</code>
+(before these two guides were added); test suite 12 passed.</p>
 </body>
 </html>

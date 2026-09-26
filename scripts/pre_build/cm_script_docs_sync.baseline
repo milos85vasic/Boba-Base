@@ -1,0 +1,84 @@
+# cm_script_docs_sync.baseline — CM-SCRIPT-DOCS-SYNC finding SET (§11.4.18, BOB-242)
+#
+# One key per line: NODOC:<path> (no docs/scripts/<name>.md) or
+# DOCBEHIND:<path> (the script changed after its guide). Lines starting with '#'
+# and blank lines are ignored. MONOTONE-DECREASING RATCHET (§11.4.135(5) /
+# §11.4.224(E)):
+#   * a finding NOT listed here FAILs the gate (NEW) — never add a row to hide one;
+#   * a row whose finding no longer exists FAILs the gate (RETIRED) — delete the
+#     row in the SAME change that writes or updates the guide.
+# Compared by SET, not count, so a one-out-one-in swap is caught.
+#
+# Seeded 2026-09-26 from `check_cm_script_docs_sync.sh . --list` on the real
+# tree at HEAD d36899a: 52 NODOC + 11 DOCBEHIND = 63 rows. Two findings the
+# list printed were deliberately NOT seeded because they were transient working-
+# tree state, not debt: the gate's own new script (its guide lands with it) and
+# scripts/zero_shortcomings_audit.sh (uncommitted edits by a concurrent stream;
+# its committed script and guide are in sync).
+#
+# Adoption choice: ratchet snapshot, the repository's established default for
+# set-based gates. Open to an operator decision (§11.4.66) to switch to a hard
+# floor or to changed-files-only enforcement.
+DOCBEHIND:scripts/hooks/unattributed-commit-guard.sh
+DOCBEHIND:scripts/install-resource-pressure-timer.sh
+DOCBEHIND:scripts/ownership_precondition.sh
+DOCBEHIND:scripts/ownership_repair.sh
+DOCBEHIND:scripts/pre_build/check_cm_closure_seam_binds.sh
+DOCBEHIND:scripts/pre_build/check_cm_go_toolchain_matches_builder.sh
+DOCBEHIND:scripts/pre_build/check_cm_killpg_pgid_guard.sh
+DOCBEHIND:scripts/pre_build/check_cm_runtime_deps_parity.sh
+DOCBEHIND:scripts/pre_build/check_cm_test_mock_pid_explicit_int.sh
+DOCBEHIND:scripts/pre_build/check_cm_test_mock_pid_patched_when_real_pid.sh
+DOCBEHIND:scripts/regenerate-continuation-exports.sh
+NODOC:scripts/add-submodules.sh
+NODOC:scripts/anchor_block_integrity_check.sh
+NODOC:scripts/audit-plugins.sh
+NODOC:scripts/boba-ctl.sh
+NODOC:scripts/boba-svc.sh
+NODOC:scripts/build-releases.sh
+NODOC:scripts/deploy-remote.sh
+NODOC:scripts/diagnostics/bob137_soak.sh
+NODOC:scripts/diagnostics/bob137_thread_census.sh
+NODOC:scripts/egress-via-vpn.sh
+NODOC:scripts/ensure-macos-tunnel.sh
+NODOC:scripts/flight-recorder/install.sh
+NODOC:scripts/flight-recorder/uninstall.sh
+NODOC:scripts/freeze-openapi.sh
+NODOC:scripts/helixqa.sh
+NODOC:scripts/hooks/auto-commit-forensic-capture.sh
+NODOC:scripts/hooks/docs-sync-commit-seam.sh
+NODOC:scripts/host-power-management/check-no-suspend-calls.sh
+NODOC:scripts/host-power-management/install-host-power-guard.sh
+NODOC:scripts/host-power-management/install-host-suspend-guard.sh
+NODOC:scripts/host-power-management/user_session_no_suspend_bootstrap.sh
+NODOC:scripts/install-dev-tools.sh
+NODOC:scripts/install.sh
+NODOC:scripts/lib/audit_execution_policy.sh
+NODOC:scripts/lib/audit_ledger_parser.sh
+NODOC:scripts/lib/audit_run_id.sh
+NODOC:scripts/lib/export_staleness.sh
+NODOC:scripts/lib/git-safe-backup.sh
+NODOC:scripts/lib/ownership.sh
+NODOC:scripts/multitrack/track_branch_label.sh
+NODOC:scripts/opencode-helixqa.sh
+NODOC:scripts/pre_build/check_cm_no_production_mutation_residue.sh
+NODOC:scripts/pre_build/check_cm_no_test_tag_debris.sh
+NODOC:scripts/pre_build/check_cm_no_unscoped_live_destruction.sh
+NODOC:scripts/pre_build/check_cm_ownership_invariants.sh
+NODOC:scripts/pre_build/check_cm_plugin_count.sh
+NODOC:scripts/pre_build/check_cm_qbittorrent_webui_credentials.sh
+NODOC:scripts/pre_build/check_cm_served_bundle_fresh.sh
+NODOC:scripts/pre_build/check_cm_sse_route_rate_limit_classed.sh
+NODOC:scripts/pre_build/check_md_export_twins_committable.sh
+NODOC:scripts/pre_build/lib/cm_export_charset_baseline_read.sh
+NODOC:scripts/pre_build_verification.sh
+NODOC:scripts/pre_code_review.sh
+NODOC:scripts/run_all_challenges.sh
+NODOC:scripts/run-tests.sh
+NODOC:scripts/scan.sh
+NODOC:scripts/system-slice-watchdog/install.sh
+NODOC:scripts/system-slice-watchdog/uninstall.sh
+NODOC:scripts/system-slice-watchdog/user1000-watchdog.sh
+NODOC:scripts/track-build-resources.sh
+NODOC:scripts/verify-all-constitution-rules.sh
+NODOC:scripts/workable-items-export.sh
