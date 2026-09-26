@@ -29,7 +29,9 @@
 # Outputs: README.md badge row + Contributing-section bullets (default mode
 #   only), docs/TESTING.md "Test counts" section (default mode only).
 # Side-effects: none in --check mode. Rewrites README.md + docs/TESTING.md
-#   in default mode (git-tracked files — review the diff before commit).
+#   in default mode (git-tracked files — review the diff before commit),
+#   then regenerates ONLY those two files' .html/.pdf/.docx twins; targets
+#   outside the repo root (test fixtures) are skipped, with a printed notice.
 # Dependencies: python (repo .venv preferred, falls back like ci.sh),
 #   node/vitest (frontend/node_modules — falls back to an honestly-labelled
 #   grep proxy if node_modules is absent), bash 4+, sed, grep, awk.
@@ -603,10 +605,33 @@ fi
 # than aborting, because the badge values themselves are already correctly
 # written by this point — losing them to a non-zero exit would be worse than a
 # stale export the next gate run will catch anyway.
+#
+# SCOPE (BOB-249): export ONLY the files this script modified, via the
+# exporter's explicit-scope mode. This previously ran the exporter with NO
+# argument — a full sweep of root + docs/ + scripts/ of the REAL tree — on every
+# run, including runs whose --readme/--testing-md pointed at temp fixtures
+# (tests/unit/test_compute_badges_carrier_match.sh): measured in a scratch copy,
+# that one test regenerated 42 tracked twins across the tree. A target that
+# resolves OUTSIDE ${ROOT_DIR} is a fixture: its exports are none of this repo's
+# business, so it is skipped and the skip is announced (never silent).
+# Guarded by tests/unit/test_compute_badges_export_scope.sh.
 _EXPORTER="${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}/generate_markdown_exports.sh"
-if [[ -x "${_EXPORTER}" || -f "${_EXPORTER}" ]]; then
-    echo "compute-badges.sh: regenerating .md exports (§11.4.65) so the tree is not left stale"
-    if bash "${_EXPORTER}" >/dev/null 2>&1; then
+_EXPORT_TARGETS=()
+for _t in "${README}" "${TESTING_MD}"; do
+    [[ -f "${_t}" ]] || continue
+    _abs="$(cd "$(dirname "${_t}")" && pwd -P)/$(basename "${_t}")"
+    _root_p="$(cd "${ROOT_DIR}" && pwd -P)"
+    if [[ "${_abs}" == "${_root_p}/"* ]]; then
+        _EXPORT_TARGETS+=("${_abs}")
+    else
+        echo "compute-badges.sh: export skipped for ${_t} (outside ${ROOT_DIR} — a fixture, not a repo document)"
+    fi
+done
+if (( ${#_EXPORT_TARGETS[@]} == 0 )); then
+    echo "compute-badges.sh: export skipped — no in-repo target was modified"
+elif [[ -x "${_EXPORTER}" || -f "${_EXPORTER}" ]]; then
+    echo "compute-badges.sh: regenerating exports of ${#_EXPORT_TARGETS[@]} modified file(s) (§11.4.65) so the tree is not left stale"
+    if bash "${_EXPORTER}" "${_EXPORT_TARGETS[@]}" >/dev/null 2>&1; then
         echo "compute-badges.sh: exports regenerated"
     else
         echo "compute-badges.sh: WARNING — export regeneration failed; README/TESTING" >&2

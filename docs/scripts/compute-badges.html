@@ -245,8 +245,8 @@
 <h1
 id="scriptscompute-badges.sh-11.4.259-machine-derived-readme-badge-regenerator">scripts/compute-badges.sh
 — §11.4.259 machine-derived README badge regenerator</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-08-18T22:29:59Z <strong>Status:</strong> active
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-09-26T13:08:22Z <strong>Status:</strong> active
 <strong>Item:</strong> BOB-118 (§11.4.6 bluff audit — task-ad3205a9)</p>
 <h2 id="overview">Overview</h2>
 <p><code>scripts/compute-badges.sh</code> regenerates the “python tests”
@@ -353,6 +353,26 @@ shields.io’s <code>lightgrey</code> color — never a fabricated number
 (§11.4.6). Same discipline for the frontend count when neither
 <code>vitest</code> nor any <code>*.spec.ts</code> file can be
 found.</p>
+<h2 id="export-of-the-files-it-modifies-11.4.65-bob-249">Export of the
+files it modifies (§11.4.65, BOB-249)</h2>
+<p>In apply mode the script rewrites <code>README.md</code> and
+<code>docs/TESTING.md</code>, then regenerates <strong>only those two
+files’</strong> <code>.html</code>/<code>.pdf</code>/<code>.docx</code>
+twins via
+<code>scripts/generate_markdown_exports.sh &lt;file.md&gt; ...</code>
+(explicit-scope mode). A target passed with <code>--readme</code> /
+<code>--testing-md</code> that resolves <strong>outside</strong> the
+repository root is a test fixture: its export is skipped and the skip is
+printed. If no in-repo target was modified, the export step is skipped
+and says so. A failed export stays a loud, non-fatal warning.</p>
+<p>Before this, the export step ran the generator with
+<strong>no</strong> argument — a full sweep of root + <code>docs/</code>
++ <code>scripts/</code> of the real tree on every run, including the
+fixture runs of
+<code>tests/unit/test_compute_badges_carrier_match.sh</code> and
+<code>tests/unit/test_compute_badges_script.py</code>. Measured in a
+scratch copy, one such test run regenerated 42 unrelated tracked twins.
+Guard: <code>tests/unit/test_compute_badges_export_scope.sh</code>.</p>
 <h2 id="related-scripts">Related scripts</h2>
 <ul>
 <li><code>scripts/pre_build_verification.sh</code> invariant
@@ -362,8 +382,13 @@ FAIL, per §11.4.234) so a drifted badge surfaces on every pre-build
 sweep instead of silently aging for months.</li>
 <li><code>docs/TESTING.md</code> — the corroborating authoritative
 source this script keeps in sync.</li>
+<li><code>scripts/generate_markdown_exports.sh</code> — the exporter,
+called in explicit-scope mode for the two modified files only.</li>
 </ul>
 <h2 id="last-verified">Last verified</h2>
+<p>2026-09-26: the export-scope guard passes (fixture run touches no
+in-tree twin and announces the skip; an in-tree run regenerates only
+README + TESTING twins).</p>
 <p>2026-08-18, this session: <code>--check</code> correctly reported the
 pre-fix README as stale (<code>5248</code> vs the stale
 <code>585</code>, <code>371</code> vs the stale <code>182</code>), then

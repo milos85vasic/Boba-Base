@@ -1,7 +1,7 @@
 # scripts/compute-badges.sh — §11.4.259 machine-derived README badge regenerator
 
-**Revision:** 1
-**Last modified:** 2026-08-18T22:29:59Z
+**Revision:** 2
+**Last modified:** 2026-09-26T13:08:22Z
 **Status:** active
 **Item:** BOB-118 (§11.4.6 bluff audit — task-ad3205a9)
 
@@ -77,6 +77,23 @@ color — never a fabricated number (§11.4.6). Same discipline for the
 frontend count when neither `vitest` nor any `*.spec.ts` file can be
 found.
 
+## Export of the files it modifies (§11.4.65, BOB-249)
+
+In apply mode the script rewrites `README.md` and `docs/TESTING.md`, then
+regenerates **only those two files'** `.html`/`.pdf`/`.docx` twins via
+`scripts/generate_markdown_exports.sh <file.md> ...` (explicit-scope mode).
+A target passed with `--readme` / `--testing-md` that resolves **outside**
+the repository root is a test fixture: its export is skipped and the skip is
+printed. If no in-repo target was modified, the export step is skipped and
+says so. A failed export stays a loud, non-fatal warning.
+
+Before this, the export step ran the generator with **no** argument — a full
+sweep of root + `docs/` + `scripts/` of the real tree on every run, including
+the fixture runs of `tests/unit/test_compute_badges_carrier_match.sh` and
+`tests/unit/test_compute_badges_script.py`. Measured in a scratch copy, one
+such test run regenerated 42 unrelated tracked twins. Guard:
+`tests/unit/test_compute_badges_export_scope.sh`.
+
 ## Related scripts
 
 - `scripts/pre_build_verification.sh` invariant `CM-BADGE-FRESHNESS-CHECK`
@@ -85,8 +102,14 @@ found.
   instead of silently aging for months.
 - `docs/TESTING.md` — the corroborating authoritative source this script
   keeps in sync.
+- `scripts/generate_markdown_exports.sh` — the exporter, called in
+  explicit-scope mode for the two modified files only.
 
 ## Last verified
+
+2026-09-26: the export-scope guard passes (fixture run touches no in-tree
+twin and announces the skip; an in-tree run regenerates only README +
+TESTING twins).
 
 2026-08-18, this session: `--check` correctly reported the pre-fix
 README as stale (`5248` vs the stale `585`, `371` vs the stale `182`),
