@@ -175,8 +175,8 @@
 </head>
 <body>
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 131 <strong>Last modified:</strong>
-2026-09-26T08:52:13Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 132 <strong>Last modified:</strong>
+2026-09-26T12:19:46Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -1670,5 +1670,51 @@ specs/003-zero-shortcomings-audit</p>
 <p><strong>Acceptance criteria:</strong> Each listed follow-up is either
 implemented with a RED-first test or closed with an evidence-backed
 reason.</p>
+<h2
+id="bob-249-cm-bash-unit-tests-executed-fails-something-rewrites-tracked-export-twins-while-the-bash-suite-runs">BOB-249
+— CM-BASH-UNIT-TESTS-EXECUTED fails: something rewrites tracked export
+twins while the bash suite runs</h2>
+<p><strong>Status:</strong> Queued <strong>Type:</strong> Bug
+<strong>Severity:</strong> Important <strong>Created-By:</strong> AI</p>
+<p><strong>Reported-Via:</strong> §11.4.202 reporting directive
+<code>bug</code> on 2026-09-26T12:19:46Z <strong>Reported-By:</strong>
+AI</p>
+<p><strong>What (the report, verbatim):</strong> Found while running the
+deferred long gate after merging feature 003 (zero-shortcomings audit).
+Pre-existing: reproduced identically at the merge-base, so it is not
+caused by that feature. It keeps the long gate red independently of the
+separate gate-ledger debt (BOB-237), so BOBA_SYNC_SKIP_CI=1 cannot be
+retired until both are fixed.</p>
+<p><strong>Affected scope / file-scope manifest:</strong>
+scripts/pre_build_verification.sh invariant 30
+(CM-BASH-UNIT-TESTS-EXECUTED); the writer of docs/Issues.<em>,
+docs/Fixed.</em>, docs/*_Summary.<em>, README.</em> and
+docs/qa/BOB-<em>/closure_evidence_</em>.docx export twins</p>
+<p><strong>Reproduction / context:</strong> Run ‘ionice -c 3 nice -n 19
+bash scripts/pre_build_verification.sh’ on a clean tree. Invariant 30
+FAILs: ‘N tracked file(s) mtime-moved while the bash suite ran’ and the
+rewritten files show as modified in git status (byte changes only in the
+generated .docx/.html/.pdf twins; the Markdown sources are unchanged).
+Measured 2026-09-26: at merge-base 120fd78 (old constitution pin
+25980c1) 15 files moved (README, Fixed, Fixed_Summary, Issues,
+Issues_Summary twins); at main 88767fc 18 files moved (adds docx twins
+of several docs/qa closure evidence files and the quickstart evidence).
+Restoring the files with git checkout makes the tree clean again.
+Running six export-related tests from tests/unit one at a time
+(test_docx_export, test_export_pdf_charset_integrity,
+test_export_staleness_oracle, test_generate_markdown_exports_path_arg,
+test_pre_build_workable_items_invariant,
+test_update_readme_doc_links_no_duplication) did NOT move the files, so
+the writer is UNCONFIRMED. Earlier commit ea8ffed documents a similar
+side effect attributed to workable-items-export.sh, which is a
+resemblance not a diagnosis.</p>
+<p><strong>Acceptance criteria:</strong> Root cause of the writer is
+identified with captured evidence (bisect the bash suite and the sweep
+stages that run before invariant 30, with a control needle proving the
+mtime instrument sees a known write); the writer either stops touching
+tracked twins during the sweep or writes only when sources changed
+(idempotent, byte-stable output); a test fails against the current
+behaviour and passes after; a full pre_build sweep on a clean tree
+leaves git status clean and invariant 30 PASS.</p>
 </body>
 </html>
