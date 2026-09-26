@@ -331,7 +331,7 @@ Contributing-section bullets. Last regenerated: 2026-09-25T14:12:03Z.
 | Python contract | `tests/contract/` | **9** | `pytest --collect-only -q` |
 | Frontend (Vitest) | `frontend/src/**/*.spec.ts` | **2743** | collected (vitest list --run) |
 | HelixQA Challenges | `challenges/scripts/*.sh` | **38** | `ls challenges/scripts/*.sh \| wc -l` |
-| Pre-build invariants | `scripts/pre_build_verification.sh` | **58** | max total of every `[N/N]` progress label |
+| Pre-build invariants | `scripts/pre_build_verification.sh` | **59** | max total of every `[N/N]` progress label |
 
 **BOB-118 provenance note:** the README badge row previously read
 `python tests-585 passing` / `frontend tests-182 passing` with no
