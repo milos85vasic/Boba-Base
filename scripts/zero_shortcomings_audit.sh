@@ -75,7 +75,7 @@ count_gates_unimplemented() {
         return 0
     fi
     print_error "count_gates_unimplemented: ${GATE_LEDGER_SCRIPT} produced no parseable 'unimplemented=N' line — cannot distinguish a genuine zero from a broken gate script"
-    printf '%s\n' "$output" >&2
+    printf '%s\n' "$(audit_redact_before_write "$output")" >&2
     return 1
 }
 
@@ -132,9 +132,11 @@ cmd_enumerate() {
     fi
 
     local backlog="" gates="" escapes=""
-    [[ "$surface" == "all" || "$surface" == "backlog" ]] && backlog="$(count_backlog_open)"
-    [[ "$surface" == "all" || "$surface" == "gates" ]] && gates="$(count_gates_unimplemented)"
-    [[ "$surface" == "all" || "$surface" == "escapes" ]] && escapes="$(count_escapes_open)"
+    # A failing count MUST propagate (an `A && x="$(f)"` list swallows f's
+    # failure under set -e and leaves the value empty -- a false-null).
+    if [[ "$surface" == "all" || "$surface" == "backlog" ]]; then backlog="$(count_backlog_open)" || return 1; fi
+    if [[ "$surface" == "all" || "$surface" == "gates" ]]; then gates="$(count_gates_unimplemented)" || return 1; fi
+    if [[ "$surface" == "all" || "$surface" == "escapes" ]]; then escapes="$(count_escapes_open)" || return 1; fi
 
     if [[ "$json" == "true" ]]; then
         local body=""
@@ -505,15 +507,40 @@ audit_detect_and_revert_corruption() {
 }
 
 cmd_standing_check() {
-    mkdir -p "$REPO_ROOT/docs/qa/zero_shortcomings_audit"
-    local run_id counts redacted_counts
+    # Advisory and non-blocking by design (always exit 0), but NEVER a
+    # false-null (§11.4.201(6)): a failing sub-check is recorded as an
+    # explicit status=degraded marker, not a normal-looking line.
+    local logdir="${AUDIT_STANDING_LOG_DIR:-$REPO_ROOT/docs/qa/zero_shortcomings_audit}"
+    mkdir -p "$logdir"
+    local run_id status="ok" reasons="" failed="" body="" surface out rc
     run_id="$(audit_run_id)"
-    counts="$(cmd_enumerate --json)" || true
+    for surface in backlog gates escapes; do
+        if [[ "$surface" == "backlog" && ! -r "$WORKABLE_ITEMS_DB" ]]; then
+            # Checked BEFORE any sqlite3 call: sqlite3 silently creates a
+            # missing file, which would turn absence into a healthy empty DB.
+            status="degraded"; reasons+="db_missing,"; failed+="backlog,"
+            continue
+        fi
+        rc=0
+        out="$(cmd_enumerate --json --surface "$surface")" || rc=$?
+        if [[ "$rc" -ne 0 ]]; then
+            status="degraded"; reasons+="${surface}_rc${rc},"; failed+="${surface},"
+            continue
+        fi
+        out="${out#\{}"; out="${out%\}}"
+        [[ -n "$out" ]] && body+="${out},"
+    done
+    body="{${body%,}}"
+    local marker="status=${status}"
+    if [[ "$status" == "degraded" ]]; then
+        marker+=" reason=${reasons%,} failed=${failed%,}"
+        print_warning "standing-check degraded (${reasons%,}) -- advisory only, exiting 0"
+    fi
+    local line
     # Constitution Principle III: redact BEFORE the value touches the log file.
-    redacted_counts="$(audit_redact_before_write "$counts")" || true
-    printf '%s mode=standing-check %s\n' "$run_id" "$redacted_counts" \
-        >> "$REPO_ROOT/docs/qa/zero_shortcomings_audit/${run_id}.log"
-    print_info "standing-check ($run_id): $redacted_counts"
+    line="$(audit_redact_before_write "$run_id mode=standing-check $marker $body")" || line="$run_id mode=standing-check status=degraded reason=redaction_failed"
+    printf '%s\n' "$line" >> "$logdir/${run_id}.log"
+    print_info "standing-check: $line"
     return 0
 }
 main "$@"
