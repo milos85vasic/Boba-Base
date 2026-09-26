@@ -291,6 +291,23 @@ audit_find_evidence_file() {
     printf '%s' "$last"
 }
 
+# audit_exercised_test_types <command> — prints, one per line and without
+# duplicates, the closed-set test types a recorded command visibly runs:
+# a `tests/<type>/` path token for unit|integration|e2e|security|stress|chaos|
+# scaling, and a `challenges/` path token for challenge. Prints nothing when
+# none is present (the honest "not decidable" case). The `|| true` / `if`
+# forms matter: a grep with no match exits 1, and under the inherited
+# errexit/pipefail a bare pipeline would end this function before the
+# challenges/ check runs (§11.4.201(12)).
+audit_exercised_test_types() {
+    {
+        printf '%s\n' "$1" | grep -oE '(^|[^A-Za-z0-9_./-])tests/(unit|integration|e2e|security|stress|chaos|scaling)/' \
+            | sed -E 's#.*tests/([a-z0-9]+)/$#\1#' || true
+        if printf '%s\n' "$1" | grep -qE '(^|[^A-Za-z0-9_./-])challenges/'; then printf 'challenge\n'; fi
+    } | sort -u
+    return 0
+}
+
 # audit_take_verify_lock — FR-011 serialization of closure checks. Opens the
 # per-repository lock file on a fresh descriptor and holds it for the rest of
 # this process. Returns non-zero (after naming the reason) when the lock
@@ -411,17 +428,28 @@ cmd_verify_closure() {
         print_error "verify-closure: $item_id declares no **Test Type:** — FR-010 requires every closure to name which test type its evidence exercises"
         return 2
     fi
-    # Validate the trimmed, lower-cased value against the closed set; a
-    # whitespace-only or unknown value is not a declaration.
-    local normalized_test_type
+    # The field is a comma-separated list (FR-010: a closure declares EVERY
+    # type its evidence exercises). Each member is trimmed, lower-cased and
+    # validated against the closed set; a whitespace-only or unknown member,
+    # or a list with no members, is not a declaration.
+    local -a declared_types=()
+    local member normalized_test_type
     normalized_test_type="$(printf '%s' "$declared_test_type" | tr '[:upper:]' '[:lower:]' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
-    case "$normalized_test_type" in
-        unit|integration|e2e|security|stress|chaos|scaling|ui|challenge) ;;
-        *)
-            print_error "verify-closure: $item_id declares an invalid **Test Type:** '${normalized_test_type}' — allowed: unit|integration|e2e|security|stress|chaos|scaling|ui|challenge (FR-010)"
-            return 2
-            ;;
-    esac
+    while IFS= read -r member; do
+        member="$(printf '%s' "$member" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+        [[ -n "$member" ]] || continue
+        case "$member" in
+            unit|integration|e2e|security|stress|chaos|scaling|ui|challenge) declared_types+=("$member") ;;
+            *)
+                print_error "verify-closure: $item_id declares an invalid **Test Type:** '${member}' — allowed: unit|integration|e2e|security|stress|chaos|scaling|ui|challenge (FR-010)"
+                return 2
+                ;;
+        esac
+    done < <(printf '%s\n' "$normalized_test_type" | tr ',' '\n')
+    if [[ ${#declared_types[@]} -eq 0 ]]; then
+        print_error "verify-closure: $item_id declares an invalid **Test Type:** '${normalized_test_type}' — allowed: unit|integration|e2e|security|stress|chaos|scaling|ui|challenge (FR-010)"
+        return 2
+    fi
 
     local recorded_command recorded_summary
     # `|| true` guards against the same set -e/pipefail footgun already
@@ -439,6 +467,29 @@ cmd_verify_closure() {
     if [[ -z "$recorded_command" ]]; then
         print_error "verify-closure: $evidence_file has no **Command:** field to re-run"
         return 2
+    fi
+
+    # FR-010 coverage: every test type the command MECHANICALLY exercises must
+    # be declared. Decidable only from the project's own test-path tokens
+    # (tests/<type>/ and challenges/); a command with none of them (go test,
+    # pytest -k, an ad-hoc pipeline, tests/audit/ ...) is an honest limit and
+    # is said to be one -- never guessed either way.
+    local -a exercised=() undeclared=()
+    local t d found
+    mapfile -t exercised < <(audit_exercised_test_types "$recorded_command")
+    if [[ ${#exercised[@]} -eq 0 ]]; then
+        print_info "verify-closure: FR-010 coverage for $item_id is not mechanically decidable from its command; its declared type(s) '${declared_types[*]}' are taken as stated"
+    else
+        for t in "${exercised[@]}"; do
+            found=false
+            for d in "${declared_types[@]}"; do [[ "$d" == "$t" ]] && found=true; done
+            [[ "$found" == "true" ]] || undeclared+=("$t")
+        done
+        if [[ ${#undeclared[@]} -gt 0 ]]; then
+            local IFS=,
+            print_error "verify-closure: $item_id declares **Test Type:** '${declared_types[*]}' but its command exercises undeclared test type(s): ${undeclared[*]} (FR-010)"
+            return 2
+        fi
     fi
 
     # Review Focus item 3: compare the SEMANTIC result_summary, never raw

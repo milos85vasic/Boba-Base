@@ -1,7 +1,7 @@
 # `scripts/zero_shortcomings_audit.sh`
 
-**Revision:** 7
-**Last modified:** 2026-09-26T17:20:00Z
+**Revision:** 8
+**Last modified:** 2026-09-26T17:35:00Z
 
 **Purpose**: Unified enumeration, closure-evidence re-verification, and standing-check
 entry point across this project's three tracked "unfinished/gap/shortcoming" surfaces
@@ -69,9 +69,18 @@ ranks as `source`).
 Required evidence-file fields:
 
 - `**Evidence Layer:**` (optional; see above)
-- `**Test Type:**` (FR-010) -- required. Allowed values, compared case-insensitively after
-  trimming: `unit`, `integration`, `e2e`, `security`, `stress`, `chaos`, `scaling`, `ui`,
-  `challenge`.
+- `**Test Type:**` (FR-010) -- required. A comma-separated list of one or more values, each
+  compared case-insensitively after trimming: `unit`, `integration`, `e2e`, `security`,
+  `stress`, `chaos`, `scaling`, `ui`, `challenge` (e.g. `**Test Type:** unit, integration`).
+  An unknown member, or a list with no members, is refused (exit 2). **Coverage check**: the
+  declared list must include every type the command visibly exercises, where that is
+  mechanically decidable -- a `tests/<type>/` path token in the command (for `unit`,
+  `integration`, `e2e`, `security`, `stress`, `chaos`, `scaling`) or a `challenges/` path
+  token (`challenge`). A missing type is refused (exit 2, `... exercises undeclared test
+  type(s): X`). **Honest limit**: a command with no such token (`go test ./...`, `pytest -k`,
+  an ad-hoc pipeline, `tests/audit/`, `tests/load/`, `tests/ux/`, ...) cannot be decided from
+  its text; the run then prints `FR-010 coverage for <id> is not mechanically decidable from
+  its command; its declared type(s) ... are taken as stated` and accepts the declaration.
 - ``**Command:** `<command>` `` -- the command to re-run. It runs as `bash -c "<command>"` in
   a **fresh process** with the working directory set to the repository root (the one this
   script lives in, not the caller's cwd) and stdin closed, so it does not inherit this

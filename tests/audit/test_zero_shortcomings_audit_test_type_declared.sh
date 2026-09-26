@@ -48,5 +48,50 @@ check "the whitespace-only refusal names the allowed set" \
     'grep -q "unit|integration|e2e|security|stress|chaos|scaling|ui|challenge" <<<"$out"'
 
 unset AUDIT_QA_ROOT
+
+# --- FR-010 (BOB-248): a closure must declare EVERY test type its command
+# mechanically exercises. Decidable only from test-path tokens the project
+# itself uses to classify tests (tests/<type>/ and challenges/); anything else
+# is reported as an honest limit, never guessed. Temp fixtures only.
+T="$(mktemp -d)"
+trap 'rm -rf "$T"' EXIT
+fx() { # id test-type command
+    mkdir -p "$T/$1"
+    printf '**Command:** `%s`\n**Result Summary:** ok\n**Evidence Layer:** runtime\n**Test Type:** %s\n' \
+        "$3" "$2" > "$T/$1/closure_evidence_1.md"
+}
+fx T-UNIT-AS-INTEG 'integration'       ': tests/unit/a.sh; echo ok'
+fx T-TWO-DECLARED  'unit, integration'  ': tests/unit/a.sh tests/integration/b.sh; echo ok'
+fx T-TWO-ONE-MISS  'unit'               ': tests/unit/a.sh tests/integration/b.sh; echo ok'
+fx T-UNDECIDABLE   'unit'               'echo ok'
+fx T-LIST-BAD      'unit, banana'       'echo ok'
+fx T-CHALLENGE     'challenge'          ': challenges/scripts/x.sh; echo ok'
+fx T-NOT-A-TYPE    'unit'               ': tests/unitx/a.sh tests/audit/b.sh; echo ok'
+fx T-EMPTY-LIST    ' , '                'echo ok'
+vc() { set +e; out="$(AUDIT_QA_ROOT="$T" AUDIT_VERIFY_LOCK_FILE="$T/lock" bash scripts/zero_shortcomings_audit.sh verify-closure "$1" 2>&1)"; rc=$?; set -e; }
+
+vc T-UNIT-AS-INTEG
+check "FR-010: a command running tests/unit/ but declaring only integration is refused (exit 2)" '[[ "$rc" -eq 2 ]]'
+check "FR-010: the refusal names the undeclared type" 'grep -q "exercises undeclared test type(s): unit" <<<"$out"'
+vc T-TWO-DECLARED
+check "FR-010: a command exercising two types that declares both is accepted (exit 0)" '[[ "$rc" -eq 0 ]]'
+vc T-TWO-ONE-MISS
+check "FR-010: declaring only one of two exercised types is refused, naming the other" \
+    '[[ "$rc" -eq 2 ]] && grep -q "undeclared test type(s): integration" <<<"$out"'
+vc T-UNDECIDABLE
+check "FR-010 honest limit: an undecidable command is accepted as declared (exit 0)" '[[ "$rc" -eq 0 ]]'
+check "FR-010 honest limit: it SAYS coverage is not mechanically decidable" 'grep -q "not mechanically decidable" <<<"$out"'
+vc T-LIST-BAD
+check "FR-010: one invalid member in a declared list is refused (exit 2) and named" \
+    '[[ "$rc" -eq 2 ]] && grep -q "banana" <<<"$out"'
+vc T-CHALLENGE
+check "FR-010: a challenges/ path is decided as challenge and accepted when declared" \
+    '[[ "$rc" -eq 0 ]] && ! grep -q "not mechanically decidable" <<<"$out"'
+vc T-NOT-A-TYPE
+check "FR-010 control: tests/unitx/ and tests/audit/ are not mistaken for a type (undecidable, exit 0)" \
+    '[[ "$rc" -eq 0 ]] && grep -q "not mechanically decidable" <<<"$out"'
+vc T-EMPTY-LIST
+check "FR-010: a declared list with no members is refused (exit 2)" '[[ "$rc" -eq 2 ]]'
+
 printf 'test_zero_shortcomings_audit_test_type_declared: %d passed, %d failed\n' "$pass" "$fail"
 [[ "$fail" -eq 0 ]]
