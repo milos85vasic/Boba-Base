@@ -1,7 +1,7 @@
 # scripts/generate_markdown_exports.sh — the §11.4.65 document-twin exporter
 
-**Revision:** 3
-**Last modified:** 2026-09-26T13:27:53Z
+**Revision:** 5
+**Last modified:** 2026-09-26T14:26:37Z
 **Status:** active
 
 ## Overview
@@ -61,7 +61,20 @@ bash scripts/generate_markdown_exports.sh CLAUDE.md docs/USER_MANUAL.md
 ### Outputs
 
 `.html`, `.pdf`, and `.docx` siblings written next to each source `.md`.
-Counts of generated files are printed per twin type.
+Per twin type the script prints how many were rendered, how many of those
+were byte-identical to the existing twin (and therefore not rewritten), and
+how many legs failed.
+
+Every leg renders into a private scratch directory first and only then
+installs the result. The install never moves the render across filesystems
+(the scratch directory can be tmpfs, where `mv` degrades to unlink + copy):
+the bytes are copied to a temp file named `.<twin>.exporttmp.XXXXXX.tmp` in
+the twin's **own** directory, given the existing twin's mode (or the umask
+default for a new twin), and renamed over the twin with `mv -f` — an atomic
+`rename(2)`. A failed install removes the temp, leaves the previous twin
+untouched, prints an `ERROR: could not install …` line and counts as a failed
+leg (never as "byte-identical"). A temp left behind by a `SIGKILL` matches the
+project's `*.tmp` ignore rule and no twin pattern.
 
 ### Exit codes
 
@@ -69,6 +82,21 @@ Counts of generated files are printed per twin type.
 |------|---------|
 | `0` | Completed (including "nothing was stale"). |
 | `1` | No HTML converter available at all, **or** an explicitly-named argument was not an existing `.md` file. |
+| `2` | The run completed, but at least one HTML leg failed. Each failure is printed on stderr as an `ERROR:` line carrying the converter's own message. |
+
+A failed **PDF** or **DOCX** leg keeps its historical non-fatal status: it is
+counted, reported as a `WARN:` line on stderr, and the previous twin (if any)
+is left in place.
+
+### A failed HTML leg (BOB-249 review M4)
+
+The HTML converter used to run bare under `set -e` with its stderr thrown
+away. One failing render therefore aborted the whole run with no message at
+all (measured: exit 3, the DOCX leg of the same file and every later file
+never processed). Now the failure is caught and reported, the stale `.html`
+is left exactly as it was, the `.pdf` is **not** re-derived from that stale
+`.html` (a PDF baked from it would look fresh while carrying old content),
+the DOCX leg and every remaining file still run, and the script exits `2`.
 
 ## Why the explicit-scope argument exists
 
@@ -129,6 +157,81 @@ Regenerating identical content twice now yields a byte-identical `.docx`.
 its `.md` is still uncommitted carries the *previous* commit's time; a forced
 re-render after that `.md` is committed carries the new one. Output is
 deterministic per (content, history), not per content alone.
+
+### Identical renders are not rewritten, and HTML records its provenance (BOB-249 review M1)
+
+Two rules together make a stale pair **converge** instead of staying stale
+forever:
+
+1. **A render byte-identical to the existing twin is not rewritten.** The twin
+   is only re-stamped (`touch`), which records "verified against the current
+   source" for the mtime half of the oracle, so a locally-edited or
+   untracked source is not re-rendered on the next run.
+2. **Every generated `.html` records what it was built from**, in two `<meta>`
+   elements inserted just before the first `</head>` after pandoc has run
+   (not via `pandoc -H`, which suppresses a document's own YAML
+   `header-includes`; the bytes otherwise equal the former `-H` output):
+   `x-export-source-sha256` (sha256 of the source bytes) and
+   `dcterms.modified` (the per-file `SOURCE_DATE_EPOCH`, i.e. the source
+   revision time). `weasyprint` maps `dcterms.modified` into the PDF's
+   `ModDate`, so the `.pdf` moves with it.
+
+Why rule 2 is needed: the gate judges a committed pair by git history. A
+whitespace-only `.md` commit made the `.md` newer than its twins, but pandoc
+and weasyprint rendered byte-**identical** `.html`/`.pdf` for it, so nothing
+could be committed and the gate called the pair stale forever (measured: only
+the `.docx`, whose stamp moved, showed up in `git status`). With the
+provenance record, a regeneration for a newer source revision always produces
+committable bytes; after committing them the gate calls the pair fresh. Both
+values are pure functions of (content, history) — never the wall clock — so
+output stays byte-stable. The oracle and the gate are unchanged.
+
+**Limit:** when the caller pins one `SOURCE_DATE_EPOCH` for every revision and
+a later commit restores a `.md` to content an older twin was already built
+from, the render is identical again and the pair cannot converge by writing
+alone. Closing that residual case needs the staleness oracle itself to
+compare content fingerprints; that is an oracle/gate change and is **not**
+part of this script.
+Two `.md` commits within the same second share an epoch (only the `.html`
+sha then moves; the `.pdf` may not).
+
+### Docs Chain-owned twins are rendered exactly as the engine renders them (BOB-249 review I1)
+
+A twin that is a node `path:` of any `.docs_chain/contexts/*.yaml` context
+(for example `docs/features/Status.html`) is owned by the Docs Chain engine,
+whose `verify` (pre-build invariant 24, `CM-DOCS-CHAIN-ENGINE-VERIFY`)
+recomputes it and compares **bytes**. For such a twin the script uses the
+engine's own argv from `constitution/submodules/docs_chain/internal/adapter/derived.go`
+— `pandoc --standalone --from=markdown --to=html --metadata title=<base>`,
+`pandoc --from=markdown --to=docx --metadata title=<base>`,
+`weasyprint --base-url <live pdf path>` — with `SOURCE_DATE_EPOCH=946684800`
+and **no** provenance tags, so running this script before `docs_chain sync`
+cannot make invariant 24 fail. Every other twin keeps the provenance tags. A
+context file with no parsable node path prints one `NOTE:` line and its files
+are treated as not owned. **Limit:** an engine-owned `.html` has no
+provenance record, so the rule-2 convergence above does not apply to it.
+Guard: `tests/unit/test_generate_markdown_exports_engine_parity.sh`.
+
+### Structural validity check (BOB-249 review M3)
+
+History says nothing about **content**: a twin corrupted after it was
+generated (garbage bytes with a newer mtime, or a corruption that was
+committed) used to be judged "fresh" by writer and gate alike, forever. Each
+existing twin is now also checked for cheap **structural** validity, and an
+invalid one is regenerated:
+
+| Twin    | Valid when |
+|---------|------------|
+| `.html` | it has a `<meta … charset>` element **and** a closing `</html>` |
+| `.pdf`  | it starts with `%PDF-` **and** its last 1 KiB contains `%%EOF` |
+| `.docx` | it starts with the zip local-header magic `PK\x03\x04` **and** (when `unzip` is on `PATH`) lists `word/document.xml` |
+
+This is deliberately **not** a byte comparison with a fresh render — that
+would re-render the whole corpus on every run. A fresh checkout still
+rewrites **0** twins (measured over all 464 in-scope sources). The checks
+never pipe a producer into `grep -q`: an early `grep` exit kills the producer
+with SIGPIPE, and under `pipefail` a valid twin would read as invalid and be
+regenerated on every run (§11.4.201(12)).
 
 ### The charset self-heal rule
 
@@ -191,6 +294,15 @@ bash tests/unit/test_generate_markdown_exports_content_staleness.sh
 
 # the shared staleness oracle (incl. .docx history)
 bash tests/unit/test_export_staleness_oracle.sh
+
+# M1 convergence after a whitespace-only commit, M3 corrupt-twin healing with a
+# valid-twin control, M4 loud non-fatal HTML failure, plus the (a) content
+# change / (b) missing twin / (c) charset fragment regeneration controls
+bash tests/unit/test_generate_markdown_exports_review_followups.sh
+
+# I1 docs_chain engine byte parity (real engine verify when built), M-a YAML
+# header-includes kept, M-b atomic same-directory install keeping the mode
+bash tests/unit/test_generate_markdown_exports_engine_parity.sh
 ```
 
 When checking a heading survived into the HTML, match against a
@@ -213,3 +325,7 @@ that `&` is correctly emitted as `&amp;`.
 `README.*` (456 `.md`): 310 twins rewritten before the fix, 0 after; a
 control edit still regenerated its three twins. Content-staleness, oracle,
 DOCX, PDF charset-integrity and path-argument guards all PASS.
+Re-verified after the review follow-ups (M1/M3/M4): explicit-scope run over
+all 464 in-scope sources of a fresh clone rewrote 0 twins (content and
+mtime); a corrupted `.docx` planted as a needle was the only one regenerated;
+the follow-up suite passes 18/18 (11 of its assertions failed before).
