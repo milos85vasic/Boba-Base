@@ -237,8 +237,8 @@
     code span.vs { color: #4070a0; } /* VerbatimString */
     code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
-  <meta name="x-export-source-sha256" content="5002616f761f1e1996458b55788dddc1950cffadaccce216de603158db98d3a0">
-  <meta name="dcterms.modified" content="2026-09-26T13:28:09Z">
+  <meta name="x-export-source-sha256" content="48c3de09f167bb4412ff9007af11b21967756d4bc4cc149614b4d8790724aac9">
+  <meta name="dcterms.modified" content="2026-09-26T14:44:40Z">
 </head>
 <body>
 <header id="title-block-header">
@@ -247,8 +247,8 @@
 <h1
 id="scriptsgenerate_markdown_exports.sh-the-11.4.65-document-twin-exporter">scripts/generate_markdown_exports.sh
 — the §11.4.65 document-twin exporter</h1>
-<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
-2026-09-26T14:26:37Z <strong>Status:</strong> active</p>
+<p><strong>Revision:</strong> 6 <strong>Last modified:</strong>
+2026-09-26T17:45:00Z <strong>Status:</strong> active</p>
 <h2 id="overview">Overview</h2>
 <p><code>scripts/generate_markdown_exports.sh</code> is the project’s
 canonical §11.4.65 exporter. For every in-scope <code>*.md</code> source
@@ -563,10 +563,46 @@ provenance tags, so running this script before
 <code>docs_chain sync</code> cannot make invariant 24 fail. Every other
 twin keeps the provenance tags. A context file with no parsable node
 path prints one <code>NOTE:</code> line and its files are treated as not
-owned. <strong>Limit:</strong> an engine-owned <code>.html</code> has no
-provenance record, so the rule-2 convergence above does not apply to it.
-Guard:
-<code>tests/unit/test_generate_markdown_exports_engine_parity.sh</code>.</p>
+owned.</p>
+<p>Node paths are read by a small explicit reader of the YAML subset the
+contexts use (<code>docs_chain_node_paths</code>), not a regex: the key
+must be exactly <code>path</code> (at the start of a block-mapping line,
+after <code>-</code>, or after <code>{</code>/<code>,</code> in a flow
+mapping — <code>script_path:</code> and a <code>path:</code> inside a
+quoted value are not keys); values may be double-quoted (escapes
+<code>\"</code> <code>\\</code> <code>\/</code> <code>\t</code>),
+single-quoted (<code>''</code> is a literal quote) or plain, and a plain
+value may contain spaces (it ends at
+<code>,</code>/<code>}</code>/<code>]</code> inside a flow mapping, else
+at <code>#</code> or end of line). The previous regex stopped at the
+first space, so <code>path: "docs/a b/Status.html"</code> was read as
+<code>docs/a</code> and that real node lost its engine ownership (the
+real engine’s <code>verify</code> then reported it STALE). Anything the
+reader cannot parse — an unterminated or multi-line quoted scalar, an
+unknown escape — prints a <code>NOTE:</code> naming the file, the line
+and the reason, and <strong>none</strong> of that file’s paths is
+trusted (the engine would reject the whole context anyway). On the two
+real contexts the reader returns exactly the 16 paths the regex
+returned.</p>
+<p><strong>Limit (residual, measured):</strong> an engine-owned twin has
+no provenance record, so the rule-2 convergence above does not apply to
+it. After a whitespace-only <code>.md</code> commit the engine renders
+byte-identical <code>.html</code>/<code>.pdf</code>/<code>.docx</code>
+(its epoch is pinned), the generator therefore rewrites nothing,
+<code>docs_chain verify</code> reports the context <code>in-sync</code>,
+and the shared history oracle
+(<code>scripts/lib/export_staleness.sh</code>, used by
+<code>CM-MARKDOWN-EXPORT-SYNC</code>) reports all three twins STALE —
+permanently, because no committable byte can appear. Reproduced in a
+sandbox on 2026-09-26. No fix inside the writer is sound: adding any
+marker to an owned twin breaks engine byte parity; treating the diff as
+“whitespace only” is unsound for Markdown (trailing double spaces, blank
+lines and indentation change the render); closing it needs the gate
+oracle to compare content for owned twins (re-render, or consult the
+engine’s verdict), which is a gate design decision tracked outside this
+script. Guards:
+<code>tests/unit/test_generate_markdown_exports_engine_parity.sh</code>,
+<code>tests/unit/test_generate_markdown_exports_docs_chain_paths.sh</code>.</p>
 <h3 id="structural-validity-check-bob-249-review-m3">Structural validity
 check (BOB-249 review M3)</h3>
 <p>History says nothing about <strong>content</strong>: a twin corrupted
@@ -686,7 +722,11 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="
 <span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="co"># I1 docs_chain engine byte parity (real engine verify when built), M-a YAML</span></span>
 <span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="co"># header-includes kept, M-b atomic same-directory install keeping the mode</span></span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> tests/unit/test_generate_markdown_exports_engine_parity.sh</span></code></pre></div>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> tests/unit/test_generate_markdown_exports_engine_parity.sh</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="co"># docs_chain node paths: quoted/spaced/&#39;&#39; paths, block plain scalars, look-alike</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="co"># keys, loud </span><span class="al">NOTE</span><span class="co"> on an unterminated quote, real engine verify + control needle</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> tests/unit/test_generate_markdown_exports_docs_chain_paths.sh</span></code></pre></div>
 <p>When checking a heading survived into the HTML, match against a
 <strong>whitespace-normalized</strong> stream, not lines: pandoc
 hard-wraps its HTML at ~72 columns, so a heading routinely spans a

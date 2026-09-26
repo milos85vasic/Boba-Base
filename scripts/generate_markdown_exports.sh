@@ -359,10 +359,11 @@ insert_provenance() {
 # derived.go renders it — same argv, SOURCE_DATE_EPOCH pinned to the engine's
 # reproducibleEpoch, no provenance tags — so running this generator before
 # `docs_chain sync` can never make invariant 24 fail. Every other twin keeps
-# the provenance tags. Ownership is read from the node `path:` values; a
-# context file declaring none (unparsable, or a schema this reader does not
-# understand) earns a one-line NOTE and its files are treated as NOT owned; a
-# project with no .docs_chain/ directory is simply not a docs_chain project.
+# the provenance tags. Ownership is read from the node `path:` values (by
+# docs_chain_node_paths below, a reader for the YAML subset the contexts use);
+# a context file declaring none, or one the reader cannot parse, earns a
+# one-line NOTE and its files are treated as NOT owned; a project with no
+# .docs_chain/ directory is simply not a docs_chain project.
 DOCS_CHAIN_EPOCH=946684800   # derived.go: reproducibleEpoch (2000-01-01T00:00:00Z)
 declare -A _ENGINE_NODE=() _ENGINE_ROOT_LOADED=()
 load_engine_nodes() {
@@ -375,20 +376,136 @@ load_engine_nodes() {
         echo "NOTE: ${root}/.docs_chain has no contexts/ directory — no twin treated as docs_chain-owned" >&2
         return 0
     fi
+    local -a paths=()
     for f in "$dir"/*.yaml "$dir"/*.yml; do
         [[ -f "$f" ]] || continue
         n=0
-        while IFS= read -r p; do
-            p="${p%\"}"; p="${p#\"}"; p="${p%\'}"; p="${p#\'}"; p="${p#./}"
+        if ! mapfile -t paths < <(docs_chain_node_paths "$f"); then paths=(); fi
+        # docs_chain_node_paths prints a final "@@OK" sentinel only when the
+        # whole file parsed; without it (a parse error, reported by the parser
+        # itself) NO path from this file is trusted -- the engine would reject
+        # the whole context anyway.
+        if [[ ${#paths[@]} -eq 0 || "${paths[-1]}" != "@@OK" ]]; then
+            continue
+        fi
+        unset 'paths[-1]'
+        for p in "${paths[@]}"; do
+            p="${p#./}"
             [[ -n "$p" ]] || continue
             [[ "$p" == /* ]] || p="${root}/${p}"
             _ENGINE_NODE["$p"]=1
             n=$((n + 1))
-        done < <(grep -v '^[[:space:]]*#' "$f" 2>/dev/null \
-                 | grep -oE '(^|[{,[:space:]])path:[[:space:]]*[^,}[:space:]#]+' \
-                 | sed -E 's/^.*path:[[:space:]]*//' || true)
+        done
         (( n > 0 )) || echo "NOTE: docs_chain context ${f} declares no node path (unparsable?) — its files are treated as not engine-owned" >&2
     done
+}
+
+# docs_chain_node_paths <context.yaml> — prints every `path:` value of the
+# context, one per line, then the sentinel line "@@OK". A small, explicit
+# reader for the YAML subset these contexts use (BOB-250 follow-up: the old
+# regex stopped at the first space, so `path: "docs/a b/x.html"` was read as
+# `docs/a` and the real node lost its engine ownership):
+#   * the key must be exactly `path` -- at the start of a block mapping line
+#     (optionally after `- `) or right after `{` / `,` inside a flow mapping;
+#     `script_path:` and a `path:` inside a quoted scalar are NOT keys;
+#   * values: double-quoted (escapes \" \\ \/ and \t; any other escape is
+#     refused), single-quoted ('' is a literal '), or plain -- a plain value
+#     ends at `,` `}` `]` inside a flow mapping, else at ` #` or end of line,
+#     and may contain spaces; trailing blanks are trimmed;
+#   * `#` starts a comment only outside quotes and at line start or after a
+#     blank; flow-mapping depth carries across lines.
+# Anything it cannot read (an unterminated or multi-line quoted scalar, an
+# unknown escape) is reported as a NOTE naming the file, line and reason, and
+# the sentinel is withheld so the caller trusts none of the file's paths.
+docs_chain_node_paths() {
+    local file="$1" line lineno=0 depth=0 i len c prev val q ok=true reason=""
+    local sq="'" dq='"'
+    local -a out=()
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        lineno=$((lineno + 1))
+        line="${line%$'\r'}"
+        len=${#line}; i=0; prev=" "
+        while (( i < len )); do
+            c="${line:i:1}"
+            if [[ "$c" == "#" && ( "$prev" == " " || "$prev" == $'\t' ) ]]; then
+                break
+            fi
+            if [[ "$c" == "$dq" || "$c" == "$sq" ]]; then
+                # A quoted scalar that is not a path value: skip over it.
+                q="$c"; i=$((i + 1))
+                while (( i < len )); do
+                    c="${line:i:1}"
+                    if [[ "$q" == "$dq" && "$c" == "\\" ]]; then i=$((i + 2)); continue; fi
+                    if [[ "$c" == "$q" ]]; then
+                        if [[ "$q" == "$sq" && "${line:i+1:1}" == "$sq" ]]; then i=$((i + 2)); continue; fi
+                        break
+                    fi
+                    i=$((i + 1))
+                done
+                if (( i >= len )); then ok=false; reason="line ${lineno}: unterminated or multi-line quoted scalar"; break 2; fi
+                prev="$q"; i=$((i + 1)); continue
+            fi
+            case "$c" in
+                "{"|"[") depth=$((depth + 1)); prev="$c"; i=$((i + 1)); continue ;;
+                "}"|"]") (( depth > 0 )) && depth=$((depth - 1)); prev="$c"; i=$((i + 1)); continue ;;
+            esac
+            # A `path:` key: preceded by line start / blank / `{` / `,` / `- `,
+            # followed by a blank or the end of the line.
+            if [[ "${line:i:5}" == "path:" && ( "$prev" == " " || "$prev" == $'\t' || "$prev" == "{" || "$prev" == "," ) \
+                  && ( $((i + 5)) -ge $len || "${line:i+5:1}" == " " || "${line:i+5:1}" == $'\t' ) ]]; then
+                i=$((i + 5))
+                while (( i < len )) && [[ "${line:i:1}" == " " || "${line:i:1}" == $'\t' ]]; do i=$((i + 1)); done
+                c="${line:i:1}"; val=""
+                if [[ "$c" == "$dq" ]]; then
+                    i=$((i + 1))
+                    while (( i < len )); do
+                        c="${line:i:1}"
+                        if [[ "$c" == "\\" ]]; then
+                            case "${line:i+1:1}" in
+                                '"') val+='"' ;; "\\") val+="\\" ;; "/") val+="/" ;; "t") val+=$'\t' ;;
+                                *) ok=false; reason="line ${lineno}: unsupported escape \\${line:i+1:1} in a double-quoted path"; break 3 ;;
+                            esac
+                            i=$((i + 2)); continue
+                        fi
+                        [[ "$c" == "$dq" ]] && break
+                        val+="$c"; i=$((i + 1))
+                    done
+                    if (( i >= len )); then ok=false; reason="line ${lineno}: unterminated double-quoted path"; break; fi
+                    i=$((i + 1))
+                elif [[ "$c" == "$sq" ]]; then
+                    i=$((i + 1))
+                    while (( i < len )); do
+                        c="${line:i:1}"
+                        if [[ "$c" == "$sq" ]]; then
+                            if [[ "${line:i+1:1}" == "$sq" ]]; then val+="$sq"; i=$((i + 2)); continue; fi
+                            break
+                        fi
+                        val+="$c"; i=$((i + 1))
+                    done
+                    if (( i >= len )); then ok=false; reason="line ${lineno}: unterminated single-quoted path"; break; fi
+                    i=$((i + 1))
+                else
+                    while (( i < len )); do
+                        c="${line:i:1}"
+                        if (( depth > 0 )) && [[ "$c" == "," || "$c" == "}" || "$c" == "]" ]]; then break; fi
+                        if [[ "$c" == "#" && ( "${line:i-1:1}" == " " || "${line:i-1:1}" == $'\t' ) ]]; then break; fi
+                        val+="$c"; i=$((i + 1))
+                    done
+                    val="${val%"${val##*[![:space:]]}"}"
+                fi
+                [[ -n "$val" ]] && out+=("$val")
+                prev="x"; continue
+            fi
+            if [[ "$c" == "-" && "$prev" == " " ]]; then prev=" "; i=$((i + 1)); continue; fi
+            prev="$c"; i=$((i + 1))
+        done
+    done < "$file"
+    if [[ "$ok" != "true" ]]; then
+        echo "NOTE: docs_chain context ${file}: ${reason} — none of its paths is trusted; its files are treated as not engine-owned" >&2
+        return 1
+    fi
+    (( ${#out[@]} == 0 )) || printf '%s\n' "${out[@]}"
+    printf '@@OK\n'
 }
 # engine_owned <abs_twin> <root> -> 0 when the twin is a docs_chain node.
 engine_owned() {

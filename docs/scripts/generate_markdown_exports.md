@@ -1,7 +1,7 @@
 # scripts/generate_markdown_exports.sh — the §11.4.65 document-twin exporter
 
-**Revision:** 5
-**Last modified:** 2026-09-26T14:26:37Z
+**Revision:** 6
+**Last modified:** 2026-09-26T17:45:00Z
 **Status:** active
 
 ## Overview
@@ -208,9 +208,38 @@ engine's own argv from `constitution/submodules/docs_chain/internal/adapter/deri
 and **no** provenance tags, so running this script before `docs_chain sync`
 cannot make invariant 24 fail. Every other twin keeps the provenance tags. A
 context file with no parsable node path prints one `NOTE:` line and its files
-are treated as not owned. **Limit:** an engine-owned `.html` has no
-provenance record, so the rule-2 convergence above does not apply to it.
-Guard: `tests/unit/test_generate_markdown_exports_engine_parity.sh`.
+are treated as not owned.
+
+Node paths are read by a small explicit reader of the YAML subset the contexts
+use (`docs_chain_node_paths`), not a regex: the key must be exactly `path`
+(at the start of a block-mapping line, after `- `, or after `{`/`,` in a flow
+mapping — `script_path:` and a `path:` inside a quoted value are not keys);
+values may be double-quoted (escapes `\"` `\\` `\/` `\t`), single-quoted
+(`''` is a literal quote) or plain, and a plain value may contain spaces (it
+ends at `,`/`}`/`]` inside a flow mapping, else at ` #` or end of line). The
+previous regex stopped at the first space, so `path: "docs/a b/Status.html"`
+was read as `docs/a` and that real node lost its engine ownership (the real
+engine's `verify` then reported it STALE). Anything the reader cannot parse —
+an unterminated or multi-line quoted scalar, an unknown escape — prints a
+`NOTE:` naming the file, the line and the reason, and **none** of that file's
+paths is trusted (the engine would reject the whole context anyway). On the
+two real contexts the reader returns exactly the 16 paths the regex returned.
+
+**Limit (residual, measured):** an engine-owned twin has no provenance record,
+so the rule-2 convergence above does not apply to it. After a whitespace-only
+`.md` commit the engine renders byte-identical `.html`/`.pdf`/`.docx` (its
+epoch is pinned), the generator therefore rewrites nothing, `docs_chain
+verify` reports the context `in-sync`, and the shared history oracle
+(`scripts/lib/export_staleness.sh`, used by `CM-MARKDOWN-EXPORT-SYNC`) reports
+all three twins STALE — permanently, because no committable byte can appear.
+Reproduced in a sandbox on 2026-09-26. No fix inside the writer is sound:
+adding any marker to an owned twin breaks engine byte parity; treating the
+diff as "whitespace only" is unsound for Markdown (trailing double spaces,
+blank lines and indentation change the render); closing it needs the gate
+oracle to compare content for owned twins (re-render, or consult the engine's
+verdict), which is a gate design decision tracked outside this script.
+Guards: `tests/unit/test_generate_markdown_exports_engine_parity.sh`,
+`tests/unit/test_generate_markdown_exports_docs_chain_paths.sh`.
 
 ### Structural validity check (BOB-249 review M3)
 
@@ -303,6 +332,10 @@ bash tests/unit/test_generate_markdown_exports_review_followups.sh
 # I1 docs_chain engine byte parity (real engine verify when built), M-a YAML
 # header-includes kept, M-b atomic same-directory install keeping the mode
 bash tests/unit/test_generate_markdown_exports_engine_parity.sh
+
+# docs_chain node paths: quoted/spaced/'' paths, block plain scalars, look-alike
+# keys, loud NOTE on an unterminated quote, real engine verify + control needle
+bash tests/unit/test_generate_markdown_exports_docs_chain_paths.sh
 ```
 
 When checking a heading survived into the HTML, match against a
