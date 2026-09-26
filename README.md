@@ -254,6 +254,8 @@ never hand-typed (§11.4.57).
 - [`docs/AGENT_GUARDRAILS.md`](docs/AGENT_GUARDRAILS.md) — §11.4.109 anti-forgetting enforcement (subagent constitutional preamble + orchestrator pre-action checklist)
 - [`docs/CONSTITUTION_ADDENDUM_QUALITY.md`](docs/CONSTITUTION_ADDENDUM_QUALITY.md) — constitution addendum: quality stack (Principle I exception)
 - [`docs/PLUGIN_AUDIT.md`](docs/PLUGIN_AUDIT.md) — plugin audit matrix
+- [`docs/scripts/zero_shortcomings_audit.md`](docs/scripts/zero_shortcomings_audit.md) — user guide for `scripts/zero_shortcomings_audit.sh` (unified zero-shortcomings enumeration / closure re-verification / standing check)
+- [`specs/003-zero-shortcomings-audit/`](specs/003-zero-shortcomings-audit/) — feature spec, plan, research, data model, CLI contract and task list for the zero-shortcomings audit
 - [`docs/TEST_RESULTS.md`](docs/TEST_RESULTS.md) — snapshot of last full test run
 - [`docs/TEST_SUITE_GUIDE.md`](docs/TEST_SUITE_GUIDE.md) — test suite guide
 - [`docs/testing/`](docs/testing/) — DDoS resilience + test-type matrix notes
