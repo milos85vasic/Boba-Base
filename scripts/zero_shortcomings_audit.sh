@@ -46,6 +46,17 @@ count_backlog_open() {
         "SELECT count(*) FROM items WHERE status NOT LIKE '%(→ Fixed.md)' AND status != 'Obsolete';"
 }
 
+list_backlog_risk_ordered() {
+    # FR-012: reopens DESC then last_modified DESC. items has no reopens_count
+    # column; the count is derived from item_history 'Reopened' events. The open
+    # predicate is identical to count_backlog_open above.
+    sqlite3 "$WORKABLE_ITEMS_DB" \
+        "SELECT i.atm_id FROM items i
+         WHERE i.status NOT LIKE '%(→ Fixed.md)' AND i.status != 'Obsolete'
+         ORDER BY (SELECT count(*) FROM item_history h WHERE h.atm_id = i.atm_id AND h.event_type = 'Reopened') DESC,
+                  i.last_modified DESC, i.atm_id;"
+}
+
 count_gates_unimplemented() {
     # cm_gate_ledger_ratchet.sh's underlying engine (gate_ledger.sh) prints
     # its "LEDGER: unimplemented=N ..." summary line on BOTH its pass and
@@ -74,10 +85,12 @@ count_escapes_open() {
 cmd_enumerate() {
     local json=false
     local surface="all"
+    local sort_by_risk=false
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --json) json=true; shift ;;
             --surface) surface="$2"; shift 2 ;;
+            --sort-by-risk) sort_by_risk=true; shift ;;
             *) print_error "enumerate: unknown option: $1"; return 1 ;;
         esac
     done
@@ -102,6 +115,11 @@ cmd_enumerate() {
             return 1
             ;;
     esac
+
+    if [[ "$sort_by_risk" == "true" && "$surface" == "backlog" ]]; then
+        list_backlog_risk_ordered
+        return 0
+    fi
 
     local backlog="" gates="" escapes=""
     [[ "$surface" == "all" || "$surface" == "backlog" ]] && backlog="$(count_backlog_open)"
