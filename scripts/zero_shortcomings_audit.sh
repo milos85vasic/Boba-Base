@@ -38,9 +38,18 @@ Modes:
                           most recently modified; valid only with
                           --surface backlog (rejected otherwise).
   verify-closure <item-id> [--reopen-on-mismatch] [--require-layer <layer>]
-      Independently re-runs one item's recorded closure evidence.
-      --require-layer     minimum evidence layer the closure must carry
-                          (default: runtime).
+      Independently re-runs one item's recorded closure evidence. The
+      evidence file's **Command:** runs as shell in a fresh bash process
+      with cwd = the repository root (evidence files are trusted input).
+      <item-id> must match ^[A-Za-z0-9][A-Za-z0-9._-]*$ and contain no '..'.
+      --require-layer     minimum evidence layer the closure must carry:
+                          source|artifact|runtime (default: runtime).
+      --reopen-on-mismatch
+                          reopen the item in the tracker on a mismatch.
+      Exit: 0 match, 1 mismatch (or usage error), 2 no/insufficient
+      evidence, 3 mismatch but the tracker reopen FAILED.
+      Corruption incidents are logged under $AUDIT_QA_ROOT/zero_shortcomings_audit
+      (or $AUDIT_INCIDENT_LOG_DIR when set).
   standing-check
       The recurring, non-blocking mode wired into pre_build_verification.sh.
       Writes its run log to $AUDIT_STANDING_LOG_DIR when set.
@@ -98,7 +107,14 @@ cmd_enumerate() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --json) json=true; shift ;;
-            --surface) surface="$2"; shift 2 ;;
+            --surface)
+                # m2: a missing value must be a clear usage error, never a
+                # set -u "unbound variable" abort.
+                if [[ $# -lt 2 || -z "$2" ]]; then
+                    print_error "enumerate: --surface requires a value (all|backlog|gates|escapes|blocked)"
+                    return 1
+                fi
+                surface="$2"; shift 2 ;;
             --sort-by-risk) sort_by_risk=true; shift ;;
             *) print_error "enumerate: unknown option: $1"; return 1 ;;
         esac
@@ -108,6 +124,7 @@ cmd_enumerate() {
         blocked)
             # FR-007: honestly report every Operator-blocked item's specific,
             # observable unblock condition -- NEVER collapse to a bare count.
+            audit_require_db || return 1
             print_info "Operator-blocked items (id|unblock_condition):"
             count_blocked_with_conditions
             return 0
@@ -124,6 +141,10 @@ cmd_enumerate() {
             return 1
             ;;
     esac
+
+    if [[ "$surface" == "all" || "$surface" == "backlog" ]]; then
+        audit_require_db || return 1
+    fi
 
     if [[ "$sort_by_risk" == "true" ]]; then
         if [[ "$surface" != "backlog" ]]; then
@@ -174,10 +195,41 @@ main() {
 
 
 count_blocked_with_conditions() {
-    sqlite3 -separator '|' "$WORKABLE_ITEMS_DB" \
-        "SELECT i.atm_id, b.unblock_condition FROM items i
-         JOIN operator_block_details b ON b.atm_id = i.atm_id
-         WHERE i.status = 'Operator-blocked';"
+    # LEFT JOIN (never an inner join): an Operator-blocked item with NO
+    # details row, or with a blank/whitespace-only condition, is SURFACED as
+    # an explicit `<id>|MISSING-UNBLOCK-CONDITION` defect line rather than
+    # silently dropped (FR-007/SC-006 -- an inner join made such an item
+    # vanish from the report, reading as "every blocked item is fine").
+    # Output is "id|condition", one row per item, ordered by id. The number
+    # of MISSING rows is announced on stderr; the exit status stays 0
+    # because enumerate reports findings rather than gating on them.
+    local rows missing
+    rows="$(sqlite3 -separator '|' "$WORKABLE_ITEMS_DB" \
+        "SELECT DISTINCT i.atm_id,
+                CASE WHEN b.unblock_condition IS NULL OR trim(b.unblock_condition) = ''
+                     THEN 'MISSING-UNBLOCK-CONDITION'
+                     ELSE b.unblock_condition END
+         FROM items i
+         LEFT JOIN operator_block_details b ON b.atm_id = i.atm_id
+         WHERE i.status = 'Operator-blocked'
+         ORDER BY i.atm_id;")" || return 1
+    [[ -n "$rows" ]] && printf '%s\n' "$rows"
+    missing="$(printf '%s\n' "$rows" | grep -c '|MISSING-UNBLOCK-CONDITION$' || true)"
+    if [[ "$missing" -gt 0 ]]; then
+        print_warning "enumerate: ${missing} Operator-blocked item(s) lack an unblock condition (FR-007 defect)" >&2
+    fi
+    return 0
+}
+
+# audit_require_db — fail loud when the tracker DB is absent or unreadable.
+# Checked BEFORE any sqlite3 call: sqlite3 silently CREATES a missing file,
+# which would both litter a 0-byte DB and turn absence into a healthy-looking
+# empty result (the §11.4.201(6) false-null this audit exists to catch).
+audit_require_db() {
+    if [[ ! -f "$WORKABLE_ITEMS_DB" || ! -r "$WORKABLE_ITEMS_DB" ]]; then
+        print_error "tracker DB missing or unreadable: $WORKABLE_ITEMS_DB"
+        return 1
+    fi
 }
 
 AUDIT_QA_ROOT="${AUDIT_QA_ROOT:-$REPO_ROOT/docs/qa}"
@@ -186,18 +238,41 @@ cmd_verify_closure() {
     local item_id="${1:-}"
     local reopen_on_mismatch=false
     local require_layer="runtime"
-    shift || true
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            --reopen-on-mismatch) reopen_on_mismatch=true; shift ;;
-            --require-layer) require_layer="$2"; shift 2 ;;
-            *) print_error "verify-closure: unknown option: $1"; return 1 ;;
-        esac
-    done
     if [[ -z "$item_id" ]]; then
         print_error "verify-closure: an item id is required"
         return 1
     fi
+    # m3: the id is used to build a filesystem path below, so validate it
+    # BEFORE any path use: [A-Za-z0-9._-] only, starting with a letter or
+    # digit (no option-like leading `-`, no `.`/`..` directory names), and
+    # never containing `..` or `/`.
+    if [[ ! "$item_id" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ || "$item_id" == *..* ]]; then
+        print_error "verify-closure: invalid item id '$item_id' (allowed: ^[A-Za-z0-9][A-Za-z0-9._-]*\$, no '..' or '/')"
+        return 1
+    fi
+    shift
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --reopen-on-mismatch) reopen_on_mismatch=true; shift ;;
+            --require-layer)
+                if [[ $# -lt 2 || -z "$2" ]]; then
+                    print_error "verify-closure: --require-layer requires a value (source|artifact|runtime)"
+                    return 1
+                fi
+                require_layer="$2"; shift 2 ;;
+            *) print_error "verify-closure: unknown option: $1"; return 1 ;;
+        esac
+    done
+    case "$require_layer" in
+        source|artifact|runtime) ;;
+        *) print_error "verify-closure: unrecognized --require-layer value '$require_layer' (expected source|artifact|runtime)"; return 1 ;;
+    esac
+
+    # Resolve the evidence root to an absolute path once, so neither the
+    # recorded command's cwd (below) nor the incident-log location depends
+    # on the directory this was invoked from.
+    local qa_root_abs
+    qa_root_abs="$(cd "$AUDIT_QA_ROOT" 2>/dev/null && pwd -P)" || qa_root_abs="$AUDIT_QA_ROOT"
 
     # `|| true` guards against `find` exiting non-zero when the target
     # directory does not exist at all (GNU find: "No such file or
@@ -207,7 +282,7 @@ cmd_verify_closure() {
     # silently short-circuiting the deliberate "no evidence -> exit 2"
     # contract (root-caused, not guessed, per §11.4.102/§11.4.201(12)).
     local evidence_file
-    evidence_file="$(find "$AUDIT_QA_ROOT/$item_id" -maxdepth 1 -name 'closure_evidence_*.md' 2>/dev/null | head -1)" || true
+    evidence_file="$(find "$qa_root_abs/$item_id" -maxdepth 1 -name 'closure_evidence_*.md' 2>/dev/null | head -1)" || true
     if [[ -z "$evidence_file" ]]; then
         print_error "verify-closure: no recorded evidence for $item_id under $AUDIT_QA_ROOT/$item_id"
         return 2
@@ -300,25 +375,50 @@ cmd_verify_closure() {
     # than silently absorbed -- never allowed to block the closure check
     # itself, since a corrupted OTHER item's evidence is a separate finding
     # from whether THIS item's own recorded command still reproduces.
-    local corruption_snapshot corruption_backup
-    corruption_backup="$(mktemp -d)"
-    corruption_snapshot="$(audit_snapshot_tracked_evidence "$corruption_backup")"
+    # The repository the recorded command runs in (and whose tracked
+    # docs/qa the guard protects) is THIS script's repository, resolved from
+    # $REPO_ROOT -- never from the caller's cwd, so the result of a closure
+    # check does not depend on where it was invoked (review finding I-6).
+    local cmd_root
+    cmd_root="$(git -C "$REPO_ROOT" rev-parse --show-toplevel 2>/dev/null)" || cmd_root="$REPO_ROOT"
 
-    local fresh_summary
+    local corruption_snapshot corruption_backup
+    corruption_backup="$(mktemp -d)" || { print_error "verify-closure: mktemp failed -- cannot run the corruption guard"; return 1; }
+    if ! corruption_snapshot="$(audit_snapshot_tracked_evidence "$corruption_backup" "$cmd_root")"; then
+        rm -rf "$corruption_backup"
+        print_error "verify-closure: could not snapshot tracked evidence -- refusing to run $item_id's command unguarded"
+        return 1
+    fi
+
+    local fresh_summary cmd_stderr
+    cmd_stderr="$(mktemp)" || { rm -rf "$corruption_backup"; print_error "verify-closure: mktemp failed"; return 1; }
+    # FR-006 (review finding I-6): run the recorded command in a FRESH bash
+    # process with cwd = the repository root and stdin closed -- never
+    # `eval`ed in this shell, where it would inherit set -euo pipefail, this
+    # script's functions and non-exported variables, and the caller's cwd.
+    # Only the exported environment is inherited (as for any child process).
     # `|| true`: a non-zero exit from the recorded command must NOT abort
     # this function under set -e before the corruption guard's detect step
     # runs (review finding 2) -- the commands most likely to corrupt evidence
     # are also the most likely to fail. A failing command yields a partial
     # summary that then MISMATCHes, which is the correct outcome.
-    fresh_summary="$(eval "$recorded_command")" || true
+    fresh_summary="$(cd "$cmd_root" && bash -c "$recorded_command" </dev/null 2>"$cmd_stderr")" || true
+    # Constitution Principle III (review finding I-4): the command's stderr
+    # is shown to the operator, but only AFTER it passes through the redactor.
+    if [[ -s "$cmd_stderr" ]]; then
+        printf '%s\n' "$(audit_redact_before_write "$(cat "$cmd_stderr")")" >&2
+    fi
+    rm -f "$cmd_stderr"
 
-    local guard_repo_root own_evidence_dir corruption_incidents
-    guard_repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || guard_repo_root="$REPO_ROOT"
-    own_evidence_dir="${AUDIT_QA_ROOT#"$guard_repo_root"/}/$item_id"
-    corruption_incidents="$(audit_detect_and_revert_corruption "$corruption_snapshot" "$own_evidence_dir" "$corruption_backup")" || true
+    local own_evidence_dir corruption_incidents
+    own_evidence_dir="${qa_root_abs#"$cmd_root"/}/$item_id"
+    corruption_incidents="$(audit_detect_and_revert_corruption "$corruption_snapshot" "$own_evidence_dir" "$corruption_backup" "$cmd_root")" || true
     rm -rf "$corruption_backup"
     if [[ -n "$corruption_incidents" ]]; then
-        local run_log_dir="$REPO_ROOT/docs/qa/zero_shortcomings_audit"
+        # m4: the incident log lives under the evidence tree being audited
+        # (AUDIT_QA_ROOT), or AUDIT_INCIDENT_LOG_DIR when set -- never
+        # unconditionally under this repo's real docs/qa.
+        local run_log_dir="${AUDIT_INCIDENT_LOG_DIR:-$qa_root_abs/zero_shortcomings_audit}"
         mkdir -p "$run_log_dir"
         local run_log="$run_log_dir/$(audit_run_id).log"
         {
@@ -347,9 +447,14 @@ cmd_verify_closure() {
     print_error "verify-closure: $item_id MISMATCH — recorded '$recorded_summary_safe', got '$fresh_summary_safe'"
     if [[ "$reopen_on_mismatch" == "true" ]]; then
         print_warning "verify-closure: reopening $item_id (--reopen-on-mismatch)"
-        "$WORKABLE_ITEMS_BIN" reopen --id "$item_id" --db "$WORKABLE_ITEMS_DB" \
+        # FR-013: a failing reopen is REPORTED, never swallowed -- the
+        # mismatch would otherwise exist nowhere but this terminal.
+        if ! "$WORKABLE_ITEMS_BIN" reopen --id "$item_id" --db "$WORKABLE_ITEMS_DB" \
             --why "test-failed" --who "AI" --when "$(date -u '+%Y-%m-%d')" \
-            --incident "$evidence_file" || true
+            --incident "$evidence_file"; then
+            print_error "verify-closure: reopen FAILED for $item_id -- the mismatch is NOT recorded in the tracker ($WORKABLE_ITEMS_DB); reopen it manually"
+            return 3
+        fi
     fi
     return 1
 }
@@ -414,11 +519,47 @@ audit_redact_before_write() {
     # redaction helper failing loudly-but-uninformatively on empty input is
     # itself worth hardening cheaply.
     local text="${1:-}"
-    printf '%s' "$text" | sed -E 's/(password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret|key|token|cookies)([[:space:]]*[:=][[:space:]]*)[^[:space:]]+/\1\2<redacted-per-§11.4.10>/Ig'
+    # Review finding I-4 (2026-09-26): a single `keyword<sep>\S+` rule leaked
+    # (a) a JSON quoted key `"api_key": "v"` (the closing quote sat between
+    # keyword and separator), (b) the tail of a quoted multi-word value
+    # `password='a b'`, (c) everything after the first token of a cookie
+    # string `X_COOKIES=a=1 b=2`, (d) URL `user:pass@host` credentials and
+    # (e) `Bearer <token>` values. The rules below run IN ORDER, one sed
+    # expression each, rather than one giant regex:
+    #   1. cookie keys (`*_COOKIES=`, `Cookie:` headers) redact to end of line,
+    #      because a cookie string is `k=v; k2=v2 ...` with spaces inside it;
+    #   2. `Authorization:` header lines redact to end of line;
+    #   3. URL userinfo `scheme://user:PASS@` keeps the user, drops PASS;
+    #   4. `Bearer`/`Basic` followed by a credential token;
+    #   5. `<keyword>["']?<sep>"quoted value"` (double-quoted, multi-word);
+    #   6. the same with single quotes;
+    #   7. `<keyword>["']?<sep>unquoted-token` (original rule; skips a value
+    #      that starts with a quote, which 5/6 already handled);
+    #   8. a space-separated CLI flag `--<...keyword> value`.
+    # Known limits (stated, not hidden -- see docs/scripts guide): an escaped
+    # quote inside a quoted value (`"a\"b"`) ends the match early; a secret
+    # split across lines, a secret with no recognisable keyword in front of
+    # it (a bare token or base64 blob), and a value introduced by a separator
+    # other than `:`/`=`/whitespace-after-a-flag are NOT redacted. Bare
+    # `key`/`token`/`bearer` favour recall: some non-secret text is
+    # over-redacted rather than a secret passing through.
+    local kw='(password|passwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret|key|token|cookies)'
+    local sep="[\"']?[[:space:]]*[:=][[:space:]]*"
+    local r='<redacted-per-§11.4.10>'
+    printf '%s' "$text" | sed -E \
+        -e "s/([A-Za-z0-9_-]*cookies?${sep})(.*)/\\1${r}/I" \
+        -e "s/(authorization${sep})(.*)/\\1${r}/I" \
+        -e "s#([A-Za-z][A-Za-z0-9+.-]*://[^/:@[:space:]]+:)[^@/[:space:]]+@#\\1${r}@#g" \
+        -e "s/((bearer|basic)[[:space:]]+)[^[:space:]\"',;<]+/\\1${r}/Ig" \
+        -e "s/(${kw}${sep})\"[^\"]*\"/\\1\"${r}\"/Ig" \
+        -e "s/(${kw}${sep})'[^']*'/\\1'${r}'/Ig" \
+        -e "s/(${kw}${sep})[^[:space:]\"'<][^[:space:]]*/\\1${r}/Ig" \
+        -e "s/(--?[A-Za-z0-9_-]*${kw}[[:space:]]+)[^-[:space:]<][^[:space:]]*/\\1${r}/Ig"
 }
 
-# audit_snapshot_tracked_evidence — prints every git-tracked path under
-# docs/qa/ paired with its current content hash, as one line per file.
+# audit_snapshot_tracked_evidence [<backup-dir>] [<repo-root>] — prints every
+# git-tracked file under docs/qa/ as one "<blob-hash><TAB><path>" line, and
+# (with <backup-dir>) copies every already-dirty tracked file there.
 #
 # Resolves the repo root FRESH at call time via `git rev-parse
 # --show-toplevel` (falling back to the fixed $REPO_ROOT anchor only if the
@@ -438,79 +579,105 @@ audit_redact_before_write() {
 # resolves to the same path $REPO_ROOT already does.
 audit_snapshot_tracked_evidence() {
     local backup_dir="${1:-}"
-    local repo_root
-    repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || repo_root="$REPO_ROOT"
+    local repo_root="${2:-}"
+    if [[ -z "$repo_root" ]]; then
+        repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || repo_root="$REPO_ROOT"
+    fi
     # Task 6 review finding 1 (Critical): a file that is ALREADY modified vs
     # HEAD holds uncommitted legitimate work; `git checkout --` restores from
     # HEAD and would destroy it. Save a byte copy of every already-dirty file
-    # so detect can restore the PRE-COMMAND bytes instead.
+    # so detect can restore the PRE-COMMAND bytes instead. NUL-delimited
+    # (`-z`) so a path with spaces or other special characters round-trips.
     if [[ -n "$backup_dir" ]]; then
         local d
-        while IFS= read -r d; do
+        while IFS= read -r -d '' d; do
             [[ -f "$repo_root/$d" ]] || continue
             mkdir -p "$backup_dir/$(dirname "$d")"
             cp -p "$repo_root/$d" "$backup_dir/$d"
-        done < <(git -C "$repo_root" diff --name-only -- 'docs/qa' 2>/dev/null || true)
+        done < <(git -C "$repo_root" diff -z --name-only -- 'docs/qa' 2>/dev/null || true)
     fi
+    # Snapshot format: one line per file, "<blob-hash><TAB><path>". The hash
+    # comes FIRST and the path is everything after the first tab, so a path
+    # containing spaces (or tabs) is carried verbatim (review finding I-2(b):
+    # the old space-delimited "<path> <hash>" format split such a path).
+    # Paths are enumerated NUL-delimited via `ls-files -z`. A path containing
+    # a NEWLINE cannot be carried by `git hash-object --stdin-paths` (which is
+    # newline-delimited) nor by this line format; such a path is skipped with
+    # an explicit warning, never silently.
+    #
     # One batched `git hash-object --stdin-paths` process for the whole set
     # (a per-file subprocess was measured at ~2m31s over this repo's 1511
     # tracked docs/qa files, twice per closure check). Files listed by
     # ls-files but absent from the worktree are filtered first, since
     # --stdin-paths would abort on a missing path.
-    local paths
-    paths="$(git -C "$repo_root" ls-files 'docs/qa/**' 2>/dev/null | while IFS= read -r f; do [[ -f "$repo_root/$f" ]] && printf '%s\n' "$f"; done)" || true
-    [[ -n "$paths" ]] || return 0
-    paste -d' ' <(printf '%s\n' "$paths") \
-        <(cd "$repo_root" && printf '%s\n' "$paths" | git hash-object --stdin-paths)
+    local -a paths=()
+    local f nl=$'\n'
+    while IFS= read -r -d '' f; do
+        if [[ "$f" == *"$nl"* ]]; then
+            print_warning "corruption guard: cannot snapshot a path containing a newline, skipped: ${f//$nl/\\n}" >&2
+            continue
+        fi
+        [[ -f "$repo_root/$f" ]] && paths+=("$f")
+    done < <(git -C "$repo_root" ls-files -z -- 'docs/qa' 2>/dev/null || true)
+    [[ ${#paths[@]} -gt 0 ]] || return 0
+    local -a hashes=()
+    mapfile -t hashes < <(cd "$repo_root" && printf '%s\n' "${paths[@]}" | git hash-object --stdin-paths)
+    if [[ ${#hashes[@]} -ne ${#paths[@]} ]]; then
+        print_error "corruption guard: hashed ${#hashes[@]} of ${#paths[@]} tracked evidence files -- snapshot incomplete"
+        return 1
+    fi
+    local i
+    for i in "${!paths[@]}"; do
+        printf '%s\t%s\n' "${hashes[$i]}" "${paths[$i]}"
+    done
 }
 
-# audit_detect_and_revert_corruption <snapshot> <own-item-evidence-dir> —
-# diffs the current tracked docs/qa/ state against <snapshot>; any changed
-# file OUTSIDE <own-item-evidence-dir> is reverted via `git checkout --` and
-# printed (one path per line) as an incident. A changed file INSIDE
+# audit_detect_and_revert_corruption <snapshot> <own-item-evidence-dir>
+#     [<backup-dir>] [<repo-root>] —
+# diffs the current tracked docs/qa/ state against <snapshot> (the
+# "<hash><TAB><path>" lines from audit_snapshot_tracked_evidence). Any file
+# OUTSIDE <own-item-evidence-dir> that was MODIFIED or DELETED is restored --
+# from <backup-dir> when the file was already dirty before the command
+# (preserving uncommitted work), otherwise via `git checkout --` -- and its
+# path is printed (one per line) as an incident. A change INSIDE
 # <own-item-evidence-dir> is a legitimate write and is left untouched
-# (Review Focus item 2).
+# (Review Focus item 2). <repo-root> defaults to the same fresh
+# `git rev-parse --show-toplevel` resolution as the snapshot function.
 #
-# Same fresh-repo-root resolution as audit_snapshot_tracked_evidence above,
-# for the identical reason documented there.
-#
-# The pre-command hash lookup for each file deliberately uses an exact awk
-# field match rather than `grep -F "^$f "` (root-caused during Task 6 TDD,
-# RED-run 2, §11.4.102/§11.4.201): with `-F`, grep treats its PATTERN
-# argument as a plain fixed string, so the leading `^` is searched for as a
-# LITERAL caret character rather than interpreted as a regex line-anchor --
-# the lookup can therefore never match, and `before` is always empty. Under
-# this file's `set -e`+`pipefail`, that failing pipeline produced no visible
-# error here because this whole function is itself invoked inside a `$(...)`
-# command substitution: bash's `errexit` only aborts a command substitution
-# on the failure of the LAST command executed within it, never an
-# intermediate one — so the bug silently reported "no corruption detected"
-# on every call, exactly the §11.4.201(6) false-null class this audit tool
-# exists to catch elsewhere. Confirmed directly (not guessed, §11.4.6):
-# `grep -F "^literal string"` measurably never matches that same literal
-# string with the caret stripped.
+# History (kept because it explains the format): an earlier version looked
+# the pre-command hash up with `grep -F "^$f "`, which treats `^` as a
+# literal caret and therefore never matched -- silently reporting "no
+# corruption" on every call (a §11.4.201(6) false-null, masked because the
+# failure happened mid-pipeline inside `$(...)`). The later awk `$1 == path`
+# lookup fixed that but split paths containing spaces (review finding
+# I-2(b)); the tab-delimited, hash-first format below removes both classes.
 audit_detect_and_revert_corruption() {
-    local snapshot="$1" own_dir="$2" backup_dir="${3:-}"
-    local repo_root
-    repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || repo_root="$REPO_ROOT"
-    local incidents=""
-    while IFS= read -r f; do
-        [[ -f "$repo_root/$f" ]] || continue
+    local snapshot="$1" own_dir="$2" backup_dir="${3:-}" repo_root="${4:-}"
+    if [[ -z "$repo_root" ]]; then
+        repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || repo_root="$REPO_ROOT"
+    fi
+    local incidents="" line before f after
+    while IFS= read -r line; do
+        [[ -n "$line" ]] || continue
+        before="${line%%$'\t'*}"
+        f="${line#*$'\t'}"
         case "$f" in
             "$own_dir"/*) continue ;;
         esac
-        local before after
-        before="$(printf '%s\n' "$snapshot" | awk -v path="$f" '$1 == path { print $2; exit }')"
-        after="$(git -C "$repo_root" hash-object "$repo_root/$f")"
-        if [[ -n "$before" && "$before" != "$after" ]]; then
-            if [[ -n "$backup_dir" && -f "$backup_dir/$f" ]]; then
-                cp -p "$backup_dir/$f" "$repo_root/$f"
-            else
-                git -C "$repo_root" checkout -- "$f"
-            fi
-            incidents+="$f"$'\n'
+        if [[ -f "$repo_root/$f" ]]; then
+            after="$(git -C "$repo_root" hash-object -- "$repo_root/$f")"
+            [[ "$before" == "$after" ]] && continue
         fi
-    done < <(printf '%s\n' "$snapshot" | awk '{print $1}')
+        # Modified OR deleted (review finding I-2(a): a deletion was
+        # previously skipped by `[[ -f ]] || continue` and never restored).
+        if [[ -n "$backup_dir" && -f "$backup_dir/$f" ]]; then
+            mkdir -p "$(dirname "$repo_root/$f")"
+            cp -p "$backup_dir/$f" "$repo_root/$f"
+        else
+            git -C "$repo_root" checkout -- "$f"
+        fi
+        incidents+="$f"$'\n'
+    done <<< "$snapshot"
     printf '%s' "$incidents"
 }
 

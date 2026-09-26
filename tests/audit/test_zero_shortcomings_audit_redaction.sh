@@ -61,6 +61,44 @@ check "tracker COOKIES value is redacted (security review Critical-1)" \
 check "tracker COOKIES variable name remains loggable" \
     'printf "%s" "$out_cookies" | grep -q "NNMCLUB_COOKIES"'
 
+# Review finding I-4: shapes that previously leaked (each probe value is a
+# fixture, never a real secret). Every case: the VALUE is gone, the NAME stays.
+redact_case() { # desc input leaked-value name-that-must-remain
+    local desc="$1" input="$2" leaked="$3" name="$4" out
+    out="$(audit_redact_before_write "$input")"
+    printf '    %s  =>  %s\n' "$input" "$out"
+    check "I-4 $desc: value redacted" '! printf "%s" "$out" | grep -qF -- "$leaked"'
+    check "I-4 $desc: name remains loggable" 'printf "%s" "$out" | grep -qF -- "$name"'
+}
+redact_case "JSON quoted key + space + quoted value" '{"api_key": "SEKRETJSON1"}' 'SEKRETJSON1' 'api_key'
+redact_case "single-quoted multi-word value" "password='a SEKRET2'" 'SEKRET2' 'password'
+redact_case "double-quoted multi-word value" 'RUTRACKER_PASSWORD="hello SEKRET3"' 'SEKRET3' 'RUTRACKER_PASSWORD'
+redact_case "URL user:pass@host credentials" 'https://user:SEKRET4@host/x' 'SEKRET4' 'https://user:'
+redact_case "Authorization Bearer header" 'Authorization: Bearer SEKRET5' 'SEKRET5' 'Authorization'
+redact_case "bare Bearer token" 'curl sent Bearer SEKRET5B to host' 'SEKRET5B' 'Bearer'
+redact_case "cookie string runs to end of line" 'NNMCLUB_COOKIES=abc SEKRET6=1' 'SEKRET6' 'NNMCLUB_COOKIES'
+redact_case "Cookie request header" 'Cookie: bb_session=SEKRET8; cf=SEKRET9' 'SEKRET9' 'Cookie'
+redact_case "spaced separator" 'password = SEKRET7' 'SEKRET7' 'password'
+redact_case "space-separated CLI flag" 'tool --api-key SEKRET10 --verbose' 'SEKRET10' '--api-key'
+
+multi="$(audit_redact_before_write "$(printf 'line one ok\npassword=SEKRETML\nline three ok')")"
+check "I-4 multi-line input: the credential line is redacted and other lines kept" \
+    '! printf "%s" "$multi" | grep -q SEKRETML && printf "%s" "$multi" | grep -q "line three ok"'
+
+# No over-redaction of the standing-check record (its JSON count keys and
+# markers must stay byte-identical, or the pre-build stage would log garbage).
+standing_line='20260926T000000Z-pid1 mode=standing-check status=ok {"backlog_open":41,"gates_unimplemented":7,"escapes_open":2}'
+check "I-4 standing-check JSON count keys pass through byte-identical" \
+    '[[ "$(audit_redact_before_write "$standing_line")" == "$standing_line" ]]'
+
+# The recorded command's STDERR must pass through the redactor too.
+stderr_out="$(AUDIT_QA_ROOT=tests/audit/fixtures/docs_qa_fixture bash scripts/zero_shortcomings_audit.sh verify-closure BOB-FIXTURE-STDERR-CREDENTIAL 2>&1)" || true
+printf '    stderr-path output: %s\n' "$(printf '%s' "$stderr_out" | tr '\n' ' ')"
+check "I-4 the recorded command's stderr credential value never reaches the terminal" \
+    '! printf "%s" "$stderr_out" | grep -q "stderr-leak-fixture-not-real"'
+check "I-4 the recorded command's stderr is still shown (name loggable, not swallowed)" \
+    'printf "%s" "$stderr_out" | grep -q "BOBA_API_TOKEN"'
+
 # Integration-level regression for the same review's Important finding:
 # exercise the REAL cmd_verify_closure MISMATCH branch (not the standalone
 # function above) so the wiring at the actual print_error call site is
