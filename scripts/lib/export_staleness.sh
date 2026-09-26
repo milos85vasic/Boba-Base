@@ -61,36 +61,57 @@ _export_build_maps() {
     # '*.docx' is in the pathspec (BOB-249): without it a .docx had no history
     # entry and fell back to mtime, so every docx twin was "stale" after a fresh
     # checkout. Adding a pattern only inserts more commits into the walk; the
-    # relative order of any two commits (and same-commit equality) is unchanged,
-    # so every existing .html/.pdf verdict is identical (verified over the real
-    # repo: 77 stale pairs before and after, same list).
-    # NOTE: the format MUST carry a placeholder. `--format='C'` (a bare
-    # literal) makes git emit NOTHING AT ALL with --name-only — measured, the
-    # map came back empty and every pair silently fell back to mtime, which
-    # looked like a regression in the oracle. '%ct' is present only to make
-    # the format valid; its VALUE is deliberately unused (two commits in the
-    # same second share a timestamp and cannot be ordered by it).
-    local p t
-    while IFS=$'\t' read -r p t; do
-        [[ -n "$p" ]] && _EXPORT_HIST_CT["$p"]="$t"
+    # relative order of any two commits (and same-commit equality) is unchanged.
+    # --full-history (M6): git's default walk SIMPLIFIES merge history, so which of a
+    # branch's commits are visited depends on the pathspec (adding '*.docx' flipped
+    # the html/pdf verdict of a merge that took only docx from a branch: measured 3
+    # divergences in 120 fuzzed merge histories, 0 with --full-history). --full-history
+    # visits every commit that touches a listed path, so a verdict is a function of the
+    # twins alone. Residual: a merge that DISCARDS a branch's md/html/pdf changes reads
+    # STALE (safe direction: one regen). -m / --first-parent read it fresh but report
+    # false-FRESH for "regen, then edit md" on a merged branch, so they are not used.
+    # NUL-DELIMITED (-z), parsed in pure bash (no awk): without -z git C-quotes
+    # any path containing a tab, newline, double-quote or backslash even with
+    # core.quotePath=false, so such a clean file never matched its history key and
+    # silently fell back to mtime. awk is deliberately NOT used: RS="\0" is a
+    # gawk/mawk extension and busybox awk truncates at the first NUL (measured).
+    # Record layout of `git log -z --format='%x01C%ct' --name-only`:
+    #   \x01C<ct> NUL  ("\n"<path1>) NUL <path2> NUL ...  \x01C<ct> NUL ...
+    # i.e. each commit is a header record followed by its paths; git prefixes the
+    # FIRST path of a commit with one "\n" (strip exactly one). Empty/merge
+    # commits emit a header only. The '%ct' value is deliberately unused (two
+    # commits in the same second cannot be ordered by it); the format needs a
+    # placeholder or git emits nothing with --name-only (measured). A header is
+    # a record that is exactly \x01C<digits>; a real path cannot be mistaken for
+    # one short of a filename that is itself \x01C<digits>.
+    local rec i=-1 first=0
+    while IFS= read -r -d '' rec; do
+        if [[ "$rec" =~ ^$'\x01'C[0-9]+$ ]]; then
+            i=$((i+1)); first=1; continue
+        fi
+        (( first )) && { rec="${rec#$'\n'}"; first=0; }
+        [[ -n "$rec" && -z "${_EXPORT_HIST_CT[$rec]+x}" ]] && _EXPORT_HIST_CT["$rec"]="$i"
     done < <(
-        cd "$root" 2>/dev/null && git -c core.quotePath=false log --format='C%ct' --name-only -- '*.md' '*.html' '*.pdf' '*.docx' 2>/dev/null \
-        | awk '/^C[0-9]+$/{i++;next} NF&&!(($0) in s){s[$0]=i; print $0"\t"i}'
+        cd "$root" 2>/dev/null && git log -z --full-history --format='%x01C%ct' --name-only -- '*.md' '*.html' '*.pdf' '*.docx' 2>/dev/null
     )
 
     # working-tree-dirty set (one git status pass).
     # `-z` is load-bearing (BOB-249 review I1): plain --porcelain C-quotes any
-    # path with a space or non-ASCII byte (` M "d/a b.md"`), and a whitespace
-    # split then yields `b.md"`, so the edit was invisible and history said
-    # "fresh". -z output is NUL-delimited, unquoted: `XY <path>\0`, and for a
-    # rename/copy `XY <to>\0<from>\0` (two path fields — the second has no XY
-    # prefix). Both paths are marked dirty.
-    local dp
-    while IFS= read -r -d '' dp; do
-        [[ -n "$dp" ]] && _EXPORT_DIRTY["$dp"]=1
+    # path with a space or non-ASCII byte. -z output is NUL-delimited, unquoted:
+    # `XY <path>\0`, and for a rename/copy `XY <to>\0<from>\0` (the second
+    # record is a bare path with NO XY prefix, so it must be consumed here, never
+    # parsed as an entry: an original path starting with R or C would otherwise be
+    # read as a further rename/copy and swallow the next real entry). Both paths
+    # are marked dirty. Pure bash for the same portability reason as above.
+    local xy orig
+    while IFS= read -r -d '' rec; do
+        xy="${rec:0:2}"
+        [[ -n "${rec:3}" ]] && _EXPORT_DIRTY["${rec:3}"]=1
+        if [[ "$xy" == *[RC]* ]]; then
+            IFS= read -r -d '' orig && [[ -n "$orig" ]] && _EXPORT_DIRTY["$orig"]=1
+        fi
     done < <(
-        cd "$root" 2>/dev/null && git status --porcelain -z --untracked-files=all 2>/dev/null \
-        | awk 'BEGIN{RS="\0"; ORS="\0"} skip{print; skip=0; next} {x=substr($0,1,1); y=substr($0,2,1); print substr($0,4); if (x ~ /[RC]/ || y ~ /[RC]/) skip=1}'
+        cd "$root" 2>/dev/null && git status --porcelain -z --untracked-files=all 2>/dev/null
     )
 }
 
