@@ -7,11 +7,14 @@
 #     order: submodule/workspace sync, cheap validation, (optional)
 #     long gate, commit, push to ALL configured upstreams, closing
 #     green verification. Safe to re-run; idempotent.
-# (B) Hooks MUST NOT block the mechanism. Boba does NOT ship any git
-#     hooks (`.git/hooks/` = samples only, `core.hooksPath` unset), so
-#     there is nothing to disconnect — the always-unblocked invariant
-#     is trivially preserved AT THE HOOK LAYER. The cheap-check stage
-#     below is this project's own explicit validation.
+# (B) Hooks MUST NOT block the mechanism. `core.hooksPath` is unset, but
+#     scripts/install_git_hooks.sh copies tracked hooks from
+#     scripts/git_hooks/ into .git/hooks/ (pre-commit, pre-push,
+#     commit-msg, post-commit). The pre-push hook re-runs the pre-commit
+#     §11.4.75 mutation-marker check on HEAD and CAN refuse a push; since
+#     BOB-251 it always names the failing step and its cause instead of
+#     failing silently. The cheap-check stage below is this project's own
+#     explicit validation.
 # (C) No gate is lost. Every check previously executed at some other
 #     seam remains executed by name. The heavy `scripts/
 #     pre_build_verification.sh` is invoked here as the LONG STAGE and
@@ -31,6 +34,18 @@
 #   bash scripts/commit-push-all.sh "commit message"
 #   bash scripts/commit-push-all.sh --scope <path> [--scope <path>]... "commit message"
 #   bash scripts/commit-push-all.sh --scope <path> --scope-allow-partial "commit message"
+#   bash scripts/commit-push-all.sh --scope <path> --message-file msg.txt
+#   printf '%s' "$text" | bash scripts/commit-push-all.sh --scope <path> --message-file -
+#
+# Flags may appear before OR after the message (BOB-246). Exactly one
+# message is required; extra positional arguments, a message given twice,
+# or a --scope token after `--` are refused with exit 2 and nothing is
+# committed. The message is written to a file in the git dir and committed
+# with `git commit --cleanup=verbatim -F`, so it lands byte-for-byte.
+# NOTE for callers: backticks and $(...) inside a DOUBLE-quoted message are
+# expanded by YOUR shell before this script runs (this is what stripped an
+# inline-code span from commit c67bcec). Single-quote the message or use
+# --message-file to keep them.
 #
 # ─── task #66 / BOB-068 SWEEP-PATTERN REMEDY ──────────────────────────
 # Without --scope, stage 5 runs an unconditional `git add -A`, which
@@ -89,14 +104,32 @@
 #   0 = commit + push completed (or nothing to commit)
 #   1 = validation failure (cheap check, long gate, or --scope safety
 #       check) — remediation printed to stderr
-#   2 = invocation error (missing message / malformed --scope)
+#   2 = invocation error (missing/empty/duplicated message, extra
+#       positional argument, malformed --scope or --message-file, or a
+#       --scope token after --)
 #   3 = another commit-push-all.sh is already running (flock)
 
 set -euo pipefail
 
 # ─── args ─────────────────────────────────────────────────────────────
+# BOB-246: flags are parsed in ANY position relative to the message. The
+# previous parser stopped at the first non-flag token, so a --scope placed
+# after the message was silently discarded together with every other
+# trailing token, and the run fell through to the unscoped `git add -A`
+# sweep. Now every non-flag token is collected; exactly ONE message is
+# required (a positional, or --message-file), and a --scope-shaped token
+# that ends up treated as a message (only possible after `--`) is refused,
+# so a --scope anywhere in argv can never degrade into an unscoped commit.
 SCOPES=()
 SCOPE_ALLOW_PARTIAL=0
+POSITIONALS=()
+MSG_FILE=""
+MSG_FILE_SET=0
+_usage() {
+    echo "Usage: $0 [--scope <path>]... [--scope-allow-partial] \"commit message\"" >&2
+    echo "       $0 [--scope <path>]... [--scope-allow-partial] --message-file <path|->" >&2
+    echo "  Flags may appear before or after the message; use -- to end flags." >&2
+}
 while [ $# -gt 0 ]; do
     case "$1" in
         --scope)
@@ -127,32 +160,103 @@ while [ $# -gt 0 ]; do
             SCOPE_ALLOW_PARTIAL=1
             shift
             ;;
+        --message-file)
+            # BOB-246: read the message from a file (or stdin with "-") so a
+            # caller never has to put it through shell quoting at all — the
+            # class of defect where a caller's own double-quoted backticks
+            # are command-substituted before this script ever sees them.
+            if [ $# -lt 2 ] || [ -z "${2:-}" ]; then
+                echo "ERROR: --message-file requires a path argument (or - for stdin)" >&2
+                exit 2
+            fi
+            MSG_FILE="$2"
+            MSG_FILE_SET=$((MSG_FILE_SET + 1))
+            shift 2
+            ;;
+        --message-file=*)
+            MSG_FILE="${1#--message-file=}"
+            if [ -z "$MSG_FILE" ]; then
+                echo "ERROR: --message-file= requires a path (or - for stdin)" >&2
+                exit 2
+            fi
+            MSG_FILE_SET=$((MSG_FILE_SET + 1))
+            shift
+            ;;
         --)
             shift
+            POSITIONALS+=("$@")
             break
             ;;
         -*)
             echo "ERROR: unknown flag: $1" >&2
-            echo "Usage: $0 [--scope <path>]... [--scope-allow-partial] \"commit message\"" >&2
+            _usage
             exit 2
             ;;
         *)
-            break
+            POSITIONALS+=("$1")
+            shift
             ;;
     esac
 done
 
-if [ $# -lt 1 ]; then
-    echo "Usage: $0 [--scope <path>]... [--scope-allow-partial] \"commit message\"" >&2
+for p in ${POSITIONALS[@]+"${POSITIONALS[@]}"}; do
+    case "$p" in
+        --scope|--scope=*|--scope-allow-partial)
+            echo "ERROR: '$p' was given after -- and would be read as the commit message." >&2
+            echo "       Refusing: a --scope token anywhere in the arguments must never" >&2
+            echo "       fall back to an unscoped 'git add -A' commit (BOB-246)." >&2
+            echo "       Put --scope flags before -- (or omit --)." >&2
+            exit 2
+            ;;
+    esac
+done
+
+if [ "$MSG_FILE_SET" -gt 1 ]; then
+    echo "ERROR: --message-file given more than once" >&2
+    exit 2
+fi
+if [ "$MSG_FILE_SET" -eq 1 ] && [ "${#POSITIONALS[@]}" -gt 0 ]; then
+    echo "ERROR: the commit message was supplied twice (--message-file AND a positional argument):" >&2
+    printf '  - %s\n' "${POSITIONALS[@]}" >&2
+    exit 2
+fi
+if [ "$MSG_FILE_SET" -eq 0 ] && [ "${#POSITIONALS[@]}" -gt 1 ]; then
+    echo "ERROR: expected exactly ONE commit message argument, got ${#POSITIONALS[@]}:" >&2
+    printf '  - %s\n' "${POSITIONALS[@]}" >&2
+    echo "       Quote the whole message as one argument, or use --message-file." >&2
+    _usage
+    exit 2
+fi
+if [ "$MSG_FILE_SET" -eq 0 ] && [ "${#POSITIONALS[@]}" -eq 0 ]; then
+    _usage
     echo "  --scope <path>          Repeatable. Only stage these path(s) —" >&2
     echo "                          NEVER 'git add -A'. See task #66." >&2
     echo "  --scope-allow-partial   Silence the WARN when part of a declared" >&2
     echo "                          --scope is left dirty/unstaged (reverse-" >&2
     echo "                          BOB-068 check, §11.4.209 review MINOR-5)." >&2
+    echo "  --message-file <path|-> Read the message from a file or stdin." >&2
     echo "  Optional: BOBA_SYNC_SKIP_CI=1 to defer the long pre-build gate." >&2
     exit 2
 fi
-MSG="$1"
+if [ "$MSG_FILE_SET" -eq 1 ]; then
+    if [ "$MSG_FILE" = "-" ]; then
+        # Command substitution would strip trailing newlines; the sentinel
+        # keeps the message byte-for-byte.
+        MSG="$(cat; printf x)"
+    elif [ -r "$MSG_FILE" ] && [ -f "$MSG_FILE" ]; then
+        MSG="$(cat -- "$MSG_FILE"; printf x)"
+    else
+        echo "ERROR: --message-file '$MSG_FILE' is not a readable regular file" >&2
+        exit 2
+    fi
+    MSG="${MSG%x}"
+else
+    MSG="${POSITIONALS[0]}"
+fi
+if [ -z "${MSG//[[:space:]]/}" ]; then
+    echo "ERROR: the commit message is empty" >&2
+    exit 2
+fi
 
 # ─── concurrent-run protection ────────────────────────────────────────
 LOCK="$(git rev-parse --git-dir)/.commit_push_all.lock"
@@ -296,6 +400,24 @@ _docs_sync_seam_check() {
     exit 1
 }
 
+# BOB-246: the message is handed to git through a file with
+# --cleanup=verbatim, never re-parsed by a shell and never reformatted by
+# git's default whitespace cleanup, so backticks, $(...), quotes, blank
+# lines and trailing whitespace land exactly as the caller supplied them.
+# The file lives in the git dir, not in $TMPDIR, so a full tmpfs cannot
+# turn a commit into a failure (see BOB-251 for that failure mode).
+_commit_verbatim() {
+    local msg_file
+    msg_file="$(git rev-parse --absolute-git-dir)/COMMIT_PUSH_ALL_MSG"
+    printf '%s' "${MSG}${SKIP_TAG}" >"$msg_file"
+    if ! git commit --cleanup=verbatim -F "$msg_file"; then
+        rm -f "$msg_file"
+        echo "ERROR: git commit failed (see output above); nothing was committed." >&2
+        exit 1
+    fi
+    rm -f "$msg_file"
+}
+
 # §11.4.201-style real-condition assertion for the --scope safety layer:
 # a path is "in scope" iff it EQUALS a declared scope entry, or sits
 # UNDER one (declared entry is a directory prefix). Never a substring
@@ -376,7 +498,7 @@ if [ "${#SCOPES[@]}" -gt 0 ]; then
         echo "[commit-push-all] nothing to commit — skipping to push stage"
     else
         _docs_sync_seam_check
-        git commit -m "${MSG}${SKIP_TAG}"
+        _commit_verbatim
     fi
 else
     git add -A
@@ -384,7 +506,7 @@ else
         echo "[commit-push-all] nothing to commit — skipping to push stage"
     else
         _docs_sync_seam_check
-        git commit -m "${MSG}${SKIP_TAG}"
+        _commit_verbatim
     fi
 fi
 

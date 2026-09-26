@@ -1,9 +1,9 @@
 # scripts/commit-push-all.sh — §11.4.234 dedicated commit/push entrypoint
 
-**Revision:** 1
-**Last modified:** 2026-08-18T18:49:45Z
+**Revision:** 2
+**Last modified:** 2026-09-26T16:28:00Z
 **Status:** active
-**Item:** task #66 (BOB-068 sweep-pattern interim remedy)
+**Item:** task #66 (BOB-068 sweep-pattern interim remedy); BOB-246 (argument order + message fidelity)
 
 ## Overview
 
@@ -88,6 +88,46 @@ disturbed).
 `--scope=<path>` (`=`-joined) is also accepted. `--scope` may be
 repeated any number of times for a multi-file commit.
 
+### Argument order and the message (BOB-246)
+
+Flags may appear **before or after** the message:
+
+```bash
+bash scripts/commit-push-all.sh --scope a.sh "fix: a"            # flags first
+bash scripts/commit-push-all.sh "fix: a" --scope a.sh            # flags last
+bash scripts/commit-push-all.sh --scope a.sh "fix: a" --scope b.sh
+bash scripts/commit-push-all.sh --scope a.sh --message-file msg.txt
+printf '%s' "$text" | bash scripts/commit-push-all.sh --scope a.sh --message-file -
+```
+
+Until BOB-246 the parser stopped at the first non-flag token: a
+`--scope` placed after the message was silently discarded and the run
+fell through to the unscoped `git add -A`, sweeping unrelated files into
+the commit and pushing them. Now:
+
+- every `--scope`/`--scope=` token is honoured wherever it appears;
+- exactly **one** message is required — a second positional argument is
+  refused (exit 2, the offending token printed, nothing committed);
+- `--` ends flag parsing; a `--scope`-shaped token after `--` is refused
+  rather than being taken as the message, so a `--scope` anywhere in
+  argv can never turn into an unscoped commit;
+- supplying the message twice (`--message-file` plus a positional) is
+  refused.
+
+The message is written to a file inside the git directory and committed
+with `git commit --cleanup=verbatim -F`, so it lands byte-for-byte:
+backticks, `$(...)`, both quote kinds, blank lines, `#`-led lines and
+trailing whitespace are all kept. When the long gate is skipped the
+literal ` [skip-ci]` is appended to the end of the message, as before.
+
+**Backticks and the caller's shell.** Backticks or `$(...)` inside a
+*double-quoted* message are expanded by the calling shell before this
+script receives its arguments; ``"the same `|| true` guard"`` reaches
+the script as ``the same  guard``, with a command-substitution syntax
+error printed by the caller's shell. That is how commit `c67bcec` lost
+an inline-code span — the wrapper never saw the backticks. Single-quote
+such messages, or write them to a file and use `--message-file`.
+
 ## Safety layer (the reviewer's exact concern)
 
 Scoped mode does, in order:
@@ -149,7 +189,7 @@ the intended scope.
 |---|---|
 | 0 | Commit + push completed (or nothing to commit). |
 | 1 | Validation failure — cheap check, long gate, **or the `--scope` safety check** — remediation printed to stderr. |
-| 2 | Invocation error (missing commit message, malformed `--scope`, unknown flag). |
+| 2 | Invocation error: missing, empty or duplicated message, extra positional argument, malformed `--scope`/`--message-file`, a `--scope` token after `--`, unknown flag. Nothing is committed. |
 | 3 | Another `commit-push-all.sh` invocation already holds the flock. |
 
 ## Edge cases
@@ -196,12 +236,26 @@ and confirmed the mutated script silently commits the out-of-scope
 file — proving the check is load-bearing. See
 `.superpowers/sdd/task-66-report.md` for the pasted terminal evidence.
 
+`tests/unit/test_commit_push_all_args.sh` (BOB-246) covers argument
+order and message fidelity in throwaway sandboxes whose only remote is a
+local bare repository: `--scope` after the message and on both sides of
+it, extra positionals, a `--scope` token after `--`, byte-exact messages
+with and without the skip tag, `--message-file` from a path and from
+stdin, and controls for the flags-first form, the unscoped default and
+the push. Run it against another copy with
+`SUT=/path/to/copy bash tests/unit/test_commit_push_all_args.sh`; against
+the pre-fix script it fails 9 of 13 checks.
+
 ## Related scripts
 
 - `scripts/pre_build_verification.sh` — the long gate this entrypoint
   runs at stage 3.
 - `challenges/scripts/commit_push_all_scope_challenge.sh` — anti-bluff
   proof for `--scope`.
+- `tests/unit/test_commit_push_all_args.sh` — argument order and message
+  fidelity (BOB-246).
+- `scripts/git_hooks/pre-push` — the installed pre-push hook that stage 6
+  pushes run through (see `docs/scripts/install_git_hooks.md`).
 - `docs/proposals/` — the §11.4.179 isolated-git-streams proposal
   (task #67), the architectural remedy `--scope` is an interim
   substitute for.
