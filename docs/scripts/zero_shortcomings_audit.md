@@ -1,7 +1,7 @@
 # `scripts/zero_shortcomings_audit.sh`
 
-**Revision:** 3
-**Last modified:** 2026-09-26T12:00:00Z
+**Revision:** 4
+**Last modified:** 2026-09-26T08:50:32Z
 
 **Purpose**: Unified enumeration, closure-evidence re-verification, and standing-check
 entry point across this project's three tracked "unfinished/gap/shortcoming" surfaces
@@ -157,7 +157,7 @@ The rules run in order, one line at a time:
 
 1. `*_COOKIES=` / `Cookie:` -- everything to the end of the line (cookie strings contain spaces).
 2. `Authorization:` -- everything to the end of the line.
-3. URL userinfo `scheme://user:PASSWORD@host` -- the password (the user stays).
+3. URL userinfo `scheme://user:PASSWORD@host` -- the password (the user stays); a token-only `scheme://TOKEN@host` (GitHub PAT clone form) -- the whole token; and `curl -u user:PASSWORD` -- the password.
 4. `Bearer <token>` / `Basic <token>` -- the token.
 5. `<keyword>["']?<sep>"double-quoted value"` -- the whole quoted value (JSON style included).
 6. The same with single quotes.

@@ -74,6 +74,8 @@ redact_case "JSON quoted key + space + quoted value" '{"api_key": "SEKRETJSON1"}
 redact_case "single-quoted multi-word value" "password='a SEKRET2'" 'SEKRET2' 'password'
 redact_case "double-quoted multi-word value" 'RUTRACKER_PASSWORD="hello SEKRET3"' 'SEKRET3' 'RUTRACKER_PASSWORD'
 redact_case "URL user:pass@host credentials" 'https://user:SEKRET4@host/x' 'SEKRET4' 'https://user:'
+redact_case "token-only URL userinfo (GitHub PAT clone form)" 'git clone https://SEKRETPAT@github.com/org/repo.git' 'SEKRETPAT' 'github.com/org/repo.git'
+redact_case "curl -u user:pass basic auth" 'curl -u admin:SEKRETCU https://host/x' 'SEKRETCU' 'admin'
 redact_case "Authorization Bearer header" 'Authorization: Bearer SEKRET5' 'SEKRET5' 'Authorization'
 redact_case "bare Bearer token" 'curl sent Bearer SEKRET5B to host' 'SEKRET5B' 'Bearer'
 redact_case "cookie string runs to end of line" 'NNMCLUB_COOKIES=abc SEKRET6=1' 'SEKRET6' 'NNMCLUB_COOKIES'

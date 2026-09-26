@@ -50,8 +50,14 @@ scripts/zero_shortcomings_audit.sh verify-closure <item-id> [--reopen-on-mismatc
   mismatch is reported but the item is left as-is (dry-run mode, for investigation).
 
 **Exit codes**: `0` = re-run matched the recorded evidence; `1` = re-run did not match
-(a genuine mismatch was found); `2` = the item has no recorded evidence to verify
-against (itself a finding — a closed item with no evidence is a bluff by definition).
+(a genuine mismatch was found) OR a usage/invalid-id/internal refusal occurred before the
+command ran (e.g. invalid `item-id`, missing option value, could not snapshot evidence) —
+callers MUST read the printed message to tell these apart; `2` = the item has no recorded
+evidence to verify against, the evidence layer is too weak, the `**Test Type:**` is
+missing/invalid, or no `**Command:**` is recorded (itself a finding — a closed item with
+no evidence is a bluff by definition); `3` = mismatch found and `--reopen-on-mismatch` was
+given but the tracker reopen itself FAILED (explicit error, never swallowed).
+Known contract debt: usage/internal refusals share exit `1` with a genuine mismatch.
 
 ### `standing-check`
 

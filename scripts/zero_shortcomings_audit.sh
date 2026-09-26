@@ -529,7 +529,9 @@ audit_redact_before_write() {
     #   1. cookie keys (`*_COOKIES=`, `Cookie:` headers) redact to end of line,
     #      because a cookie string is `k=v; k2=v2 ...` with spaces inside it;
     #   2. `Authorization:` header lines redact to end of line;
-    #   3. URL userinfo `scheme://user:PASS@` keeps the user, drops PASS;
+    #   3. URL userinfo `scheme://user:PASS@` keeps the user, drops PASS; a
+    #      token-only `scheme://TOKEN@` (GitHub PAT clone form) is dropped
+    #      whole; `curl -u user:PASS` keeps the user, drops PASS;
     #   4. `Bearer`/`Basic` followed by a credential token;
     #   5. `<keyword>["']?<sep>"quoted value"` (double-quoted, multi-word);
     #   6. the same with single quotes;
@@ -550,6 +552,8 @@ audit_redact_before_write() {
         -e "s/([A-Za-z0-9_-]*cookies?${sep})(.*)/\\1${r}/I" \
         -e "s/(authorization${sep})(.*)/\\1${r}/I" \
         -e "s#([A-Za-z][A-Za-z0-9+.-]*://[^/:@[:space:]]+:)[^@/[:space:]]+@#\\1${r}@#g" \
+        -e "s#([A-Za-z][A-Za-z0-9+.-]*://)[^/:@[:space:]]+@#\\1${r}@#g" \
+        -e "s#([[:space:]]-u[[:space:]]+[^:[:space:]]+:)[^[:space:]]+#\\1${r}#g" \
         -e "s/((bearer|basic)[[:space:]]+)[^[:space:]\"',;<]+/\\1${r}/Ig" \
         -e "s/(${kw}${sep})\"[^\"]*\"/\\1\"${r}\"/Ig" \
         -e "s/(${kw}${sep})'[^']*'/\\1'${r}'/Ig" \
