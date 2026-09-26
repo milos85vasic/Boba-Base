@@ -16,7 +16,8 @@ source "$SCRIPT_DIR/lib/audit_execution_policy.sh"
 source "$SCRIPT_DIR/lib/audit_run_id.sh"
 
 WORKABLE_ITEMS_BIN="$REPO_ROOT/constitution/scripts/workable-items/workable-items"
-WORKABLE_ITEMS_DB="$REPO_ROOT/docs/workable_items.db"
+# Overridable for testability (risk-order test builds a temp DB).
+WORKABLE_ITEMS_DB="${WORKABLE_ITEMS_DB_OVERRIDE:-$REPO_ROOT/docs/workable_items.db}"
 # Overridable for testability (Task 4+4B review, 2026-09-25): the false-null
 # regression test points this at a genuinely non-existent script to prove
 # count_gates_unimplemented fails loud rather than silently reporting 0.
@@ -116,8 +117,17 @@ cmd_enumerate() {
             ;;
     esac
 
-    if [[ "$sort_by_risk" == "true" && "$surface" == "backlog" ]]; then
-        list_backlog_risk_ordered
+    if [[ "$sort_by_risk" == "true" ]]; then
+        if [[ "$surface" != "backlog" ]]; then
+            print_error "enumerate: --sort-by-risk applies only to --surface backlog (got '$surface')"
+            return 1
+        fi
+        if [[ "$json" == "true" ]]; then
+            # JSON array of atm_ids in risk order.
+            list_backlog_risk_ordered | awk 'BEGIN{printf "["} {printf "%s\"%s\"", (NR>1?",":""), $0} END{print "]"}'
+        else
+            list_backlog_risk_ordered
+        fi
         return 0
     fi
 
@@ -228,11 +238,22 @@ cmd_verify_closure() {
     # `|| true`: a missing field makes grep -oP exit 1; under pipefail an
     # unguarded assignment would abort here (§11.4.201(12)) before the -z check.
     local declared_test_type
-    declared_test_type="$(grep -oP '(?<=\*\*Test Type:\*\* ).*' "$evidence_file" | head -1)" || true
+    declared_test_type="$(grep -oP '^\*\*Test Type:\*\* \K.*' "$evidence_file" | head -1)" || true
     if [[ -z "$declared_test_type" ]]; then
         print_error "verify-closure: $item_id declares no **Test Type:** — FR-010 requires every closure to name which test type its evidence exercises"
         return 2
     fi
+    # Validate the trimmed, lower-cased value against the closed set; a
+    # whitespace-only or unknown value is not a declaration.
+    local normalized_test_type
+    normalized_test_type="$(printf '%s' "$declared_test_type" | tr '[:upper:]' '[:lower:]' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+    case "$normalized_test_type" in
+        unit|integration|e2e|security|stress|chaos|scaling|ui|challenge) ;;
+        *)
+            print_error "verify-closure: $item_id declares an invalid **Test Type:** '${normalized_test_type}' — allowed: unit|integration|e2e|security|stress|chaos|scaling|ui|challenge (FR-010)"
+            return 2
+            ;;
+    esac
 
     local recorded_command recorded_summary
     # `|| true` guards against the same set -e/pipefail footgun already
