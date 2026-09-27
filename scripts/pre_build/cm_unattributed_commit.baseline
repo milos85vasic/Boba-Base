@@ -1,0 +1,55 @@
+# cm_unattributed_commit.baseline — grandfathered unattributed commits (BOB-162)
+#
+# Consumed by: scripts/hooks/unattributed-commit-guard.sh --range HEAD --baseline <this file>
+# (pre-build invariant 63, CM-UNATTRIBUTED-COMMIT-RATCHET).
+#
+# Operator decision (binding, recorded as DATA per §11.4.224(E) / §11.4.66):
+# option (b) of BOB-162 — a ONE-TIME monotone-decrease ratchet. Every commit
+# listed below was already in history when the gate was adopted; any other
+# unattributed bare/templated commit reachable from HEAD FAILS the gate.
+#
+# Grandfathering is by EXACT commit SHA (never by count): a new commit is never
+# in this set by construction, even if it reuses a grandfathered subject line.
+# The guard also refuses the two ways to hide a new commit here:
+#   * more rows than SEEDED_COUNT  -> FAIL (the set may only shrink);
+#   * a row committed after SEED_CUTOFF_EPOCH -> FAIL (cannot grandfather it).
+# A row inside the scanned range that is no longer a violation FAILs as
+# RETIRED — delete it in the same change. History is never rewritten to shrink
+# this set (§11.4.113); it shrinks only if the closed pattern set changes.
+#
+# Seeded 2026-09-27T15:12:05Z from HEAD 30221da: 26 commits reachable from HEAD (24 bare
+# "Auto-commit" incl. 1 epoch-ms-suffixed, 2 "sync: ..."); a scan of --all
+# refs finds the same 26. Cross-checked by an independent subject-line count
+# of HEAD history (also 26) with a zero-hit negative control. The earlier
+# "14 since the last tag" figure was a range artefact: the default range is
+# now 1.3.0..HEAD and holds 0, which is exactly why the gate scans all of HEAD.
+# (cutoff = committer time of the NEWEST grandfathered commit, not the seed time,
+#  so nothing committed after the last grandfathered one can ever be added)
+# SEED_CUTOFF_EPOCH: 1789833444
+# SEEDED_COUNT: 26
+d768373290e2e3ac53ee1c0c34aa6d64774b48ba Auto-commit 1789833444209
+0e617794b41c397743ac2c5ea802cdb8ba629780 Auto-commit
+ab41babd7c3b909ebd8c17326f978f9c157dc19d Auto-commit
+c5576083b81967f9481d1c6e4e918c5d886192d8 Auto-commit
+de9270b8ea600fb068270679e98af1a7da35ce38 Auto-commit
+1c367775c4a2c816d2973e2097d7de0915cfe9fa Auto-commit
+41179c29d917728e7159630dc4a9f68e7dda3170 Auto-commit
+7c529ca294314226507339382274ff500a3cf2e0 Auto-commit
+34ac4d725f9757db4158e5a51a61edd5c5549926 Auto-commit
+49087d769b747fbcfc594685af6d38f5752fff2b Auto-commit
+743097ab22a6ebb5fe85ff345259e456b580c2ac Auto-commit
+9c8f684ea6e20824ee503ad19b1266450d29847d Auto-commit
+54e313fa814fbf87803b274db0bd073cb1966c11 Auto-commit
+0d05ec14acfc6e29939c001bbe99da54f573bfa1 Auto-commit
+55b86718d8fa759103f575794928cc90665256b9 sync: post-rsync commit 20260628
+cdb555f3683e85bd0864e63c5f8f5beee096a820 sync: auto-commit before cross-host sync 20260628
+1108fc12112fb8b937429ef30ce6b8e0b1bd8c82 Auto-commit
+c10ad070f3bb3654f2076700ba041d377caa6d88 Auto-commit
+08081a2bf76070393ff11c60449ddf6befffcf09 Auto-commit
+e15cd69d4b9ed812792ced3bc6c63daf0a311d93 Auto-commit
+20b911ae47f6b01592ec1aa11ae4405cbc728569 Auto-commit
+be8643e0f839f2e4799e5aefc637aa28abf972a4 Auto-commit
+4c77310cf886d34f4e7d0aa2a096a1b01cf9b754 Auto-commit
+dfe0bd8caf7621653da669404dc1cebca402fd33 Auto-commit
+90d66b3965558025cd0aa9466408a756920a5bf3 Auto-commit
+286539045df4bc8182cdd8c7eeabc7ba0413d5cd Auto-commit

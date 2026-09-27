@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 134
-**Last modified:** 2026-09-26T15:11:04Z
+**Revision:** 135
+**Last modified:** 2026-09-27T15:10:53Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -534,15 +534,6 @@ DISCOVERY CHANNEL (§11.4.238): found by boba's own pre-build sweep (scripts/pre
 **Assigned-To:** Claude
 
 BOB-223 closed the incentive inversion where writing a §11.4.18-mandated docs/scripts/<name>.md companion doc tripped invariant 16 while the mandate requiring the doc to exist (CM-SCRIPT-DOCS-SYNC) has zero implementation, and the doc's required §11.4.44 revision header (CM-DOC-REVISION-HEADER-PRESENT) is likewise unenforced outside one unrelated ledger file. Both are now registered as explicit GATE-DEBT REGISTER deferrals in scripts/pre_build_verification.sh, satisfying §11.4.227(A)'s bar for now, but the underlying mandates remain unenforced. This item implements BOTH: (1) walk every *.sh/*.bash under scripts/, require a docs/scripts/<name>.md companion (24 of 36 currently lack one per BOB-151's own count), verify same-commit-or-newer mtime per §11.4.18's literal text; (2) require every in-scope companion doc to carry **Revision:**/**Last modified:** per §11.4.44. Both need an operator brownfield-adoption decision (§11.4.224(E)/§11.4.66 -- immediate hard floor vs. monotone-decrease ratchet vs. changed-files-only), a paired §1.1 mutation each, and -- once landed -- removal of both DEFERRED: lines from the GATE-DEBT REGISTER in scripts/pre_build_verification.sh. Duplicate-of/originating-from: BOB-223, BOB-151. Also recommend adding two rows to constitution/scripts/gates/gate_ledger_deferrals.tsv (the constitution submodule's own canonical §11.4.227(A) deferral ledger) once this new item's ID is known.
-
-## BOB-243 — CM-GITIGNORE-SWALLOW-GUARD: 4 first-party source files under .specify/extensions/superspec/ silently swallowed by .gitignore
-
-**Status:** Queued
-**Type:** Bug
-**Created-By:** Claude
-**Assigned-To:** Claude
-
-Discovered by a full 58-invariant pre_build_verification.sh sweep (2026-09-25) run during BOB-223 closure verification: invariant 56 (CM-GITIGNORE-SWALLOW-GUARD, §11.4.201(6), BOB-212) reports 4 first-party source files silently ignored: .specify/extensions/superspec/scripts/e2e-agent-claude.sh, .specify/extensions/superspec/scripts/e2e-smoke.sh, .specify/extensions/superspec/scripts/validate-extension-metadata.py, .specify/extensions/superspec/scripts/validate-release-archive.py -- all blocked by the broad .gitignore:218 rule '.specify/extensions/superspec/'. Unrelated to BOB-223's own scope; a genuinely new finding, not previously tracked. Remedy per the gate's own remediation text: either rename/relocate the files so no .gitignore rule matches them, or add an explicit ! negation for them in .gitignore, then re-run the guard. Investigate first per §11.4.6/§11.4.124 whether the broad .specify/extensions/superspec/ ignore rule was intentional (e.g. to exclude a vendored/generated subtree) before narrowing it, since a careless negation could re-expose something the rule was deliberately protecting.
 
 ## BOB-246 — commit-push-all.sh: --scope flags placed after the commit message are silently ignored, falls back to git add -A
 

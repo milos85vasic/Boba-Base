@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 68
-**Last modified:** 2026-09-26T15:11:04Z
+**Revision:** 69
+**Last modified:** 2026-09-27T15:10:53Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -3743,4 +3743,17 @@ Run 'ionice -c 3 nice -n 19 bash scripts/pre_build_verification.sh' on a clean t
 
 **Acceptance criteria:**
 Root cause of the writer is identified with captured evidence (bisect the bash suite and the sweep stages that run before invariant 30, with a control needle proving the mtime instrument sees a known write); the writer either stops touching tracked twins during the sweep or writes only when sources changed (idempotent, byte-stable output); a test fails against the current behaviour and passes after; a full pre_build sweep on a clean tree leaves git status clean and invariant 30 PASS.
+
+## BOB-243 — CM-GITIGNORE-SWALLOW-GUARD: 4 first-party source files under .specify/extensions/superspec/ silently swallowed by .gitignore
+
+**Status:** Obsolete (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-244/closure_evidence_20260925.md
+**Created-By:** Claude
+**Assigned-To:** Claude
+**Obsolete-Details:** Since: 2026-09-27; Reason: duplicate-of; Superseding-item: BOB-244; Triple-check evidence: docs/qa/BOB-244/closure_evidence_20260925.md
+
+Discovered by a full 58-invariant pre_build_verification.sh sweep (2026-09-25) run during BOB-223 closure verification: invariant 56 (CM-GITIGNORE-SWALLOW-GUARD, §11.4.201(6), BOB-212) reports 4 first-party source files silently ignored: .specify/extensions/superspec/scripts/e2e-agent-claude.sh, .specify/extensions/superspec/scripts/e2e-smoke.sh, .specify/extensions/superspec/scripts/validate-extension-metadata.py, .specify/extensions/superspec/scripts/validate-release-archive.py -- all blocked by the broad .gitignore:218 rule ''.specify/extensions/superspec/''. Unrelated to BOB-223''s own scope; a genuinely new finding, not previously tracked. Remedy per the gate''s own remediation text: either rename/relocate the files so no .gitignore rule matches them, or add an explicit ! negation for them in .gitignore, then re-run the guard. Investigate first per §11.4.6/§11.4.124 whether the broad .specify/extensions/superspec/ ignore rule was intentional (e.g. to exclude a vendored/generated subtree) before narrowing it, since a careless negation could re-expose something the rule was deliberately protecting.
+
+DUPLICATE-OF: BOB-244 (§11.4.214). Filed first (2026-09-25 12:41) for the same 4 superspec files that BOB-244 (minted 2026-09-25 17:12) closed as Fixed with evidence in docs/qa/BOB-244 (byte-identical to the tracked superspec submodule, check_gitignore_swallow.sh exclusion added). Re-verified 2026-09-26/27: the guard passes and all 4 files are correctly ignored. Linked and reopened per §11.4.214 (canonical chain head = BOB-244, terminal Fixed).
 

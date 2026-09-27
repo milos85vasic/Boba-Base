@@ -94,9 +94,11 @@ TASKPR_RE='(TASK|PR)[ _#-]*[0-9]+'
 
 MODE="default"
 RANGE=""
+BASELINE=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --range) RANGE="$2"; MODE="range"; shift 2 ;;
+        --baseline) BASELINE="${2:-}"; shift 2 ;;
         --self-test) MODE="selftest"; shift ;;
         -h|--help) sed -n '/─── USAGE/,/─── EXIT/p' "$0"; exit 0 ;;
         *) echo "ERROR: unknown argument: $1" >&2; exit 2 ;;
@@ -137,6 +139,9 @@ _scan_range() {
     while IFS= read -r -d $'\x1e' rec; do
         [ -n "$rec" ] || continue
         sha="${rec%%$'\x1f'*}"
+        # %B ends with a newline that lands before the NEXT record's SHA;
+        # strip it so the SHA field is exactly 40 hex characters.
+        while [ "${sha#$'\n'}" != "$sha" ]; do sha="${sha#$'\n'}"; done
         rec="${rec#*$'\x1f'}"
         subject="${rec%%$'\x1f'*}"
         full="${rec#*$'\x1f'}"
@@ -225,6 +230,76 @@ HITS="$(_scan_range "$RANGE")" || exit 2
 HIT_COUNT=0
 [ -n "$HITS" ] && HIT_COUNT="$(printf '%s\n' "$HITS" | grep -c .)"
 
+# ─── RATCHET MODE (--baseline FILE, BOB-162 operator decision (b)) ────────
+# Grandfathering is by EXACT COMMIT SHA, never by count: a new commit can
+# never be in the baseline set by construction, even when it reuses a
+# grandfathered subject word for word, and a one-out-one-in swap is caught.
+if [ -n "$BASELINE" ]; then
+    export LC_ALL=C   # sort and comm must agree on collation
+    if [ ! -f "$BASELINE" ]; then
+        echo "ERROR: baseline file not found: $BASELINE" >&2; exit 2
+    fi
+    CUTOFF="$(sed -n 's/^# SEED_CUTOFF_EPOCH: *\([0-9][0-9]*\) *$/\1/p' "$BASELINE" | head -n1)"
+    SEEDED="$(sed -n 's/^# SEEDED_COUNT: *\([0-9][0-9]*\) *$/\1/p' "$BASELINE" | head -n1)"
+    if [ -z "$CUTOFF" ] || [ -z "$SEEDED" ]; then
+        echo "ERROR: baseline $BASELINE lacks '# SEED_CUTOFF_EPOCH: <n>' and/or '# SEEDED_COUNT: <n>' — cannot verify it was not grown, so the result would be UNVERIFIED" >&2
+        exit 2
+    fi
+    RWORK="$(mktemp -d)"; trap 'rm -rf "$RWORK"' EXIT
+    grep -vE '^[[:space:]]*(#|$)' "$BASELINE" | awk '{print $1}' > "$RWORK/rows.raw"
+    if grep -qvE '^[0-9a-f]{40}$' "$RWORK/rows.raw"; then
+        echo "ERROR: baseline $BASELINE has a row whose first field is not a full 40-hex commit SHA:" >&2
+        grep -vE '^[0-9a-f]{40}$' "$RWORK/rows.raw" | sed 's/^/    /' >&2
+        exit 2
+    fi
+    sort -u "$RWORK/rows.raw" > "$RWORK/base"
+    printf '%s\n' "$HITS" | grep -oE '^[0-9a-f]{40}' | sort -u > "$RWORK/hits" || true
+    if ! git -C "$REPO_ROOT" rev-list "$RANGE" > "$RWORK/range.raw" 2>"$RWORK/err"; then
+        echo "ERROR: git rev-list failed for range '$RANGE': $(cat "$RWORK/err")" >&2; exit 2
+    fi
+    sort -u "$RWORK/range.raw" > "$RWORK/range"
+
+    BAD=0
+    ROWS="$(grep -c . "$RWORK/base" || true)"
+    if [ "$(grep -c . "$RWORK/rows.raw" || true)" -ne "$ROWS" ]; then
+        echo "INTEGRITY duplicate SHA row(s) in $BASELINE"; BAD=1
+    fi
+    if [ "$ROWS" -gt "$SEEDED" ]; then
+        echo "INTEGRITY baseline has ${ROWS} rows, which exceeds SEEDED_COUNT ${SEEDED} — the set may only shrink, never grow"; BAD=1
+    fi
+    while IFS= read -r s; do
+        [ -n "$s" ] || continue
+        if git -C "$REPO_ROOT" cat-file -e "${s}^{commit}" 2>/dev/null; then
+            ct="$(git -C "$REPO_ROOT" log -1 --format=%ct "$s")"
+            if [ "$ct" -gt "$CUTOFF" ]; then
+                echo "INTEGRITY row ${s} is newer than SEED_CUTOFF_EPOCH ${CUTOFF} (committed ${ct}) — a commit made after the seed cannot be grandfathered"; BAD=1
+            fi
+        fi
+    done < "$RWORK/base"
+
+    NEW_SHAS="$(comm -23 "$RWORK/hits" "$RWORK/base")"  # RATCHET-NEW-SET
+    RETIRED_SHAS="$(comm -12 "$RWORK/base" "$RWORK/range" | comm -23 - "$RWORK/hits")"
+    KEPT="$(comm -12 "$RWORK/hits" "$RWORK/base" | grep -c . || true)"
+    NEW_N=0; RET_N=0
+    while IFS= read -r s; do
+        [ -n "$s" ] || continue
+        echo "NEW ${s} $(git -C "$REPO_ROOT" log -1 --format=%s "$s")"; NEW_N=$((NEW_N + 1))
+    done <<< "$NEW_SHAS"
+    while IFS= read -r s; do
+        [ -n "$s" ] || continue
+        echo "RETIRED ${s}  (baselined, inside ${RANGE}, no longer a violation — delete this row)"; RET_N=$((RET_N + 1))
+    done <<< "$RETIRED_SHAS"
+
+    if [ "$NEW_N" -gt 0 ] || [ "$RET_N" -gt 0 ] || [ "$BAD" -ne 0 ]; then
+        echo "FAIL: ${NEW_N} NEW unattributed commit(s), ${RET_N} RETIRED baseline row(s), integrity $([ "$BAD" -eq 0 ] && echo ok || echo FAILED) (${RANGE}; ${KEPT} baselined, baseline ${ROWS}/${SEEDED})"
+        echo "      fix a NEW commit with an attributed follow-up (never a history rewrite, §11.4.113) and stop its producer;"
+        echo "      never add a row to hide it — rows newer than the seed cutoff are refused."
+        exit 1
+    fi
+    echo "OK: no new unattributed commit in ${RANGE} (${KEPT} baselined, baseline ${ROWS}/${SEEDED})"
+    exit 0
+fi
+
 if [ "$HIT_COUNT" -eq 0 ]; then
     echo "[unattributed-commit-guard] OK — no unattributed bare/templated commit in ${RANGE}"
     exit 0
@@ -232,7 +307,7 @@ fi
 
 echo "" >&2
 echo "  ── UNATTRIBUTED BARE/TEMPLATED COMMIT(S) (§11.4.84) ──" >&2
-printf '  %s\n' "$HITS" >&2
+printf '%s\n' "$HITS" | sed 's/^/  /' >&2
 echo "" >&2
 echo "  ${HIT_COUNT} commit(s) in ${RANGE} match a closed bare/templated" >&2
 echo "  pattern with no ATM-NNN or task/PR reference. Per BOB-068 (RD2-00)" >&2

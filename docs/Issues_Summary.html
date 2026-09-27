@@ -200,7 +200,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>Queued</td>
-<td>5</td>
+<td>4</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -220,7 +220,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>41</strong></td>
+<td><strong>40</strong></td>
 </tr>
 </tbody>
 </table>
@@ -1224,24 +1224,6 @@ Duplicate-of/originating-from: BOB-223, BOB-151. Also recommend adding
 two rows to constitution/scripts/gates/gate_ledger_deferrals.tsv (the
 constitution submodule's own canonical §11.4.227(A) deferral ledger)
 once this new item's ID is known. |
-| BOB-243 | Bug | Queued | — | Discovered by a full 58-invariant
-pre_build_verification.sh sweep (2026-09-25) run during BOB-223 closure
-verification: invariant 56 (CM-GITIGNORE-SWALLOW-GUARD, §11.4.201(6),
-BOB-212) reports 4 first-party source files silently ignored:
-.specify/extensions/superspec/scripts/e2e-agent-claude.sh,
-.specify/extensions/superspec/scripts/e2e-smoke.sh,
-.specify/extensions/superspec/scripts/validate-extension-metadata.py,
-.specify/extensions/superspec/scripts/validate-release-archive.py -- all
-blocked by the broad .gitignore:218 rule
-'.specify/extensions/superspec/'. Unrelated to BOB-223's own scope; a
-genuinely new finding, not previously tracked. Remedy per the gate's own
-remediation text: either rename/relocate the files so no .gitignore rule
-matches them, or add an explicit ! negation for them in .gitignore, then
-re-run the guard. Investigate first per §11.4.6/§11.4.124 whether the
-broad .specify/extensions/superspec/ ignore rule was intentional (e.g.
-to exclude a vendored/generated subtree) before narrowing it, since a
-careless negation could re-expose something the rule was deliberately
-protecting. |
 | BOB-246 | Bug | In progress | Critical | Discovered 2026-09-25 by a
 subagent implementing 003-zero-shortcomings-audit Task 1, independently
 reproduced in isolation. scripts/commit-push-all.sh's argument parser

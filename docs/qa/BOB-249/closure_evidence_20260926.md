@@ -6,7 +6,7 @@
 **Command:** `for t in test_generate_markdown_exports_content_staleness test_export_staleness_oracle test_export_staleness_parser_edges test_compute_badges_export_scope test_workable_items_export_deterministic test_generate_markdown_exports_engine_parity; do nice -n 19 bash tests/unit/$t.sh 2>&1 | grep -oE '[0-9]+ passed, [0-9]+ failed' | tail -1; done | awk '{p+=$1; f+=$3} END{print p" passed, "f" failed"}'`
 **Result Summary:** 77 passed, 0 failed
 **Evidence Layer:** runtime
-**Test Type:** integration
+**Test Type:** unit, integration
 
 ## What was reported
 
