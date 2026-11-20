@@ -1,0 +1,14 @@
+BOB-106 closure evidence — 2026-11-20
+
+Item: §11.4.84 quiescence-check helper for the unattributed auto-commit path
+
+The unattributed-commit guard is implemented and wired as pre-build invariant
+63/64 (CM-UNATTRIBUTED-COMMIT-RATCHET). The operator-decision blocker
+(BOB-162) is closed and the one-time ratchet baseline was re-seeded on
+2026-11-20.
+
+Evidence command:
+$ bash scripts/hooks/unattributed-commit-guard.sh --range HEAD --baseline scripts/pre_build/cm_unattributed_commit.baseline
+
+[unattributed-commit-guard] scanning HEAD
+OK: no new unattributed commit in HEAD (28 baselined, baseline 28/28)

@@ -1,0 +1,41 @@
+BOB-109 closure evidence — 2026-11-20
+
+Item: BOB-074 followup: scaling-class test coverage absent from mandated test-type matrix
+
+Root cause fixed in this session:
+- tests/scaling/test_scaling_envelope.py::_distinct_results generated 400 titles
+  that differed only by a small index/group suffix. After normalization the
+  names were ~0.94 Levenshtein-similar, so the deduplicator's Tier-1 identity
+  and Tier-4 fuzzy thresholds collapsed all 400 rows into one group.
+- Fixture now embeds a deterministic 32-character SHA-256 hex token per row,
+  making every normalized/lowered title genuinely distinct.
+
+Verification command:
+$ .venv/bin/python -m pytest tests/scaling/test_scaling_envelope.py::TestDedupCostScaling -v --import-mode=importlib
+
+tests/scaling/test_scaling_envelope.py::TestDedupCostScaling::test_dedup_growth_does_not_regress_past_quadratic PASSED [ 25%]
+tests/scaling/test_scaling_envelope.py::TestDedupCostScaling::test_dedup_identity_preserved_at_scale PASSED [ 50%]
+tests/scaling/test_scaling_envelope.py::TestDedupCostScaling::test_dedup_latency_distribution_at_operating_size PASSED [ 75%]
+tests/scaling/test_scaling_envelope.py::TestDedupCostScaling::test_dedup_collapses_identical_union_to_one_group PASSED [100%]
+
+============================== 4 passed in 13.65s ==============================
+
+Regenerated at-scale identity artifact:
+{
+  "axis": "dedup identity preservation at scale (ungated)",
+  "captured_at": "2026-11-20T18:56:12Z",
+  "distinct_sources_preserved": 400,
+  "download_bindings_missing": 0,
+  "download_urls_union": 400,
+  "feature_class": "scaling",
+  "groups_out": 400,
+  "groups_with_cross_wired_downloads": 0,
+  "item": "BOB-109",
+  "n_results": 400,
+  "purpose": "baseline",
+  "releases_invented": 0,
+  "releases_missing": 0,
+  "run_id": "20261120T185612Z-pid4160792",
+  "total_source_rows": 400,
+  "verdict": "PASS"
+}

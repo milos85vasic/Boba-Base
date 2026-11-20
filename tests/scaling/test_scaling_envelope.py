@@ -62,6 +62,7 @@ from __future__ import annotations
 
 import ast
 import concurrent.futures as cf
+import hashlib
 import importlib.util
 import itertools
 import json
@@ -417,7 +418,7 @@ def _distinct_results(n: int) -> list:
     realistic shape of a broad query fanned across three trackers."""
     return [
         SearchResult(
-            name=f"Distinct.Title.{i}.2024.1080p.BluRay.x264-GRP{i}",
+            name=f"Distinct.Title.{i}.{hashlib.sha256(str(i).encode()).hexdigest()[:32]}.2024.1080p.BluRay.x264-GRP{i}",
             link=f"magnet:?xt=urn:btih:{i:040x}",
             size=f"{1 + (i % 9)}.0 GB",
             seeds=i % 100,

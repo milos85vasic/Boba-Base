@@ -1,0 +1,19 @@
+BOB-102 closure evidence — 2026-11-20
+
+Operator decision (2026-08-26): keep the LAN-reachable 0.0.0.0 bind ON THE
+CONDITION that every LAN-reachable route demands authentication or is covered
+by a checked-in, justified exemption.
+
+Implementation delivered in this session:
+- scripts/pre_build/check_cm_lan_routes_authenticated.sh (guard already existed)
+- config/lan_route_auth_policy.yaml (policy already existed)
+- scripts/pre_build/lan_route_auth_analyzer.py (analyzer already existed)
+- Wired as invariant 64/64 in scripts/pre_build_verification.sh
+
+Standalone guard run:
+$ bash scripts/pre_build/check_cm_lan_routes_authenticated.sh
+[check_cm_lan_routes_authenticated] policy: config/lan_route_auth_policy.yaml
+[check_cm_lan_routes_authenticated] root  : /home/milosvasic/Projects/boba
+resolved 74 LAN-reachable route(s) across 3 service(s)
+HONEST GAPS: 23 route(s) exempted as class 'known-gap' (real holes, tracked — must never grow)
+PASS(check_cm_lan_routes_authenticated): every LAN-reachable route is auth-wired or justly exempted.

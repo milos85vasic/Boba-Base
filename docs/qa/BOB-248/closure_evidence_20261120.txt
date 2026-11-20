@@ -1,0 +1,18 @@
+BOB-248 closure evidence — 2026-11-20
+
+Item: Zero-shortcomings audit: deferred review follow-ups (FR-010/011/012,
+      minor hardening)
+
+Evidence commands:
+$ bash tests/audit/test_zero_shortcomings_audit_test_type_declared.sh
+$ bash tests/audit/test_zero_shortcomings_audit_risk_order.sh
+$ bash tests/audit/test_zero_shortcomings_audit_exit_contract.sh
+
+FR-010 — declared Test Type coverage:
+test_zero_shortcomings_audit_test_type_declared: 19 passed, 0 failed
+
+FR-012 — backlog risk order:
+test_zero_shortcomings_audit_risk_order: 7 passed, 0 failed
+
+FR-011 / exit-contract:
+test_zero_shortcomings_audit_exit_contract: 27 passed, 0 failed

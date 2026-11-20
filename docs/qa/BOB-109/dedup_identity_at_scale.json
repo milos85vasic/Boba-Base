@@ -1,6 +1,6 @@
 {
   "axis": "dedup identity preservation at scale (ungated)",
-  "captured_at": "2026-08-21T21:49:47Z",
+  "captured_at": "2026-11-20T18:56:34Z",
   "distinct_sources_preserved": 400,
   "download_bindings_missing": 0,
   "download_urls_union": 400,
@@ -12,7 +12,7 @@
   "purpose": "baseline",
   "releases_invented": 0,
   "releases_missing": 0,
-  "run_id": "20260821T214914Z-pid1918585",
+  "run_id": "20261120T185628Z-pid4161849",
   "total_source_rows": 400,
   "verdict": "PASS"
 }

@@ -1,0 +1,98 @@
+{
+  "axis": "dedup cost vs result-set size (worst case: all-distinct)",
+  "captured_at": "2026-11-20T18:56:34Z",
+  "complexity_note": "merge_results rescans all remaining candidates per seed, so all-distinct input is quadratic BY DESIGN. This gate catches a regression PAST quadratic, not quadratic itself.",
+  "feature_class": "scaling",
+  "gated_on": "span_exponent",
+  "growth_per_step": [
+    {
+      "from_n": 100,
+      "growth_exponent": 1.7055,
+      "p50_ratio": 3.2614,
+      "to_n": 200
+    },
+    {
+      "from_n": 200,
+      "growth_exponent": 1.8038,
+      "p50_ratio": 3.4915,
+      "to_n": 400
+    },
+    {
+      "from_n": 400,
+      "growth_exponent": 1.9752,
+      "p50_ratio": 3.9317,
+      "to_n": 800
+    }
+  ],
+  "host_safety_at_admission": {
+    "cpu_count": 16,
+    "load_per_cpu": 0.081,
+    "load_per_cpu_ceiling": 0.75,
+    "loadavg_1m": 1.29,
+    "max_workers_cap": 16,
+    "mem_used_pct": 42.51,
+    "mem_used_pct_ceiling": 60,
+    "thread_headroom": 121232,
+    "thread_headroom_floor": 2048
+  },
+  "host_safety_at_emit": {
+    "cpu_count": 16,
+    "loadavg_1m": 1.33,
+    "max_workers_cap": 16,
+    "mem_used_pct": 42.52,
+    "mem_used_pct_ceiling": 60,
+    "thread_headroom": 121249,
+    "thread_headroom_floor": 2048
+  },
+  "item": "BOB-109",
+  "max_growth_exponent_allowed": 2.1,
+  "per_size": {
+    "100": {
+      "groups_out": 100,
+      "max_ms": 25.616,
+      "min_ms": 19.492,
+      "n": 5,
+      "n_results": 100,
+      "p50_ms": 19.813,
+      "p95_ms": 25.616,
+      "p99_ms": 25.616
+    },
+    "200": {
+      "groups_out": 200,
+      "max_ms": 68.224,
+      "min_ms": 64.25,
+      "n": 5,
+      "n_results": 200,
+      "p50_ms": 64.619,
+      "p95_ms": 68.224,
+      "p99_ms": 68.224
+    },
+    "400": {
+      "groups_out": 400,
+      "max_ms": 232.355,
+      "min_ms": 224.857,
+      "n": 5,
+      "n_results": 400,
+      "p50_ms": 225.617,
+      "p95_ms": 232.355,
+      "p99_ms": 232.355
+    },
+    "800": {
+      "groups_out": 800,
+      "max_ms": 900.971,
+      "min_ms": 835.221,
+      "n": 5,
+      "n_results": 800,
+      "p50_ms": 887.064,
+      "p95_ms": 900.971,
+      "p99_ms": 900.971
+    }
+  },
+  "purpose": "baseline",
+  "repeats_per_size": 5,
+  "run_id": "20261120T185628Z-pid4161849",
+  "span_exponent": 1.8282,
+  "span_from_n": 100,
+  "span_to_n": 800,
+  "verdict": "PASS"
+}

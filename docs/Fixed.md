@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 75
-**Last modified:** 2026-11-20T17:58:54Z
+**Revision:** 76
+**Last modified:** 2026-11-20T19:01:45Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -3928,4 +3928,264 @@ RD2-29: Author tests/stress/test_tracker_fetch_stress_chaos.py with §11.4.85 fa
 **Evidence:** docs/qa/BOB-194/closure_evidence_20261120.txt
 
 WHAT: agent worktrees under .claude/worktrees/ are ephemeral copies pinned at arbitrary commits - never built, never shipped, deleted when the agent finishes. Pre-build gates that walk the tree with find(1) from the repo root descend into them anyway. MEASURED INSTANCE (2026-08-25): CM-GO-TOOLCHAIN-MATCHES-BUILDER FAILED the main build with exactly one finding, from .claude/worktrees/agent-afda1df906c537ab4 - a worktree 86 commits behind still carrying 'FROM golang:1.23-alpine' against a go.mod long since at 1.26.2. The main tree was CORRECT throughout. Per §11.4.201(1) a false-positive refusal is a FAIL-bluff of equal severity to a false pass: it blocks real work and teaches people to bypass the gate. FIXED FOR ONE GATE: '.claude' added to that gate's PRUNE_DIRS with a deterministic §1.1 pair - a stale mismatch inside .claude/worktrees must NOT fail a healthy tree, the SAME mismatch outside it MUST still fail, so the prune cannot widen into blindness (§11.4.201(6)). Mutation verified: reverting the prune fails 2 checks. SURVEY, measured not inferred: 8 of 13 pre_build gates walk the tree; only the fixed one prunes .claude. Gates using 'git ls-files' are structurally immune - worktrees are untracked. Empirically probed: check_cm_closure_seam_binds, check_cm_killpg_pgid_guard and check_cm_no_production_mutation_residue all rc=0 with ZERO worktree references - clean in practice today. UNMEASURED, not clean: check_cm_test_mock_pid_explicit_int and check_cm_test_mock_pid_patched_when_real_pid were not reached before the probe budget expired. HYPOTHESIS REFUTED, recorded so nobody re-walks it: an earlier revision of this item speculated that check_cm_plugin_count's 90s timeout was caused by walking worktrees. It is NOT. That gate's find is scoped to $PLUGINS_DIR (check_cm_plugin_count.sh:224), so worktrees are outside its walk entirely. Its slowness is real - still running past 54s on a re-measure - but has a different, still-unidentified cause and belongs to its own item, not this one. ACCEPTANCE: every tree-walking gate either prunes agent scratch or is proven immune by measurement, each with a paired mutation. NOTE the asymmetry that bounds the risk: a stale worktree can only ADD findings to a security-relevant scan (killpg, mutation-residue), never remove them - so the exposure is false refusal and eroded trust, not a missed defect.
+
+## BOB-102 — RW-05: LAN-exposure threat model — bind tunnel 127.0.0.1 or keep 0.0.0.0? — OPERATOR-DECISION
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-102/closure_evidence_20261120.txt
+**Severity:** Medium
+
+**OPERATOR DECISION (2026-08-26, §11.4.66 interactive clarification): KEEP 0.0.0.0 + MANDATORY AUTH GUARD**
+
+The tunnel STAYS LAN-reachable — no bind address changes to 127.0.0.1. The operator explicitly chose to preserve access from other devices on the network. THE DECISION CARRIES A BINDING OBLIGATION: a permanent §11.4.135 regression guard MUST land that FAILS THE BUILD if any LAN-reachable route ever stops demanding authentication. The operator accepted 0.0.0.0 ON THE CONDITION that guard exists — without it this decision is unprotected and the item is NOT closeable. Guard requirements: enumerate routes from the authoritative source (FastAPI app, Go handlers, boba-jackett) never a hand-maintained list; resolve real auth coverage not a grep for the string 'auth' (§11.4.201 real-condition); deliberately-public routes exempt ONLY via a checked-in list with per-entry justification, enumerated as honest gaps never silent; golden-TRUE + golden-FALSE fixtures per §11.4.107(10).
+
+This answer is recorded as consumer DATA per §11.4.35 — it is the operator's stated choice, not an agent inference, and supersedes any prior agent-chosen default on this question. Options not chosen are named above so a future reader does not re-litigate a settled call (§11.4.112(5) bounded-verdict discipline applied to decisions).
+
+--- prior item text follows ---
+
+RW-05: LAN-exposure threat model — bind tunnel 127.0.0.1 or keep 0.0.0.0? — OPERATOR-DECISION
+
+## BOB-104 — §11.4.238 followup: CodeGraph 1.5.0 nested-.gitignore regression challenge
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-104/closure_evidence_20261120.txt
+**Severity:** Medium
+**Created-By:** Claude
+
+Coverage-escape followup (docs/QA_DISCOVERY_LEDGER.md, BOB-075 agent-code-reading finding, commit e6162f7): CodeGraph 1.5.0 (up from documented 0.9.9) walked into nested-.gitignore-excluded frontend/node_modules and extension/node_modules (32,260 files / 514,456 nodes vs the 2026-06-06 baseline of 509 files / 8,906 nodes) instead of honoring frontend/.gitignore + extension/.gitignore per git check-ignore -v. Author a challenge (challenges/scripts/codegraph_gitignore_honor_challenge.sh or equivalent, e.g. wrapping 'codegraph doctor --sniff-gitignore-honor' if that subcommand exists, else a real re-index + file-count assertion) with §11.4.115 RED_MODE polarity: RED_MODE=1 reproduces the blowup against the live nested-.gitignore tree, RED_MODE=0 asserts the resync stays within the documented baseline order of magnitude. Full evidence: docs/codegraph/Status.md lines 91-118. UPSTREAM FILED 2026-08-18: real upstream repo is github.com/colbymchenry/codegraph (npm package @colbymchenry/codegraph, confirmed via package.json + gh repo view; NOT vasic-digital/codegraph, correcting this ledger's original assumption). Issue: https://github.com/colbymchenry/codegraph/issues/1567 (full reproduction evidence: git check-ignore -v re-verified first-hand; two bounded synthetic repro attempts up to 63 nested .gitignore files / 960 files against the actual installed v1.5.0 binary did NOT reproduce the blowup in isolation -- honest negative result, root cause not pinned to a specific line in either scanning implementation). Draft PR (diagnostic only, not a behavioral fix): https://github.com/colbymchenry/codegraph/pull/1568 -- adds a logDebug() call so a future report can confirm which of the two independent gitignore-respecting code paths (git-ls-files-based vs filesystem-walk fallback) actually ran. Both PRs/issue filed via SSH (Hard Stop #2) from a fork at github.com/milos85vasic/codegraph. Status: In-progress pending upstream maintainer triage/merge -- boba-side closure of this item still needs the RED/GREEN challenge script (§11.4.115) authored per the original scope, independent of upstream's response.
+
+## BOB-106 — §11.4.238 followup: §11.4.84 quiescence-check helper for the unattributed auto-commit path
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-106/closure_evidence_20261120.txt
+**Severity:** Medium
+**Created-By:** Claude
+
+§11.4.238 followup: §11.4.84 quiescence-check helper for the unattributed auto-commit path
+
+=== ROUND-2 PROGRESS, 2026-08-21 (discovered + independently verified 2026-09-25 via BOB-238 investigation) ===
+
+Already substantially implemented at commit 7b45113c6b03524d9c799bdd68496ec202575e4c: `scripts/hooks/unattributed-commit-guard.sh` (237 lines) + companion doc + a hermetic self-validated test (140 lines, golden-good/golden-bad/self-test per §11.4.107(10)). The guard's own header carries an explicit, honest "WIRING (honest gap, §11.4.6)" section stating it is NOT yet invoked from scripts/pre_build_verification.sh or scripts/commit-push-all.sh. Confirmed via full-diff grep the guard's name appears only in itself/its doc/its own test/BOB-162's text -- never inside either seam file.
+
+REMAINING WORK: (1) actual wiring into one of the two seams; (2) the §11.4.224(E) brownfield-adoption operator decision -- 14 pre-existing violating commits would immediately fail the seam as written today, so wiring it in un-gated would retroactively "break the build" on history nobody is fixing. This item is explicitly tracked as blocked on that same operator decision via sibling item BOB-162 ("this item is not closed until that answer is recorded").
+
+EVIDENCE: docs/qa/BOB-238/investigation_20260925.md (full citation trail).
+
+## BOB-109 — BOB-074 followup: scaling-class test coverage absent from mandated test-type matrix
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-109/closure_evidence_20261120.txt
+**Severity:** Medium
+**Created-By:** Claude
+
+docs/testing/test_type_matrix.md's §11.4.27 test-type audit found zero scaling-class coverage anywhere in the tree (no scaling-tagged directory, test file, or HelixQA bank distinguishes growing-dataset/tracker-count/concurrent-user scale-out from stress-under-burst). Scope at least one scaling dimension, e.g. tracker-count scale-out in merge search against challenges/helixqa-banks/boba-services.yaml's tracker set, or the qbittorrent-proxy-go --profile go swap, with a real measured baseline.
+
+## BOB-188 — Gate invariant 17 runs a STALE TRACKED binary that structurally cannot see the violations it exists to catch
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-188/closure_evidence_20261120.txt
+
+**OPERATOR DECISION (2026-08-26, §11.4.66 interactive clarification): UNTRACK THE BINARY — BUILD ON DEMAND**
+
+§11.4.30 answer, recorded as consumer DATA: the compiled `workable-items` binary is NOT to be git-tracked. 'Any build derivate which we can recreate by executing proper mechanism for generating MUST NOT be versioned' applies without exception here. Keeping it tracked with only the invariant-52 fingerprint gate, and keeping it tracked with a commit-time rebuild, were both offered and NOT chosen. REQUIRED END STATE: the gate builds from source, or REFUSES HONESTLY when the Go toolchain is absent (§11.4.201(11) — probe the artifact through its real invocation path, never fake a pass, never silently fall back to a stale binary). Staleness becomes structurally impossible rather than merely detected. ACCEPTED COST: a fresh clone needs a Go toolchain before invariant 17 can run — already true for the qBitTorrent-go backend, so this adds no new host requirement. The invariant-52 fingerprint gate remains useful as defence-in-depth for as long as any binary exists on disk.
+
+This answer is recorded as consumer DATA per §11.4.35 — it is the operator's stated choice, not an agent inference, and supersedes any prior agent-chosen default on this question. Options not chosen are named above so a future reader does not re-litigate a settled call (§11.4.112(5) bounded-verdict discipline applied to decisions).
+
+--- prior item text follows ---
+
+pre_build_verification.sh invariant 17 (CM-WORKABLE-ITEMS-VALIDATE) resolves its binary through the candidate loop at :534, whose FIRST entry is constitution/scripts/workable-items/bin/workable-items. That file is GIT-TRACKED (md5 17644a248363, identical to bin/workable-items-linux) and executable, so it WINS resolution over the current untracked sibling constitution/scripts/workable-items/workable-items (md5 43376a6d0184). The tracked binary is STALE: it does not contain the guards its own source now has.
+
+MEASURED, needle-proven, 2026-08-25. String presence in the tracked binary: "refusing to set terminal status" -> 0; "Issues-location item has TERMINAL status" -> 0; control needle from the SAME updateCmd, "at least one mutable field flag is required" -> 2 (so the instrument sees through that path and the zeros are real absences, not a blind read). The untracked sibling returns 1 / 1 / 2 for the same three queries. A check whose message string is absent from the binary cannot fire.
+
+RUNTIME PROOF: the same injected violation (a row set to terminal status while current_location=Issues) run through both binaries -> stale reports 1 violation (only the body_md desync class), current reports 2 including the location-status class verbatim. This is exactly why the ten BOB-166 rows (BOB-087/129/131/144/145/146/148/153/155/157) survived undetected: the gate that was supposed to catch them was running a binary structurally incapable of seeing them.
+
+The 11.4.108 SOURCE->ARTIFACT gap: source correct, artifact stale, every gate reading the artifact reports green. This is the THIRD instance of that class found in one session, alongside BOB-169 (a charset gate that never opened a file) and BOB-183 (a served bundle five days older than its sources).
+
+COMPOUNDING: the comment at :519-523 directly above the loop asserts "The naive bin/workable-items path never existed in this checkout (bin/ is a gitignored local build-output dir nothing ever populated)". That statement is now FALSE - bin/ holds two tracked binaries. A stale comment asserting the absence of the very file that now shadows resolution is how this stayed invisible.
+
+Also an 11.4.30 question the operator owns: bin/workable-items and bin/workable-items-linux are VERSIONED BUILD ARTIFACTS in a constitution submodule that is inherited by reference by every consumer, so every consumer inherits whichever binary was last committed. Flagged independently by two separate agents this session.
+
+ACCEPTANCE: (a) resolution must never prefer a stale artifact over a current one - either the tracked binaries are removed and resolution falls through to build-on-demand, or a freshness check refuses a binary older than its sources (see the BOB-183 fingerprint gate for a working pattern); (b) the false comment at :519-523 corrected; (c) a paired 1.1 mutation proving the new refusal fires, plus a negative control proving a genuinely fresh binary still passes so the fix is not an 11.4.201(1) false-positive refusal; (d) the 11.4.30 tracked-binary decision recorded as operator DATA. Discovered out-of-band during BOB-166 remediation - a 11.4.238 coverage escape in its own right.
+
+## BOB-191 — Fail-open scanner is a MATCHER hole blind to 5 enumerated languages (Go/Rust/Ruby/C/…) — enumerated-but-unanalysable prints PASS instead of SKIP (§11.4.201(6))
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-191/closure_evidence_20261120.txt
+
+WHAT: the §11.4.252 fail-open scan reports 0 hits for qBitTorrent-go, and that zero is NOT evidence. The triage agent ran control needles through the scanner's own path per §11.4.201(7)(b): a Python 'except Exception: pass' needle was SEEN, a TypeScript 'catch (e) {}' needle was SEEN (so frontend/src's zero IS a real zero), but a Go empty-'if err != nil {}' needle was NOT SEEN. An instrument that cannot see the idiom returns the same quiet zero as a clean tree, and only one of those is honest. DISTINCT FROM BOB-189, deliberately not merged with it per §11.4.214: BOB-189 is a false MATCH (fail-closed guards reported as fail-open); this is a false NULL (an entire language unscanned). Same scanner, opposite failure directions, different fixes - merging them would hide one behind the other. IMPACT: Go is the language of qbittorrent-proxy-go and boba-jackett (port 7189, which owns encrypted tracker credentials), so the unscanned surface is exactly where §11.4.252's credential-plus-mutation combination is most likely. Nobody has assessed it; the dashboard says clean. ACCEPTANCE: the scanner grows a Go arm covering the empty-err-block and swallowed-error idioms, its needle is SEEN through the real path, qBitTorrent-go's result is re-derived, and every finding is triaged as this Python/TS pass was. Until then qBitTorrent-go's fail-open posture is UNKNOWN and must be reported as UNKNOWN, never as 0.
+
+=== ROUND-2 INVESTIGATION, MEASURED 2026-08-26 — THE FILED TITLE WAS TOO NARROW (§11.4.6) ===
+
+The live scanner is constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh, driven per-root by invariant 39 at scripts/pre_build_verification.sh:1481-1544. (scripts/pre_build/check_cm_no_fail_open_skip.sh has NEVER existed on any branch — it exists only in an uncommitted worktree. Any citation of that path is citing a file that is not there.)
+
+IT IS A WEAK-MATCHER DEFECT, NOT A SCOPE HOLE. Line :243 sets exts="py go rs c cc cpp h hpp java cs js ts jsx tsx php rb" — .go IS enumerated. But line :537 gates the Python ast analyser on `case "$f" in *.py)`, so every non-Python file falls through to just two text matchers (:772 empty `catch (...) {`, :794 credential `= x || "literal"`). Go has no `catch` keyword, so neither matcher CAN fire on Go by construction.
+
+NEEDLE TEST, BOTH ARMS (planted / rc / result): Python 2 / 1 / SEEN · TypeScript 1 / 1 / SEEN · Java 1 / 1 / SEEN · **Go 6 / 0 / NOT SEEN — PASS** · Rust 2 / 0 / NOT SEEN · Ruby 1 / 0 / NOT SEEN · C 2 / 0 / NOT SEEN. Go is ONE OF FIVE BLIND EXTENSIONS, not a special case. The Go needle is real code: go build rc=0, go vet rc=0, gofmt -e clean.
+
+THE DECISIVE DISCRIMINATOR — same bytes, extension changed: .zig (NOT enumerated) → "SKIP — topology_unsupported"; .go (enumerated) → "PASS". The gate ALREADY OWNS an honest-blindness mechanism and it works correctly; Go routes around it precisely BY BEING ENUMERATED. A scope hole announces itself; this matcher hole prints green. That makes it the worse defect and is why the corrected title leads with it.
+
+QUANTIFIED SURFACE (exclusions stated, §11.4.224(E)): using the scanner's OWN prune list and nothing added — 106 .go files / 20,389 LOC (52 production files / 6,858 LOC). WITH and WITHOUT exclusions the count is 106 == 106; no vendored tree exists, so no unstated exclusion could manufacture a clean number. qBitTorrent-go holds 106 blind files and 0 analysable files — 100% blind — yet invariant 39 counts it among "5 first-party source root(s)" reported clean.
+
+DEFECTS THE BLINDNESS HID → filed as BOB-204 (credential DELETE returns unconditional 204 while the .env plaintext delete error is discarded; plus the env_write_failed_db_rolled_back code asserting an unconfirmed rollback).
+SEPARATE SCOPE HOLE → filed as BOB-205 (cmd/boba-ctl, 947 LOC orchestrator, absent from DANGER_ROOTS entirely). Distinct-but-similar per §11.4.214, deliberately not merged.
+
+GOLDEN-FALSE FIXTURE FOR ANY FUTURE GO ARM: internal/jackettapi/auth_middleware.go:45-66 is correctly fail-CLOSED (constant-time compare, 401+return) — a Go arm MUST NOT flag it.
+
+LOAD-BEARING §11.4.250 PREDICTION: bolting a naive Go regex arm on will IMMEDIATELY manufacture BOB-189-class false positives in Go — `if err != nil { return false }` in a Go validator is fail-CLOSED. Fixing this as layer N+1 reproduces BOB-189 in a new language. THEREFORE the remediation order is fixed: (1) analyser REGISTRY with an UNANALYSED verdict FIRST — extension→analyser map, unmapped extension reports UNANALYSED never silent PASS, which converts the false null into an honest gap and covers rust/ruby/C too; (2) only then a Go arm, call-site-aware from day one (go/ast, or adopt errcheck/staticcheck rather than hand-rolled regex), shipped with the auth_middleware golden-FALSE.
+
+ONE PRIMITIVE, TWO SYMPTOMS: the scanner classifies by local syntactic shape and never consults semantic role — BOB-189 ignores the CALLER's context (false match), BOB-191 searches for a shape from a DIFFERENT language family (false null). The gate's own header already concedes the primitive ("requires real data-flow analysis this gate CANNOT honestly claim"); what is missing is propagating that concession into PER-LANGUAGE honesty. Keep two tracker items.
+
+INSTRUMENT BUG RECORDED, NOT HIDDEN (§11.4.201(12)): the investigation's first verdict extraction used `grep -oE 'PASS|FAIL|SKIP'`, which matched FAIL inside the gate's own name (...FAIL-CLOSED) and mislabelled three PASSes. Re-run keyed on exit code; the table above is the corrected run.
+
+EVIDENCE: docs/qa/BOB-191/scanner_blindness_investigation_20260826.md (255 lines, §11.4.44 header). No source, gate, or config modified by the investigation.
+
+=== ROUND-3 PARTIAL FIX, MEASURED 2026-09-25 — STEP (1) OF THE ROUND-2 REMEDIATION ORDER LANDED; STEP (2) STILL OPEN, ACCEPTANCE NOT YET MET ===
+
+Per the round-2 remediation order, step (1) — the analyser REGISTRY with an honest UNANALYSED verdict — is now implemented and independently re-verified (conductor re-ran the mutation suite from a clean shell, 206/206 green). Step (2) — a real semantic Go arm — is DELIBERATELY DEFERRED, so this item stays Queued: the ACCEPTANCE criterion above ("its needle is SEEN through the real path") is still unmet for Go/Rust/Ruby/C.
+
+CORRECTION TO ROUND-2's OWN FIGURE (§11.4.6, re-verified live, not re-guessed): round-2 said "5 blind extensions (go/rs/rb/c/h)". Re-run live against all candidates this round: C++ (.cpp, a genuine empty `catch(){}`) is SEEN — `rc=1 FAIL`, already correctly caught. It was never actually blind; `.h` is content-ambiguous (same header extension serves both C and C++) and is not a distinct 5th case. **Exactly 4 languages are structurally blind: Go, Rust, Ruby, C.** This narrows, not widens, the round-2 figure.
+
+WHAT LANDED (constitution/scripts/gates/cm_dangerous_combination_fail_closed.sh — a constitution-submodule file, inherited by reference; landing it for real still needs the submodule's own §11.4.26 fetch/pull/push workflow, separate from boba's commit path):
+- New `DANGEROUS_COMBO_UNANALYSED_EXT` registry (default `go rs rb c`). Verdict now has 3 branches: real hits → FAIL (unchanged); zero hits + UNANALYSED files present → new honest `⚠ NOTE — N file(s) UNANALYSED...` + `PASS (PARTIAL COVERAGE)` (still exit 0, advisory — never blocks a build on an unanalysed language); zero hits + zero unanalysed → unchanged original clean-PASS text.
+- `scripts/pre_build_verification.sh` invariant 39 (boba-owned): fixed to read the UNANALYSED count unconditionally, not only on nonzero exit — otherwise a 100%-UNANALYSED root would still have silently printed "no fail-open anti-pattern across N clean roots" with the caller never seeing the NOTE.
+- Mutation test extended with 17 new assertions covering Go/Rust/Ruby/C UNANALYSED-branch RED/GREEN, a C++ negative control (still caught, never marked UNANALYSED — the registry must not swallow a working extension), a clean-root negative control, and a mixed-real-hit-not-masked control. Full suite 206/206 (189 pre-existing + 17 new), independently re-run by the conductor from a clean shell.
+
+LIVE FULL-REPO RESCAN RESULT (real DANGER_ROOTS, this round): Python backlog unchanged at 59 hits (download-proxy/src:25, plugins:32, scripts:2 — pre-existing, out of scope, advisory since 2026-08-20). **New honest signal: 121 files now reported UNANALYSED** (qBitTorrent-go:117, cmd/boba-ctl:4 — BOB-205's scope hole now visibly folded into the same honest-gap mechanism) instead of silently counting toward "clean." Zero new FAIL findings in Go — by design; a real Go checker needs call-site-aware semantic analysis, still deferred.
+
+WHY STEP (2) STAYS DEFERRED, NOT A REGRESSION: the round-2 §11.4.250 PREDICTION stands unrefuted — a naive Go regex arm would immediately flag `internal/jackettapi/auth_middleware.go:45-66` (the golden-FALSE fixture) as a BOB-189-class false positive. A real arm needs go/ast or an adopted tool (errcheck/staticcheck), shipped WITH that golden-FALSE passing, before it can fire.
+
+REMAINING WORK TO CLOSE THIS ITEM: implement the Go semantic arm (go/ast-based or errcheck/staticcheck-adopted) covering the empty-err-block and swallowed-error idioms, verified against the auth_middleware.go golden-FALSE fixture, re-derive qBitTorrent-go's real result (currently UNKNOWN, honestly reported as such), and triage every real finding as the Python/TS pass already is. Rust/Ruby/C have zero first-party files in boba's tree today (verified this round) so their own arms are lower priority until such files exist — the UNANALYSED registry already covers them honestly in the meantime.
+
+EVIDENCE: docs/qa/BOB-191/closure_evidence_20260925.md (full RED/GREEN transcripts, the C++ correction with live proof, the live full-repo scan table, anti-bluff provenance). State left uncommitted by design (constitution-submodule files need the §11.4.26 workflow, not boba's commit-push-all.sh).
+
+## BOB-231 — A gate asserting every executable a pre-build invariant invokes is itself tracked (BOB-227 criterion 2 follow-up)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-231/closure_evidence_20261120.txt
+**Severity:** Major
+**Created-By:** AI
+
+BOB-227 measured 3 of 4 artifacts of the CM-LAN-ROUTES-AUTHENTICATED gate untracked in git; criterion 1 (commit them) was already resolved by an unrelated prior commit before this session, closed 2026-09-23. Criterion 2 was NOT addressed: 'a gate asserting that every executable a pre-build invariant invokes is itself tracked' -- a general mechanism preventing this whole CLASS of defect (a pre-build gate's own implementation files shipping untracked, invisible to a fresh clone, no committed baseline for round-over-round diffs) from recurring for ANY future gate, not merely this one. ACCEPTANCE: (1) enumerate every file path scripts/pre_build_verification.sh invokes (via bash/timeout/python3 calls to scripts under scripts/pre_build/, plus every tests/pre_build/*.sh and tests/hooks/*.sh it runs) -- likely via a static grep/parse of pre_build_verification.sh itself, or a runtime trace; (2) assert every one of those paths is git-tracked (git ls-files --error-unmatch); (3) wire this as a new pre-build invariant so a future untracked gate implementation is caught immediately, not discovered independently weeks later; (4) a RED test creating an untracked fake gate-invocation target and asserting the new check fails on it, GREEN once the mechanism exists and the fake target is either removed or tracked.
+
+## BOB-237 — CM-GATE-LEDGER-RATCHET FAIL: constitution corpus has 414 unimplemented CM-* gates against a checked-in baseline of 403 (§11.4.227(A))
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-237/closure_evidence_20261120.txt
+**Severity:** high
+**Created-By:** AI
+**Assigned-To:** AI
+
+WHAT: CM-GATE-LEDGER-RATCHET (§11.4.227(A)) FAILED the pre-build sweep during this session's batch-15 commit attempt: unimplemented=414 exceeds the checked-in baseline=403 in constitution/scripts/gates/gate_ledger_baseline.txt. This is a HARD, blocking FAIL (unlike the other gate findings surfaced in the same sweep, which are all explicitly ADVISORY/non-blocking per §11.4.234).
+
+INVESTIGATION (§11.4.102): the four newest anchors this session's constitution pull brought in (§11.4.268 tamper-evident evidence chain, §11.4.269 critic/consensus advisory-only ban, §11.4.270 dependency-existence-verdict register, §11.4.271 waiver mechanism) were checked FIRST as the likely cause, since they are the most recently landed (2026-08-26) and each names several recommended mechanism gates in its own text. RULED OUT: every one of those gates' names (CM-CRITIC-CONSENSUS-ADVISORY-ONLY, CM-DEPENDENCY-EXISTENCE-VERDICT-REGISTER, CM-EVIDENCE-CHAIN-ANCHOR-CATCHES-RECOMPUTE-AND-TRUNCATION, CM-EVIDENCE-CHAIN-DELETE-REORDER-DETECTED, CM-EVIDENCE-CHAIN-INCOMPLETE-VERIFICATION-REFUSES, CM-WAIVER-ROSTERED-EXPIRY-TRACKED) is already correctly registered DEFERRED against an OWED-GATE-NNN tracked item, and each anchor's own §11.4.227(B) propagation gate is IMPLEMENTED. So this batch of new anchors did NOT introduce the ratchet violation.
+
+The full ledger run (docs/qa/BOB-237/unimplemented_gates_snapshot_20260925.txt, 414 lines, captured verbatim from `bash constitution/scripts/gates/cm_gate_ledger_ratchet.sh`) shows the total current state is 414 UNIMPLEMENTED + 121 IMPLEMENTED + 73 DEFERRED. The checked-in baseline (403) was last legitimately bumped by commit 34e42f0 ("cite the §11.4.209 gate rename, bump baseline 397->403") — some point after that, the unimplemented count grew to 414 (11 more) without a matching baseline bump or deferral registration for the newly-named gates, across one or more subsequent anchor-landing rounds in the constitution submodule. This is accumulated UNIVERSAL governance-corpus debt, not something introduced by any boba-side edit in this session (confirmed: `git diff eba38e8..HEAD -- constitution/scripts/gates/gate_ledger_baseline.txt` inside the constitution submodule is empty — the baseline file itself was never touched across the two merges this session performed).
+
+WHY DEFERRED RATHER THAN FIXED HERE: identifying which of the 414 unimplemented names are the specific 11 that pushed past baseline, and then either implementing 11 gates' worth of real UNIVERSAL gate-code or registering 11 proper OWED-GATE-NNN deferrals with tracked-item citations, is itself real engineering work scoped to the constitution submodule (universal, not project-specific per §11.4.17) — it is not a boba-project fix and doing it hastily mid-session, unrelated to this session's actual mandate (Jackett incorporation + backlog triage), risks exactly the kind of rushed, unreviewed governance-corpus edit §11.4.209's Fable-xhigh review requirement exists to prevent.
+
+ACCEPTANCE: (1) a future session (or the constitution's own maintainers) triages the 414-line snapshot against the 403 baseline to identify the specific unaccounted gate names; (2) each is either implemented, registered as a proper OWED-GATE-NNN deferral, or (if genuinely retired) cited in constitution/scripts/gates/gate_ledger_removals.tsv; (3) the constitution submodule's baseline is re-bumped with a citation once accounted, following the same pattern as commit 34e42f0; (4) boba's own pinned constitution pointer is then re-synced and this item closed with the passing CM-GATE-LEDGER-RATCHET re-run as evidence.
+
+DISPOSITION FOR THIS SESSION'S COMMIT: per §11.4.234(D) (the commit/push mechanism MUST always be able to complete; a failing gate is skippable ONLY via an explicit recorded deferral flag, with the skip recorded in the commit message so the debt stays tracked, never forgotten), this session's batch-15 commit used the sanctioned skip (BOBA_SYNC_SKIP_CI=1), citing this tracked item BOB-237, rather than silently bypassing or spending unbounded effort resolving an inherited universal-corpus debt mid-session.
+
+DISCOVERY CHANNEL (§11.4.238): found by boba's own pre-build sweep (scripts/pre_build_verification.sh, invariant 38/57) during a routine session commit — the automated gate itself is the discoverer, exactly as §11.4.238 requires.
+
+## BOB-248 — Zero-shortcomings audit: deferred review follow-ups (FR-010/011/012, minor hardening)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-248/closure_evidence_20261120.txt
+**Severity:** Minor
+**Created-By:** AI
+
+**Reported-Via:** §11.4.202 reporting directive `task` on 2026-09-26T08:52:13Z
+**Reported-By:** AI
+
+**What (the report, verbatim):**
+Deferred by ruling: FR-011 audit_dispatch_bounded is defined but never called; FR-010 only checks one declared Test Type, not that every applicable type was used; FR-012 risk order ignores the severity column; blocked-surface trim() ignores tab/newline-only conditions and duplicate details rows double-print; redactor over-redacts ordinary text and misses db_password => x, mysql -pSECRET, URL-encoded values; BASH_ENV can reach the fresh verify-closure process; the exit code 1 is shared between mismatch and usage/internal refusals (contract debt); the [59/59] stage's degraded WARN branch is proven at unit level only, never in a live sweep.
+
+**Affected scope / file-scope manifest:**
+scripts/zero_shortcomings_audit.sh; specs/003-zero-shortcomings-audit
+
+**Reproduction / context:**
+See final review of feature 003.
+
+**Acceptance criteria:**
+Each listed follow-up is either implemented with a RED-first test or closed with an evidence-backed reason.
+
+## BOB-250 — Export oracle and generator hardening follow-ups from the BOB-249 fix reviews
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-250/closure_evidence_20261120.txt
+**Severity:** Minor
+**Created-By:** AI
+
+**Reported-Via:** §11.4.202 reporting directive `task` on 2026-09-26T13:50:14Z
+**Reported-By:** AI
+
+**What (the report, verbatim):**
+Filed at the operator's request after invariant 30 (CM-BASH-UNIT-TESTS-EXECUTED) passed on a quiet tree: sweep 54 passed, 1 failed (only the gate-ledger debt BOB-237). Fixes are being developed in scratch clones as patches (streams A oracle parser, B generator, C badges plus merge-history measurement) and are applied only after review.
+
+**Affected scope / file-scope manifest:**
+scripts/lib/export_staleness.sh; scripts/generate_markdown_exports.sh; scripts/compute-badges.sh and their tests
+
+**Reproduction / context:**
+See the two independent reviews of the BOB-249 fix (afe5d1f, a630935, 74e5b6f, e47346b). Items: (1) rename/copy branch of the porcelain -z parser untested; (2) git log still C-quotes tab/quote/newline/backslash paths so a clean file with such a name falls back to mtime; (3) awk portability of the NUL parser (busybox awk truncates at the first NUL); (4) a history-stale pair whose regeneration yields identical bytes stays stale forever; (5) a corrupted twin with a newer mtime is never healed (no content check); (6) html_regenerated flag set even when the html leg fails; (7) adding *.docx to the history pathspec can change merge-history verdicts at merges resolved from mixed sides (3 of 120 fuzzed histories, none on the real repo); (8) a symlinked README pointing outside the repo was classified in-repo and the write-temp-then-mv replaced the link.
+
+**Acceptance criteria:**
+Each item is either fixed with a RED-first test that fails before and passes after, plus a paired control proving the generator still regenerates on a real content change, a missing twin and a charset-fragment file and rewrites 0 twins after a fresh checkout, or closed with an evidence-backed reason; an independent review approves the combined change; the full pre-build sweep stays at no new failures with CM-BASH-UNIT-TESTS-EXECUTED passing.
+
+## BOB-251 — pre-push hook fails silently when its temporary worktree cannot be created (tmpfs full)
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-251/closure_evidence_20261120.txt
+**Severity:** Important
+**Created-By:** AI
+
+**Reported-Via:** §11.4.202 reporting directive `bug` on 2026-09-26T15:11:04Z
+**Reported-By:** AI
+
+**What (the report, verbatim):**
+Found while pushing the BOB-249 hardening commits. A guard that fails without saying why is a constitution 11.4.201 concern: the operator sees only a generic push failure and cannot tell a broken environment from a rejected push. Root cause in this instance was the session's own scratch copies filling the tmpfs; the fix belongs in the hook, which should report the failing step.
+
+**Affected scope / file-scope manifest:**
+.git/hooks/pre-push (installed copy) and whatever tracked script installs it; git push via scripts/commit-push-all.sh
+
+**Reproduction / context:**
+Fill /tmp (tmpfs) so a full worktree of HEAD cannot be written (or make git worktree add fail for any reason), then git push. The hook runs 'git worktree add "$WORKTREE" HEAD >/dev/null 2>&1' under 'set -euo pipefail' with all output suppressed, so it aborts with no message; git prints only 'error: failed to push some refs'. Observed 2026-09-26: /tmp was at 80% and a worktree add of HEAD failed with 'unable to write file' and 'Could not reset index file to revision HEAD'; pushes to github and gitlab failed silently for three commits until the scratch space was freed.
+
+**Acceptance criteria:**
+The hook prints an explicit, actionable message naming the failing step and the cause (worktree creation failed, with the underlying git error and free space of the temp directory) before exiting non-zero; it honours TMPDIR and falls back or fails loudly; a test simulates a failing worktree add (shim or read-only temp dir) and asserts the message is printed and the exit status is non-zero, and a control asserts a healthy environment still passes; the hook cleans up any partially created worktree registration (git worktree prune).
+
+## BOB-247 — Zero-shortcomings audit: standing-check must re-verify closed items (SC-005)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-247/closure_evidence_20261120.txt
+**Severity:** Important
+**Created-By:** AI
+
+**Reported-Via:** §11.4.202 reporting directive `task` on 2026-09-26T08:51:37Z
+**Reported-By:** AI
+
+**What (the report, verbatim):**
+Found by the final whole-branch review of feature 003: SC-005 is not met. The mechanism exists (verify-closure, risk order) but nothing drives it over closed items on a recurring basis.
+
+**Affected scope / file-scope manifest:**
+scripts/zero_shortcomings_audit.sh cmd_standing_check; specs/003-zero-shortcomings-audit SC-005
+
+**Reproduction / context:**
+Reintroduce a previously fixed defect whose closure evidence exists; standing-check reports only counts (backlog/gates/escapes) and never re-runs closed items' recorded commands, so the regression is not detected.
+
+**Acceptance criteria:**
+standing-check (or a sibling recurring mode) periodically re-runs verify-closure over a risk-ordered sample of closed items and records any mismatch as a finding without blocking; a test reintroduces a fixed defect in a temp DB and proves it is flagged.
 

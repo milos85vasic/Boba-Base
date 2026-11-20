@@ -1,0 +1,27 @@
+BOB-251 closure evidence — 2026-11-20
+
+Item: pre-push hook fails silently when its temporary worktree cannot be
+      created (tmpfs full)
+
+The tracked hook source at scripts/git_hooks/pre-push was rewritten to report
+step failures explicitly (no temporary worktree is created). The installed
+.git/hooks/pre-push copy was refreshed.
+
+Evidence command:
+$ bash tests/hooks/test_pre_push_hook.sh
+
+=== test_pre_push_hook (HOOKS_SRC=/home/milosvasic/Projects/boba/scripts/git_hooks) ===
+PASS: H0 installer installed an executable, byte-identical .git/hooks/pre-push
+PASS: H1 control: clean push succeeds and updates the remote
+PASS: H2 production marker in a pushed commit blocks the push and names the file
+PASS: H3 marker in docs/ does not block the push (scope parity with pre-commit)
+PASS: H4 marker removed before the pushed tip does not block
+PASS: H5 unwritable TMPDIR does not break a healthy push
+PASS: H6 a failing 'git worktree add' cannot break the hook (no worktree needed)
+PASS: H7 git failure inside the hook: non-zero, names the step, shows the git error and free space incl. TMPDIR
+PASS: H7b unreadable pushed content is reported as an error (exit 2), not as clean
+PASS: H8 marker on a brand-new branch blocks its first push
+PASS: H9 branch deletion push passes
+PASS: H10 zero local sha (deletion) needs no check
+
+Total: PASS=12 FAIL=0

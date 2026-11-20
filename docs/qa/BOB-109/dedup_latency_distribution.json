@@ -1,0 +1,39 @@
+{
+  "axis": "dedup latency distribution at operating size",
+  "budget_p99_ms": 2000.0,
+  "captured_at": "2026-11-20T18:56:41Z",
+  "feature_class": "scaling",
+  "groups_out": 200,
+  "host_safety_at_admission": {
+    "cpu_count": 16,
+    "load_per_cpu": 0.083,
+    "load_per_cpu_ceiling": 0.75,
+    "loadavg_1m": 1.33,
+    "max_workers_cap": 16,
+    "mem_used_pct": 42.46,
+    "mem_used_pct_ceiling": 60,
+    "thread_headroom": 121249,
+    "thread_headroom_floor": 2048
+  },
+  "host_safety_at_emit": {
+    "cpu_count": 16,
+    "loadavg_1m": 1.38,
+    "max_workers_cap": 16,
+    "mem_used_pct": 42.14,
+    "mem_used_pct_ceiling": 60,
+    "thread_headroom": 121222,
+    "thread_headroom_floor": 2048
+  },
+  "item": "BOB-109",
+  "iterations": 100,
+  "max_ms": 87.056,
+  "min_ms": 64.809,
+  "n": 100,
+  "n_results": 200,
+  "p50_ms": 66.546,
+  "p95_ms": 70.334,
+  "p99_ms": 80.669,
+  "purpose": "baseline",
+  "run_id": "20261120T185628Z-pid4161849",
+  "verdict": "PASS"
+}

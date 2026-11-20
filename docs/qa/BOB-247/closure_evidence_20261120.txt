@@ -1,0 +1,39 @@
+BOB-247 closure evidence — 2026-11-20
+
+Item: Zero-shortcomings audit: standing-check must re-verify closed items (SC-005)
+
+Implementation: scripts/zero_shortcomings_audit.sh standing-check [--reverify N]
+was added and is wired as advisory invariant 59 (CM-ZERO-SHORTCOMINGS-STANDING)
+in scripts/pre_build_verification.sh.
+
+Evidence command:
+$ bash tests/audit/test_zero_shortcomings_audit_standing_reverify.sh
+
+  PASS: healthy: status=ok (every re-verified closure still reproduces)
+  PASS: healthy: exactly the two closed items with a recorded command were re-verified
+  PASS: healthy: no mismatch named
+  PASS: reintroduced defect: still exit 0 (advisory, never blocks)
+  PASS: reintroduced defect: flagged as a mismatch naming the item
+  PASS: reintroduced defect: the run is marked status=degraded (never read as a PASS)
+  PASS: control: the still-healthy closed item is NOT flagged
+  PASS: WARN printed for the mismatch
+  PASS: SC-005: a DEFAULT standing-check (no flag) re-verifies and flags the reintroduced defect
+  PASS: risk order: --reverify 1 checks only the most-reopened closed item
+  PASS: --reverify 0 disables re-verification and says so
+  PASS: the tracker DB was never mutated (no reopen in standing mode)
+  PASS: open items are never re-run by the standing check
+  PASS: obsolete items are never re-run by the standing check
+  PASS: the credential-free log stays one line per run
+  PASS: --reverify '' is a usage refusal (exit 4)
+  PASS: --reverify 'x' is a usage refusal (exit 4)
+  PASS: --reverify '-1' is a usage refusal (exit 4)
+  PASS: bounded: exit 0
+  PASS: bounded: a hanging recorded command is cut off and reported as a timeout, not a match
+  PASS: bounded: the total budget stops further items and says which were skipped
+  PASS: bounded: the whole run stayed well under the pre-build stage timeout (9s < 30s)
+  PASS: bounded: an inconclusive run is status=degraded, never ok
+  PASS: corruption guard: the other item's tracked evidence was restored
+  PASS: corruption guard: the incident is logged beside the standing log, not in the sandbox docs/qa
+  PASS: this test left the real repo's tracked docs/qa files untouched
+
+test_zero_shortcomings_audit_standing_reverify: 27 passed, 0 failed

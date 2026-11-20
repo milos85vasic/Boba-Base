@@ -1,0 +1,25 @@
+BOB-231 closure evidence — 2026-11-20
+
+Item: A gate asserting every executable a pre-build invariant invokes is itself
+      tracked (BOB-227 criterion 2 follow-up)
+
+Implemented as blocking invariant 60 (CM-PREBUILD-INVOKED-EXECUTABLES-TRACKED)
+in scripts/pre_build_verification.sh.
+
+Evidence command:
+$ bash tests/pre_build/test_check_prebuild_invoked_executables_tracked.sh
+
+CM-PREBUILD-INVOKED-EXECUTABLES-TRACKED — arms
+  PASS  G1 golden-GOOD every invoked gate tracked (exit 0)
+  PASS  R1 golden-BAD untracked invoked gate is named (exit 1)
+  PASS  R2 golden-BAD untracked helper called by a gate is named (exit 1)
+  PASS  R3 golden-BAD untracked constitution gate is named (checked in the submodule's own index) (exit 1)
+  PASS  R3b the tracked constitution gate beside it is not reported (exit 1)
+  PASS  R3c tracked constitution gate not reported
+  PASS  R4 golden-BAD dynamic ${anchor} path: the untracked glob match is named (exit 1)
+  PASS  F1 golden-FALSE untracked path mentioned only in a comment is not an invocation (exit 0)
+  PASS  F2 golden-FALSE untracked test suite is advisory: exit 0 with a WARN naming it (exit 0)
+  PASS  B1 fail-closed: a sweep resolving zero targets is BLIND, never clean (exit 2)
+  PASS  B2 fail-closed: not a git repository (exit 2)
+  PASS  M1 mutated gate (tracked-check neutered) passes the R1 fixture — R1's exit-1 assertion would catch it
+RESULT: 12 passed, 0 failed

@@ -1,0 +1,19 @@
+BOB-188 closure evidence — 2026-11-20
+
+Item: Gate invariant 17 runs a STALE TRACKED binary that structurally cannot
+      see the violations it exists to catch
+
+Operator decision (2026-08-26): build workable-items from source on every
+pre-build run; refuse honestly when Go is absent; never trust a binary on disk.
+
+Evidence command:
+$ bash tests/pre_build/test_build_workable_items_from_source.sh
+
+BOB-188 build-on-demand resolver — cases
+  PASS  R5 negative control: the old candidate loop picks the stale shipped binary on this fixture
+  PASS  R1 resolver builds from source and ignores the stale binaries (prints SRC-V1)
+  PASS  R2 a source edit is reflected immediately (prints SRC-V2) — staleness is structurally impossible
+  PASS  R3 Go absent -> exit 3 REFUSED, no binary path emitted (never a stale fallback)
+  PASS  R4 broken source -> exit 1, no binary path (a failed build is never replaced by a stale one)
+  PASS  M1 mutation (prefer shipped binary) is caught by the R1 oracle — the test has teeth
+RESULT: 6 passed, 0 failed

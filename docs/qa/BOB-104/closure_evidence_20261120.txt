@@ -1,0 +1,15 @@
+BOB-104 closure evidence — 2026-11-20
+
+Item: §11.4.238 followup: CodeGraph 1.5.0 nested-.gitignore regression challenge
+
+Evidence command:
+$ bash challenges/scripts/codegraph_gitignore_honor_challenge.sh
+
+codegraph_gitignore_honor_challenge — measured file counts
+  baseline (2026-06-06):                 509
+  correct oracle (git ls-files -co):     4015
+  broken ceiling (unrestricted find):    156183
+  green-mode max (order-of-magnitude):   5000
+  red-mode min (10x baseline):           5090
+  RED_MODE=0
+PASS (GREEN): correct oracle 4015 <= 5000 — invariant holds.

@@ -1,0 +1,15 @@
+BOB-237 closure evidence — 2026-11-20
+
+Item: CM-GATE-LEDGER-RATCHET FAIL: constitution corpus has 414 unimplemented
+      CM-* gates against a checked-in baseline of 403
+
+The constitution submodule pointer in boba is at a state where the checked-in
+baseline has been reconciled to the current unimplemented count.
+
+Evidence command:
+$ bash constitution/scripts/gates/cm_gate_ledger_ratchet.sh --quiet
+
+CM-GATE-LEDGER-RATCHET: corpus read (corpus = Constitution.md + its status-summary archive docs/amendment-log/status-summary-constitution.md)
+LEDGER: unimplemented=394 baseline=394 fails=0
+✅ CM-GATE-LEDGER-RATCHET: PASS — every named CM-* gate is implemented-or-deferred
+   within the checked-in monotone-decrease baseline; no uncited vanished name

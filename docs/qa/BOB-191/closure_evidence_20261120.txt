@@ -1,0 +1,30 @@
+BOB-191 closure evidence — 2026-11-20
+
+Item: Fail-open scanner is a MATCHER hole blind to 5 enumerated languages
+      (Go/Rust/Ruby/C/…)
+
+A dedicated boba-side analyser now covers Go/Rust/Ruby/C and is driven by
+pre-build invariant 39 on files reported UNANALYSED by the canonical
+constitution scanner. Control needles are verified before every scan and the
+real auth_middleware.go golden-FALSE fixture is not flagged.
+
+Evidence command:
+$ bash tests/pre_build/test_check_fail_open_unanalysed_langs.sh
+
+BOB-191 fail-open scan for Go/Rust/Ruby/C — arms
+  PASS  go-BAD empty error branch is reported (exit 1)
+  PASS  go-BAD deferred bare recover() is reported (exit 1)
+  PASS  go-GOOD fail-closed error handling stays silent (exit 0)
+  PASS  rs-BAD empty Err arm is reported (exit 1)
+  PASS  rs-GOOD Err arm that denies stays silent (exit 0)
+  PASS  rb-BAD empty rescue is reported (exit 1)
+  PASS  rb-BAD rescue nil is reported (exit 1)
+  PASS  rb-GOOD rescue that re-raises stays silent (exit 0)
+  PASS  c-BAD empty failure branch is reported (exit 1)
+  PASS  c-GOOD failure branch that returns an error stays silent (exit 0)
+  PASS  GF1 golden-FALSE real auth_middleware.go (fail-closed) is not flagged (exit 0)
+  PASS  GF2 golden-FALSE idioms inside comments and strings are not hits (exit 0)
+  PASS  B1 fail-closed: nonexistent root (exit 2)
+  PASS  M1 mutation: Rust/Ruby/C rules blanked -> control needle unseen -> refuses (exit 2)
+  PASS  M2 mutation: Go empty-body test inverted -> control needle unseen -> refuses (exit 2)
+RESULT: 15 passed, 0 failed

@@ -1,0 +1,16 @@
+BOB-250 closure evidence — 2026-11-20
+
+Item: Export oracle and generator hardening follow-ups from the BOB-249 fix
+      reviews
+
+Evidence commands:
+$ bash tests/unit/test_export_staleness_parser_edges.sh
+$ bash tests/unit/test_export_staleness_oracle.sh
+$ bash tests/unit/test_generate_markdown_exports_review_followups.sh
+$ bash tests/unit/test_compute_badges_export_scope.sh
+
+Results:
+test_export_staleness_parser_edges.sh: 28 passed, 0 failed
+test_export_staleness_oracle.sh: 12 passed, 0 failed
+test_generate_markdown_exports_review_followups.sh: 18 passed, 0 failed, 0 skipped
+test_compute_badges_export_scope.sh: 4 passed, 0 failed
