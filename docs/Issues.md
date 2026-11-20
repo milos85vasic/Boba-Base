@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 141
-**Last modified:** 2026-11-20T17:30:29Z
+**Revision:** 142
+**Last modified:** 2026-11-20T17:58:54Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -324,13 +324,6 @@ WHY STEP (2) STAYS DEFERRED, NOT A REGRESSION: the round-2 §11.4.250 PREDICTION
 REMAINING WORK TO CLOSE THIS ITEM: implement the Go semantic arm (go/ast-based or errcheck/staticcheck-adopted) covering the empty-err-block and swallowed-error idioms, verified against the auth_middleware.go golden-FALSE fixture, re-derive qBitTorrent-go's real result (currently UNKNOWN, honestly reported as such), and triage every real finding as the Python/TS pass already is. Rust/Ruby/C have zero first-party files in boba's tree today (verified this round) so their own arms are lower priority until such files exist — the UNANALYSED registry already covers them honestly in the meantime.
 
 EVIDENCE: docs/qa/BOB-191/closure_evidence_20260925.md (full RED/GREEN transcripts, the C++ correction with live proof, the live full-repo scan table, anti-bluff provenance). State left uncommitted by design (constitution-submodule files need the §11.4.26 workflow, not boba's commit-push-all.sh).
-
-## BOB-194 — Pre-build gates walk .claude/worktrees, so a stale agent worktree can fail the main build (§11.4.201(1))
-
-**Status:** In progress
-**Type:** Bug
-
-WHAT: agent worktrees under .claude/worktrees/ are ephemeral copies pinned at arbitrary commits - never built, never shipped, deleted when the agent finishes. Pre-build gates that walk the tree with find(1) from the repo root descend into them anyway. MEASURED INSTANCE (2026-08-25): CM-GO-TOOLCHAIN-MATCHES-BUILDER FAILED the main build with exactly one finding, from .claude/worktrees/agent-afda1df906c537ab4 - a worktree 86 commits behind still carrying 'FROM golang:1.23-alpine' against a go.mod long since at 1.26.2. The main tree was CORRECT throughout. Per §11.4.201(1) a false-positive refusal is a FAIL-bluff of equal severity to a false pass: it blocks real work and teaches people to bypass the gate. FIXED FOR ONE GATE: '.claude' added to that gate's PRUNE_DIRS with a deterministic §1.1 pair - a stale mismatch inside .claude/worktrees must NOT fail a healthy tree, the SAME mismatch outside it MUST still fail, so the prune cannot widen into blindness (§11.4.201(6)). Mutation verified: reverting the prune fails 2 checks. SURVEY, measured not inferred: 8 of 13 pre_build gates walk the tree; only the fixed one prunes .claude. Gates using 'git ls-files' are structurally immune - worktrees are untracked. Empirically probed: check_cm_closure_seam_binds, check_cm_killpg_pgid_guard and check_cm_no_production_mutation_residue all rc=0 with ZERO worktree references - clean in practice today. UNMEASURED, not clean: check_cm_test_mock_pid_explicit_int and check_cm_test_mock_pid_patched_when_real_pid were not reached before the probe budget expired. HYPOTHESIS REFUTED, recorded so nobody re-walks it: an earlier revision of this item speculated that check_cm_plugin_count's 90s timeout was caused by walking worktrees. It is NOT. That gate's find is scoped to $PLUGINS_DIR (check_cm_plugin_count.sh:224), so worktrees are outside its walk entirely. Its slowness is real - still running past 54s on a re-measure - but has a different, still-unidentified cause and belongs to its own item, not this one. ACCEPTANCE: every tree-walking gate either prunes agent scratch or is proven immune by measurement, each with a paired mutation. NOTE the asymmetry that bounds the risk: a stale worktree can only ADD findings to a security-relevant scan (killpg, mutation-residue), never remove them - so the exposure is false refusal and eroded trust, not a missed defect.
 
 ## BOB-211 — LATENT + OPERATOR-GATED: on a uid-flattening mount whose uid is not the operator, chown fails EPERM with no fstype-aware diagnosis, and fmask/dmask silently defeat the preserve_mode 600 contract
 

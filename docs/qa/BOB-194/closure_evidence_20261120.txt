@@ -1,0 +1,29 @@
+BOB-194 — agent-worktree immunity, measured per gate
+-- killpg
+  PASS  killpg A golden-FALSE: defect only inside .claude/worktrees/agent-probe does not fail the gate (exit 0)
+  PASS  killpg B control: the same defect inside scripts/ IS caught (exit 1)
+  PASS  killpg M mutation (scan root widened to repo root) sees the worktree plant (exit 1)
+-- mockpid
+  PASS  mockpid A golden-FALSE: defect only inside .claude/worktrees/agent-probe does not fail the gate (exit 0)
+  PASS  mockpid B control: the same defect inside tests/ IS caught (exit 1)
+  PASS  mockpid M mutation (scan root widened to repo root) sees the worktree plant (exit 1)
+-- realpid
+  PASS  realpid A golden-FALSE: defect only inside .claude/worktrees/agent-probe does not fail the gate (exit 0)
+  PASS  realpid B control: the same defect inside tests/ IS caught (exit 1)
+  PASS  realpid M mutation (scan root widened to repo root) sees the worktree plant (exit 1)
+-- residue
+  PASS  residue A golden-FALSE: defect only inside .claude/worktrees/agent-probe does not fail the gate (exit 0)
+  PASS  residue B control: the same defect inside scripts/ IS caught (exit 1)
+  PASS  residue M mutation (scan root widened to repo root) sees the worktree plant (exit 1)
+-- dangerous-combination repo-root arm (invariant 39)
+  PASS  danger A golden-FALSE: fail-open only inside .claude/worktrees/agent-probe is not reported at depth 1 (exit 0)
+  PASS  danger B control: the same fail-open at the repo root IS reported (exit 1)
+  PASS  danger M mutation (--max-depth 1 dropped) sees the worktree plant (exit 1)
+  PASS  danger W: pre_build_verification.sh still scans the repo-root arm with --max-depth 1
+-- gitignore swallow guard (git-based walk)
+  PASS  swallow A golden-FALSE: ignored source inside .claude/worktrees/agent-probe is not reported as swallowed (exit 0)
+  PASS  swallow B control: an ignored first-party source outside the worktree IS reported (exit 1)
+  PASS  swallow M mutation ('worktrees' dropped from the excluded names) sees the worktree file (exit 1)
+  PASS  W1a check_cm_plugin_count walks only $PLUGINS_DIR
+  PASS  W1b check_cm_workable_items_binary_fresh walks only the workable-items source dir
+RESULT: 21 passed, 0 failed
