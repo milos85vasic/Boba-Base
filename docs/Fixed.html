@@ -167,16 +167,11 @@
     }
     .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
-  <meta name="x-export-source-sha256" content="d82ed28aea509064d9eb740477f0420dc43c11c4ad1f0f66d15d4ee5c3764a03">
-  <meta name="dcterms.modified" content="2026-11-20T17:11:39Z">
 </head>
 <body>
-<header id="title-block-header">
-<h1 class="title">Fixed</h1>
-</header>
 <h1 id="fixed-closed-workable-items">Fixed — Closed Workable Items</h1>
-<p><strong>Revision:</strong> 73 <strong>Last modified:</strong>
-2026-11-20T17:19:07Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 74 <strong>Last modified:</strong>
+2026-11-20T17:30:29Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Closed items
 only. Open items live in <a
 href="Issues.md"><code>Issues.md</code></a>.</p>
@@ -7686,5 +7681,23 @@ tasks.md’s own Step 5 example ordering across every task (flags before
 the message, matching the working pattern used successfully elsewhere
 this session) so the plan itself does not keep tripping this bug for
 every future task implementer.</p>
+<h2
+id="bob-094-rd2-29-author-testsstresstest_tracker_fetch_stress_chaos.py-with-11.4.85-fault-injection">BOB-094
+— RD2-29: Author tests/stress/test_tracker_fetch_stress_chaos.py with
+§11.4.85 fault injection</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Evidence:</strong>
+docs/qa/BOB-094/closure_evidence_20261120.txt <strong>Severity:</strong>
+Medium</p>
+<p>RD2-29: Author tests/stress/test_tracker_fetch_stress_chaos.py with
+§11.4.85 fault injection</p>
+<p>[BOB-136 adoption audit 2026-08-21 -&gt; In progress] The suite
+landed (test file at 4b7b21d, evidence + RED-on-mutated-classifier
+capture at f3ca131) with 9 test functions: 2 stress, 3 boundary, 3 chaos
+(network_drop, midflight_kill, input_corruption), 1 category_map. This
+item explicitly requires fault injection across process-kill,
+network-fault AND resource-exhaustion. Only 2 of those 3 classes are
+present — there is no resource-exhaustion scenario in
+tests/stress/test_tracker_fetch_stress_chaos.py. Partial.</p>
 </body>
 </html>
