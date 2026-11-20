@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 70
-**Last modified:** 2026-11-20T12:55:46Z
+**Revision:** 71
+**Last modified:** 2026-11-20T16:47:02Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -3815,4 +3815,57 @@ Both guards run correctly by hand and are covered by passing tests (9/9 and 15/1
 
 **Acceptance criteria:**
 Each guard is invoked by a named seam, OR carries a registered deferral pointing at this item. For unattributed-commit-guard.sh specifically, the operator has answered the adoption question below and the answer is recorded as consumer DATA -- never an invented ratchet.
+
+## BOB-242 — Implement CM-SCRIPT-DOCS-SYNC (§11.4.18) and CM-DOC-REVISION-HEADER-PRESENT (§11.4.44) -- the two gates BOB-223 found named-but-unimplemented and registered as deferrals
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** scripts/pre_build/check_cm_script_docs_sync.sh
+**Created-By:** Claude
+**Assigned-To:** Claude
+
+BOB-223 closed the incentive inversion where writing a §11.4.18-mandated docs/scripts/<name>.md companion doc tripped invariant 16 while the mandate requiring the doc to exist (CM-SCRIPT-DOCS-SYNC) has zero implementation, and the doc's required §11.4.44 revision header (CM-DOC-REVISION-HEADER-PRESENT) is likewise unenforced outside one unrelated ledger file. Both are now registered as explicit GATE-DEBT REGISTER deferrals in scripts/pre_build_verification.sh, satisfying §11.4.227(A)'s bar for now, but the underlying mandates remain unenforced. This item implements BOTH: (1) walk every *.sh/*.bash under scripts/, require a docs/scripts/<name>.md companion (24 of 36 currently lack one per BOB-151's own count), verify same-commit-or-newer mtime per §11.4.18's literal text; (2) require every in-scope companion doc to carry **Revision:**/**Last modified:** per §11.4.44. Both need an operator brownfield-adoption decision (§11.4.224(E)/§11.4.66 -- immediate hard floor vs. monotone-decrease ratchet vs. changed-files-only), a paired §1.1 mutation each, and -- once landed -- removal of both DEFERRED: lines from the GATE-DEBT REGISTER in scripts/pre_build_verification.sh. Duplicate-of/originating-from: BOB-223, BOB-151. Also recommend adding two rows to constitution/scripts/gates/gate_ledger_deferrals.tsv (the constitution submodule's own canonical §11.4.227(A) deferral ledger) once this new item's ID is known.
+
+## BOB-219 — LIVE §11.4.65 sync violation: docs/guides/tracker-credentials.{html,pdf} exist on disk but are untracked and ignored, while their .md source IS tracked
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** .gitignore
+**Severity:** major
+
+WHAT, conductor-verified: docs/guides/tracker-credentials.md is TRACKED. Its §11.4.65-mandated export twins docs/guides/tracker-credentials.html and .pdf both EXIST ON DISK, are NOT tracked, and ARE ignored — matched by the .gitignore *credentials* deny-all at :31. The .md is rescued by an explicit allowlist entry at :38; nobody added entries for the twins.
+
+WHY IT IS A LIVE VIOLATION AND NOT A HYPOTHETICAL: §11.4.65 requires every in-scope Markdown document to carry synchronized .html/.pdf siblings, and §11.4.212 requires every §11.4.65-scope doc to be reachable from the README. Two artifacts that exist locally but can never be committed are, from any fresh clone, ABSENT — so every clone of this repository has a tracker-credentials guide with no exports, while the authoring host looks complete. The divergence is invisible on the machine that would notice it.
+
+WHY NOBODY SAW IT: this is a §11.4.201(6) FALSE-NULL of the BOB-212 class. git status never listed the twins, so no gate and no author had a signal. The blind instrument and the clean tree return the identical quiet zero.
+
+ANOTHER INSTANCE OF THE SAME MECHANISM, filed here rather than separately because it is one fix: docs/qa/BOB-124/evidence/loginctl_user_state.txt is swallowed by *_user* at .gitignore:~55 and is therefore uncommitted §11.4.83 QA evidence. Its SIBLINGS IN THE SAME DIRECTORY — user1000_grepped.log, user_scope_events_head.log, user_service_lifecycle.log — ARE tracked, saved only by the robust glob negation !docs/qa/**/*.log. That one file is lost purely because it is .txt rather than .log. The pattern is exact: robust glob negations hold; per-file and per-extension rescues leak.
+
+ACCEPTANCE: (1) both twins become trackable and are committed alongside their .md; (2) the BOB-124 .txt evidence likewise; (3) whichever BOB-212 fix direction is chosen, it MUST cover these — a fix that closes the future-swallow while leaving these three artifacts permanently uncommittable has addressed the mechanism and not the damage; (4) a check that a tracked .md in §11.4.65 scope has COMMITTABLE twins, so this class cannot recur silently.
+
+DISCOVERY CHANNEL (§11.4.238): found by the BOB-212 blast-radius sweep — and only on its SECOND pass. The first pass filtered by a source-extension set that omitted .pdf, which hid this finding entirely; the agent re-ran with no extension filter over all 420 non-artifact paths and recorded the blind spot rather than shipping the first number. Worth keeping: an extension allowlist is itself a false-null generator, which is the same shape as the defect being investigated.
+
+=== ROUND-2 PARTIAL CLOSURE, MEASURED 2026-09-25 — criterion 1 already done, criterion 2 unsatisfiable, criteria 3+4 done ONLY for the .md-export-twin class ===
+
+Independently re-verified via `git check-ignore -v` on all three named artifacts:
+CRITERION 1 (tracker-credentials.{html,pdf} twins committable) — ALREADY DONE, pre-dating this round: commit 9f6f517 already added `!docs/guides/tracker-credentials.{html,pdf}` rescue lines (.gitignore:49-54); both are tracked and clean. Nothing to do.
+
+CRITERION 2 (BOB-124 loginctl_user_state.txt trackable) — CLOSED AS UNSATISFIABLE. The file does not exist on disk, has ZERO trace in `git log --all --diff-filter=A -- "*loginctl_user_state*"`, and is absent from the entire working tree. Its .log siblings in the same directory ARE tracked (rescued by the existing `!docs/qa/**/*.log` negation), confirming the file was lost purely by having a .txt extension, exactly as the original report claimed — but there is no recovery path and no legitimate way to "make it trackable" without fabricating QA evidence, which is itself an anti-bluff violation. This criterion is permanently closed, not deferred.
+
+CRITERION 3 (general mechanism preventing recurrence) — PARTIALLY closed. A new guard (see criterion 4) closes the class criterion 1 exemplified: a TRACKED .md file whose §11.4.65 export twin is gitignore-swallowed. It does NOT close the class criterion 2 exemplified: a NON-.md QA-evidence file (any extension) swallowed by an unrelated gitignore pattern. Extending the existing `!docs/qa/**/*.log` negation to also cover `.txt` was concretely measured this round and PROVEN UNSAFE for this project: `.gitignore` documents `cookies_*.txt` as this repo's own secret-file naming convention, and a scratch-tree experiment confirmed a `.txt`-wide rescue would also un-ignore `cookies_rutracker.txt` / `RUTRACKER_session.txt` / `my_password.txt` — real credential-shaped files already relying on that exact pattern staying broad. This candidate fix is now closed off with evidence rather than left for a future session to re-attempt and re-measure. THE REMAINING GAP: a general mechanism for "a QA-evidence file legitimately meant to be tracked gets silently swallowed by a broad secret-shaped-filename gitignore pattern, distinguished from an actual secret file" remains genuinely open — it needs a smarter signal than file extension (e.g. content-sniffing, or an explicit per-file allowlist-on-creation discipline) that this round did not attempt to design, since inventing one hastily risked exactly the credential-leak class the constraint exists to prevent.
+
+CRITERION 4 (a check exists) — DONE for the .md-export-twin class. New gate `scripts/pre_build/check_md_export_twins_committable.sh` + self-validated test `tests/pre_build/test_check_md_export_twins_committable.sh` (7 arms: RED, GREEN, 2 golden-FALSE, fail-closed x3, real-repo run, §1.1 paired mutation — all independently re-run and confirmed passing by the conductor). Wired into scripts/pre_build_verification.sh as invariant 58/58 (CM-MD-EXPORT-TWINS-COMMITTABLE), mirroring the sibling CM-GITIGNORE-SWALLOW-GUARD (BOB-212) pattern exactly — BLOCKING, not advisory, since it is a pure tree-scan needing no live stack.
+
+REMAINING WORK TO FULLY CLOSE THIS ITEM: design and implement the criterion-3 residual — a mechanism distinguishing "a legitimate QA-evidence file lost to a secret-shaped gitignore pattern" from "an actual secret correctly caught by that pattern" — without narrowing the existing credential-protecting globs. Until then this item stays Queued; criteria 1/2/4 are genuinely done, criterion 3 is genuinely partial.
+
+EVIDENCE: docs/qa/BOB-219/closure_evidence_20260925.md (full command transcripts: before/after git check-ignore, the .txt-wide-rescue safety experiment, 7-arm test output, standalone gate invocation against the real repo).
+
+## BOB-097 — RD2-32: Author DDoS-class coverage for exposed download-proxy/merge endpoints (canonical impl of RD2-07)
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-097/closure_evidence_20261120.md
+**Severity:** Low
+
+[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-32, P3] Author DDoS-class coverage (RD2-07) for the exposed download-proxy/merge endpoints. Priority: P3.
 
