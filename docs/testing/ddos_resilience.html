@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.11" />
+  <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>ddos_resilience</title>
   <style>
-    /* Default styles provided by pandoc.
-    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-    */
     html {
       color: #1a1a1a;
       background-color: #fdfdfd;
@@ -41,6 +38,7 @@
       body {
         background-color: transparent;
         color: black;
+        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -90,7 +88,6 @@
       color: #606060;
     }
     code {
-      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,13 +151,10 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
+    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: 1.5em;}
-    div.column{flex: auto;}
-    @media screen {
-    div.columns{gap: min(4vw, 1.5em);}
-    div.column{overflow-x: auto;}
-    }
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -171,6 +165,7 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
     /* CSS for syntax highlighting */
     html { -webkit-text-size-adjust: 100%; }
     pre > code.sourceCode { white-space: pre; position: relative; }
@@ -237,6 +232,8 @@
     code span.vs { color: #4070a0; } /* VerbatimString */
     code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
+  <meta name="x-export-source-sha256" content="f5d7b2bfa7f54967f209bfcb45bf595c615b1e72e6215c45d601347aa2730f49">
+  <meta name="dcterms.modified" content="2026-11-20T17:08:41Z">
 </head>
 <body>
 <header id="title-block-header">
@@ -311,8 +308,11 @@ true — <code>merge_search :7187</code> now enforces one
 (<code>x-ratelimit-limit: 120</code> with a <code>retry-after</code>;
 measured live 33 x 429 at c=50), so it <strong>PASSes</strong> in GREEN
 and would FAIL in RED — exactly the polarity flip the original clause
-predicted. <code>:7185</code> and <code>:7189</code> still
-<code>SKIP</code> as <code>extension_absent</code>.</li>
+predicted. <strong>Superseded 2026-11-20:</strong>
+<code>boba-jackett :7189</code> also now enforces a per-IP token-bucket
+limiter (<code>internal/middleware/ratelimit.go</code>, 30 rpm / burst
+10, minimal 429 body). Only <code>:7185</code> (qBittorrent’s own WebUI)
+still <code>SKIP</code>s as <code>extension_absent</code>.</li>
 <li><strong>Cross-endpoint isolation</strong> — while one endpoint is
 under its heaviest tier, the other two stay <strong>responsive</strong>
 within a bounded timeout. “Responsive” is <strong>any 2xx, OR a 429
@@ -406,29 +406,31 @@ see “Findings” for what they actually caught).</p>
 <ul>
 <li><strong><code>RED_MODE=1</code></strong> (reproduce the defect):
 asserts the <strong>absence</strong> of any 429 response under the
-heaviest tier. <strong>State as of 2026-08-26 (measured, not
-assumed):</strong> it now <code>PASS</code>es on <code>:7185</code> and
-<code>:7189</code> only, and <strong><code>FAIL</code>s on
-<code>merge_search :7187</code></strong> — that endpoint enforces a
-limiter (<code>x-ratelimit-limit: 120</code>, 32–33 × 429 at c=50), and
-the detector’s own truth table maps <code>engaged</code> +
+heaviest tier. <strong>State as of 2026-11-20 (measured, not
+assumed):</strong> it now <code>PASS</code>es on <code>:7185</code>
+only, and <strong><code>FAIL</code>s on <code>merge_search :7187</code>
+and <code>boba-jackett :7189</code></strong> — both endpoints enforce a
+limiter (<code>:7187</code>: <code>x-ratelimit-limit: 120</code>, 32–33
+× 429 at c=50; <code>:7189</code>: 30 rpm / burst 10, minimal 429 body),
+and the detector’s own truth table maps <code>engaged</code> +
 <code>RED_MODE=1</code> → <code>FAIL</code>. That FAIL is the designed
 polarity flip, not a regression: RED reproduces a defect that no longer
-exists on <code>:7187</code>. <em>(Superseded: through 2026-08-18 this
-read “<code>PASS</code>es for all three endpoints … no rate-limit
-middleware, no <code>slowapi</code>-style Python limiter, no throttle in
-either Go service, and no nginx/reverse-proxy layer exists anywhere in
-the stack”, grepped across <code>download-proxy/src/</code>,
+exists on those endpoints. <em>(Superseded: through 2026-08-18 this read
+“<code>PASS</code>es for all three endpoints … no rate-limit middleware,
+no <code>slowapi</code>-style Python limiter, no throttle in either Go
+service, and no nginx/reverse-proxy layer exists anywhere in the stack”,
+grepped across <code>download-proxy/src/</code>,
 <code>qBitTorrent-go/internal/</code> and
 <code>docker-compose.yml</code>. True when written; false
 now.)</em></li>
 <li><strong><code>RED_MODE=0</code></strong> (default, GREEN guard):
 where a limiter <strong>is</strong> present the 429s are asserted and
-<code>PASS</code> (<code>:7187</code> today); where it is absent the
-same absence-of-429 observation is honestly <code>SKIP</code>ped (reason
-<code>extension_absent</code>) rather than bluffed as a
-<code>PASS</code> or unfairly marked <code>FAIL</code> — §11.4.6 forbids
-inventing a threshold nothing in the codebase enforces.</li>
+<code>PASS</code> (<code>:7187</code> and <code>:7189</code> today);
+where it is absent the same absence-of-429 observation is honestly
+<code>SKIP</code>ped (reason <code>extension_absent</code>) rather than
+bluffed as a <code>PASS</code> or unfairly marked <code>FAIL</code> —
+§11.4.6 forbids inventing a threshold nothing in the codebase
+enforces.</li>
 </ul>
 <p><strong>Real polarity going forward:</strong> the day a rate limiter
 is configured for any of the three endpoints, <code>RED_MODE=0</code>
@@ -942,8 +944,12 @@ polarity” above)</h3>
 2026-08-18 and is no longer. <code>merge_search :7187</code> now
 enforces a limiter (<code>x-ratelimit-limit: 120</code> with a
 <code>retry-after</code>; 33 x 429 at c=50 measured live 2026-08-26), so
-it PASSes assertion (b) in GREEN. <code>:7185</code> and
-<code>:7189</code> are still unprotected and still <code>SKIP</code> as
+it PASSes assertion (b) in GREEN. <code>boba-jackett :7189</code> now
+enforces a per-IP token-bucket limiter too (30 rpm / burst 10, minimal
+429 body; wired via <code>internal/middleware/ratelimit.go</code> and
+tested in <code>cmd/boba-jackett/main_test.go</code>), so it also PASSes
+assertion (b) in GREEN. Only <code>:7185</code> (qBittorrent’s own
+WebUI) remains unprotected and <code>SKIP</code>s as
 <code>extension_absent</code>. The source-inspection record below is
 retained as the dated evidence it was, not as current state. Its arrival
 is also what surfaced BOB-163: assertion (c) read <code>:7187</code>’s
@@ -1066,16 +1072,19 @@ process itself never died.</p>
 <h2 id="how-to-interpret-a-fail">How to interpret a
 <code>FAIL</code></h2>
 <ul>
-<li>The expected rate-limiting result as of <strong>2026-08-26</strong>
-is <strong><code>PASS</code> on <code>merge_search :7187</code>,
-<code>SKIP</code> on <code>:7185</code> and <code>:7189</code></strong>
-— <code>:7187</code> enforces a limiter, the other two do not, and a
-<code>SKIP</code> there reflects that real absence rather than a broken
-challenge. <em>(Superseded: this previously read “<code>SKIP</code> for
+<li>The expected rate-limiting result as of <strong>2026-11-20</strong>
+is <strong><code>PASS</code> on <code>merge_search :7187</code> and
+<code>boba-jackett :7189</code>, <code>SKIP</code> on
+<code>:7185</code></strong> — <code>:7187</code> and <code>:7189</code>
+enforce a limiter, <code>:7185</code> does not, and a <code>SKIP</code>
+there reflects that real absence rather than a broken challenge.
+<em>(Superseded: this previously read “<code>PASS</code> on
+<code>:7187</code>, <code>SKIP</code> on <code>:7185</code> and
+<code>:7189</code>” (2026-08-26), and before that “<code>SKIP</code> for
 all three endpoints … the currently-committed state”, which was true
 only while no endpoint enforced a limiter.)</em> A <code>SKIP</code> on
-<code>:7187</code> would now be a <strong>regression signal</strong> —
-its limiter stopped firing.</li>
+<code>:7187</code> or <code>:7189</code> would now be a
+<strong>regression signal</strong> — its limiter stopped firing.</li>
 <li>If <code>boba_jackett</code>’s crash-resistance assertion
 <code>FAIL</code>s occasionally, that is the tracked, real, cold-start
 amplification finding above — not the challenge itself being flaky.
@@ -1098,10 +1107,10 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">bash</span> challenges/scripts/ddos_resilience_challenge.sh</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># RED mode — reproduce the &quot;no rate limiting configured&quot; defect state</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># explicitly. As of 2026-08-26 this PASSes on :7185 and :7189 and FAILs on</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># merge_search :7187, because RED starts FAILing for an endpoint the moment a</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co"># limiter is WIRED there (the defect it reproduces is fixed) — it does not</span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co"># require the limiter to be stripped again.</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># explicitly. As of 2026-11-20 this PASSes on :7185 only and FAILs on</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># merge_search :7187 and boba-jackett :7189, because RED starts FAILing for an</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co"># endpoint the moment a limiter is WIRED there (the defect it reproduces is</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="co"># fixed) — it does not require the limiter to be stripped again.</span></span>
 <span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="va">RED_MODE</span><span class="op">=</span>1 <span class="fu">bash</span> challenges/scripts/ddos_resilience_challenge.sh</span>
 <span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Self-validation — prove all THREE detectors distinguish their golden-good</span></span>
@@ -1145,9 +1154,14 @@ concurrent burst (measured evidence above). Fixed by commit
 before/after evidence (97.1% → 0.0% timeouts) and the standing
 <code>--healthz</code> regression guard this challenge now ships.</li>
 <li><strong>Task</strong> (filed as <strong>BOB-111</strong>): configure
-real rate limiting for boba’s three public HTTP endpoints
-(<code>:7185</code>, <code>:7187</code>, <code>:7189</code>) — none
-exists today. Candidate approaches documented above.</li>
+real rate limiting for boba’s public HTTP endpoints. <strong>Status as
+of 2026-11-20:</strong> rate limiting is wired and tested for
+<code>:7187</code> (Python <code>api/rate_limit.py</code> + Go
+<code>internal/middleware/ratelimit.go</code>), <code>:7186</code>
+(Python <code>plugins/download_proxy.py</code>), and <code>:7189</code>
+(Go <code>internal/middleware/ratelimit.go</code>). <code>:7185</code>
+(qBittorrent’s own WebUI) remains outside Boba’s direct control and is
+the only surface still unprotected.</li>
 <li><strong>Task</strong> (NOT filed as a separate BOB-NNN this round —
 remains an open scoping note here, distinct from the orchestrating
 session’s filed batch): extend <code>ddos_resilience_challenge.sh</code>
