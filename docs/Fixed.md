@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 72
-**Last modified:** 2026-11-20T17:09:52Z
+**Revision:** 73
+**Last modified:** 2026-11-20T17:19:07Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -3898,4 +3898,15 @@ RD2-07: DDoS-class testing fully absent from the mandated test-type matrix
 **Created-By:** Claude
 
 Source inspection across the whole stack (2026-08-18) verified no rate-limit mechanism exists for :7185 (qBittorrent WebUI proxy), :7187 (merge search service), or :7189 (boba-jackett) -- no slowapi/limiter/throttle import in download-proxy/src/, no rate-limit middleware in qBitTorrent-go/internal/middleware/ (only cors.go + logging.go) or internal/jackettapi/ (only auth/cors middleware tests, no rate middleware), and no nginx/reverse-proxy service in docker-compose.yml. Candidate remediations documented in docs/testing/ddos_resilience.md: nginx-in-container reverse proxy with limit_req_zone (most portable, adds a container); a FastAPI slowapi dependency for the merge-search service; a Gin rate-limit middleware for boba-jackett following the existing internal/middleware/ pattern. qBittorrent's own WebUI bandwidth-shaping settings were NOT verified to cover request-rate (only bandwidth) -- do not assume they close this gap without checking.
+
+## BOB-246 — commit-push-all.sh: --scope flags placed after the commit message are silently ignored, falls back to git add -A
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** docs/qa/BOB-246/closure_evidence_20261120.md
+**Severity:** Critical
+**Created-By:** AI
+**Assigned-To:** AI
+
+Discovered 2026-09-25 by a subagent implementing 003-zero-shortcomings-audit Task 1, independently reproduced in isolation. scripts/commit-push-all.sh's argument parser stops reading flags at the first non-flag token; when --scope <path> flags are placed AFTER the commit-message positional argument (exactly as tasks.md's own Step 5 template shows for every task in the 003-zero-shortcomings-audit plan, e.g. "bash scripts/commit-push-all.sh \"<message>\" --scope <path>"), the --scope flags are silently swallowed as if they were part of the message, no error or warning is emitted, and the script falls through to its unconditional/unscoped git add -A path. Real-world consequence (2026-09-25): following that exact template ordering caused a scoped Task-1 commit to instead sweep in 5 files -- the intended 2, a sibling task's 2 legitimate-but-not-yet-reviewed files, and a DELIBERATELY-uncommitted, known-broken/hanging test file (tests/ddos/test_sse_stream_stress_chaos.py, see BOB-097 diary entry_id=16) -- and PUSH all of it to two remote git hosts before the mistake was caught. No data was lost, nothing was force-pushed, but a silent full-tree-sweep on a routine commit is a serious safety gap in a script this project's own constitution names as the ONLY sanctioned commit path. Root cause: the parser's flag/positional-arg interleaving logic assumes flags always precede the message and never validates that assumption or warns when scope flags appear post-message. Remediation: (1) make the parser accept --scope flags in ANY position relative to the message (getopts-style two-pass parsing, or explicit flag-then-positional-then-more-flags handling), OR (2) at minimum, detect scope-flag-shaped tokens appearing after the first positional argument and REFUSE with a loud error rather than silently falling back to git add -A -- a parser that cannot tell 'no --scope given, unscoped commit intended' apart from '--scope given but in the wrong position' is itself a §11.4.201(1) false-negative-class defect. (3) Audit and fix tasks.md's own Step 5 example ordering across every task (flags before the message, matching the working pattern used successfully elsewhere this session) so the plan itself does not keep tripping this bug for every future task implementer.
 
