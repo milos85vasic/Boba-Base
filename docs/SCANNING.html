@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.11" />
+  <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>SCANNING</title>
   <style>
-    /* Default styles provided by pandoc.
-    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-    */
     html {
       color: #1a1a1a;
       background-color: #fdfdfd;
@@ -41,6 +38,7 @@
       body {
         background-color: transparent;
         color: black;
+        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -90,7 +88,6 @@
       color: #606060;
     }
     code {
-      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,13 +151,10 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
+    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: 1.5em;}
-    div.column{flex: auto;}
-    @media screen {
-    div.columns{gap: min(4vw, 1.5em);}
-    div.column{overflow-x: auto;}
-    }
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -171,6 +165,7 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
     /* CSS for syntax highlighting */
     html { -webkit-text-size-adjust: 100%; }
     pre > code.sourceCode { white-space: pre; position: relative; }
@@ -237,31 +232,34 @@
     code span.vs { color: #4070a0; } /* VerbatimString */
     code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
+  <meta name="x-export-source-sha256" content="a8903704c754ade62fb7b1c153c552bb2085c36ca55a11be8379e6a520f824e3">
+  <meta name="dcterms.modified" content="2026-11-20T11:01:33Z">
 </head>
 <body>
 <header id="title-block-header">
 <h1 class="title">SCANNING</h1>
 </header>
 <h1 id="scanning">Scanning</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-06-06T00:00:00Z</p>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-11-20T00:00:00Z</p>
 <p>qBittorrent-Fixed runs <strong>seven scanners</strong> that cover
 dependencies, static analysis, secrets, and quality gates. They all run
-locally (via <code>scripts/scan.sh</code>) and in CI
-(<code>.github/workflows/security.yml</code>).</p>
+locally via <code>scripts/scan.sh</code>.</p>
+<p><strong>CI is manual-only.</strong> <code>./ci.sh</code> is the
+canonical (and only) validation pipeline. All GitHub Actions workflow
+files have been removed per the Hard Stop rule; no automated CI/CD
+triggers exist anywhere in the repository.</p>
 <table>
 <colgroup>
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
 </colgroup>
 <thead>
 <tr>
 <th>Scanner</th>
 <th>Surface</th>
 <th>Invocation</th>
-<th>Runs in</th>
 </tr>
 </thead>
 <tbody>
@@ -269,49 +267,41 @@ locally (via <code>scripts/scan.sh</code>) and in CI
 <td>pip-audit</td>
 <td>Python runtime deps</td>
 <td>host</td>
-<td>push, nightly, weekly</td>
 </tr>
 <tr>
 <td>bandit</td>
 <td>Python SAST</td>
 <td>host (<code>pip install 'bandit[toml]'</code>)</td>
-<td>push, weekly</td>
 </tr>
 <tr>
 <td>ruff</td>
 <td>Python lint + ASYNC/S rules</td>
 <td>host</td>
-<td>every push</td>
 </tr>
 <tr>
 <td>semgrep</td>
 <td>Multi-language SAST (project + registry rules)</td>
 <td>compose run-once</td>
-<td>weekly, push on source change</td>
 </tr>
 <tr>
 <td>trivy</td>
 <td>FS CVE + misconfig + secret scan</td>
 <td>compose run-once</td>
-<td>weekly, push on deps</td>
 </tr>
 <tr>
 <td>gitleaks</td>
 <td>Secret scan (git history)</td>
 <td>compose run-once</td>
-<td>every push</td>
 </tr>
 <tr>
 <td>snyk</td>
 <td>Commercial dep + SAST (needs token)</td>
 <td>compose run-once</td>
-<td>weekly</td>
 </tr>
 <tr>
 <td>sonarqube</td>
 <td>Quality gate upload (needs token)</td>
 <td>sonar-scanner (host)</td>
-<td>weekly</td>
 </tr>
 </tbody>
 </table>
@@ -327,12 +317,12 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="va">$COMPOSE_CMD</span> <span class="at">-f</span> docker-compose.yml <span class="at">-f</span> docker-compose.quality.yml <span class="dt">\</span></span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">--profile</span> run-once up <span class="at">--remove-orphans</span> <span class="at">--abort-on-container-exit</span></span></code></pre></div>
 <p>Reports land in <code>artifacts/scans/&lt;UTC timestamp&gt;/</code>
-as SARIF/JSON. CI uploads them to the GitHub Security tab.</p>
+as SARIF/JSON.</p>
 <h2 id="non-interactive-invariants">Non-interactive invariants</h2>
 <p><code>scripts/scan.sh</code> <strong>never</strong> prompts, reads
 stdin, escalates privileges, or calls <code>sudo</code>.
 <code>tests/unit/test_scan_script_non_interactive.py</code> guards the
-invariant; the CI <code>syntax</code> workflow enforces it.</p>
+invariant.</p>
 <h2 id="secrets">Secrets</h2>
 <ul>
 <li><code>SNYK_TOKEN</code> — if unset, the snyk container exits 0 with

@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.11" />
+  <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>CONTINUATION</title>
   <style>
-    /* Default styles provided by pandoc.
-    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-    */
     html {
       color: #1a1a1a;
       background-color: #fdfdfd;
@@ -41,6 +38,7 @@
       body {
         background-color: transparent;
         color: black;
+        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -90,7 +88,6 @@
       color: #606060;
     }
     code {
-      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,13 +151,10 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
+    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: 1.5em;}
-    div.column{flex: auto;}
-    @media screen {
-    div.columns{gap: min(4vw, 1.5em);}
-    div.column{overflow-x: auto;}
-    }
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -171,7 +165,10 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
+  <meta name="x-export-source-sha256" content="290337024bc4cb2cd4894bfa0d8d4f4848600e271abaf3e9d515f0774d5b127a">
+  <meta name="dcterms.modified" content="2026-11-20T11:01:33Z">
 </head>
 <body>
 <header id="title-block-header">
@@ -179,6 +176,150 @@
 </header>
 <h1 id="continue-project-status-snapshot">Continue — Project Status
 Snapshot</h1>
+<p><strong>Revision:</strong> 32 <strong>Last modified:</strong>
+2026-11-20T12:00:00Z</p>
+<h2 id="revision-32-production-ready-gap-sweep-committed">REVISION 32 —
+Production-ready gap sweep committed</h2>
+<h3 id="verification-evidence-this-session">Verification evidence (this
+session)</h3>
+<ul>
+<li><code>./ci.sh --quick</code> GREEN: 9 PASS / 0 FAIL / 1 SKIP (Phase
+3: 5045 unit tests passed, 4 skipped, 0 failures in 1558.51s).</li>
+<li>Unit suite verified in two deterministic runs:
+<ul>
+<li><code>tests/unit/</code> excluding
+<code>test_compute_badges_script.py</code>: 5036 passed, 4 skipped, in
+1328.88s.</li>
+<li><code>tests/unit/test_compute_badges_script.py</code>: 9 passed in
+145.66s.</li>
+</ul></li>
+<li><code>go test -race -count=1 ./...</code> GREEN across all
+qBitTorrent-go packages.</li>
+<li><code>ruff check .</code> GREEN;
+<code>.venv/bin/mypy download-proxy/src/</code> GREEN.</li>
+<li><code>bash constitution/scripts/post_update_hook.sh</code> GREEN
+(project-level).</li>
+<li><code>bash challenges/scripts/docs_chain_verify_challenge.sh</code>
+GREEN.</li>
+<li><code>bash challenges/scripts/no_suspend_calls_challenge.sh</code>
+GREEN.</li>
+<li><code>bash tests/pre_build/test_bob205_danger_roots_scope.sh</code>
+GREEN.</li>
+<li><code>bash tests/pre_build/test_bob221_expected_red_declaration.sh</code>
+GREEN (P1..P18).</li>
+</ul>
+<h3 id="fixes-landed-in-commit-9293242">Fixes landed in commit
+<code>9293242</code></h3>
+<ul>
+<li>Python backend: IPTorrents freeleech download gate, SSE contract,
+scheduler payloads, upstream proxy env isolation; 12 new test files
+(unit/contract/ property/security/chaos).</li>
+<li>Go backend: real <code>:7186</code> download proxy, WebUI bridge for
+private-tracker auth, <code>internal/httpx</code> CloseNotify helper;
+Dockerfile + compose wiring.</li>
+<li>Constitution/governance: submodule pointer to v73.4 wiring ref,
+<code>helix-deps.yaml</code>, <code>.claude/settings.json</code> +
+<code>.mcp.json</code> wiring, <code>skills/</code> +
+<code>prompts/</code> convenience links committed, docs_chain +
+compute-badges regenerated.</li>
+<li>Pre-build debt closed by this commit: healthcheck port declaration
+for <code>webui-bridge</code>, <code>.gitignore</code> negation for
+credential-chaos test, removed stray
+<code>scripts/sync_remote_session.sh</code> symlink, updated
+<code>cm_script_docs_sync.baseline</code>, regenerated stale
+Status/README/TESTING exports, fixed ruff error in
+<code>failopen_lang_analyzer.py</code>.</li>
+</ul>
+<h3 id="operator-deferred-pre-existing-debt">Operator-deferred /
+pre-existing debt</h3>
+<ul>
+<li><code>scripts/pre_build_verification.sh</code> does NOT yet run
+green end-to-end: 50 passed, 10 failed at the end of the session run.
+Remaining failures are pre-existing debt, not introduced by this sweep:
+<ul>
+<li>CM-BASH-UNIT-TESTS-EXECUTED: 7 bash meta-tests fail under the
+harness environment (some pass when run individually).</li>
+<li>CM-COVENANT-PROPAGATION-BLOCK-INTEGRITY: §11.4.167 gate scans
+vendored <code>submodules/helixqa/tools/opensource/*</code> and
+<code>superspec/examples/*</code> carriers that should be excluded.</li>
+<li>CM-UNATTRIBUTED-COMMIT-RATCHET: 2 historical auto-commits remain
+reachable; retirement requires stopping the producer and operator review
+(BOB-068 / BOB-078).</li>
+</ul></li>
+<li>Host power-management host-state challenges remain FAIL until
+<code>sudo scripts/host-power-management/install-host-suspend-guard.sh</code>
+and <code>install-host-power-guard.sh</code> are run (operator
+decision).</li>
+<li>Open workable-items in <code>docs/workable_items.db</code> include
+Lava P2/P3, DDoS-class testing, auto-commit mechanism, and other
+long-running items.</li>
+</ul>
+<h3 id="how-to-resume">How to resume</h3>
+<p>Check out <code>9293242</code>, run <code>./ci.sh --quick</code>,
+then continue chipping away at the operator-deferred items above.</p>
+<hr />
+<p><strong>Revision:</strong> 31 <strong>Last modified:</strong>
+2026-11-20T00:00:00Z</p>
+<h2
+id="revision-31-documentation-drift-sweep-constitution-v73.4-wiring-state">REVISION
+31 — Documentation drift sweep + Constitution v73.4 wiring state</h2>
+<h3 id="documentation-fixes-this-sweep">Documentation fixes (this
+sweep)</h3>
+<ul>
+<li><code>docs/USER_MANUAL.md</code> updated from the stale “v2.0.0 / 12
+plugins” frame to the current 43-plugin roster, four private trackers
+(RuTracker, Kinozal, NNM-Club, IPTorrents), correct service ports, and
+the manual-only <code>./ci.sh</code> pipeline. Removed references to
+non-existent <code>./restart.sh</code>, <code>./verify.sh</code>,
+<code>PLUGIN_STATUS.md</code>, and the obsolete
+<code>DISABLE_THEME_INJECTION</code> variable.</li>
+<li><code>docs/PLUGINS.md</code>: Kinozal and NNM-Club marked
+implemented, IPTorrents added, credential/category tables refreshed,
+stale test-script references removed.</li>
+<li><code>docs/SECURITY.md</code>: tracker sessions are now correctly
+described as Fernet-encrypted at rest via
+<code>EncryptedSessionStore</code>; removed
+<code>.github/workflows/security.yml</code> reference.</li>
+<li><code>docs/SCANNING.md</code> and <code>docs/TESTING.md</code>: all
+<code>.github/workflows/*.yml</code> references removed; CI is now
+documented as manual-only via <code>./ci.sh</code> per the Hard Stop
+rule.</li>
+<li><code>docs/Migration_Summary.md</code>: theme-injection row updated
+to reflect that the Python stack no longer injects themes into the
+qBittorrent WebUI.</li>
+</ul>
+<h3 id="constitution-v73.4-wiring-state">Constitution v73.4 wiring
+state</h3>
+<ul>
+<li><code>helix-deps.yaml</code> created at project root, pinning the
+constitution submodule to the v73.4 wiring sweep ref and declaring
+<code>challenges</code>, <code>containers</code>, <code>helixqa</code>,
+<code>jackett</code>, and <code>superspec</code> dependencies.</li>
+<li>Claude hooks wired in <code>.claude/settings.json</code>:
+<code>PreToolUse</code> runs the constitution forbidden-commands guard;
+<code>UserPromptSubmit</code> runs the action-prefix expander.</li>
+<li>Speckit skills wired under
+<code>.claude/.skill-activation/pool/</code> and recorded in
+<code>.specify/integrations/claude.manifest.json</code>.</li>
+<li>MCP/label-sync tooling is active in this session.</li>
+</ul>
+<h3 id="remaining-blockers">Remaining blockers</h3>
+<ul>
+<li>The constitution v73.4 pre-release carries open follow-ups tracked
+in the constitution submodule (notably the §11.4.40
+<code>--include-heavy</code> retest and the §11.4.185 manual-QA
+confirmation owed for the v73.4 candidate).</li>
+<li>The <code>llmctl</code> / Jev decision-layer integration and any
+local Python-syntax blockers that surface from it remain open; they are
+owned by the constitution <code>claude_toolkit</code> /
+<code>jev-decision-layer</code> work and are not addressed by this
+documentation-only sweep.</li>
+</ul>
+<h3 id="how-to-resume-1">How to resume</h3>
+<p>Point a fresh session at this file, then run the standard pre-build
+gate:</p>
+<pre><code>bash scripts/pre_build_verification.sh</code></pre>
+<hr />
 <p><strong>Revision:</strong> 30 <strong>Last modified:</strong>
 2026-08-27T18:40:00Z</p>
 <h2

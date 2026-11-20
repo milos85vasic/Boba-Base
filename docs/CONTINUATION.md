@@ -1,5 +1,64 @@
 # Continue — Project Status Snapshot
 
+**Revision:** 32
+**Last modified:** 2026-11-20T12:00:00Z
+
+## REVISION 32 — Production-ready gap sweep committed
+
+### Verification evidence (this session)
+- `./ci.sh --quick` GREEN: 9 PASS / 0 FAIL / 1 SKIP (Phase 3: 5045 unit tests
+  passed, 4 skipped, 0 failures in 1558.51s).
+- Unit suite verified in two deterministic runs:
+  - `tests/unit/` excluding `test_compute_badges_script.py`: 5036 passed,
+    4 skipped, in 1328.88s.
+  - `tests/unit/test_compute_badges_script.py`: 9 passed in 145.66s.
+- `go test -race -count=1 ./...` GREEN across all qBitTorrent-go packages.
+- `ruff check .` GREEN; `.venv/bin/mypy download-proxy/src/` GREEN.
+- `bash constitution/scripts/post_update_hook.sh` GREEN (project-level).
+- `bash challenges/scripts/docs_chain_verify_challenge.sh` GREEN.
+- `bash challenges/scripts/no_suspend_calls_challenge.sh` GREEN.
+- `bash tests/pre_build/test_bob205_danger_roots_scope.sh` GREEN.
+- `bash tests/pre_build/test_bob221_expected_red_declaration.sh` GREEN (P1..P18).
+
+### Fixes landed in commit `9293242`
+- Python backend: IPTorrents freeleech download gate, SSE contract, scheduler
+  payloads, upstream proxy env isolation; 12 new test files (unit/contract/
+  property/security/chaos).
+- Go backend: real `:7186` download proxy, WebUI bridge for private-tracker
+  auth, `internal/httpx` CloseNotify helper; Dockerfile + compose wiring.
+- Constitution/governance: submodule pointer to v73.4 wiring ref, `helix-deps.yaml`,
+  `.claude/settings.json` + `.mcp.json` wiring, `skills/` + `prompts/`
+  convenience links committed, docs_chain + compute-badges regenerated.
+- Pre-build debt closed by this commit: healthcheck port declaration for
+  `webui-bridge`, `.gitignore` negation for credential-chaos test,
+  removed stray `scripts/sync_remote_session.sh` symlink, updated
+  `cm_script_docs_sync.baseline`, regenerated stale Status/README/TESTING
+  exports, fixed ruff error in `failopen_lang_analyzer.py`.
+
+### Operator-deferred / pre-existing debt
+- `scripts/pre_build_verification.sh` does NOT yet run green end-to-end:
+  50 passed, 10 failed at the end of the session run. Remaining failures are
+  pre-existing debt, not introduced by this sweep:
+  - CM-BASH-UNIT-TESTS-EXECUTED: 7 bash meta-tests fail under the harness
+    environment (some pass when run individually).
+  - CM-COVENANT-PROPAGATION-BLOCK-INTEGRITY: §11.4.167 gate scans vendored
+    `submodules/helixqa/tools/opensource/*` and `superspec/examples/*`
+    carriers that should be excluded.
+  - CM-UNATTRIBUTED-COMMIT-RATCHET: 2 historical auto-commits remain
+    reachable; retirement requires stopping the producer and operator review
+    (BOB-068 / BOB-078).
+- Host power-management host-state challenges remain FAIL until
+  `sudo scripts/host-power-management/install-host-suspend-guard.sh` and
+  `install-host-power-guard.sh` are run (operator decision).
+- Open workable-items in `docs/workable_items.db` include Lava P2/P3,
+  DDoS-class testing, auto-commit mechanism, and other long-running items.
+
+### How to resume
+Check out `9293242`, run `./ci.sh --quick`, then continue chipping away at the
+operator-deferred items above.
+
+---
+
 **Revision:** 31
 **Last modified:** 2026-11-20T00:00:00Z
 

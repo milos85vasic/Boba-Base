@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.11" />
+  <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>unattributed-commit-guard</title>
   <style>
-    /* Default styles provided by pandoc.
-    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-    */
     html {
       color: #1a1a1a;
       background-color: #fdfdfd;
@@ -41,6 +38,7 @@
       body {
         background-color: transparent;
         color: black;
+        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -90,7 +88,6 @@
       color: #606060;
     }
     code {
-      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,13 +151,10 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
+    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: 1.5em;}
-    div.column{flex: auto;}
-    @media screen {
-    div.columns{gap: min(4vw, 1.5em);}
-    div.column{overflow-x: auto;}
-    }
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -171,7 +165,10 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
+  <meta name="x-export-source-sha256" content="225263b85108a8dbd4e2162e41c89e270bc14737d7e891503f9b7ae56e2ce9ed">
+  <meta name="dcterms.modified" content="2026-09-27T15:18:07Z">
 </head>
 <body>
 <header id="title-block-header">
@@ -180,11 +177,11 @@
 <h1
 id="scriptshooksunattributed-commit-guard.sh-unattributed-commit-detector"><code>scripts/hooks/unattributed-commit-guard.sh</code>
 — unattributed-commit detector</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-08-21T19:55:00Z <strong>Purpose:</strong> §11.4.84 / §11.4.238
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-09-27T15:30:00Z <strong>Purpose:</strong> §11.4.84 / §11.4.238
 guard that finds commits landing on this repository with no attribution
 — no tracked-item id, no task, no PR reference. <strong>Last
-verified:</strong> 2026-08-21</p>
+verified:</strong> 2026-09-27</p>
 <hr />
 <h2 id="overview">Overview</h2>
 <p>A commit whose entire subject is <code>Auto-commit</code> (or
@@ -202,6 +199,13 @@ visible</strong> instead of something a human notices while reading
 (<code>v1.0.0-rc..HEAD</code>) — 11 bare <code>Auto-commit</code> plus 2
 <code>sync: …</code>, the latter class missed entirely by the narrower
 grep that preceded this guard.</p>
+<p>RE-MEASURED 2026-09-27 (HEAD 30221da): <strong>26</strong> violating
+commits are reachable from HEAD (23 bare <code>Auto-commit</code>, 1
+<code>Auto-commit &lt;epoch-ms&gt;</code>, 2 <code>sync: …</code>), and
+a scan of <code>--all</code> refs finds the same 26. The default range
+is now <code>1.3.0..HEAD</code> and holds <strong>0</strong> — the “14”
+above was a property of the range, not of the repository, which is why
+the standing gate scans all of HEAD instead.</p>
 <h2 id="prerequisites">Prerequisites</h2>
 <ul>
 <li>A git working tree (the guard reads history only; it never
@@ -212,10 +216,65 @@ credentials.</li>
 <h2 id="usage">Usage</h2>
 <pre><code>bash scripts/hooks/unattributed-commit-guard.sh                # default range
 bash scripts/hooks/unattributed-commit-guard.sh --range A..B   # explicit range
-bash scripts/hooks/unattributed-commit-guard.sh --self-test    # §11.4.107(10)</code></pre>
+bash scripts/hooks/unattributed-commit-guard.sh --self-test    # §11.4.107(10)
+bash scripts/hooks/unattributed-commit-guard.sh --range HEAD \
+    --baseline scripts/pre_build/cm_unattributed_commit.baseline  # ratchet (pre-build 63)</code></pre>
 <p>Default range is “since the last tag reachable from HEAD”.</p>
-<p>Exit status: <code>0</code> clean, non-zero when violations are found
-(each named).</p>
+<p>Exit status: <code>0</code> clean, <code>1</code> violations found
+(each named), <code>2</code> the result could not be determined (bad
+range, unreadable or header-less baseline).</p>
+<h3 id="ratchet-mode---baseline-file">Ratchet mode
+(<code>--baseline FILE</code>)</h3>
+<p>Adopted per the operator’s BOB-162 decision, option (b): a
+<strong>one-time monotone-decrease ratchet</strong>. The baseline file
+lists the grandfathered commits <strong>by exact 40-hex SHA</strong>
+(first field of each non-comment line) and carries two header lines:</p>
+<pre><code># SEED_CUTOFF_EPOCH: &lt;committer time of the newest grandfathered commit&gt;
+# SEEDED_COUNT: &lt;number of rows at seeding&gt;</code></pre>
+<p>Why SHA and not a count: a count lets a new violation replace a
+retired one (one in, one out) and cannot tell a new
+<code>Auto-commit</code> from an old one with the same subject. A SHA
+can never match a commit that did not exist at seeding.</p>
+<p>In this mode the run FAILs (<code>1</code>) on any of:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Output line</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NEW &lt;sha&gt; &lt;subject&gt;</code></td>
+<td>a violating commit that is not in the baseline</td>
+</tr>
+<tr>
+<td><code>RETIRED &lt;sha&gt;</code></td>
+<td>a baselined commit inside the range that is no longer a violation —
+delete the row</td>
+</tr>
+<tr>
+<td><code>INTEGRITY … exceeds SEEDED_COUNT</code></td>
+<td>the baseline was grown — the set may only shrink</td>
+</tr>
+<tr>
+<td><code>INTEGRITY … newer than SEED_CUTOFF_EPOCH</code></td>
+<td>a row names a commit made after the seed — it cannot be
+grandfathered</td>
+</tr>
+<tr>
+<td><code>INTEGRITY duplicate SHA row(s)</code></td>
+<td>the same SHA is listed twice</td>
+</tr>
+</tbody>
+</table>
+<p>A missing header or a row that is not a full SHA is exit
+<code>2</code> (unverifiable, never a pass). Baselined commits outside
+the range are ignored, so the same file works for any range.</p>
 <h2 id="edge-cases">Edge cases</h2>
 <ul>
 <li><strong>A referenced <code>Auto-commit</code> is NOT a
@@ -242,21 +301,36 @@ unvalidated instrumentation (§11.4.115(F)).</p>
 pattern match makes the self-test FAIL and makes the real scan silently
 report OK against 21 known violations — the exact bluff. Restored, the
 file is sha256-identical and the scan again names the 14.</p>
-<h2 id="known-gap-read-this-before-trusting-a-green-run">Known gap —
-read this before trusting a green run</h2>
-<p><strong>This guard is not yet wired into any seam.</strong> It runs
-when a human types it, so it is not standing detection pressure
-(§11.4.226 — registration is not coverage). Wiring it as-is would refuse
-every commit immediately, because the 14 pre-existing violations are
-real and cannot be fixed in the moment; that is a §11.4.224(E)
-brownfield-adoption decision the operator owns, tracked as
-<strong>BOB-162</strong> with the options enumerated. Until that answer
-is recorded, a clean run of this guard means only “the range you asked
-about is clean”.</p>
+<p><strong>Ratchet mutation (re-run by the test on every
+execution):</strong> replacing the line marked
+<code># RATCHET-NEW-SET</code> with an empty set makes a new
+unattributed commit on top of the grandfathered history pass with exit
+0; the unmutated guard refuses it with exit 1.</p>
+<h2 id="wiring">Wiring</h2>
+<p>Pre-build invariant 63 (<code>CM-UNATTRIBUTED-COMMIT-RATCHET</code>)
+in <code>scripts/pre_build_verification.sh</code> runs the ratchet mode
+over all of HEAD against
+<code>scripts/pre_build/cm_unattributed_commit.baseline</code> (seeded
+with the 26 commits above). It is BLOCKING.</p>
+<p>The seam is the pre-build sweep, not the pre-push hook: the commits
+this guard exists for are produced and pushed from another host or
+session, so a push hook on this host never sees them; they become
+visible here the moment they are in HEAD.</p>
+<p>Honest limits: the SEED_CUTOFF_EPOCH check trusts committer
+timestamps, so a producer that backdates its commits below the cutoff
+could be added to the baseline without tripping it (the SEEDED_COUNT
+check still refuses the extra row, and the change is visible in review).
+History is never rewritten to shrink the set (§11.4.113), so the 26
+remain unless the closed pattern set changes.</p>
 <h2 id="related">Related</h2>
 <ul>
 <li><code>tests/hooks/test_unattributed_commit_guard.sh</code> — 9
 real-invocation assertions</li>
+<li><code>tests/hooks/test_unattributed_commit_ratchet.sh</code> — 12
+assertions for the ratchet mode in mktemp repos, the paired mutation,
+and the real-repo scan</li>
+<li><code>scripts/pre_build/cm_unattributed_commit.baseline</code> — the
+grandfathered set</li>
 <li><code>docs/history/BOB-079-attributed-auto-commit-history.md</code>
 — the attribution record built FROM this guard’s output (BOB-079)</li>
 <li><code>scripts/hooks/check-brief-inputs.sh</code> — sibling

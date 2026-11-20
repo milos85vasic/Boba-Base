@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.11" />
+  <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>SECURITY</title>
   <style>
-    /* Default styles provided by pandoc.
-    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-    */
     html {
       color: #1a1a1a;
       background-color: #fdfdfd;
@@ -41,6 +38,7 @@
       body {
         background-color: transparent;
         color: black;
+        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -90,7 +88,6 @@
       color: #606060;
     }
     code {
-      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,13 +151,10 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
+    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: 1.5em;}
-    div.column{flex: auto;}
-    @media screen {
-    div.columns{gap: min(4vw, 1.5em);}
-    div.column{overflow-x: auto;}
-    }
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -171,6 +165,7 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
     /* CSS for syntax highlighting */
     html { -webkit-text-size-adjust: 100%; }
     pre > code.sourceCode { white-space: pre; position: relative; }
@@ -237,14 +232,16 @@
     code span.vs { color: #4070a0; } /* VerbatimString */
     code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
+  <meta name="x-export-source-sha256" content="ad892448bb00fa82d74dcae94d0c2dc2c9c43a9782f0a0bae661fbab152f8964">
+  <meta name="dcterms.modified" content="2026-11-20T11:01:33Z">
 </head>
 <body>
 <header id="title-block-header">
 <h1 class="title">SECURITY</h1>
 </header>
 <h1 id="security">Security</h1>
-<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
-2026-08-09T00:00:00Z</p>
+<p><strong>Revision:</strong> 3 <strong>Last modified:</strong>
+2026-11-20T00:00:00Z</p>
 <p>This document defines the threat model, credential-handling rules,
 and scanner stack for qBittorrent-Fixed. It complements the constitution
 (<code>.specify/memory/constitution.md</code>, Principle III —
@@ -309,9 +306,12 @@ initiator. Phase 3 adds per-client bearer tokens.</td>
 <tr>
 <td>Downgrade / replay</td>
 <td>Tracker cookies in session storage</td>
-<td>In-memory dict <code>_tracker_sessions</code>; cookies never
-persisted to disk. Phase 2.3 adds <strong>Fernet-at-rest</strong>
-encryption for saved cookies — status: <strong>pending</strong>.</td>
+<td><code>_tracker_sessions</code> are <strong>Fernet-encrypted at
+rest</strong> via <code>EncryptedSessionStore</code>
+(<code>download-proxy/src/merge_service/search.py</code>). The key is
+per-process ephemeral by default; set
+<code>SESSION_ENCRYPTION_KEY</code> to pin it. Cookies still evaporate
+on container restart.</td>
 </tr>
 <tr>
 <td>Supply-chain</td>
@@ -333,11 +333,13 @@ Later sources do <em>not</em> override earlier ones.</li>
 <code>config/download-proxy/qbittorrent_creds.json</code> when the user
 checks “Remember me”. The file is <code>rw-------</code> and
 gitignored.</li>
-<li><strong>Tracker sessions</strong> (<code>_tracker_sessions</code>
-dict in <code>download-proxy/src/merge_service/search.py</code>) are
-in-memory. They evaporate on container restart. Phase 2.3 will persist
-them encrypted with Fernet — the spec is written but the implementation
-is <strong>pending</strong>.</li>
+<li><strong>Tracker sessions</strong> (<code>_tracker_sessions</code> in
+<code>download-proxy/src/merge_service/search.py</code>) are
+<strong>Fernet-encrypted at rest</strong> via
+<code>EncryptedSessionStore</code>. The encryption key is per-process
+ephemeral by default; set <code>SESSION_ENCRYPTION_KEY</code>
+(urlsafe-base64 32-byte Fernet key) to pin it across restarts. Sessions
+still evaporate on container restart.</li>
 </ul>
 <h2 id="adminadmin-default"><code>admin</code>/<code>admin</code>
 default</h2>
@@ -414,8 +416,9 @@ Details in <a href="SCANNING.md"><code>SCANNING.md</code></a>:</p>
 <li><code>sonarqube</code> — quality gate upload (via opt-in
 compose).</li>
 </ul>
-<p>All run locally via <code>scripts/scan.sh</code> and in CI
-(<code>.github/workflows/security.yml</code>). Reports land under
+<p>All run locally via <code>scripts/scan.sh</code>. CI is manual-only
+via <code>./ci.sh</code>; all GitHub Actions workflow files have been
+removed per the Hard Stop rule. Reports land under
 <code>artifacts/scans/&lt;UTC timestamp&gt;/</code>.</p>
 <h2 id="waiver-policy">Waiver policy</h2>
 <p>Any <code>.snyk</code> ignore, <code>.trivyignore</code> entry, or
@@ -442,17 +445,18 @@ into higher.</li>
 </ul>
 <h2 id="known-gaps-pending">Known gaps (pending)</h2>
 <ul>
-<li>Fernet-at-rest for tracker cookies — Phase 2.3.</li>
 <li>Allowed-origin allowlist — Phase 3.</li>
 <li>TTL on <code>_pending_captchas</code> — Phase 3.</li>
-<li>Bearer-token per-client SSE — Phase 3.</li>
+<li>Bearer-token per-client SSE — Phase 3 (partially implemented:
+<code>stream_token</code> is returned per search; enforcement is opt-in
+via <code>SSE_REQUIRE_TOKEN=1</code>).</li>
 <li>Per-subprocess resource limit (ulimit, prlimit) for plugin execution
 — Phase 2.</li>
 </ul>
 <h2 id="related-documents">Related documents</h2>
 <ul>
 <li><a href="SCANNING.md"><code>SCANNING.md</code></a> — scanner
-invocation and CI integration.</li>
+invocation.</li>
 <li><a href="QUALITY_STACK.md"><code>QUALITY_STACK.md</code></a> —
 opt-in compose file.</li>
 <li><a href="CONCURRENCY.md"><code>CONCURRENCY.md</code></a> — graceful

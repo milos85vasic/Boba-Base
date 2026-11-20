@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.11" />
+  <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>PLUGINS</title>
   <style>
-    /* Default styles provided by pandoc.
-    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-    */
     html {
       color: #1a1a1a;
       background-color: #fdfdfd;
@@ -41,6 +38,7 @@
       body {
         background-color: transparent;
         color: black;
+        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -90,7 +88,6 @@
       color: #606060;
     }
     code {
-      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,13 +151,10 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
+    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: 1.5em;}
-    div.column{flex: auto;}
-    @media screen {
-    div.columns{gap: min(4vw, 1.5em);}
-    div.column{overflow-x: auto;}
-    }
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -171,6 +165,7 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
     /* CSS for syntax highlighting */
     html { -webkit-text-size-adjust: 100%; }
     pre > code.sourceCode { white-space: pre; position: relative; }
@@ -237,6 +232,8 @@
     code span.vs { color: #4070a0; } /* VerbatimString */
     code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
+  <meta name="x-export-source-sha256" content="81007beb38b4a749fa3102547b75b1724cffe7c24bf1c11f68ddd6e796c07695">
+  <meta name="dcterms.modified" content="2026-11-20T11:01:33Z">
 </head>
 <body>
 <header id="title-block-header">
@@ -244,10 +241,10 @@
 </header>
 <h1 id="qbittorrent-search-plugins-documentation">qBitTorrent Search
 Plugins Documentation</h1>
-<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
-2026-06-06T00:00:00Z</p>
-<p>This document provides comprehensive documentation for all included
-search plugins.</p>
+<p><strong>Revision:</strong> 2 <strong>Last modified:</strong>
+2026-11-20T00:00:00Z</p>
+<p>This document provides comprehensive documentation for the 43
+included search plugins.</p>
 <h2 id="table-of-contents">Table of Contents</h2>
 <ol type="1">
 <li><a href="#overview">Overview</a></li>
@@ -306,7 +303,7 @@ Software, Pictures, Books</p>
 <p><strong>Mirrors:</strong> - https://rutor.info - https://rutor.is</p>
 <hr />
 <h3 id="kinozal.tv">3. Kinozal.tv 🔐</h3>
-<p><strong>Status:</strong> 🚧 Coming Soon</p>
+<p><strong>Status:</strong> ✅ Fully Implemented and Tested</p>
 <p><strong>Description:</strong> Russian torrent tracker focused on
 movies and TV shows.</p>
 <p><strong>Credentials Required:</strong> -
@@ -325,7 +322,7 @@ href="https://kinozal.tv/signup.php">https://kinozal.tv/signup.php</a></p>
 use magnet mode to bypass.</p>
 <hr />
 <h3 id="nnm-club.me">4. NNM-Club.me 🍪</h3>
-<p><strong>Status:</strong> 🚧 Coming Soon</p>
+<p><strong>Status:</strong> ✅ Fully Implemented and Tested</p>
 <p><strong>Description:</strong> One of the biggest Russian torrent
 trackers.</p>
 <p><strong>Credentials Required:</strong> -
@@ -346,6 +343,27 @@ Software</p>
 href="https://nnmclub.to/forum/profile.php?mode=register">https://nnmclub.to/forum/profile.php?mode=register</a></p>
 <p><strong>⚠️ Important:</strong> Very sensitive to proxies, may trigger
 DDoS protection (403 error)</p>
+<hr />
+<h3 id="iptorrents">5. IPTorrents 🔐</h3>
+<p><strong>Status:</strong> ✅ Fully Implemented and Tested</p>
+<p><strong>Description:</strong> English private tracker with
+ratio-based downloads.</p>
+<p><strong>Credentials Required:</strong> -
+<code>IPTORRENTS_USERNAME</code> - Your IPTorrents username -
+<code>IPTORRENTS_PASSWORD</code> - Your IPTorrents password</p>
+<p><strong>Freeleech Policy:</strong> - Automated tests and downloads
+MUST only use freeleech results. - Freeleech results are tagged
+<code>IPTorrents [free]</code> in the tracker display name. -
+Non-freeleech downloads cost ratio and are never triggered by
+automation.</p>
+<p><strong>Optional Settings:</strong> -
+<code>IPTORRENTS_PROXY_ENABLED</code> - Enable proxy (true/false) -
+<code>IPTORRENTS_HTTP_PROXY</code> - HTTP proxy URL -
+<code>IPTORRENTS_HTTPS_PROXY</code> - HTTPS proxy URL</p>
+<p><strong>Categories:</strong> All, Movies, TV, Music, Games, Anime,
+Software</p>
+<p><strong>Registration:</strong> Required - <a
+href="https://www.iptorrents.com">https://www.iptorrents.com</a></p>
 <hr />
 <h2 id="credential-requirements-summary">Credential Requirements
 Summary</h2>
@@ -388,6 +406,13 @@ Summary</h2>
 <td>✅ Required</td>
 <td>Required</td>
 </tr>
+<tr>
+<td><strong>IPTorrents</strong></td>
+<td>✅ Required</td>
+<td>✅ Required</td>
+<td>❌ No</td>
+<td>Required</td>
+</tr>
 </tbody>
 </table>
 <hr />
@@ -414,7 +439,11 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="
 <span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co"># NNM-Club Configuration</span></span>
 <span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="va">NNMCLUB_USERNAME</span><span class="op">=</span>your_username</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="va">NNMCLUB_COOKIES</span><span class="op">=</span>phpbb2mysql_4_sid=abc123<span class="kw">;</span> <span class="va">phpbb2mysql_4_data</span><span class="op">=</span>xyz789</span></code></pre></div>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="va">NNMCLUB_COOKIES</span><span class="op">=</span>phpbb2mysql_4_sid=abc123<span class="kw">;</span> <span class="va">phpbb2mysql_4_data</span><span class="op">=</span>xyz789</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co"># IPTorrents Configuration</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="va">IPTORRENTS_USERNAME</span><span class="op">=</span>your_username</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="va">IPTORRENTS_PASSWORD</span><span class="op">=</span>your_password</span></code></pre></div>
 <h4 id="docker-compose-environment">2. Docker Compose Environment</h4>
 <p>Add to <code>docker-compose.yml</code>:</p>
 <div class="sourceCode" id="cb2"><pre
@@ -480,17 +509,14 @@ class="sourceCode powershell"><code class="sourceCode powershell"><span id="cb8-
 <h2 id="testing">Testing</h2>
 <h3 id="comprehensive-plugin-tests">Comprehensive Plugin Tests</h3>
 <div class="sourceCode" id="cb9"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Test all plugins</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./run-all-tests.sh</span> <span class="at">--suite</span> plugins</span>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the full manual CI pipeline</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">./ci.sh</span></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Test specific plugin</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> tests/test_plugin_download_fix.py <span class="at">--run</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Quick validation (syntax + unit tests)</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="ex">./ci.sh</span> <span class="at">--quick</span></span>
 <span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Test download functionality</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> tests/test_download_comprehensive.py <span class="at">--run</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Quick validation</span></span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="ex">./test.sh</span> <span class="at">--plugin</span></span></code></pre></div>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Run merge-service unit tests</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/python</span> <span class="at">-m</span> pytest tests/unit/ <span class="at">-v</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span></code></pre></div>
 <h3 id="manual-plugin-testing">Manual Plugin Testing</h3>
 <div class="sourceCode" id="cb10"><pre
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Test search functionality</span></span>
@@ -608,11 +634,13 @@ WebUI, only in desktop application.</p>
 <th>Rutor</th>
 <th>Kinozal</th>
 <th>NNM-Club</th>
+<th>IPTorrents</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>All</td>
+<td>✅</td>
 <td>✅</td>
 <td>✅</td>
 <td>✅</td>
@@ -624,9 +652,11 @@ WebUI, only in desktop application.</p>
 <td>✅</td>
 <td>✅</td>
 <td>✅</td>
+<td>✅</td>
 </tr>
 <tr>
 <td>TV</td>
+<td>✅</td>
 <td>✅</td>
 <td>✅</td>
 <td>✅</td>
@@ -638,9 +668,11 @@ WebUI, only in desktop application.</p>
 <td>✅</td>
 <td>✅</td>
 <td>✅</td>
+<td>✅</td>
 </tr>
 <tr>
 <td>Games</td>
+<td>✅</td>
 <td>✅</td>
 <td>✅</td>
 <td>✅</td>
@@ -652,9 +684,11 @@ WebUI, only in desktop application.</p>
 <td>✅</td>
 <td>✅</td>
 <td>✅</td>
+<td>✅</td>
 </tr>
 <tr>
 <td>Software</td>
+<td>✅</td>
 <td>✅</td>
 <td>✅</td>
 <td>✅</td>
@@ -666,11 +700,13 @@ WebUI, only in desktop application.</p>
 <td>✅</td>
 <td>❌</td>
 <td>❌</td>
+<td>❌</td>
 </tr>
 <tr>
 <td>Books</td>
 <td>✅</td>
 <td>✅</td>
+<td>❌</td>
 <td>❌</td>
 <td>❌</td>
 </tr>
