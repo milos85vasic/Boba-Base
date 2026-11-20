@@ -147,6 +147,7 @@ def build_app(
     default: str = "200/minute",
     disabled: bool = False,
     trust_forwarded_for: bool = True,
+    trusted_proxy_cidrs: str = "127.0.0.1/32,::1/128",
 ):
     """Import the REAL production app with the given limits in force.
 
@@ -159,10 +160,17 @@ def build_app(
     `request.client.host`, which for an in-process ASGI client is the SAME
     constant for every caller — so "attacker" and "bystander" would collapse
     into one bucket and the per-client isolation assertion would be vacuous.
-    Turning it on is what makes distinct simulated clients meaningful here (and
-    incidentally proves that knob is wired).
+
+    `trusted_proxy_cidrs` is the BOB-171 companion: X-Forwarded-For is honoured
+    only when the real socket peer is inside this allowlist. TestClient's peer
+    is the string `testclient` (not an IP), so the harness additionally pins the
+    production key function's peer extraction to the loopback address — this is
+    a TEST-ONLY shim that keeps the real `_client_key` / trusted-proxy logic in
+    the code path while letting distinct `X-Forwarded-For` values resolve to
+    distinct buckets.
     """
     os.environ["TRUST_FORWARDED_FOR"] = "1" if trust_forwarded_for else "0"
+    os.environ["TRUSTED_PROXY_CIDRS"] = trusted_proxy_cidrs if trust_forwarded_for else ""
     if disabled:
         os.environ["RATE_LIMIT_DISABLED"] = "1"
     else:
@@ -175,6 +183,12 @@ def build_app(
     purge_api_modules()
     api_mod = importlib.import_module("api")
     rl_mod = importlib.import_module("api.rate_limit")
+    # TestClient reports peer as the literal string "testclient", which is not
+    # a valid IP and therefore can never satisfy a CIDR allowlist. Replace the
+    # peer extractor for this in-process generation only, so X-Forwarded-For
+    # still flows through the real trusted-proxy decision in `_client_key`.
+    if trust_forwarded_for:
+        rl_mod.get_remote_address = lambda _request: "127.0.0.1"  # type: ignore[assignment]
     # Counters must start empty even if a sibling module generation ran earlier
     # in this pytest session (§11.4.14 quiescent baseline).
     rl_mod.reset_counters()

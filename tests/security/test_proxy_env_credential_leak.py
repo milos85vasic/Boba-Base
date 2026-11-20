@@ -75,6 +75,14 @@ def test_apply_proxy_env_redacts_nothing_but_propagates(monkeypatch):
         monkeypatch.delenv(v, raising=False)
     monkeypatch.setenv("BOBA_UPSTREAM_PROXY", "http://alice:secret@proxy.example:8080")
 
-    proxy_config.apply_proxy_env()
-    assert os.environ["HTTP_PROXY"] == "http://alice:secret@proxy.example:8080"
-    assert "alice:secret" in os.environ["HTTP_PROXY"]
+    # apply_proxy_env() mutates the global os.environ. Save/restore it explicitly
+    # so no proxy state leaks to later tests (monkeypatch only undoes the vars it
+    # knew about at test start, not the ones the function writes).
+    before = os.environ.copy()
+    try:
+        proxy_config.apply_proxy_env()
+        assert os.environ["HTTP_PROXY"] == "http://alice:secret@proxy.example:8080"
+        assert "alice:secret" in os.environ["HTTP_PROXY"]
+    finally:
+        os.environ.clear()
+        os.environ.update(before)

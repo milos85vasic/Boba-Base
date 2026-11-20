@@ -33,8 +33,10 @@ asserts:
    in the stack is no longer true — `merge_search :7187` now enforces one
    (`x-ratelimit-limit: 120` with a `retry-after`; measured live 33 x 429 at
    c=50), so it **PASSes** in GREEN and would FAIL in RED — exactly the
-   polarity flip the original clause predicted. `:7185` and `:7189` still
-   `SKIP` as `extension_absent`.
+   polarity flip the original clause predicted. **Superseded 2026-11-20:**
+   `boba-jackett :7189` also now enforces a per-IP token-bucket limiter
+   (`internal/middleware/ratelimit.go`, 30 rpm / burst 10, minimal 429 body).
+   Only `:7185` (qBittorrent's own WebUI) still `SKIP`s as `extension_absent`.
 3. **Cross-endpoint isolation** — while one endpoint is under its heaviest
    tier, the other two stay **responsive** within a bounded timeout.
    "Responsive" is **any 2xx, OR a 429 carrying a well-formed `Retry-After`**
@@ -86,13 +88,14 @@ checks regardless of `RED_MODE` — see "Findings" for what they actually
 caught).
 
 - **`RED_MODE=1`** (reproduce the defect): asserts the **absence** of any
-  429 response under the heaviest tier. **State as of 2026-08-26 (measured,
-  not assumed):** it now `PASS`es on `:7185` and `:7189` only, and **`FAIL`s
-  on `merge_search :7187`** — that endpoint enforces a limiter
-  (`x-ratelimit-limit: 120`, 32–33 × 429 at c=50), and the detector's own
-  truth table maps `engaged` + `RED_MODE=1` → `FAIL`. That FAIL is the
-  designed polarity flip, not a regression: RED reproduces a defect that no
-  longer exists on `:7187`.
+  429 response under the heaviest tier. **State as of 2026-11-20 (measured,
+  not assumed):** it now `PASS`es on `:7185` only, and **`FAIL`s on
+  `merge_search :7187` and `boba-jackett :7189`** — both endpoints enforce a
+  limiter (`:7187`: `x-ratelimit-limit: 120`, 32–33 × 429 at c=50; `:7189`:
+  30 rpm / burst 10, minimal 429 body), and the detector's own truth table
+  maps `engaged` + `RED_MODE=1` → `FAIL`. That FAIL is the designed polarity
+  flip, not a regression: RED reproduces a defect that no longer exists on
+  those endpoints.
   *(Superseded: through 2026-08-18 this read "`PASS`es for all three
   endpoints … no rate-limit middleware, no `slowapi`-style Python limiter, no
   throttle in either Go service, and no nginx/reverse-proxy layer exists
@@ -100,8 +103,8 @@ caught).
   `qBitTorrent-go/internal/` and `docker-compose.yml`. True when written;
   false now.)*
 - **`RED_MODE=0`** (default, GREEN guard): where a limiter **is** present the
-  429s are asserted and `PASS` (`:7187` today); where it is absent the same
-  absence-of-429 observation is honestly `SKIP`ped (reason
+  429s are asserted and `PASS` (`:7187` and `:7189` today); where it is absent
+  the same absence-of-429 observation is honestly `SKIP`ped (reason
   `extension_absent`) rather than bluffed as a `PASS` or unfairly marked
   `FAIL` — §11.4.6 forbids inventing a threshold nothing in the codebase
   enforces.
@@ -362,9 +365,13 @@ with §11.4.238's mandate that automated QA be the discovery channel:
 > **Superseded.** This finding was true when written on 2026-08-18 and is no
 > longer. `merge_search :7187` now enforces a limiter (`x-ratelimit-limit:
 > 120` with a `retry-after`; 33 x 429 at c=50 measured live 2026-08-26), so it
-> PASSes assertion (b) in GREEN. `:7185` and `:7189` are still unprotected and
-> still `SKIP` as `extension_absent`. The source-inspection record below is
-> retained as the dated evidence it was, not as current state. Its arrival is
+> PASSes assertion (b) in GREEN. `boba-jackett :7189` now enforces a per-IP
+> token-bucket limiter too (30 rpm / burst 10, minimal 429 body; wired via
+> `internal/middleware/ratelimit.go` and tested in `cmd/boba-jackett/main_test.go`),
+> so it also PASSes assertion (b) in GREEN. Only `:7185` (qBittorrent's own
+> WebUI) remains unprotected and `SKIP`s as `extension_absent`. The
+> source-inspection record below is retained as the dated evidence it was, not
+> as current state. Its arrival is
 > also what surfaced BOB-163: assertion (c) read `:7187`'s own 429 as a
 > degraded sibling.
 
@@ -485,13 +492,15 @@ process itself never died.
 
 ## How to interpret a `FAIL`
 
-- The expected rate-limiting result as of **2026-08-26** is
-  **`PASS` on `merge_search :7187`, `SKIP` on `:7185` and `:7189`** — `:7187`
-  enforces a limiter, the other two do not, and a `SKIP` there reflects that
-  real absence rather than a broken challenge. *(Superseded: this previously
-  read "`SKIP` for all three endpoints … the currently-committed state",
-  which was true only while no endpoint enforced a limiter.)* A `SKIP` on
-  `:7187` would now be a **regression signal** — its limiter stopped firing.
+- The expected rate-limiting result as of **2026-11-20** is
+  **`PASS` on `merge_search :7187` and `boba-jackett :7189`, `SKIP` on
+  `:7185`** — `:7187` and `:7189` enforce a limiter, `:7185` does not, and a
+  `SKIP` there reflects that real absence rather than a broken challenge.
+  *(Superseded: this previously read "`PASS` on `:7187`, `SKIP` on `:7185`
+  and `:7189`" (2026-08-26), and before that "`SKIP` for all three endpoints
+  … the currently-committed state", which was true only while no endpoint
+  enforced a limiter.)* A `SKIP` on `:7187` or `:7189` would now be a
+  **regression signal** — its limiter stopped firing.
 - If `boba_jackett`'s crash-resistance assertion `FAIL`s occasionally, that
   is the tracked, real, cold-start amplification finding above — not the
   challenge itself being flaky. Re-run it; if it now `PASS`es, the endpoint
@@ -514,10 +523,10 @@ process itself never died.
 bash challenges/scripts/ddos_resilience_challenge.sh
 
 # RED mode — reproduce the "no rate limiting configured" defect state
-# explicitly. As of 2026-08-26 this PASSes on :7185 and :7189 and FAILs on
-# merge_search :7187, because RED starts FAILing for an endpoint the moment a
-# limiter is WIRED there (the defect it reproduces is fixed) — it does not
-# require the limiter to be stripped again.
+# explicitly. As of 2026-11-20 this PASSes on :7185 only and FAILs on
+# merge_search :7187 and boba-jackett :7189, because RED starts FAILing for an
+# endpoint the moment a limiter is WIRED there (the defect it reproduces is
+# fixed) — it does not require the limiter to be stripped again.
 RED_MODE=1 bash challenges/scripts/ddos_resilience_challenge.sh
 
 # Self-validation — prove all THREE detectors distinguish their golden-good
@@ -560,8 +569,13 @@ completed — see the BOB-NNN id on each item below:
    evidence (97.1% → 0.0% timeouts) and the standing `--healthz` regression
    guard this challenge now ships.
 2. **Task** (filed as **BOB-111**): configure real rate limiting for
-   boba's three public HTTP endpoints (`:7185`, `:7187`, `:7189`) — none
-   exists today. Candidate approaches documented above.
+   boba's public HTTP endpoints. **Status as of 2026-11-20:** rate limiting
+   is wired and tested for `:7187` (Python `api/rate_limit.py` + Go
+   `internal/middleware/ratelimit.go`), `:7186` (Python
+   `plugins/download_proxy.py`), and `:7189` (Go
+   `internal/middleware/ratelimit.go`). `:7185` (qBittorrent's own WebUI)
+   remains outside Boba's direct control and is the only surface still
+   unprotected.
 3. **Task** (NOT filed as a separate BOB-NNN this round — remains an open
    scoping note here, distinct from the orchestrating session's filed
    batch): extend `ddos_resilience_challenge.sh` (or add a sibling

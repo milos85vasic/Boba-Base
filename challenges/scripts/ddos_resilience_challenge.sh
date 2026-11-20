@@ -27,16 +27,19 @@
 #                             honest §11.4.3 SKIP (reason=extension_absent)
 #                             rather than a bluffed PASS or an unearned FAIL —
 #                             §11.4.6 forbids inventing a threshold nothing
-#                             enforces. STATE AS OF 2026-08-26 (measured live,
+#                             enforces. STATE AS OF 2026-11-20 (measured live,
 #                             this same run prints it): merge_search :7187 now
 #                             DOES enforce a limiter — `x-ratelimit-limit: 120`
 #                             with a `retry-after`, 33 x 429 at c=50 — so it
-#                             PASSes in GREEN and would FAIL in RED, exactly
-#                             the polarity flip this clause predicted. :7185
-#                             and :7189 still SKIP as extension_absent. (The
-#                             2026-08-18 note that NO limiter existed anywhere
-#                             in the stack is superseded; it was true when
-#                             written and is no longer.)
+#                             PASSes in GREEN and would FAIL in RED; and
+#                             boba-jackett :7189 now DOES enforce a per-IP
+#                             token-bucket limiter (30 rpm / burst 10, minimal
+#                             429 body) via internal/middleware/ratelimit.go.
+#                             Only :7185 (qBittorrent's own WebUI) still SKIPs
+#                             as extension_absent. (The 2026-08-18 note that NO
+#                             limiter existed anywhere in the stack is
+#                             superseded; it was true when written and is no
+#                             longer.)
 #   (c) CROSS-ENDPOINT ISOLATION — while one endpoint is under its heaviest
 #                             tier, the OTHER two stay RESPONSIVE within a
 #                             bounded latency. "Responsive" is any 2xx, OR a
@@ -1203,7 +1206,7 @@ for name in "${EP_NAMES[@]}"; do
     absent/PASS)
       verdict PASS "$name: confirmed absence of rate limiting at c=$heaviest_c (RED reproduces the real current defect)" ;;
     *)
-      verdict SKIP "$name: no rate limiting observed on THIS endpoint at c=$heaviest_c (reason=extension_absent — measured 2026-08-26, merge_search :7187 DOES enforce a limiter and PASSes; :7185/:7189 do not yet; tracked as BOB-074 followup, see docs/testing/ddos_resilience.md)"
+      verdict SKIP "$name: no rate limiting observed on THIS endpoint at c=$heaviest_c (reason=extension_absent — measured 2026-11-20, merge_search :7187 and boba-jackett :7189 DO enforce a limiter and PASS in GREEN; :7185 (qBittorrent WebUI) does not yet; tracked as BOB-074 followup, see docs/testing/ddos_resilience.md)"
       notes+=("$name: rate limiting SKIP'd — extension_absent, followup filed") ;;
   esac
 
