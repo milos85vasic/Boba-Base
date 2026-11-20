@@ -19,7 +19,6 @@
 # Adoption choice: ratchet snapshot, the repository's established default for
 # set-based gates. Open to an operator decision (§11.4.66) to switch to a hard
 # floor or to changed-files-only enforcement.
-DOCBEHIND:scripts/hooks/unattributed-commit-guard.sh
 DOCBEHIND:scripts/install-resource-pressure-timer.sh
 DOCBEHIND:scripts/ownership_precondition.sh
 DOCBEHIND:scripts/ownership_repair.sh

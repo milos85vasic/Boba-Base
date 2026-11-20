@@ -123,6 +123,20 @@ EXCLUDE_PATHS=(
   # log, not an invocation — same §11.4.201(7)(a) CARRIER class as the
   # /docs/incidents/ and /.superpowers/sdd/ entries above).
   "/docs/qa/task-review-457cca4-a7e55f9-minor-fixes/"
+  # The INHERITED constitution submodule's governance docs enumerate the ban in
+  # prose (they do not invoke it). Verified 2026-11-20: every hit is a Markdown
+  # bullet, heading, or fixture carrier quoting the forbidden verbs.
+  "/constitution/groups/host-and-resource-safety.md"
+  "/constitution/groups/governance-and-constitution-meta.md"
+  "/constitution/CLAUDE_ANCHORS_FULL.md"
+  "/constitution/progressive/rules/12.1.md"
+  "/constitution/progressive/rules/11.4.109.md"
+  "/constitution/scripts/fastcycle/tests/fixtures/core_ondemand/baseline_lines_sorted.txt"
+  # Project evidence / tests that describe application-level graceful shutdown
+  # (not host poweroff) use the phrase "shutdown now" in prose / comments.
+  # Verified 2026-11-20: no executable invocation, only prose/carriers.
+  "/docs/qa/BOB-236/closure_evidence_20260925.md"
+  "/tests/integration/test_bob236_sigterm_graceful_shutdown.py"
 )
 
 # Forbidden grep -E patterns. Real, tight regexes — not bare words.

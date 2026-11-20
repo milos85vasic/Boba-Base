@@ -225,7 +225,12 @@ class Scheduler:
             # Execute the search
             result = await self._search_callback(search.query, search.category)
 
-            search.results_count = result.get("merged_results", 0) if result else 0
+            if result is None:
+                search.results_count = 0
+            elif isinstance(result, dict):
+                search.results_count = result.get("merged_results", 0)
+            else:
+                search.results_count = getattr(result, "merged_results", 0)
             search.status = ScheduleStatus.COMPLETED
             search.error_message = None
 

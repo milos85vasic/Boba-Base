@@ -1,5 +1,54 @@
 # Continue — Project Status Snapshot
 
+**Revision:** 31
+**Last modified:** 2026-11-20T00:00:00Z
+
+## REVISION 31 — Documentation drift sweep + Constitution v73.4 wiring state
+
+### Documentation fixes (this sweep)
+- `docs/USER_MANUAL.md` updated from the stale "v2.0.0 / 12 plugins" frame to the
+  current 43-plugin roster, four private trackers (RuTracker, Kinozal, NNM-Club,
+  IPTorrents), correct service ports, and the manual-only `./ci.sh` pipeline.
+  Removed references to non-existent `./restart.sh`, `./verify.sh`,
+  `PLUGIN_STATUS.md`, and the obsolete `DISABLE_THEME_INJECTION` variable.
+- `docs/PLUGINS.md`: Kinozal and NNM-Club marked implemented, IPTorrents added,
+  credential/category tables refreshed, stale test-script references removed.
+- `docs/SECURITY.md`: tracker sessions are now correctly described as
+  Fernet-encrypted at rest via `EncryptedSessionStore`; removed
+  `.github/workflows/security.yml` reference.
+- `docs/SCANNING.md` and `docs/TESTING.md`: all `.github/workflows/*.yml`
+  references removed; CI is now documented as manual-only via `./ci.sh` per the
+  Hard Stop rule.
+- `docs/Migration_Summary.md`: theme-injection row updated to reflect that the
+  Python stack no longer injects themes into the qBittorrent WebUI.
+
+### Constitution v73.4 wiring state
+- `helix-deps.yaml` created at project root, pinning the constitution submodule
+  to the v73.4 wiring sweep ref and declaring `challenges`, `containers`,
+  `helixqa`, `jackett`, and `superspec` dependencies.
+- Claude hooks wired in `.claude/settings.json`: `PreToolUse` runs the
+  constitution forbidden-commands guard; `UserPromptSubmit` runs the action-prefix
+  expander.
+- Speckit skills wired under `.claude/.skill-activation/pool/` and recorded in
+  `.specify/integrations/claude.manifest.json`.
+- MCP/label-sync tooling is active in this session.
+
+### Remaining blockers
+- The constitution v73.4 pre-release carries open follow-ups tracked in the
+  constitution submodule (notably the §11.4.40 `--include-heavy` retest and the
+  §11.4.185 manual-QA confirmation owed for the v73.4 candidate).
+- The `llmctl` / Jev decision-layer integration and any local Python-syntax
+  blockers that surface from it remain open; they are owned by the constitution
+  `claude_toolkit` / `jev-decision-layer` work and are not addressed by this
+  documentation-only sweep.
+
+### How to resume
+Point a fresh session at this file, then run the standard pre-build gate:
+
+    bash scripts/pre_build_verification.sh
+
+---
+
 **Revision:** 30
 **Last modified:** 2026-08-27T18:40:00Z
 

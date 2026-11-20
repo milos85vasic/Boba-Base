@@ -1,22 +1,27 @@
 # Scanning
 
-**Revision:** 1
-**Last modified:** 2026-06-06T00:00:00Z
+**Revision:** 2
+**Last modified:** 2026-11-20T00:00:00Z
 
 qBittorrent-Fixed runs **seven scanners** that cover dependencies,
 static analysis, secrets, and quality gates. They all run locally
-(via `scripts/scan.sh`) and in CI (`.github/workflows/security.yml`).
+via `scripts/scan.sh`.
 
-| Scanner | Surface | Invocation | Runs in |
-|---|---|---|---|
-| pip-audit | Python runtime deps | host | push, nightly, weekly |
-| bandit | Python SAST | host (`pip install 'bandit[toml]'`) | push, weekly |
-| ruff | Python lint + ASYNC/S rules | host | every push |
-| semgrep | Multi-language SAST (project + registry rules) | compose run-once | weekly, push on source change |
-| trivy | FS CVE + misconfig + secret scan | compose run-once | weekly, push on deps |
-| gitleaks | Secret scan (git history) | compose run-once | every push |
-| snyk | Commercial dep + SAST (needs token) | compose run-once | weekly |
-| sonarqube | Quality gate upload (needs token) | sonar-scanner (host) | weekly |
+**CI is manual-only.** `./ci.sh` is the canonical (and only) validation
+pipeline. All GitHub Actions workflow files have been removed per the
+Hard Stop rule; no automated CI/CD triggers exist anywhere in the
+repository.
+
+| Scanner | Surface | Invocation |
+|---|---|---|
+| pip-audit | Python runtime deps | host |
+| bandit | Python SAST | host (`pip install 'bandit[toml]'`) |
+| ruff | Python lint + ASYNC/S rules | host |
+| semgrep | Multi-language SAST (project + registry rules) | compose run-once |
+| trivy | FS CVE + misconfig + secret scan | compose run-once |
+| gitleaks | Secret scan (git history) | compose run-once |
+| snyk | Commercial dep + SAST (needs token) | compose run-once |
+| sonarqube | Quality gate upload (needs token) | sonar-scanner (host) |
 
 ## Local run
 
@@ -32,14 +37,13 @@ $COMPOSE_CMD -f docker-compose.yml -f docker-compose.quality.yml \
     --profile run-once up --remove-orphans --abort-on-container-exit
 ```
 
-Reports land in `artifacts/scans/<UTC timestamp>/` as SARIF/JSON. CI
-uploads them to the GitHub Security tab.
+Reports land in `artifacts/scans/<UTC timestamp>/` as SARIF/JSON.
 
 ## Non-interactive invariants
 
 `scripts/scan.sh` **never** prompts, reads stdin, escalates privileges,
 or calls `sudo`. `tests/unit/test_scan_script_non_interactive.py`
-guards the invariant; the CI `syntax` workflow enforces it.
+guards the invariant.
 
 ## Secrets
 

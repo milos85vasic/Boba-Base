@@ -75,3 +75,7 @@ services:
   boba-jackett:
     container_name: boba-jackett
     serves: [7189]          # boba-jackett Go service
+
+  webui-bridge:
+    container_name: webui-bridge
+    serves: [7188]          # WebUI bridge for private-tracker authenticated downloads

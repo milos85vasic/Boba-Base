@@ -25,5 +25,5 @@ WORKDIR /app
 COPY --from=builder /qbittorrent-proxy .
 COPY --from=builder /webui-bridge .
 COPY .env.example .env
-EXPOSE 7187 7188
+EXPOSE 7186 7187 7188
 CMD ["/app/qbittorrent-proxy"]

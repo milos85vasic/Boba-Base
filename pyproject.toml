@@ -51,6 +51,8 @@ markers = [
     "memory: memory-leak / tracemalloc test",
     "chaos: chaos/fault-injection test",
     "observability: scrapes prometheus / metrics",
+    "integration: integration test",
+    "e2e: end-to-end test",
 ]
 
 [tool.coverage.run]

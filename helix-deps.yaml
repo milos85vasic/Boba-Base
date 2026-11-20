@@ -1,0 +1,61 @@
+# helix-deps.yaml — Boba Project Submodule-Dependency Manifest
+# Per HelixConstitution §11.4.31 (Submodule-Dependency-Manifest Mandate).
+#
+# Boba (qBittorrent enhancement: multi-tracker search + authenticated
+# download proxy + Merge Search Service) consumes the Helix Constitution
+# as its governance hub, plus the shared Challenges, Containers and
+# HelixQA submodules for test/challenge/orchestration infrastructure.
+# Jackett and Superspec are third-party checkouts tracked for
+# convenience; they are not own-org dependencies.
+#
+# Schema reference: constitution/Constitution.md §11.4.31
+# Last updated: 2026-11-20 (constitution v73.4 wiring sweep)
+
+schema_version: 1
+
+deps:
+  - name: constitution
+    ssh_url: git@github.com:HelixDevelopment/HelixConstitution.git
+    ref: 0c3eb170bc766c004dc588eaaba542b96d89783e
+    why: "Helix Universal Constitution — governance source-of-truth, skills, MCP configs, git hooks, label-sync and multi-track tooling; consumed at the project root via constitution/ (v73.4 + py_compile fix)"
+    layout: grouped
+
+  - name: challenges
+    ssh_url: git@github.com:vasic-digital/Challenges.git
+    ref: 072724af8736cbabf5b481e9bc0843c4c66bf901
+    why: "§11.4.27 required dependency — anti-bluff Challenge Test infrastructure validating real-life use cases end-to-end"
+    layout: grouped
+
+  - name: containers
+    ssh_url: git@github.com:vasic-digital/Containers.git
+    ref: 0788dd751b21a73ce5cca11dc9fc0d60a3419684
+    why: "§11.4.28 required flat-layout dependency — rootless container orchestration primitives shared across the Helix fleet"
+    layout: grouped
+
+  - name: helixqa
+    ssh_url: git@github.com:HelixDevelopment/qa.git
+    ref: b9c6d71c46265cb87d0fdc05ef9073e8cbc026d9
+    why: "§11.4.27 required dependency — autonomous QA test-bank execution framework"
+    layout: grouped
+
+  - name: jackett
+    ssh_url: git@github.com:Jackett/Jackett.git
+    ref: 8529ce4f2dbe82f5f70f4433189c7cf00ac769d6
+    why: "Third-party indexer aggregator — tracked checkout used for upstream issue/reference access only; runtime uses the linuxserver/jackett container image"
+    layout: grouped
+    third_party: true
+    licence: GPL-2.0
+
+  - name: superspec
+    ssh_url: git@github.com:WangX0111/superspec.git
+    ref: c20ac6c1ba069cc9a72dacb8044b7b193d3dde81
+    why: "Third-party Spec Kit extension — tracked checkout used as a reference for spec-kit integration patterns"
+    layout: grouped
+    third_party: true
+    licence: MIT
+
+transitive_handling:
+  recursive: true
+  conflict_resolution: operator-required
+
+language_specific_subtree: false

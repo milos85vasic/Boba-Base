@@ -1,9 +1,9 @@
 # qBitTorrent Search Plugins Documentation
 
-**Revision:** 1
-**Last modified:** 2026-06-06T00:00:00Z
+**Revision:** 2
+**Last modified:** 2026-11-20T00:00:00Z
 
-This document provides comprehensive documentation for all included search plugins.
+This document provides comprehensive documentation for the 43 included search plugins.
 
 ## Table of Contents
 
@@ -79,7 +79,7 @@ This project includes multiple search engine plugins for qBittorrent, specifical
 
 ### 3. Kinozal.tv 🔐
 
-**Status:** 🚧 Coming Soon
+**Status:** ✅ Fully Implemented and Tested
 
 **Description:** Russian torrent tracker focused on movies and TV shows.
 
@@ -103,7 +103,7 @@ This project includes multiple search engine plugins for qBittorrent, specifical
 
 ### 4. NNM-Club.me 🍪
 
-**Status:** 🚧 Coming Soon
+**Status:** ✅ Fully Implemented and Tested
 
 **Description:** One of the biggest Russian torrent trackers.
 
@@ -132,6 +132,32 @@ This project includes multiple search engine plugins for qBittorrent, specifical
 
 ---
 
+### 5. IPTorrents 🔐
+
+**Status:** ✅ Fully Implemented and Tested
+
+**Description:** English private tracker with ratio-based downloads.
+
+**Credentials Required:**
+- `IPTORRENTS_USERNAME` - Your IPTorrents username
+- `IPTORRENTS_PASSWORD` - Your IPTorrents password
+
+**Freeleech Policy:**
+- Automated tests and downloads MUST only use freeleech results.
+- Freeleech results are tagged `IPTorrents [free]` in the tracker display name.
+- Non-freeleech downloads cost ratio and are never triggered by automation.
+
+**Optional Settings:**
+- `IPTORRENTS_PROXY_ENABLED` - Enable proxy (true/false)
+- `IPTORRENTS_HTTP_PROXY` - HTTP proxy URL
+- `IPTORRENTS_HTTPS_PROXY` - HTTPS proxy URL
+
+**Categories:** All, Movies, TV, Music, Games, Anime, Software
+
+**Registration:** Required - [https://www.iptorrents.com](https://www.iptorrents.com)
+
+---
+
 ## Credential Requirements Summary
 
 | Plugin | Username | Password | Cookies | Registration |
@@ -140,6 +166,7 @@ This project includes multiple search engine plugins for qBittorrent, specifical
 | **Rutor** | ❌ No | ❌ No | ❌ No | **Not Required** |
 | **Kinozal** | ✅ Required | ✅ Required | ❌ No | Required |
 | **NNM-Club** | ✅ Required | ❌ No | ✅ Required | Required |
+| **IPTorrents** | ✅ Required | ✅ Required | ❌ No | Required |
 
 ---
 
@@ -171,6 +198,10 @@ KINOZAL_USE_MAGNET=false
 # NNM-Club Configuration
 NNMCLUB_USERNAME=your_username
 NNMCLUB_COOKIES=phpbb2mysql_4_sid=abc123; phpbb2mysql_4_data=xyz789
+
+# IPTorrents Configuration
+IPTORRENTS_USERNAME=your_username
+IPTORRENTS_PASSWORD=your_password
 ```
 
 #### 2. Docker Compose Environment
@@ -263,17 +294,14 @@ copy plugins\rutracker.png %LOCALAPPDATA%\qBittorrent\nova3\engines\
 ### Comprehensive Plugin Tests
 
 ```bash
-# Test all plugins
-./run-all-tests.sh --suite plugins
+# Run the full manual CI pipeline
+./ci.sh
 
-# Test specific plugin
-python3 tests/test_plugin_download_fix.py --run
+# Quick validation (syntax + unit tests)
+./ci.sh --quick
 
-# Test download functionality
-python3 tests/test_download_comprehensive.py --run
-
-# Quick validation
-./test.sh --plugin
+# Run merge-service unit tests
+.venv/bin/python -m pytest tests/unit/ -v --import-mode=importlib
 ```
 
 ### Manual Plugin Testing
@@ -449,17 +477,17 @@ KINOZAL_USE_MAGNET=true
 
 All plugins support the following categories:
 
-| Category | RuTracker | Rutor | Kinozal | NNM-Club |
-|----------|-----------|-------|---------|----------|
-| All | ✅ | ✅ | ✅ | ✅ |
-| Movies | ✅ | ✅ | ✅ | ✅ |
-| TV | ✅ | ✅ | ✅ | ✅ |
-| Music | ✅ | ✅ | ✅ | ✅ |
-| Games | ✅ | ✅ | ✅ | ✅ |
-| Anime | ✅ | ✅ | ✅ | ✅ |
-| Software | ✅ | ✅ | ✅ | ✅ |
-| Pictures | ✅ | ✅ | ❌ | ❌ |
-| Books | ✅ | ✅ | ❌ | ❌ |
+| Category | RuTracker | Rutor | Kinozal | NNM-Club | IPTorrents |
+|----------|-----------|-------|---------|----------|------------|
+| All | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Movies | ✅ | ✅ | ✅ | ✅ | ✅ |
+| TV | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Music | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Games | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Anime | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Software | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Pictures | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Books | ✅ | ✅ | ❌ | ❌ | ❌ |
 
 ---
 

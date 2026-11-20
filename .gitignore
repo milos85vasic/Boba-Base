@@ -27,9 +27,15 @@ docs/build-stats.ndjson
 *.env
 .qbit.env
 
+# Tool runtime state directories (empty, recreated by IDE/constitution wiring)
+.gemini/
+.qwen/
+
 # NEVER commit credentials - multiple patterns for safety
 *credentials*
 *creds*
+# Tests that exercise credential-handling chaos (no secret material) — allow explicitly.
+!tests/chaos/test_qbittorrent_creds_chaos.py
 # Source code that has "credentials" in its name (not secret material) — allow explicitly.
 !qBitTorrent-go/internal/db/repos/credentials.go
 !qBitTorrent-go/internal/db/repos/credentials_test.go

@@ -19,25 +19,30 @@ from .retry import retry_policy
 from .trackers import PRIVATE_TRACKER_BASE_URLS
 
 # Configurable outbound proxy for tracker-bound egress (BOBA_UPSTREAM_PROXY /
-# *_PROXY). `apply_proxy_env()` maps the knob onto HTTP(S)_PROXY/NO_PROXY (the
-# public-tracker urllib subprocesses honor it natively); `_tracker_session_kwargs()`
-# returns {"trust_env": True} so the private-tracker aiohttp sessions honor the
-# same env with the loopback/sidecar NO_PROXY bypass. The guarded fallback keeps
-# search.py importable in embedded contexts where `config` is not on sys.path;
-# the container path always resolves the real module (see config/proxy.py).
+# *_PROXY). `_proxy_env()` builds the proxy env dict passed to public-tracker
+# urllib subprocesses; `_proxy_for_url(url)` returns the explicit proxy for
+# private-tracker aiohttp requests; `_tracker_session_kwargs()` returns
+# {"trust_env": True} for sessions that may still read proxy env as a fallback.
+# The guarded fallback keeps search.py importable in embedded contexts where
+# `config` is not on sys.path; the container path always resolves the real
+# module (see config/proxy.py).
 try:
     from config.proxy import (
         aiohttp_session_kwargs as _tracker_session_kwargs,
     )
-    from config.proxy import (
-        apply_proxy_env as _apply_proxy_env,
-    )
+    from config.proxy import proxy_env as _proxy_env
+    from config.proxy import proxy_for_url as _proxy_for_url
 except Exception:  # pragma: no cover - config package not importable in some embeds
+
     def _tracker_session_kwargs() -> dict[str, bool]:  # type: ignore[misc]
         return {}
 
-    def _apply_proxy_env() -> None:
+    def _proxy_env() -> dict[str, str]:
+        return os.environ.copy()
+
+    def _proxy_for_url(url: str) -> str | None:
         return None
+
 
 _TRACKER_NAME_RE = _re.compile(r"^[a-zA-Z0-9_-]+$")
 
@@ -415,7 +420,10 @@ def _classify_upstream_http_status(status: int, body_sample: str = "") -> dict[s
         401: ("upstream_http_401", "upstream returned HTTP 401 Unauthorized for the search request"),
         403: ("upstream_http_403", "upstream returned HTTP 403 Forbidden for the search request"),
         404: ("upstream_http_404", "upstream returned HTTP 404 Not Found for the search request (domain moved?)"),
-        429: ("upstream_http_429", "upstream returned HTTP 429 Too Many Requests for the search request (rate limited)"),
+        429: (
+            "upstream_http_429",
+            "upstream returned HTTP 429 Too Many Requests for the search request (rate limited)",
+        ),
         503: ("upstream_http_503", "upstream returned HTTP 503 Service Unavailable for the search request"),
     }
     error_type, summary = known.get(
@@ -915,12 +923,6 @@ class SearchOrchestrator:
                     except Exception as e:
                         logger.debug(f"Could not load env from {path}: {e}")
 
-        # Map BOBA_UPSTREAM_PROXY onto HTTP(S)_PROXY/NO_PROXY (idempotent) so the
-        # public-tracker nova3 plugin subprocesses — which inherit os.environ and
-        # fetch via urllib — egress through the configured proxy with the
-        # loopback/sidecar bypass. Runs before every search fan-out.
-        _apply_proxy_env()
-
     def is_search_queue_full(self) -> bool:
         """True when the number of in-flight `_run_search` tasks is at
         or above ``MAX_CONCURRENT_SEARCHES``.
@@ -1173,15 +1175,8 @@ class SearchOrchestrator:
             # tell the user to fix auth/CAPTCHA/cookies rather than show a
             # misleading "No results found.". The per-tracker errors are
             # already accumulated in metadata.errors above.
-            errored = [
-                s for s in metadata.tracker_stats.values() if s.status in ("error", "timeout")
-            ]
-            if (
-                not merged
-                and metadata.total_results == 0
-                and trackers
-                and len(errored) == len(trackers)
-            ):
+            errored = [s for s in metadata.tracker_stats.values() if s.status in ("error", "timeout")]
+            if not merged and metadata.total_results == 0 and trackers and len(errored) == len(trackers):
                 metadata.status = "all_trackers_errored"
             else:
                 metadata.status = "completed"
@@ -1282,8 +1277,7 @@ class SearchOrchestrator:
             # BOB-006: credentials are present via raw cookies OR
             # username+password available for a session login.
             return bool(
-                os.getenv("NNMCLUB_COOKIES")
-                or (os.getenv("NNMCLUB_USERNAME") and os.getenv("NNMCLUB_PASSWORD"))
+                os.getenv("NNMCLUB_COOKIES") or (os.getenv("NNMCLUB_USERNAME") and os.getenv("NNMCLUB_PASSWORD"))
             )
         if name == "iptorrents":
             return bool(os.getenv("IPTORRENTS_USERNAME") and os.getenv("IPTORRENTS_PASSWORD"))
@@ -1456,7 +1450,9 @@ class SearchOrchestrator:
                         link=r.get("link", ""),
                         desc_link=r.get("desc_link", ""),
                         tracker=tracker_name,
-                        engine_url=PUBLIC_TRACKERS.get(tracker_name, (tracker_name == "jackett" and "http://localhost:9117") or ""),
+                        engine_url=PUBLIC_TRACKERS.get(
+                            tracker_name, (tracker_name == "jackett" and "http://localhost:9117") or ""
+                        ),
                         content_type=ct,
                         quality=q,
                     )
@@ -1474,6 +1470,7 @@ class SearchOrchestrator:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 start_new_session=True,
+                env=_proxy_env(),
             )
             while True:
                 remaining = deadline - asyncio.get_event_loop().time()
@@ -1627,7 +1624,7 @@ class SearchOrchestrator:
                 timeout = aiohttp.ClientTimeout(total=15)
                 async with (
                     aiohttp.ClientSession(timeout=timeout, **_tracker_session_kwargs()) as session,
-                    session.get(search_url, cookies=cookie_dict) as resp,
+                    session.get(search_url, cookies=cookie_dict, proxy=_proxy_for_url(search_url)) as resp,
                 ):
                     _http_status = resp.status
                     html_content = await resp.text()
@@ -1690,13 +1687,15 @@ class SearchOrchestrator:
 
             timeout = aiohttp.ClientTimeout(total=15)
             async with aiohttp.ClientSession(timeout=timeout, **_tracker_session_kwargs()) as session:
+                login_url = f"{base_url}/forum/login.php"
                 async with session.post(
-                    f"{base_url}/forum/login.php",
+                    login_url,
                     data={
                         "login_username": username,
                         "login_password": password,
                         "login": "Вход",
                     },
+                    proxy=_proxy_for_url(login_url),
                 ) as resp:
                     cookies = resp.cookies
 
@@ -1734,7 +1733,7 @@ class SearchOrchestrator:
                     }
                     return results
 
-                async with session.get(search_url, cookies=cookies) as resp:
+                async with session.get(search_url, cookies=cookies, proxy=_proxy_for_url(search_url)) as resp:
                     _http_status = resp.status
                     html_content = await resp.text()
                     _resp_history = resp.history
@@ -1922,10 +1921,12 @@ class SearchOrchestrator:
             timeout = aiohttp.ClientTimeout(total=15)
             async with aiohttp.ClientSession(timeout=timeout, **_tracker_session_kwargs()) as session:
                 login_data = urlencode({"username": username, "password": password}, encoding="cp1251")
+                _kinozal_login_url = f"{base_url}/takelogin.php"
                 async with session.post(
-                    f"{base_url}/takelogin.php",
+                    _kinozal_login_url,
                     data=login_data,
                     allow_redirects=False,
+                    proxy=_proxy_for_url(_kinozal_login_url),
                 ) as login_resp:
                     if login_resp.status not in (200, 301, 302):
                         # BOB-178: kinozal is the one private-tracker login
@@ -1964,6 +1965,7 @@ class SearchOrchestrator:
                     _kinozal_search_url,
                     params={"s": query},
                     cookies=cookie_dict,
+                    proxy=_proxy_for_url(_kinozal_search_url),
                 ) as resp:
                     _http_status = resp.status
                     raw = await resp.read()
@@ -2100,6 +2102,7 @@ class SearchOrchestrator:
                 async with session.get(
                     _nnmclub_search_url,
                     cookies=cookie_jar,
+                    proxy=_proxy_for_url(_nnmclub_search_url),
                 ) as resp:
                     _http_status = resp.status
                     raw_bytes = await resp.read()
@@ -2167,13 +2170,15 @@ class SearchOrchestrator:
         try:
             timeout = aiohttp.ClientTimeout(total=15)
             async with aiohttp.ClientSession(timeout=timeout, **_tracker_session_kwargs()) as session:
+                _nnmclub_login_url = f"{base_url}/forum/login.php"
                 async with session.post(
-                    f"{base_url}/forum/login.php",
+                    _nnmclub_login_url,
                     data={
                         "username": username,
                         "password": password,
                         "login": "вход",
                     },
+                    proxy=_proxy_for_url(_nnmclub_login_url),
                 ) as resp:
                     cookies = resp.cookies
 
@@ -2283,11 +2288,13 @@ class SearchOrchestrator:
         try:
             timeout = aiohttp.ClientTimeout(total=15)
             async with aiohttp.ClientSession(timeout=timeout, **_tracker_session_kwargs()) as session:
+                _iptorrents_login_url = f"{base_url}/do-login.php"
                 async with session.post(
-                    f"{base_url}/do-login.php",
+                    _iptorrents_login_url,
                     data={"username": username, "password": password},
                     headers={"Referer": f"{base_url}/login.php"},
                     allow_redirects=False,
+                    proxy=_proxy_for_url(_iptorrents_login_url),
                 ) as resp:
                     cookies = {c.key: c.value for c in resp.cookies.values()}
                     if not cookies:
@@ -2307,6 +2314,7 @@ class SearchOrchestrator:
                     search_url,
                     cookies=cookies,
                     headers={"Referer": f"{base_url}/t"},
+                    proxy=_proxy_for_url(search_url),
                 ) as resp:
                     _http_status = resp.status
                     html_content = await resp.text()
@@ -2461,7 +2469,9 @@ class SearchOrchestrator:
             timeout = aiohttp.ClientTimeout(total=30)
             async with aiohttp.ClientSession(timeout=timeout, **_tracker_session_kwargs()) as session:
                 headers = {"Referer": base_url}
-                async with session.get(url, cookies=cookies, headers=headers, allow_redirects=True) as resp:
+                async with session.get(
+                    url, cookies=cookies, headers=headers, allow_redirects=True, proxy=_proxy_for_url(url)
+                ) as resp:
                     if resp.status != 200:
                         logger.error(f"fetch_torrent {tracker}: HTTP {resp.status} for {url}")
                         return None
@@ -2486,7 +2496,9 @@ class SearchOrchestrator:
             logger.error(f"fetch_torrent {tracker}: {e}")
             return None
 
-    async def _fetch_rutracker_redirect(self, session: Any, url: str, cookies: dict[str, str], base_url: str) -> bytes | None:
+    async def _fetch_rutracker_redirect(
+        self, session: Any, url: str, cookies: dict[str, str], base_url: str
+    ) -> bytes | None:
         import logging
         import re
 
@@ -2498,7 +2510,7 @@ class SearchOrchestrator:
             topic_id = match.group(1)
             dl_url = f"{base_url}/forum/dl.rss.php?{topic_id}"
             headers = {"Referer": f"{base_url}/forum/viewtopic.php?t={topic_id}"}
-            async with session.get(dl_url, cookies=cookies, headers=headers) as resp:
+            async with session.get(dl_url, cookies=cookies, headers=headers, proxy=_proxy_for_url(dl_url)) as resp:
                 if resp.status != 200:
                     return None
                 data = await resp.read()
@@ -2508,13 +2520,15 @@ class SearchOrchestrator:
             logger.error(f"_fetch_rutracker_redirect: {e}")
         return None
 
-    async def _fetch_kinozal_torrent(self, session: Any, url: str, cookies: dict[str, str], base_url: str) -> bytes | None:
+    async def _fetch_kinozal_torrent(
+        self, session: Any, url: str, cookies: dict[str, str], base_url: str
+    ) -> bytes | None:
         import logging
 
         logger = logging.getLogger(__name__)
         try:
             headers = {"Referer": base_url}
-            async with session.get(url, cookies=cookies, headers=headers) as resp:
+            async with session.get(url, cookies=cookies, headers=headers, proxy=_proxy_for_url(url)) as resp:
                 if resp.status != 200:
                     return None
                 data = await resp.read()

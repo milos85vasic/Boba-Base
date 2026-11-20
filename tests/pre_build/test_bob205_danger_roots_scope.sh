@@ -143,7 +143,9 @@ SCANNED=0
 for _r in "${DANGER_ROOTS[@]}"; do
     [[ -d "${FIX}/${_r}" ]] || continue
     SCANNED=$((SCANNED + 1))
-    bash "${GATE}" --root "${FIX}/${_r}" --quiet 2>&1 \
+    _dr_extra_args=()
+    [[ "${_r}" == "." ]] && _dr_extra_args=(--max-depth 1)
+    bash "${GATE}" --root "${FIX}/${_r}" "${_dr_extra_args[@]}" --quiet 2>&1 \
         | grep -aE '^❌.* at .*:[0-9]+' >> "${FINDINGS}" || true
 done
 echo "roots scanned by the driver's own list: ${SCANNED}"

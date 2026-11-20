@@ -26,6 +26,7 @@ Usage:
 Output:  <path>:<line>: <RULE> <detail>
 Exit:    0 no hits / selfcheck passed, 1 hits, 2 unreadable file / selfcheck failed
 """
+
 import re
 import sys
 
@@ -49,21 +50,33 @@ def strip_ruby(text):
 
 RULES = {
     "rust": [
-        ("RS-EMPTY-ERR-ARM", re.compile(r"\bErr\s*\([^()]*\)\s*=>\s*(?:\{\s*\}|\(\s*\))"),
-         "error match arm does nothing"),
-        ("RS-EMPTY-IF-LET-ERR", re.compile(r"\bif\s+let\s+Err\s*\([^()]*\)\s*=[^{;]*\{\s*\}"),
-         "error matched then dropped (empty body)"),
+        (
+            "RS-EMPTY-ERR-ARM",
+            re.compile(r"\bErr\s*\([^()]*\)\s*=>\s*(?:\{\s*\}|\(\s*\))"),
+            "error match arm does nothing",
+        ),
+        (
+            "RS-EMPTY-IF-LET-ERR",
+            re.compile(r"\bif\s+let\s+Err\s*\([^()]*\)\s*=[^{;]*\{\s*\}"),
+            "error matched then dropped (empty body)",
+        ),
     ],
     "ruby": [
-        ("RB-EMPTY-RESCUE", re.compile(r"\brescue\b[ \t]*(?:[A-Z][\w:]*)?[ \t]*(?:=>[ \t]*\w+)?[ \t]*(?:\n|;)\s*end\b"),
-         "rescue clause with an empty body"),
-        ("RB-RESCUE-NIL", re.compile(r"\brescue[ \t]+nil\b"),
-         "every error is converted to nil"),
+        (
+            "RB-EMPTY-RESCUE",
+            re.compile(r"\brescue\b[ \t]*(?:[A-Z][\w:]*)?[ \t]*(?:=>[ \t]*\w+)?[ \t]*(?:\n|;)\s*end\b"),
+            "rescue clause with an empty body",
+        ),
+        ("RB-RESCUE-NIL", re.compile(r"\brescue[ \t]+nil\b"), "every error is converted to nil"),
     ],
     "c": [
-        ("C-EMPTY-ERR-BRANCH",
-         re.compile(r"\bif\s*\(\s*(?:\w*(?:err|ret|rc|status|res)\w*)\s*(?:!=\s*0|<\s*0|==\s*-1)\s*\)\s*(?:\{\s*\}|;)", re.I),
-         "failure branch on an error status is empty"),
+        (
+            "C-EMPTY-ERR-BRANCH",
+            re.compile(
+                r"\bif\s*\(\s*(?:\w*(?:err|ret|rc|status|res)\w*)\s*(?:!=\s*0|<\s*0|==\s*-1)\s*\)\s*(?:\{\s*\}|;)", re.I
+            ),
+            "failure branch on an error status is empty",
+        ),
     ],
 }
 
@@ -81,7 +94,7 @@ def scan_text(lang, text):
 
 SELFCHECK = {
     "rust": (
-        'fn f() { match g() { Ok(v) => use_it(v), Err(_) => {} }\n if let Err(e) = h() {} }\n',
+        "fn f() { match g() { Ok(v) => use_it(v), Err(_) => {} }\n if let Err(e) = h() {} }\n",
         'fn f() -> bool { match g() { Ok(_) => true, Err(_) => false } }\n// Err(_) => {}\nlet s = "Err(x) => {}";\n',
         {"RS-EMPTY-ERR-ARM", "RS-EMPTY-IF-LET-ERR"},
     ),
@@ -125,7 +138,7 @@ def main(argv):
         return 2
     total, bad = 0, 0
     for path in argv:
-        lang = next((l for e, l in EXT_LANG.items() if path.endswith(e)), None)
+        lang = next((ext_lang for e, ext_lang in EXT_LANG.items() if path.endswith(e)), None)
         if lang is None:
             continue
         try:

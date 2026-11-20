@@ -2,8 +2,27 @@
   "mcpServers": {
     "codegraph": {
       "command": "codegraph",
-      "args": ["serve", "--mcp"],
+      "args": [
+        "serve",
+        "--mcp"
+      ],
       "env": {}
+    },
+    "label-sync": {
+      "description": "Live label + alias bus (§11.4.182): read the current `(T<N>/<branch> - <alias> - <model> - <effort>)` label, list labelled sessions/agents/shells, switch the operator's active alias (all followers relabel immediately), register/heartbeat/finish an entity. Decoupled Go stdio MCP server (protocol 2024-11-05), stdlib only (§11.4.28).",
+      "command": "sh",
+      "args": [
+        "-c",
+        "d=$PWD; while [ ! -d \"$d\"/'constitution' ] || [ ! -f \"$d\"/.mcp.json ]; do [ \"$d\" = / ] && { echo \"label-sync MCP launcher: \"'constitution'\" not found above $PWD\" >&2; exit 127; }; d=$(dirname \"$d\"); done; cd \"$d\" && exec \"$0\" \"$@\"",
+        "constitution/scripts/label-sync/mcp/label-mcp.sh"
+      ],
+      "env": {},
+      "disabled": false,
+      "autoApprove": [
+        "label_get",
+        "label_list",
+        "label_active"
+      ]
     }
   }
 }

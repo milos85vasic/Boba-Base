@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.11" />
+  <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>TESTING</title>
   <style>
-    /* Default styles provided by pandoc.
-    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-    */
     html {
       color: #1a1a1a;
       background-color: #fdfdfd;
@@ -41,6 +38,7 @@
       body {
         background-color: transparent;
         color: black;
+        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -90,7 +88,6 @@
       color: #606060;
     }
     code {
-      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,13 +151,10 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
+    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: 1.5em;}
-    div.column{flex: auto;}
-    @media screen {
-    div.columns{gap: min(4vw, 1.5em);}
-    div.column{overflow-x: auto;}
-    }
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -171,6 +165,7 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
     /* CSS for syntax highlighting */
     html { -webkit-text-size-adjust: 100%; }
     pre > code.sourceCode { white-space: pre; position: relative; }
@@ -237,14 +232,16 @@
     code span.vs { color: #4070a0; } /* VerbatimString */
     code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
+  <meta name="x-export-source-sha256" content="e6666e3e41c94535d9f36fd2711a630a901d79b3f3a17883df87e2c43a06ff73">
+  <meta name="dcterms.modified" content="2026-09-26T08:16:48Z">
 </head>
 <body>
 <header id="title-block-header">
 <h1 class="title">TESTING</h1>
 </header>
 <h1 id="testing-guide">Testing Guide</h1>
-<p><strong>Revision:</strong> 5 <strong>Last modified:</strong>
-2026-08-20T14:17:27Z</p>
+<p><strong>Revision:</strong> 6 <strong>Last modified:</strong>
+2026-11-20T00:00:00Z</p>
 <p>This is the <strong>authoritative test-type catalogue</strong> for
 qBittorrent-Fixed. Every testable module in the repo must have coverage
 in every applicable row below. The catalogue is derived from Part C of
@@ -488,26 +485,26 @@ pyproject.toml)</td>
 <td>25</td>
 <td>Type-check (static)</td>
 <td>mypy –strict + tsc –noEmit</td>
-<td>CI job</td>
+<td>local</td>
 <td><code>mypy download-proxy/src plugins</code> /
 <code>cd frontend &amp;&amp; tsc --noEmit</code></td>
-<td>CI log</td>
+<td>terminal log</td>
 </tr>
 <tr>
 <td>26</td>
 <td>Lint (static)</td>
 <td>ruff + eslint + shellcheck + hadolint + yamllint</td>
-<td>CI job</td>
+<td>local</td>
 <td><code>ruff check .</code> /
 <code>cd frontend &amp;&amp; ng lint</code> /
 <code>shellcheck *.sh</code></td>
-<td>CI log</td>
+<td>terminal log</td>
 </tr>
 <tr>
 <td>27</td>
 <td>Dependency audit</td>
 <td>pip-audit + npm audit + Snyk + Trivy</td>
-<td>CI job</td>
+<td>local</td>
 <td><code>pip-audit -r download-proxy/requirements.txt</code> /
 <code>snyk test</code></td>
 <td><code>artifacts/scans/</code></td>
@@ -516,7 +513,7 @@ pyproject.toml)</td>
 <td>28</td>
 <td>SAST</td>
 <td>Semgrep + Bandit + SonarQube</td>
-<td>CI job</td>
+<td>local</td>
 <td><code>semgrep scan --config=auto</code> /
 <code>bandit -r download-proxy/src</code></td>
 <td><code>artifacts/scans/</code></td>
@@ -525,7 +522,7 @@ pyproject.toml)</td>
 <td>29</td>
 <td>Secret scan</td>
 <td>Gitleaks + TruffleHog</td>
-<td>CI job</td>
+<td>local</td>
 <td><code>gitleaks detect</code></td>
 <td><code>artifacts/scans/</code></td>
 </tr>
@@ -533,7 +530,7 @@ pyproject.toml)</td>
 <td>30</td>
 <td>License compliance</td>
 <td>pip-licenses + license-checker</td>
-<td>CI job</td>
+<td>local</td>
 <td><code>pip-licenses</code> /
 <code>cd frontend &amp;&amp; license-checker</code></td>
 <td><code>artifacts/licenses/</code></td>
@@ -559,8 +556,9 @@ tests, <em>not</em> <code>download-proxy/tests/</code> (which does not
 exist).</li>
 <li><strong><code>frontend/src/**/*.spec.ts</code></strong> — co-located
 Angular unit tests.</li>
-<li><strong>CI jobs</strong> —
-<code>.github/workflows/{syntax,unit,integration,nightly,security}.yml</code>.</li>
+<li><strong>Manual CI</strong> — <code>./ci.sh</code> is the only
+validation pipeline; no <code>.github/workflows/*.yml</code> files exist
+in this repository.</li>
 </ul>
 <h2 id="service-availability-fixtures">Service-availability
 fixtures</h2>
@@ -1057,10 +1055,10 @@ this.</li>
 <li><code>pytest-timeout</code> hard-caps every test at 30 seconds.
 Stress and load tests that legitimately run longer must override with
 <code>@pytest.mark.timeout(...)</code>.</li>
-<li>The CI workflow is <strong>no longer manual-only</strong> since
-Phase 0.4 — push and PR triggers the syntax / unit / integration
-workflows. Only the <code>nightly.yml</code> and
-<code>security.yml</code> are scheduled.</li>
+<li>CI is <strong>manual-only</strong> via <code>./ci.sh</code>. All
+GitHub Actions workflow files have been removed per the Hard Stop rule.
+There are no automated push, PR, or scheduled triggers anywhere in the
+repository.</li>
 </ul>
 <h2 id="test-counts-machine-derived-11.4.259">Test counts
 (machine-derived, §11.4.259)</h2>
@@ -1068,7 +1066,7 @@ workflows. Only the <code>nightly.yml</code> and
 href="../scripts/compute-badges.sh"><code>scripts/compute-badges.sh</code></a>
 — never hand-typed. Corroborates the README badge row + the
 Contributing-section bullets. Last regenerated:
-2026-09-25T14:12:03Z.</p>
+2026-11-20T09:23:30Z.</p>
 <table>
 <colgroup>
 <col style="width: 25%" />
@@ -1088,13 +1086,13 @@ Contributing-section bullets. Last regenerated:
 <tr>
 <td>Python (whole <code>tests/</code> tree)</td>
 <td><code>tests/</code></td>
-<td><strong>6316</strong></td>
+<td><strong>6382</strong></td>
 <td><code>pytest --collect-only -q</code></td>
 </tr>
 <tr>
 <td>Python unit</td>
 <td><code>tests/unit/</code></td>
-<td><strong>5033</strong></td>
+<td><strong>5049</strong></td>
 <td><code>pytest --collect-only -q</code></td>
 </tr>
 <tr>
@@ -1112,7 +1110,7 @@ Contributing-section bullets. Last regenerated:
 <tr>
 <td>Python contract</td>
 <td><code>tests/contract/</code></td>
-<td><strong>9</strong></td>
+<td><strong>18</strong></td>
 <td><code>pytest --collect-only -q</code></td>
 </tr>
 <tr>
@@ -1130,7 +1128,7 @@ Contributing-section bullets. Last regenerated:
 <tr>
 <td>Pre-build invariants</td>
 <td><code>scripts/pre_build_verification.sh</code></td>
-<td><strong>59</strong></td>
+<td><strong>63</strong></td>
 <td>max total of every <code>[N/N]</code> progress label</td>
 </tr>
 </tbody>

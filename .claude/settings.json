@@ -10,6 +10,16 @@
           }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "constitution/scripts/hooks/action_prefix_expand.sh"
+          }
+        ]
+      }
     ]
   }
 }

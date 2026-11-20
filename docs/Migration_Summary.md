@@ -31,7 +31,7 @@ Python-to-Go migration blueprint and parity tracking.
 | WebUI bridge | ✅ Full (7188) | ⚠️ Skeleton | |
 | SSE streaming | ✅ Full | ❌ Missing | |
 | Scheduler | ✅ Full | ❌ Missing | |
-| Theme injection | ✅ Cross-app | ❌ Missing | |
+| Theme injection | ❌ Removed (2026-09-01) | ❌ Missing | Python stack no longer injects themes into the qBittorrent WebUI; stock vanilla WebUI is served byte-for-byte. `DISABLE_THEME_INJECTION` is an obsolete no-op in Python. |
 
 ## Related
 

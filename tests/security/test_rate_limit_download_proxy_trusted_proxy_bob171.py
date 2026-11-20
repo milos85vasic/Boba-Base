@@ -126,13 +126,9 @@ FIXED_RIGHTMOST = "192.0.2.55"
 
 
 def test_green_rotating_leftmost_xff_does_not_rotate_the_bucket_key():
-    mod = _load_download_proxy(
-        {"TRUST_FORWARDED_FOR": "1", "TRUSTED_PROXY_CIDRS": TRUSTED_CIDR}
-    )
+    mod = _load_download_proxy({"TRUST_FORWARDED_FOR": "1", "TRUSTED_PROXY_CIDRS": TRUSTED_CIDR})
     try:
-        keys = _rotating_xff_keys(
-            mod, "_rate_limit_client", REAL_PEER, FIXED_RIGHTMOST, ROTATING_FORGED_LEFTMOST
-        )
+        keys = _rotating_xff_keys(mod, "_rate_limit_client", REAL_PEER, FIXED_RIGHTMOST, ROTATING_FORGED_LEFTMOST)
         assert len(set(keys)) == 1, (
             f"resolved bucket key rotated across a rotating forged leftmost "
             f"XFF value from ONE real peer: {keys} — this is the BOB-171 "
@@ -144,14 +140,10 @@ def test_green_rotating_leftmost_xff_does_not_rotate_the_bucket_key():
 
 
 def test_green_key_is_not_any_forged_leftmost_value():
-    mod = _load_download_proxy(
-        {"TRUST_FORWARDED_FOR": "1", "TRUSTED_PROXY_CIDRS": TRUSTED_CIDR}
-    )
+    mod = _load_download_proxy({"TRUST_FORWARDED_FOR": "1", "TRUSTED_PROXY_CIDRS": TRUSTED_CIDR})
     try:
-        keys = _rotating_xff_keys(
-            mod, "_rate_limit_client", REAL_PEER, FIXED_RIGHTMOST, ROTATING_FORGED_LEFTMOST
-        )
-        for forged, key in zip(ROTATING_FORGED_LEFTMOST, keys):
+        keys = _rotating_xff_keys(mod, "_rate_limit_client", REAL_PEER, FIXED_RIGHTMOST, ROTATING_FORGED_LEFTMOST)
+        for forged, key in zip(ROTATING_FORGED_LEFTMOST, keys, strict=False):
             assert key != forged, f"resolved key equalled the attacker-forged leftmost value {forged!r}"
     finally:
         sys.modules.pop("download_proxy_bob171_case", None)
@@ -208,8 +200,7 @@ def test_negative_control_flag_off_ignores_xff_entirely():
         handler = _FakeHandler(REAL_PEER, xff=f"9.9.9.9, {FIXED_RIGHTMOST}")
         key = mod.DownloadHandler._rate_limit_client(handler)
         assert key == REAL_PEER, (
-            f"TRUST_FORWARDED_FOR is OFF but the resolved key ({key!r}) was "
-            f"not the raw peer address ({REAL_PEER!r})"
+            f"TRUST_FORWARDED_FOR is OFF but the resolved key ({key!r}) was not the raw peer address ({REAL_PEER!r})"
         )
     finally:
         sys.modules.pop("download_proxy_bob171_case", None)
@@ -236,17 +227,14 @@ def test_flag_on_but_empty_allowlist_still_ignores_xff():
         handler = _FakeHandler(REAL_PEER, xff=f"9.9.9.9, {FIXED_RIGHTMOST}")
         key = mod.DownloadHandler._rate_limit_client(handler)
         assert key == REAL_PEER, (
-            "an unset TRUSTED_PROXY_CIDRS with TRUST_FORWARDED_FOR=1 must "
-            "degrade to the raw peer address"
+            "an unset TRUSTED_PROXY_CIDRS with TRUST_FORWARDED_FOR=1 must degrade to the raw peer address"
         )
     finally:
         sys.modules.pop("download_proxy_bob171_case", None)
 
 
 def test_flag_on_but_peer_outside_allowlist_ignores_xff():
-    mod = _load_download_proxy(
-        {"TRUST_FORWARDED_FOR": "1", "TRUSTED_PROXY_CIDRS": TRUSTED_CIDR}
-    )
+    mod = _load_download_proxy({"TRUST_FORWARDED_FOR": "1", "TRUSTED_PROXY_CIDRS": TRUSTED_CIDR})
     try:
         handler = _FakeHandler(UNTRUSTED_PEER, xff=f"9.9.9.9, {FIXED_RIGHTMOST}")
         key = mod.DownloadHandler._rate_limit_client(handler)

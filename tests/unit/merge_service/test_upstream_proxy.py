@@ -128,7 +128,15 @@ def test_upstream_proxy_falls_back_to_std_env(monkeypatch):
 
 
 def test_upstream_proxy_none_when_unset(monkeypatch):
-    for v in ("BOBA_UPSTREAM_PROXY", "ALL_PROXY", "all_proxy", "HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy"):
+    for v in (
+        "BOBA_UPSTREAM_PROXY",
+        "ALL_PROXY",
+        "all_proxy",
+        "HTTPS_PROXY",
+        "https_proxy",
+        "HTTP_PROXY",
+        "http_proxy",
+    ):
         monkeypatch.delenv(v, raising=False)
     assert _proxy.upstream_proxy() is None
 
@@ -170,6 +178,24 @@ def test_apply_proxy_env_maps_knob_and_sets_no_proxy(monkeypatch):
     assert os.environ["HTTP_PROXY"] == "socks5://egress:1080"
     assert os.environ["HTTPS_PROXY"] == "socks5://egress:1080"
     no_proxy = os.environ["NO_PROXY"].lower()
+    for sidecar in ("127.0.0.1", "localhost", "qbittorrent", "jackett"):
+        assert sidecar in no_proxy, f"NO_PROXY must contain {sidecar}; got {no_proxy!r}"
+
+
+def test_proxy_env_returns_resolved_vars_without_global_mutation(monkeypatch):
+    for v in ("HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy", "NO_PROXY", "no_proxy"):
+        monkeypatch.delenv(v, raising=False)
+    monkeypatch.setenv("BOBA_UPSTREAM_PROXY", "socks5://egress:1080")
+    import os
+
+    before = os.environ.copy()
+    env = _proxy.proxy_env()
+    after = os.environ.copy()
+
+    assert after == before, "proxy_env() must not mutate os.environ"
+    assert env["HTTP_PROXY"] == "socks5://egress:1080"
+    assert env["HTTPS_PROXY"] == "socks5://egress:1080"
+    no_proxy = env["NO_PROXY"].lower()
     for sidecar in ("127.0.0.1", "localhost", "qbittorrent", "jackett"):
         assert sidecar in no_proxy, f"NO_PROXY must contain {sidecar}; got {no_proxy!r}"
 
@@ -219,13 +245,21 @@ async def test_aiohttp_loopback_stays_direct(monkeypatch, recording_proxy):
 # --------------------------------------------------------------------------- #
 # END-TO-END through the real production search.py tracker client.
 # --------------------------------------------------------------------------- #
-def test_search_py_imported_real_proxy_helpers():
+def test_search_py_imported_real_proxy_helpers(monkeypatch):
     """Anti-masking: the guarded import in search.py resolved the REAL module,
     not the no-op fallback (which would silently disable the proxy)."""
+    monkeypatch.setenv("BOBA_UPSTREAM_PROXY", "socks5://egress:1080")
     assert _search._tracker_session_kwargs() == {"trust_env": True}
+    assert _search._proxy_for_url("https://rutracker.org/") == "socks5://egress:1080"
+    assert _search._proxy_for_url("http://localhost:7185/") is None
+    env = _search._proxy_env()
+    assert env.get("HTTP_PROXY") == "socks5://egress:1080"
+    assert "localhost" in env.get("NO_PROXY", "").lower()
 
 
 async def test_search_rutracker_routes_through_proxy(monkeypatch, recording_proxy):
+    import os
+
     proxy_url, rec = recording_proxy
     for v in ("HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy", "NO_PROXY", "no_proxy"):
         monkeypatch.delenv(v, raising=False)
@@ -233,10 +267,11 @@ async def test_search_rutracker_routes_through_proxy(monkeypatch, recording_prox
     monkeypatch.setenv("RUTRACKER_COOKIES", "bb_session=testsession")
     monkeypatch.setenv("RUTRACKER_MIRRORS", "http://tracker.invalid")
     monkeypatch.setenv("BOBA_UPSTREAM_PROXY", proxy_url)
-    _proxy.apply_proxy_env()
 
+    before = os.environ.copy()
     orch = _search.SearchOrchestrator()
     results = await orch._search_rutracker("ubuntu", "all")
+    after = os.environ.copy()
 
     # The recording proxy returns non-torrent HTML → 0 parsed results is fine.
     assert results == []
@@ -244,3 +279,55 @@ async def test_search_rutracker_routes_through_proxy(monkeypatch, recording_prox
     assert rec.urls[0].startswith("http://tracker.invalid/forum/tracker.php"), (
         f"proxy must have seen the rutracker mirror URL; saw {rec.urls!r}"
     )
+    assert after == before, "_search_rutracker must not mutate os.environ proxy vars"
+
+
+async def test_public_tracker_subprocess_gets_proxy_env_without_global_mutation(monkeypatch):
+    import asyncio
+    import os
+
+    for v in ("HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy", "NO_PROXY", "no_proxy"):
+        monkeypatch.delenv(v, raising=False)
+    monkeypatch.setenv("BOBA_UPSTREAM_PROXY", "http://egress.example:8080")
+
+    class _EmptyStream:
+        async def readline(self):
+            return b""
+
+        async def read(self, n=-1):
+            return b""
+
+    class _FakeProc:
+        pid = 42
+        returncode = 0
+        stdout = _EmptyStream()
+        stderr = _EmptyStream()
+
+        async def wait(self):
+            return 0
+
+        def kill(self):
+            pass
+
+    captured_env: dict[str, str] | None = None
+
+    async def _capture(*args, **kwargs):
+        nonlocal captured_env
+        captured_env = kwargs.get("env")
+        return _FakeProc()
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", _capture)
+
+    before = os.environ.copy()
+    orch = _search.SearchOrchestrator()
+    results = await orch._search_public_tracker("nonexistent_tracker_xyz", "ubuntu", "all")
+    after = os.environ.copy()
+
+    assert after == before, "_search_public_tracker must not mutate os.environ"
+    assert results == [], "no plugin output means no results"
+    assert captured_env is not None, "subprocess must be spawned with an env dict"
+    assert captured_env.get("HTTP_PROXY") == "http://egress.example:8080"
+    assert captured_env.get("HTTPS_PROXY") == "http://egress.example:8080"
+    no_proxy = captured_env.get("NO_PROXY", "").lower()
+    for sidecar in ("localhost", "127.0.0.1", "qbittorrent", "jackett"):
+        assert sidecar in no_proxy, f"NO_PROXY must contain {sidecar}; got {no_proxy!r}"

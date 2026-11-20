@@ -166,7 +166,20 @@ func main() {
 	// override — it has already run by this point, so addr below is
 	// guaranteed loopback whenever this line is reached.
 	addr := fmt.Sprintf("%s:%d", cfg.ServerBindHost, cfg.ServerPort)
-	log.Info().Str("addr", addr).Msg("server listening")
+	log.Info().Str("addr", addr).Msg("merge service listening")
+
+	// Start the :7186 download proxy in the same process so the Go backend
+	// exposes the same ports as the Python stack (BOB-141). It runs on its own
+	// goroutine and shares the qBittorrent client configuration.
+	proxyAddr := fmt.Sprintf("%s:%d", cfg.ServerBindHost, cfg.ProxyPort)
+	proxyRouter := api.NewProxyRouter(cfg.QBittorrentURL(), cfg.QBittorrentUsername, cfg.QBittorrentPassword)
+	go func() {
+		log.Info().Str("addr", proxyAddr).Msg("download proxy listening")
+		if err := proxyRouter.Run(proxyAddr); err != nil {
+			log.Fatal().Err(err).Msg("download proxy failed")
+		}
+	}()
+
 	if err := r.Run(addr); err != nil {
 		log.Fatal().Err(err).Msg("server failed")
 		os.Exit(1)

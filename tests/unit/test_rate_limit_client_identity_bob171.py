@@ -166,7 +166,7 @@ def test_green_key_is_not_any_forged_leftmost_value():
     os.environ["TRUSTED_PROXY_CIDRS"] = TRUSTED_CIDR
 
     keys = _rotating_xff_keys(rl._client_key)
-    for forged, key in zip(ROTATING_FORGED_LEFTMOST, keys):
+    for forged, key in zip(ROTATING_FORGED_LEFTMOST, keys, strict=False):
         assert key != forged, f"resolved key equalled the attacker-forged leftmost value {forged!r}"
 
 

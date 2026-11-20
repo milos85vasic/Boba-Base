@@ -129,6 +129,30 @@ class TestScheduler:
         scheduler._search_callback("ubuntu", "all")
         assert called == [("ubuntu", "all")]
 
+    @pytest.mark.asyncio
+    async def test_execute_search_with_metadata_object(self, scheduler):
+        """Scheduler callback may return a SearchMetadata-like object.
+
+        ``api/__init__.py`` historically wired the scheduler callback to
+        ``SearchOrchestrator.search()``, which returns a ``SearchMetadata``
+        object. ``Scheduler._execute_search()`` then called
+        ``result.get("merged_results", 0)``, raising ``AttributeError``.
+        This test reproduces that live bug and guards the fix.
+        """
+
+        class FakeMetadata:
+            merged_results = 7
+
+        async def callback(query, category):
+            return FakeMetadata()
+
+        scheduler.set_search_callback(callback)
+        search = scheduler.add_scheduled_search("metadata-test", "ubuntu")
+        search.last_run = None
+        await scheduler._execute_search(search)
+        assert search.results_count == 7
+        assert search.status == ScheduleStatus.COMPLETED
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

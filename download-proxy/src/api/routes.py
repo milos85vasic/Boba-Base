@@ -60,6 +60,7 @@ def _rl(class_name: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     deco: Callable[[Callable[..., Any]], Callable[..., Any]] = lim.limit(limit_for(class_name))
     return deco
 
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["search"])
@@ -282,9 +283,7 @@ class SearchRequest(BaseModel):
     enable_metadata: bool = Field(default=True, description="Enable metadata enrichment")
     validate_trackers: bool = Field(default=True, description="Validate tracker health")
     sort_by: str = Field(default="seeds", description="Sort column", max_length=32)
-    sort_order: str = Field(
-        default="desc", description="Sort direction: asc or desc", max_length=32
-    )
+    sort_order: str = Field(default="desc", description="Sort direction: asc or desc", max_length=32)
     trackers: list[str] | None = Field(
         default=None,
         max_length=64,
@@ -370,9 +369,7 @@ def _build_tag_field(request: object | None, fallback_name: str) -> str:
             year = getattr(request, "year", None)
             genres = getattr(request, "genres", None)
 
-        return tags_to_qbittorrent_field(
-            build_tags(name=name, content_type=content_type, year=year, genres=genres)
-        )
+        return tags_to_qbittorrent_field(build_tags(name=name, content_type=content_type, year=year, genres=genres))
     except Exception:  # pragma: no cover - defensive
         return ""
 
@@ -426,7 +423,7 @@ def _is_plausible_torrent_source(url: str) -> bool:
     for _, value in urllib.parse.parse_qsl(query, keep_blank_values=True):
         v = value.strip()
         low = v.lower()
-        if low.startswith("urn:btih:") and _BTIH_RE.match(v[len("urn:btih:"):]):
+        if low.startswith("urn:btih:") and _BTIH_RE.match(v[len("urn:btih:") :]):
             return True
         if low.startswith("urn:btmh:") and len(v) - len("urn:btmh:") >= _BTMH_MIN_LEN:
             return True
@@ -509,10 +506,7 @@ class DownloadRequest(BaseModel):
         # the false "reported honestly" claim this comment carried before.
         bad = [u for u in cleaned if not _is_plausible_torrent_source(u)]
         if bad:
-            raise ValueError(
-                "download_urls entries must be a magnet link or an http(s) URL; "
-                f"refused: {bad!r}"
-            )
+            raise ValueError(f"download_urls entries must be a magnet link or an http(s) URL; refused: {bad!r}")
         return cleaned
 
     title: str | None = Field(None, description="Content title, for tag derivation")
@@ -1226,8 +1220,12 @@ def _save_qbit_credentials(path: str, data: dict[str, Any]) -> None:
     try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         lock = FileLock(path + ".lock")
-        with lock, open(path, "w") as f:
-            json.dump(data, f)
+        with lock:
+            tmp_path = path + ".tmp"
+            with open(tmp_path, "w") as f:
+                json.dump(data, f)
+            os.chmod(tmp_path, 0o600)
+            os.replace(tmp_path, path)
     except Exception as e:
         logger.error(f"Failed to save qBittorrent credentials: {e}")
 
@@ -1328,6 +1326,26 @@ def _is_tracker_url(url: str) -> str | None:
         return None
 
 
+def _is_non_freeleech_iptorrents_url(orch: Any, url: str) -> bool:
+    """True when ``url`` matches a stored non-freeleech IPTorrents result.
+
+    The deduplicator already refuses to merge non-freeleech IPTorrents results
+    with other trackers; this download-time guard stops the same result from
+    being added to qBittorrent directly. Freeleech results and URLs that did
+    not originate from a search are not blocked.
+    """
+    try:
+        if _is_tracker_url(url) != "iptorrents":
+            return False
+    except Exception:  # pragma: no cover - defensive
+        return False
+    for _search_id, (_merged, all_results) in orch._last_merged_results.items():
+        for r in all_results:
+            if r.link == url and r.tracker == "iptorrents" and not r.freeleech:
+                return True
+    return False
+
+
 def _is_safe_fetch_url(url: str) -> bool:
     """SSRF guard for server-side fetches of user-supplied URLs (RW-03).
 
@@ -1414,6 +1432,19 @@ async def initiate_download(
             "url_count": len(request.download_urls),
         },
     )
+
+    orch = _get_orchestrator(req)
+    for url in request.download_urls:
+        if _is_non_freeleech_iptorrents_url(orch, url) and os.getenv(
+            "ENABLE_NON_FREELEECH_IPTORRENTS", ""
+        ).strip().lower() not in ("1", "true", "yes", "on"):
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    f"Non-freeleech IPTorrents result blocked: {url}. Set ENABLE_NON_FREELEECH_IPTORRENTS=1 to allow."
+                ),
+            )
+
     qbit_url = os.getenv("QBITTORRENT_URL", "http://localhost:7185")
     qbit_user = _get_qbit_username()  # type: ignore[no-untyped-call]
     qbit_pass = _get_qbit_password()  # type: ignore[no-untyped-call]
@@ -1569,9 +1600,7 @@ def _looks_like_torrent(data: bytes) -> bool:
 
 
 @router.post("/download/upload")
-async def upload_torrent(
-    file: Annotated[UploadFile, File()], _: None = Depends(require_api_token)
-) -> dict[str, Any]:
+async def upload_torrent(file: Annotated[UploadFile, File()], _: None = Depends(require_api_token)) -> dict[str, Any]:
     """Accept a raw ``.torrent`` file (multipart ``file`` field) and add it to
     qBittorrent.
 
@@ -1736,9 +1765,7 @@ async def download_torrent_file(
 # previously un-annotated, which FastAPI treats as "no response model"; this
 # keeps that exact behaviour while letting the annotation be checkable.
 @router.post("/magnet", response_model=None)
-async def generate_magnet(
-    request: Request, _: None = Depends(require_api_token)
-) -> JSONResponse | dict[str, Any]:
+async def generate_magnet(request: Request, _: None = Depends(require_api_token)) -> JSONResponse | dict[str, Any]:
     from pydantic import BaseModel
 
     class MagnetRequest(BaseModel):

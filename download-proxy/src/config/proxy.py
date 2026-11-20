@@ -157,15 +157,54 @@ def proxy_for_url(url: str) -> str | None:
     return proxy
 
 
+def _build_no_proxy_value() -> str:
+    """Merge operator NO_PROXY with the default bypass hosts."""
+    merged: list[str] = []
+    seen: set[str] = set()
+    for src in (os.environ.get("NO_PROXY", ""), os.environ.get("no_proxy", "")):
+        for part in src.split(","):
+            p = part.strip()
+            if p and p.lower() not in seen:
+                seen.add(p.lower())
+                merged.append(p)
+    for h in DEFAULT_NO_PROXY_HOSTS:
+        if h.lower() not in seen:
+            seen.add(h.lower())
+            merged.append(h)
+    return ",".join(merged)
+
+
+def proxy_env() -> dict[str, str]:
+    """Return a copy of the current environment with proxy vars resolved.
+
+    Use this to give a child process the same proxy configuration that
+    ``apply_proxy_env()`` would set globally, without mutating the parent
+    process environment. The returned dict is suitable for passing as the
+    ``env=`` argument to ``asyncio.create_subprocess_exec``.
+    """
+    env = os.environ.copy()
+    explicit = env.get(UPSTREAM_PROXY_ENV, "").strip()
+    if explicit:
+        for name in ("HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy"):
+            if not env.get(name, "").strip():
+                env[name] = explicit
+
+    if upstream_proxy():
+        value = _build_no_proxy_value()
+        env["NO_PROXY"] = value
+        env["no_proxy"] = value
+    return env
+
+
 def apply_proxy_env() -> None:
     """Map ``BOBA_UPSTREAM_PROXY`` onto the standard proxy env vars in-place.
 
     Idempotent. When the explicit knob is set it populates ``HTTP_PROXY`` /
     ``HTTPS_PROXY`` (upper + lower case) so urllib-based plugin subprocesses and
     requests/aiohttp(trust_env) honor it. It ALWAYS ensures ``NO_PROXY`` carries
-    the default loopback/sidecar bypass list (merged with any existing value) so
-    internal calls stay direct even when only the fallback ``*_PROXY`` vars are
-    set. Operator-supplied ``HTTP_PROXY``/``HTTPS_PROXY`` are never overwritten.
+    the default loopback/sidecar bypass list (merged, de-duped, order-stable)
+    whenever ANY proxy is active. Operator-supplied ``HTTP_PROXY``/
+    ``HTTPS_PROXY`` are never overwritten.
     """
     explicit = os.environ.get(UPSTREAM_PROXY_ENV, "").strip()
     if explicit:
@@ -176,19 +215,7 @@ def apply_proxy_env() -> None:
     # Ensure NO_PROXY always carries the bypass defaults (merged, de-duped,
     # order-stable) whenever ANY proxy is active.
     if upstream_proxy():
-        merged: list[str] = []
-        seen: set[str] = set()
-        for src in (os.environ.get("NO_PROXY", ""), os.environ.get("no_proxy", "")):
-            for part in src.split(","):
-                p = part.strip()
-                if p and p.lower() not in seen:
-                    seen.add(p.lower())
-                    merged.append(p)
-        for h in DEFAULT_NO_PROXY_HOSTS:
-            if h.lower() not in seen:
-                seen.add(h.lower())
-                merged.append(h)
-        value = ",".join(merged)
+        value = _build_no_proxy_value()
         os.environ["NO_PROXY"] = value
         os.environ["no_proxy"] = value
 

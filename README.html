@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.11" />
+  <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>README</title>
   <style>
-    /* Default styles provided by pandoc.
-    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-    */
     html {
       color: #1a1a1a;
       background-color: #fdfdfd;
@@ -41,6 +38,7 @@
       body {
         background-color: transparent;
         color: black;
+        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -90,7 +88,6 @@
       color: #606060;
     }
     code {
-      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,13 +151,10 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
+    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: 1.5em;}
-    div.column{flex: auto;}
-    @media screen {
-    div.columns{gap: min(4vw, 1.5em);}
-    div.column{overflow-x: auto;}
-    }
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -171,6 +165,7 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
     /* CSS for syntax highlighting */
     html { -webkit-text-size-adjust: 100%; }
     pre > code.sourceCode { white-space: pre; position: relative; }
@@ -237,6 +232,8 @@
     code span.vs { color: #4070a0; } /* VerbatimString */
     code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
+  <meta name="x-export-source-sha256" content="7f43b4fd7d304af9fa3b7488a9ebd9a941330c0e8bd6b8ba2d154bc4e8c6d7e1">
+  <meta name="dcterms.modified" content="2026-09-26T08:16:48Z">
 </head>
 <body>
 <header id="title-block-header">
@@ -266,12 +263,12 @@ containerised, private-tracker-aware.</strong>
 <a href="#contributing">Contributing</a>
 </p>
 <p align="center">
-<img alt="tests"          src="https://img.shields.io/badge/python%20tests-6316%20collected-blue">
+<img alt="tests"          src="https://img.shields.io/badge/python%20tests-6382%20collected-blue">
 <img alt="vitest"         src="https://img.shields.io/badge/frontend%20tests-2743%20collected-blue">
 <img alt="plugins"        src="https://img.shields.io/badge/plugins-43-blue">
 <img alt="merge"          src="https://img.shields.io/badge/merge_service-FastAPI%20%3A7187-orange">
 <img alt="ci"             src="https://img.shields.io/badge/ci-manual%20%28.%2Fci.sh%2C%20no%20auto--trigger%29-success">
-<img alt="pre-build"      src="https://img.shields.io/badge/pre--build%20invariants-59-blue">
+<img alt="pre-build"      src="https://img.shields.io/badge/pre--build%20invariants-63-blue">
 <img alt="challenges"     src="https://img.shields.io/badge/challenges-38-blue">
 <img alt="scan"           src="https://img.shields.io/badge/scanners-snyk%20%7C%20sonar%20%7C%20bandit%20%7C%20ruff%20%7C%20semgrep%20%7C%20trivy%20%7C%20gitleaks%20%7C%20pip--audit-red">
 <img alt="license"        src="https://img.shields.io/badge/license-Apache%202.0-green">
@@ -1146,7 +1143,7 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="
 the TDD protocol in <a href="CLAUDE.md"><code>CLAUDE.md</code></a>. PRs
 must keep the following green:</p>
 <ul>
-<li>Python unit + e2e + contract (<code>pytest</code> — 5077 tests
+<li>Python unit + e2e + contract (<code>pytest</code> — 5102 tests
 collected, see docs/TESTING.md)</li>
 <li>Frontend Vitest (<code>ng test</code> — 2743 tests collected, see
 docs/TESTING.md)</li>

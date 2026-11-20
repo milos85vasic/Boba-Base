@@ -93,7 +93,9 @@ def plugins_dir(tmp_path: Path) -> Path:
 # ---------------------------------------------------------------------------
 
 
-def test_write_failure_leaves_previous_plugin_content_intact(plugins_dir: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_write_failure_leaves_previous_plugin_content_intact(
+    plugins_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Pre-existing plugin content MUST survive a write failure mid-way
     through an update, byte-for-byte, with no data loss.
 
@@ -140,7 +142,7 @@ def test_write_failure_leaves_previous_plugin_content_intact(plugins_dir: Path, 
         def __init__(self, real_file) -> None:
             self._real_file = real_file
 
-        def __enter__(self) -> "_FailAfterOpen":
+        def __enter__(self) -> _FailAfterOpen:
             return self
 
         def __exit__(self, exc_type, exc, tb) -> bool:
@@ -288,9 +290,7 @@ def test_extract_version_still_returns_unknown_on_genuine_io_failure(monkeypatch
     manager = current.PluginUpdateManager(str(Path("/nonexistent-bob218-dir")))
 
     result = manager._extract_version("/nonexistent-bob218-dir/does-not-exist.py")
-    assert result == "unknown", (
-        f"a missing plugin file must still yield 'unknown' (not raise), got {result!r}"
-    )
+    assert result == "unknown", f"a missing plugin file must still yield 'unknown' (not raise), got {result!r}"
 
 
 def test_extract_version_does_not_use_bare_except() -> None:

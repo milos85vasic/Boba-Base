@@ -141,7 +141,7 @@ async def _build_merged_update_off_loop(orchestrator: Any, search_id: str) -> di
     return await asyncio.to_thread(_merge_and_serialize, *inputs)
 
 
-def _snapshot_merge_inputs(orchestrator: Any, search_id: str) -> tuple[Any, list | None, list] | None:
+def _snapshot_merge_inputs(orchestrator: Any, search_id: str) -> tuple[Any, list[Any] | None, list[Any]] | None:
     """Read everything the merge needs from the orchestrator (cheap; loop-safe).
 
     Returns ``(dedup, cached_merged_or_None, raw_snapshot)`` or ``None`` when no
@@ -168,14 +168,14 @@ def _snapshot_merge_inputs(orchestrator: Any, search_id: str) -> tuple[Any, list
                     merged = stored[0]
         except Exception:  # pragma: no cover - defensive cache access
             merged = None
-    raw: list = []
+    raw: list[Any] = []
     if merged is None:
         get_all = getattr(orchestrator, "get_all_tracker_results", None)
         raw = list(get_all(search_id)) if callable(get_all) else []
     return dedup, merged, raw
 
 
-def _merge_and_serialize(dedup: Any, merged: list | None, raw: list) -> dict[str, Any]:
+def _merge_and_serialize(dedup: Any, merged: list[Any] | None, raw: list[Any]) -> dict[str, Any]:
     """Merge ``raw`` (unless an authoritative ``merged`` is supplied) and
     serialize. Touches no orchestrator state, so it is safe on a worker thread."""
     if merged is None:
@@ -187,9 +187,7 @@ def _merge_and_serialize(dedup: Any, merged: list | None, raw: list) -> dict[str
         from .routes import _serialize_merged_rows
 
     rows = _serialize_merged_rows(merged)
-    serialized = [
-        r.model_dump() if hasattr(r, "model_dump") else (r.dict() if hasattr(r, "dict") else r) for r in rows
-    ]
+    serialized = [r.model_dump() if hasattr(r, "model_dump") else (r.dict() if hasattr(r, "dict") else r) for r in rows]
     return {"merged_results": len(merged), "results": serialized}
 
 

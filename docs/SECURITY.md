@@ -1,7 +1,7 @@
 # Security
 
-**Revision:** 2
-**Last modified:** 2026-08-09T00:00:00Z
+**Revision:** 3
+**Last modified:** 2026-11-20T00:00:00Z
 
 This document defines the threat model, credential-handling rules, and
 scanner stack for qBittorrent-Fixed. It complements the constitution
@@ -18,7 +18,7 @@ Secret Security, and Principle VIII — IPTorrents Freeleech Policy).
 | Credential capture in logs | Tracker username/password/cookies | Logger never formats credentials; env vars are read directly, never serialised to logs. |
 | CSRF / XSS against WebUI | qBittorrent WebUI (admin/admin) | Known-issue: WebUI credentials are hardcoded `admin`/`admin` per constitution III. Operator **must** change on first deploy and not expose the service publicly. |
 | Stolen SSE stream | Live search results on :7187 | `/api/v1/search/stream` requires the search_id returned by POST (unguessable UUID); an attacker still needs to race the search initiator. Phase 3 adds per-client bearer tokens. |
-| Downgrade / replay | Tracker cookies in session storage | In-memory dict `_tracker_sessions`; cookies never persisted to disk. Phase 2.3 adds **Fernet-at-rest** encryption for saved cookies — status: **pending**. |
+| Downgrade / replay | Tracker cookies in session storage | `_tracker_sessions` are **Fernet-encrypted at rest** via `EncryptedSessionStore` (`download-proxy/src/merge_service/search.py`). The key is per-process ephemeral by default; set `SESSION_ENCRYPTION_KEY` to pin it. Cookies still evaporate on container restart. |
 | Supply-chain | Python / Node.js / container deps | Dependency audit + SAST + secret scan via the seven-scanner stack (`docs/SCANNING.md`). |
 
 ## Credential storage
@@ -31,11 +31,12 @@ Secret Security, and Principle VIII — IPTorrents Freeleech Policy).
 - **qBittorrent WebUI login** is saved to
   `config/download-proxy/qbittorrent_creds.json` when the user checks
   "Remember me". The file is `rw-------` and gitignored.
-- **Tracker sessions** (`_tracker_sessions` dict in
-  `download-proxy/src/merge_service/search.py`) are in-memory. They
-  evaporate on container restart. Phase 2.3 will persist them
-  encrypted with Fernet — the spec is written but the implementation
-  is **pending**.
+- **Tracker sessions** (`_tracker_sessions` in
+  `download-proxy/src/merge_service/search.py`) are **Fernet-encrypted at
+  rest** via `EncryptedSessionStore`. The encryption key is per-process
+  ephemeral by default; set `SESSION_ENCRYPTION_KEY` (urlsafe-base64
+  32-byte Fernet key) to pin it across restarts. Sessions still evaporate
+  on container restart.
 
 ## `admin`/`admin` default
 
@@ -116,9 +117,9 @@ in [`SCANNING.md`](SCANNING.md):
 - `snyk` — commercial dep + SAST (needs token).
 - `sonarqube` — quality gate upload (via opt-in compose).
 
-All run locally via `scripts/scan.sh` and in CI
-(`.github/workflows/security.yml`). Reports land under
-`artifacts/scans/<UTC timestamp>/`.
+All run locally via `scripts/scan.sh`. CI is manual-only via `./ci.sh`;
+all GitHub Actions workflow files have been removed per the Hard Stop
+rule. Reports land under `artifacts/scans/<UTC timestamp>/`.
 
 ## Waiver policy
 
@@ -143,16 +144,17 @@ template-placeholder CVE id instead of a real one (RD2-06 / RD2-38).
 
 ## Known gaps (pending)
 
-- Fernet-at-rest for tracker cookies — Phase 2.3.
 - Allowed-origin allowlist — Phase 3.
 - TTL on `_pending_captchas` — Phase 3.
-- Bearer-token per-client SSE — Phase 3.
+- Bearer-token per-client SSE — Phase 3 (partially implemented:
+  `stream_token` is returned per search; enforcement is opt-in via
+  `SSE_REQUIRE_TOKEN=1`).
 - Per-subprocess resource limit (ulimit, prlimit) for plugin
   execution — Phase 2.
 
 ## Related documents
 
-- [`SCANNING.md`](SCANNING.md) — scanner invocation and CI integration.
+- [`SCANNING.md`](SCANNING.md) — scanner invocation.
 - [`QUALITY_STACK.md`](QUALITY_STACK.md) — opt-in compose file.
 - [`CONCURRENCY.md`](CONCURRENCY.md) — graceful shutdown and retry
   behaviour that interacts with security.

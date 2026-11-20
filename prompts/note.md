@@ -1,0 +1,1 @@
+../constitution/actions/generated/codex/note.md

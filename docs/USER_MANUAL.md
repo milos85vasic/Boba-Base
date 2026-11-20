@@ -1,9 +1,9 @@
 # qBitTorrent-Fixed User Manual
 
-**Revision:** 1
-**Last modified:** 2026-06-06T00:00:00Z
+**Revision:** 2
+**Last modified:** 2026-11-20T00:00:00Z
 
-## Complete Guide to Using All 12 Search Plugins
+## Complete Guide to Using All 43 Search Plugins
 
 ---
 
@@ -68,20 +68,22 @@ cd qBitTorrent-go && ./scripts/build.sh
 ### 3. Verify Installation
 
 ```bash
-# Run all tests
-./run-all-tests.sh
+# Run the manual CI pipeline
+./ci.sh
 
-# Check plugin status
-python3 tests/final_verification.py
+# Quick check (syntax + unit tests only)
+./ci.sh --quick
 ```
 
 ---
 
 ## Plugin Overview
 
-### Public Trackers (9 plugins)
+The project ships **43 search-plugin engines** managed by `install-plugin.sh`. The full canonical roster is the `PLUGINS=()` array in that script; the table below lists the most commonly used ones.
 
-These work immediately without configuration:
+### Public Trackers
+
+These work immediately without configuration (selection):
 
 | Plugin | Content Type | WebUI | Magnet Links | Notes |
 |--------|--------------|-------|--------------|-------|
@@ -94,8 +96,11 @@ These work immediately without configuration:
 | **torrents-csv** | General | ✅ | ✅ | Open database |
 | **TorLock** | General | ✅ | ✅ | No fake torrents |
 | **Jackett** | Meta | ✅ | ❌ | Aggregates multiple |
+| **YTS** | Movies | ✅ | ✅ | Movie releases |
+| **1337x** | General | ✅ | ✅ | General content |
+| **Kickass** | General | ✅ | ✅ | Torrent index |
 
-### Private Trackers (3 plugins)
+### Private Trackers (4 plugins)
 
 These require credentials:
 
@@ -104,6 +109,7 @@ These require credentials:
 | **RuTracker** | Russian | Username/Password | Russian content |
 | **Kinozal** | Movies/TV | Username/Password | Movies and TV |
 | **NNMClub** | General | Cookies | General content |
+| **IPTorrents** | General | Username/Password | Freeleech torrents |
 
 ---
 
@@ -129,6 +135,10 @@ KINOZAL_PASSWORD=your_kinozal_password
 # 3. Go to Application/Storage > Cookies
 # 4. Copy uid and pass cookies
 NNMCLUB_COOKIES="uid=123456; pass=abcdef1234567890abcdef1234567890"
+
+# IPTorrents credentials (freeleech downloads only)
+IPTORRENTS_USERNAME=your_iptorrents_username
+IPTORRENTS_PASSWORD=your_iptorrents_password
 ```
 
 ### Environment Variables
@@ -145,7 +155,8 @@ NNMCLUB_COOKIES="uid=123456; pass=abcdef1234567890abcdef1234567890"
 | `LOG_LEVEL` | `INFO` | Logging level |
 | `ALLOWED_ORIGINS` | — | CORS origins (comma-separated, no wildcards in prod) |
 | `MAX_CONCURRENT_SEARCHES` | `5` | Concurrent tracker search cap |
-| `DISABLE_THEME_INJECTION` | — | Obsolete no-op (2026-09-01): the themed-WebUI overlay was removed; the qBittorrent WebUI is now always served stock |
+| `MAX_CONCURRENT_TRACKERS` | `10` | Per-search parallel tracker cap |
+| `PUBLIC_TRACKER_DEADLINE_SECONDS` | `15` | Deadline for unresponsive public tracker subprocesses |
 | `OMDB_API_KEY` | — | OMDb metadata API key |
 | `TMDB_API_KEY` | — | TMDB metadata API key |
 | `ANILIST_CLIENT_ID` | — | AniList API client ID |
@@ -168,6 +179,8 @@ NNMCLUB_COOKIES="uid=123456; pass=abcdef1234567890abcdef1234567890"
 ./start.sh -p       # Pull images before starting
 ./start.sh -s       # Show container status after starting
 ./start.sh -v       # Verbose output
+./start.sh --reload-python   # Restart proxy after Python source edits
+./start.sh --recreate        # Full compose recreate after image/compose changes
 
 ./stop.sh -r        # Remove containers after stopping
 ./stop.sh --purge   # Remove containers AND images
@@ -217,7 +230,7 @@ Plugins are copied from `plugins/X.py` → `config/qBittorrent/nova3/engines/X.p
 3. Torrent appears in Transfer list
 4. Download starts automatically
 
-#### Private Trackers (RuTracker, Kinozal, NNMClub)
+#### Private Trackers (RuTracker, Kinozal, NNMClub, IPTorrents)
 
 **Option A: Using WebUI Bridge (Recommended)**
 
@@ -257,8 +270,8 @@ Plugins are copied from `plugins/X.py` → `config/qBittorrent/nova3/engines/X.p
 RUTRACKER_USERNAME=your_username
 RUTRACKER_PASSWORD=your_password
 
-# Restart container
-./restart.sh
+# Restart containers
+./stop.sh -r && ./start.sh
 ```
 
 **Usage:**
@@ -309,15 +322,34 @@ NNMCLUB_COOKIES="uid=your_uid; pass=your_pass_hash"
 4. Find `uid` and `pass` cookies
 5. Copy values to .env
 
+### IPTorrents
+
+**Requirements:**
+- Active account on iptorrents.com
+- Valid username and password
+- Automated downloads MUST only use freeleech results
+
+**Setup:**
+```bash
+# Add to .env
+IPTORRENTS_USERNAME=your_username
+IPTORRENTS_PASSWORD=your_password
+```
+
+**Usage:**
+1. Enable IPTorrents in Search Plugins
+2. Search for content
+3. Freeleech results are tagged `IPTorrents [free]` and are the only results eligible for automated download
+
 ---
 
 ## Merge Search Service
 
-The Merge Search Service is a unified search interface that queries multiple private trackers simultaneously, deduplicates results, and presents them in a single dashboard.
+The Merge Search Service is a unified search interface that queries multiple trackers simultaneously, deduplicates results, and presents them in a single dashboard.
 
 ### What It Does
 
-- Searches **RuTracker**, **Kinozal**, and **NNMClub** in parallel
+- Searches **RuTracker**, **Kinozal**, **NNMClub**, **IPTorrents**, and public trackers in parallel
 - Deduplicates results that appear on multiple trackers
 - Detects quality tags (e.g., 1080p, 4K, WEB-DL, Blu-ray) automatically
 - Proxied downloads handle authentication cookies transparently
@@ -342,15 +374,18 @@ The dashboard runs inside the `qbittorrent-proxy` container and is available whe
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/search?q=<query>` | GET | Search all configured trackers |
-| `/api/search?q=<query>&tracker=rutracker` | GET | Search a specific tracker |
-| `/api/download` | POST | Download a torrent by URL |
-| `/api/torrents/active` | GET | List active downloads |
-| `/api/health` | GET | Service health check |
+| `/api/v1/search` | POST | Start a search across configured trackers |
+| `/api/v1/search/{search_id}` | GET | Get search results |
+| `/api/v1/search/{search_id}/stream` | GET | SSE stream of live results |
+| `/api/v1/download` | POST | Download a torrent by URL |
+| `/api/v1/torrents/active` | GET | List active downloads |
+| `/api/v1/health` | GET | Service health check |
 
 Example:
 ```bash
-curl "http://localhost:7187/api/search?q=ubuntu&tracker=rutracker"
+curl -X POST "http://localhost:7187/api/v1/search" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "ubuntu"}'
 ```
 
 ### Configuration
@@ -365,6 +400,9 @@ KINOZAL_USERNAME=your_username
 KINOZAL_PASSWORD=your_password
 
 NNMCLUB_COOKIES="uid=123456; pass=abcdef1234567890"
+
+IPTORRENTS_USERNAME=your_username
+IPTORRENTS_PASSWORD=your_password
 ```
 
 Restart containers after changing credentials: `./stop.sh -r && ./start.sh`
@@ -382,10 +420,10 @@ Results are tagged and can be filtered by quality in the dashboard.
 
 ### Known Limitations
 
-- **Credentials required** — RuTracker and Kinozal need valid username/password. NNMClub needs browser cookies. Trackers without configured credentials are skipped.
+- **Credentials required** — RuTracker, Kinozal, and IPTorrents need valid username/password. NNMClub needs browser cookies. Trackers without configured credentials are skipped.
+- **IPTorrents freeleech only** — Automated downloads only use results tagged `IPTorrents [free]`. Non-freeleech results cost ratio and are never triggered by automation.
 - **RuTracker CAPTCHA** — If RuTracker presents a CAPTCHA, login will fail. Solve it in a browser first, then retry.
 - **Rate limiting** — Tracker websites may rate-limit frequent requests. The service includes basic throttling.
-- **No public trackers** — The merge service only covers private trackers. Use the qBittorrent search tab for public tracker plugins.
 
 ---
 
@@ -431,7 +469,7 @@ podman restart qbittorrent
 3. Try different search terms
 4. Check container logs: `podman logs qbittorrent`
 5. Check proxy logs: `podman logs qbittorrent-proxy`
-6. Verify tracker credentials: `curl http://localhost:7187/health`
+6. Verify merge service health: `curl http://localhost:7187/api/v1/health`
 
 ### Issue: Merge Service Returns 503
 
@@ -440,7 +478,7 @@ podman restart qbittorrent
 **Check:**
 ```bash
 podman logs qbittorrent-proxy | tail -20
-curl http://localhost:7187/health
+curl http://localhost:7187/api/v1/health
 ```
 
 ### Issue: CORS Errors in Browser Console
@@ -483,13 +521,15 @@ scripts/scan.sh pip-audit ruff
 ### Run All Tests
 
 ```bash
-# Comprehensive test suite
-./run-all-tests.sh
+# Manual CI pipeline (syntax + unit + integration + e2e + container health)
+./ci.sh
+
+# Quick check (syntax + unit tests only)
+./ci.sh --quick
 
 # Individual tests
-python3 -m pytest tests/unit/ tests/e2e/ --import-mode=importlib
-python3 tests/final_verification.py
-python3 -m pytest tests/unit/ --import-mode=importlib
+.venv/bin/python -m pytest tests/unit/ tests/e2e/ --import-mode=importlib
+.venv/bin/python -m pytest tests/unit/ --import-mode=importlib
 ```
 
 ### Test Results
@@ -513,7 +553,7 @@ Expected result: **100% success rate**
 
 ### Q: Do I need to run WebUI Bridge?
 
-**A:** Only if you want to use private trackers (RuTracker, Kinozal, NNMClub) in WebUI. Public trackers work without it.
+**A:** Only if you want to use private trackers (RuTracker, Kinozal, NNMClub, IPTorrents) in WebUI. Public trackers work without it.
 
 ### Q: Is this legal?
 
@@ -536,7 +576,7 @@ Expected result: **100% success rate**
 **A:**
 ```bash
 ./install-plugin.sh --all
-./restart.sh
+./start.sh --reload-plugins
 ```
 
 ### Q: Where are downloads saved?
@@ -585,7 +625,7 @@ tar czf plugins-backup-$(date +%Y%m%d).tar.gz plugins/
 ```bash
 tar xzf qbittorrent-backup-YYYYMMDD.tar.gz
 tar xzf plugins-backup-YYYYMMDD.tar.gz
-./restart.sh
+./stop.sh -r && ./start.sh
 ```
 
 ---
@@ -595,7 +635,7 @@ tar xzf plugins-backup-YYYYMMDD.tar.gz
 ### Getting Help
 
 1. **Documentation:** Read all docs in `docs/` folder
-2. **Tests:** Run `./run-all-tests.sh` to diagnose issues
+2. **Tests:** Run `./ci.sh` to diagnose issues
 3. **Logs:** Check `podman logs qbittorrent`
 4. **Issues:** Report on GitHub
 
@@ -604,18 +644,24 @@ tar xzf plugins-backup-YYYYMMDD.tar.gz
 1. Fork the repository
 2. Create a feature branch
 3. Make changes
-4. Run tests: `./run-all-tests.sh`
+4. Run tests: `./ci.sh`
 5. Submit pull request
 
 ---
 
 ## Version History
 
-### v2.0.0 (Current)
-- ✅ All 12 plugins working
+### Current
+- ✅ 43 search-plugin engines managed by `install-plugin.sh`
+- ✅ Four private trackers (RuTracker, Kinozal, NNMClub, IPTorrents)
 - ✅ WebUI Bridge for private trackers
+- ✅ Merge Search Service on port 7187
+- ✅ Manual CI pipeline via `./ci.sh`
 - ✅ Comprehensive test suite
-- ✅ Full documentation
+
+### v2.0.0
+- 12 plugins working
+- WebUI Bridge for private trackers
 
 ### v1.0.0
 - Initial release
@@ -623,6 +669,6 @@ tar xzf plugins-backup-YYYYMMDD.tar.gz
 
 ---
 
-**Last Updated:** March 2025  
-**Version:** 2.0.0  
+**Last Updated:** November 2026  
+**Version:** Current  
 **License:** Apache 2.0
