@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 73
-**Last modified:** 2026-11-20T17:19:07Z
+**Revision:** 74
+**Last modified:** 2026-11-20T17:30:29Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -3909,4 +3909,15 @@ Source inspection across the whole stack (2026-08-18) verified no rate-limit mec
 **Assigned-To:** AI
 
 Discovered 2026-09-25 by a subagent implementing 003-zero-shortcomings-audit Task 1, independently reproduced in isolation. scripts/commit-push-all.sh's argument parser stops reading flags at the first non-flag token; when --scope <path> flags are placed AFTER the commit-message positional argument (exactly as tasks.md's own Step 5 template shows for every task in the 003-zero-shortcomings-audit plan, e.g. "bash scripts/commit-push-all.sh \"<message>\" --scope <path>"), the --scope flags are silently swallowed as if they were part of the message, no error or warning is emitted, and the script falls through to its unconditional/unscoped git add -A path. Real-world consequence (2026-09-25): following that exact template ordering caused a scoped Task-1 commit to instead sweep in 5 files -- the intended 2, a sibling task's 2 legitimate-but-not-yet-reviewed files, and a DELIBERATELY-uncommitted, known-broken/hanging test file (tests/ddos/test_sse_stream_stress_chaos.py, see BOB-097 diary entry_id=16) -- and PUSH all of it to two remote git hosts before the mistake was caught. No data was lost, nothing was force-pushed, but a silent full-tree-sweep on a routine commit is a serious safety gap in a script this project's own constitution names as the ONLY sanctioned commit path. Root cause: the parser's flag/positional-arg interleaving logic assumes flags always precede the message and never validates that assumption or warns when scope flags appear post-message. Remediation: (1) make the parser accept --scope flags in ANY position relative to the message (getopts-style two-pass parsing, or explicit flag-then-positional-then-more-flags handling), OR (2) at minimum, detect scope-flag-shaped tokens appearing after the first positional argument and REFUSE with a loud error rather than silently falling back to git add -A -- a parser that cannot tell 'no --scope given, unscoped commit intended' apart from '--scope given but in the wrong position' is itself a §11.4.201(1) false-negative-class defect. (3) Audit and fix tasks.md's own Step 5 example ordering across every task (flags before the message, matching the working pattern used successfully elsewhere this session) so the plan itself does not keep tripping this bug for every future task implementer.
+
+## BOB-094 — RD2-29: Author tests/stress/test_tracker_fetch_stress_chaos.py with §11.4.85 fault injection
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** docs/qa/BOB-094/closure_evidence_20261120.txt
+**Severity:** Medium
+
+RD2-29: Author tests/stress/test_tracker_fetch_stress_chaos.py with §11.4.85 fault injection
+
+[BOB-136 adoption audit 2026-08-21 -> In progress] The suite landed (test file at 4b7b21d, evidence + RED-on-mutated-classifier capture at f3ca131) with 9 test functions: 2 stress, 3 boundary, 3 chaos (network_drop, midflight_kill, input_corruption), 1 category_map. This item explicitly requires fault injection across process-kill, network-fault AND resource-exhaustion. Only 2 of those 3 classes are present — there is no resource-exhaustion scenario in tests/stress/test_tracker_fetch_stress_chaos.py. Partial.
 

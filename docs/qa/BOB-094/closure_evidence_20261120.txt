@@ -1,0 +1,26 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0 -- /home/milosvasic/Projects/boba/.venv/bin/python
+cachedir: .pytest_cache
+benchmark: 5.3.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+Using --randomly-seed=1740036160
+hypothesis profile 'default'
+rootdir: /home/milosvasic/Projects/boba
+configfile: pyproject.toml
+plugins: anyio-4.14.2, schemathesis-4.25.2, benchmark-5.3.0, xdist-3.8.0, asyncio-1.4.0, cov-7.1.0, docker-3.2.5, playwright-0.9.0, base-url-2.1.0, repeat-0.9.4, locust-2.46.4, randomly-4.1.0, timeout-2.4.0, hypothesis-6.167.1, respx-0.23.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+timeout: 60.0s
+timeout method: signal
+timeout func_only: False
+collecting ... collected 9 items
+
+tests/stress/test_tracker_fetch_stress_chaos.py::test_boundary_empty_url_returns_none_or_error PASSED [ 11%]
+tests/stress/test_tracker_fetch_stress_chaos.py::test_boundary_max_length_url_survives PASSED [ 22%]
+tests/stress/test_tracker_fetch_stress_chaos.py::test_chaos_midflight_kill_clean_degradation PASSED [ 33%]
+tests/stress/test_tracker_fetch_stress_chaos.py::test_chaos_network_drop_20pct_categorised_as_network PASSED [ 44%]
+tests/stress/test_tracker_fetch_stress_chaos.py::test_stress_concurrent_10_parallel_no_fd_leak PASSED [ 55%]
+tests/stress/test_tracker_fetch_stress_chaos.py::test_chaos_input_corruption_malformed_response_quarantined PASSED [ 66%]
+tests/stress/test_tracker_fetch_stress_chaos.py::test_section_114_85_category_map PASSED [ 77%]
+tests/stress/test_tracker_fetch_stress_chaos.py::test_stress_sustained_100_sequential_fetches PASSED [ 88%]
+tests/stress/test_tracker_fetch_stress_chaos.py::test_boundary_off_by_one_content_type_edges PASSED [100%]
+
+============================== 9 passed in 22.72s ==============================

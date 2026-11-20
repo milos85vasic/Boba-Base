@@ -187,8 +187,8 @@ class _FakeSession:
         self._delay = delay_s
         self.closed = False
 
-    def get(self, url: str, *, cookies=None, headers=None, allow_redirects=True):
-        # Return the async CM directly.
+    def get(self, url: str, *, cookies=None, headers=None, allow_redirects=True, **kwargs):
+        # Production passes proxy= and other aiohttp kwargs; the stub ignores them.
         async def _cm_enter():
             if self._delay:
                 await asyncio.sleep(self._delay)
