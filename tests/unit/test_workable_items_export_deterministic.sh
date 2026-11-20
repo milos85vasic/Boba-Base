@@ -51,6 +51,12 @@ cp "$WRAP" "$SB/scripts/"
 cp "${PROJECT_ROOT}/scripts/generate_markdown_exports.sh" "$SB/scripts/"
 cp "${PROJECT_ROOT}/scripts/lib/export_staleness.sh" "$SB/scripts/lib/"
 cp "$DB" "$SB/docs/workable_items.db"
+# Replicate the real repo state: the tracker .md sources are committed alongside
+# the DB, so generate_markdown_exports.sh can derive SOURCE_DATE_EPOCH from git
+# history rather than falling back to the untracked-file constant (BOB-249).
+for _tracker_md in Issues.md Fixed.md Issues_Summary.md Fixed_Summary.md; do
+    [[ -f "${PROJECT_ROOT}/docs/${_tracker_md}" ]] && cp "${PROJECT_ROOT}/docs/${_tracker_md}" "$SB/docs/${_tracker_md}"
+done
 G() { git -C "$SB" -c user.name=t -c user.email=t@t -c commit.gpgsign=false "$@"; }
 G init -q && G add -A && G commit -q -m sandbox
 DB_CT="$(G log -1 --format=%ct -- docs/workable_items.db)"

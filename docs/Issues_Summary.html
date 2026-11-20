@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.11" />
+  <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Issues_Summary</title>
   <style>
-    /* Default styles provided by pandoc.
-    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-    */
     html {
       color: #1a1a1a;
       background-color: #fdfdfd;
@@ -41,6 +38,7 @@
       body {
         background-color: transparent;
         color: black;
+        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -90,7 +88,6 @@
       color: #606060;
     }
     code {
-      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,13 +151,10 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
+    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: 1.5em;}
-    div.column{flex: auto;}
-    @media screen {
-    div.columns{gap: min(4vw, 1.5em);}
-    div.column{overflow-x: auto;}
-    }
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -171,9 +165,15 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
+  <meta name="x-export-source-sha256" content="687451bfff518e306a1ba14c01534b8cebadc2e4b472cd1333852f16f6f8eb22">
+  <meta name="dcterms.modified" content="2026-09-27T15:18:07Z">
 </head>
 <body>
+<header id="title-block-header">
+<h1 class="title">Issues_Summary</h1>
+</header>
 <h1 id="issues_summary">Issues_Summary</h1>
 <p>Open workable items (current_location = Issues), regenerated from the
 SQLite single-source-of-truth (§11.4.12).</p>
@@ -190,7 +190,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Bug</td>
 <td>In progress</td>
-<td>5</td>
+<td>4</td>
 </tr>
 <tr>
 <td>Bug</td>
@@ -210,7 +210,7 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td>Task</td>
 <td>Queued</td>
-<td>13</td>
+<td>11</td>
 </tr>
 <tr>
 <td>Task</td>
@@ -220,18 +220,20 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <tr>
 <td><strong>TOTAL</strong></td>
 <td></td>
-<td><strong>40</strong></td>
+<td><strong>37</strong></td>
 </tr>
 </tbody>
 </table>
 <h2 id="items">Items</h2>
-<table>
+<table style="width:100%;">
 <colgroup>
-<col style="width: 20%" />
-<col style="width: 20%" />
-<col style="width: 20%" />
-<col style="width: 20%" />
-<col style="width: 20%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
 </colgroup>
 <thead>
 <tr>
@@ -240,6 +242,8 @@ SQLite single-source-of-truth (§11.4.12).</p>
 <th>Status</th>
 <th>Severity</th>
 <th>Description</th>
+<th>Reproduction</th>
+<th>Investigation</th>
 </tr>
 </thead>
 <tbody>
@@ -270,6 +274,8 @@ any prior agent-chosen default on this question. Options not chosen are
 named above so a future reader does not re-litigate a settled call
 (§11.4.112(5) bounded-verdict discipline applied to decisions). — prior
 item text follows — RuTracker automated login blocked by CAPTCHA</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-065</td>
@@ -308,6 +314,8 @@ returns 200 via proxy). No tracker is currently blocked from this
 sandbox host, so “known-blocked” is necessarily operator/time-dependent
 and cannot be hardcoded. EVIDENCE:
 docs/qa/BOB-065/investigation_20260925.md.</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-066</td>
@@ -316,14 +324,8 @@ docs/qa/BOB-065/investigation_20260925.md.</td>
 <td>High</td>
 <td>Lava P3: BOBA_UPSTREAM_PROXY in download-proxy + qBitTorrent-go +
 Jackett + compose env-forward</td>
-</tr>
-<tr>
-<td>BOB-068</td>
-<td>Bug</td>
-<td>In progress</td>
-<td>High</td>
-<td>RD2-00: unattributed, unreviewed Auto-commit mechanism pushing to
-main</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-069</td>
@@ -332,6 +334,8 @@ main</td>
 <td>High</td>
 <td>RD2-40: §11.4.238 QA-discovery-channel ledger — ongoing
 coverage-escape backfill</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-074</td>
@@ -340,14 +344,8 @@ coverage-escape backfill</td>
 <td>Medium</td>
 <td>RD2-07: DDoS-class testing fully absent from the mandated test-type
 matrix</td>
-</tr>
-<tr>
-<td>BOB-078</td>
-<td>Task</td>
-<td>Queued</td>
-<td>High</td>
-<td>RD2-11: Once identified, wire Auto-commit mechanism through
-§11.4.234 dedicated commit/push script OR retire it</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-080</td>
@@ -356,6 +354,8 @@ matrix</td>
 <td>High</td>
 <td>RD2-13: Retroactive Fable-xhigh code review of the substantive
 Auto-commit diffs</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-085</td>
@@ -364,6 +364,8 @@ Auto-commit diffs</td>
 <td>Medium</td>
 <td>RD2-18: Create top-level Boba proxy/merge-service v1.0.0 readiness
 ledger (closes GA-10)</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-090</td>
@@ -372,6 +374,8 @@ ledger (closes GA-10)</td>
 <td>Medium</td>
 <td>RD2-25: HelixQA Challenge entry exercising all three start.sh
 subcommands end-to-end against real compose stack</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-093</td>
@@ -380,6 +384,8 @@ subcommands end-to-end against real compose stack</td>
 <td>High</td>
 <td>RD2-28: Live compose bring-up + verify rutracker ReDoS regex bounds
 deployed to container (closes runtime half of GA-12)</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-094</td>
@@ -388,6 +394,8 @@ deployed to container (closes runtime half of GA-12)</td>
 <td>Medium</td>
 <td>RD2-29: Author tests/stress/test_tracker_fetch_stress_chaos.py with
 §11.4.85 fault injection</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-095</td>
@@ -396,6 +404,8 @@ deployed to container (closes runtime half of GA-12)</td>
 <td>Medium</td>
 <td>RD2-30: Author tests/stress/test_scheduler_hooks_sse_stress_chaos.py
 for Go-side triangle</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-097</td>
@@ -404,6 +414,8 @@ for Go-side triangle</td>
 <td>Low</td>
 <td>RD2-32: Author DDoS-class coverage for exposed download-proxy/merge
 endpoints (canonical impl of RD2-07)</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-101</td>
@@ -427,6 +439,8 @@ re-litigate a settled call (§11.4.112(5) bounded-verdict discipline
 applied to decisions). — prior item text follows — GA-19/RW-09: Is
 –profile go parity still a release goal? (gates RW-10..13) —
 OPERATOR-DECISION</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-102</td>
@@ -455,6 +469,8 @@ reader does not re-litigate a settled call (§11.4.112(5) bounded-verdict
 discipline applied to decisions). — prior item text follows — RW-05:
 LAN-exposure threat model — bind tunnel 127.0.0.1 or keep 0.0.0.0? —
 OPERATOR-DECISION</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-104</td>
@@ -463,6 +479,8 @@ OPERATOR-DECISION</td>
 <td>Medium</td>
 <td>§11.4.238 followup: CodeGraph 1.5.0 nested-.gitignore regression
 challenge</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-106</td>
@@ -490,6 +508,8 @@ nobody is fixing. This item is explicitly tracked as blocked on that
 same operator decision via sibling item BOB-162 (“this item is not
 closed until that answer is recorded”). EVIDENCE:
 docs/qa/BOB-238/investigation_20260925.md (full citation trail).</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-109</td>
@@ -498,6 +518,8 @@ docs/qa/BOB-238/investigation_20260925.md (full citation trail).</td>
 <td>Medium</td>
 <td>BOB-074 followup: scaling-class test coverage absent from mandated
 test-type matrix</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-111</td>
@@ -506,6 +528,8 @@ test-type matrix</td>
 <td>High</td>
 <td>BOB-074 followup: configure real rate limiting for boba’s 3 public
 HTTP endpoints</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-121</td>
@@ -514,62 +538,8 @@ HTTP endpoints</td>
 <td>Important</td>
 <td>External watchdog for the forced-logout architectural gap (task #85,
 incident #3)</td>
-</tr>
-<tr>
-<td>BOB-162</td>
-<td>Task</td>
-<td>Queued</td>
-<td>Medium</td>
-<td><strong>Reported-Via:</strong> §11.4.202 reporting directive
-<code>task</code> on 2026-08-21T19:35:02Z <strong>Reported-By:</strong>
-BOB-106/BOB-107 remediation, residual <strong>What (the report,
-verbatim):</strong> The TESTS for both guards are now executed:
-pre-build invariant 30’s glob was extended from tests/unit +
-tests/pre_build to also cover tests/hooks. MEASURED before/after: the
-glob expanded to 27 suites with 0 under tests/hooks while 3 existed
-there; it now expands to 30 with 3 under tests/hooks. All three pass.
-But the GUARDS themselves are still invoked by nothing.
-check-brief-inputs.sh is honestly conductor-run rather than automatic: a
-brief’s required-input list lives in free-form prose that the Agent
-tool’s structured input does not expose, so an automatic prompt-scraping
-gate would itself be an unproven pattern-match. Its seam is the dispatch
-procedure, and that is a documentation + habit change, not a hook.
-unattributed-commit-guard.sh is different and is why this item exists.
-Run against real history it names 14 violating commits since the last
-tag (and 21 bare Auto-commit subjects exist across all refs). Wiring it
-into the pre-build or commit seam AS-IS would therefore refuse every
-commit immediately, on pre-existing debt nobody can fix in the moment.
-That is precisely the 11.4.224(E) brownfield-adoption shape, and
-11.4.66/11.4.122 put the choice with the operator, not with an agent
-inventing a ratchet. The options, stated so the decision is a decision
-and not a default: (a) immediate hard floor – the seam refuses until all
-14 are attributed; (b) one-time monotone-decrease ratchet (the 11.4.135
-pattern) – snapshot 14 as the baseline, the count may fall and may never
-rise, so day one is green and the disease cannot spread; (c)
-changed-commits-only – gate only commits created from now on, with a
-scheduled deadline for the historical 14; (d) report-only for a stated
-period, then escalate. Recommendation, with the reasoning rather than
-just the pick: (b). It is the pattern this constitution already uses for
-exactly this situation, it makes the debt visible and bounded
-immediately, and it cannot be satisfied by deleting the guard’s name
-(11.4.227 closes that gaming channel). But it is the operator’s call and
-this item is not closed until that answer is recorded. Honest boundary
-(11.4.6): this item does NOT claim the 14 commits are harmful in
-themselves – it claims their ATTRIBUTION is absent and that nothing
-currently prevents the 15th. <strong>Affected scope / file-scope
-manifest:</strong> scripts/hooks/unattributed-commit-guard.sh;
-scripts/hooks/check-brief-inputs.sh; scripts/pre_build_verification.sh;
-scripts/commit-push-all.sh <strong>Reproduction / context:</strong> Both
-guards run correctly by hand and are covered by passing tests (9/9 and
-15/15, each proven non-bluff against a no-op stub). Neither is invoked
-by scripts/pre_build_verification.sh or scripts/commit-push-all.sh, so
-neither exerts standing detection pressure (11.4.226: a guard with no
-execution seam is not coverage; registration is not coverage).
-<strong>Acceptance criteria:</strong> Each guard is invoked by a named
-seam, OR carries a registered deferral pointing at this item. For
-unattributed-commit-guard.sh specifically, the operator has answered the
-adoption question below and the answer is recorded as consumer DATA –
-never an invented ratchet.</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-170</td>
@@ -622,6 +592,8 @@ IMPORTANT-2 by the independent Fable-substrate reviewer of the BOB-109
 work, and independently corroborated: the reviewer verified the SKIP is
 loud and prints its resolved numbers, and confirmed the shipped tests do
 SKIP at today’s load.</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-172</td>
@@ -632,6 +604,8 @@ SKIP at today’s load.</td>
 while the site itself is fully reachable. Measured unauthenticated
 2026-08-21 (no cookie file read, no credential value in any artifact —
 §11.4.10): GET /forum/index.php -&gt; 200, 96283 B, </td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-184</td>
@@ -656,6 +630,8 @@ the glyphs with inline SVG carrying explicit fill tokens), each of the
 three controls shown to clear 3:1 in all 16 palette x mode combinations,
 and the GLYPH_UNMEASURED fence shrunk by exactly the nodes then
 proven.</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-185</td>
@@ -680,6 +656,8 @@ or an injected component harness) so the badge and status nodes are
 present in the DOM, axe measures them directly, and a control needle
 proves the rendered oracle sees a seeded sub-floor badge before any
 clean result from it is believed.</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-188</td>
@@ -755,6 +733,8 @@ a genuinely fresh binary still passes so the fix is not an 11.4.201(1)
 false-positive refusal; (d) the 11.4.30 tracked-binary decision recorded
 as operator DATA. Discovered out-of-band during BOB-166 remediation - a
 11.4.238 coverage escape in its own right.</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-191</td>
@@ -914,6 +894,8 @@ transcripts, the C++ correction with live proof, the live full-repo scan
 table, anti-bluff provenance). State left uncommitted by design
 (constitution-submodule files need the §11.4.26 workflow, not boba’s
 commit-push-all.sh).</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 <tr>
 <td>BOB-194</td>
@@ -956,7 +938,7 @@ proven immune by measurement, each with a paired mutation. NOTE the
 asymmetry that bounds the risk: a stale worktree can only ADD findings
 to a security-relevant scan (killpg, mutation-residue), never remove
 them - so the exposure is false refusal and eroded trust, not a missed
-defect. |
+defect. | UNSET | UNSET |
 | BOB-211 | Bug | Queued | minor | STATUS: LATENT on this host
 (measured: all six declared locations sit on ONE btrfs mount, fully
 ownership-expressive) and OPERATOR-GATED for verification. Retained from
@@ -992,7 +974,8 @@ loopback so the RED can be built; (2) if verified, the repair path gains
 fstype-aware diagnosis naming the remount remedy; (3) the mode contract
 either detects mode-flattening mounts and refuses, or documents honestly
 that it cannot be enforced there.  DISCOVERY CHANNEL (§11.4.238):
-retained residual from the BOB-206 verification stream. |
+retained residual from the BOB-206 verification stream. | UNSET | UNSET
+|
 | BOB-219 | Bug | In progress | major | WHAT, conductor-verified:
 docs/guides/tracker-credentials.md is TRACKED. Its §11.4.65-mandated
 export twins docs/guides/tracker-credentials.html and .pdf both EXIST ON
@@ -1089,6 +1072,7 @@ credential-protecting globs. Until then this item stays Queued; criteria
 docs/qa/BOB-219/closure_evidence_20260925.md (full command transcripts:
 before/after git check-ignore, the .txt-wide-rescue safety experiment,
 7-arm test output, standalone gate invocation against the real repo). |
+UNSET | UNSET |
 | BOB-231 | Task | Queued | Major | BOB-227 measured 3 of 4 artifacts of
 the CM-LAN-ROUTES-AUTHENTICATED gate untracked in git; criterion 1
 (commit them) was already resolved by an unrelated prior commit before
@@ -1108,7 +1092,7 @@ untracked gate implementation is caught immediately, not discovered
 independently weeks later; (4) a RED test creating an untracked fake
 gate-invocation target and asserting the new check fails on it, GREEN
 once the mechanism exists and the fake target is either removed or
-tracked. |
+tracked. | UNSET | UNSET |
 | BOB-235 | Bug | Operator-blocked | — | Live kinozal credential test
 reports authenticated=False, status='empty', error='' (found
 2026-09-23). ROOT CAUSES (docs/qa/BOB-235/investigation_20260923.md):
@@ -1134,7 +1118,7 @@ kinozal operator-blocked; (3) optionally re-export a kinozal-only cookie
 file. WHY: every agent-reachable path was exhausted - DNS, mirrors,
 login POST, cookies, env propagation all measured. UNBLOCK CONDITION:
 the live test authenticates or the operator marks kinozal unsupported.
-WHO: repository operator. |
+WHO: repository operator. | UNSET | UNSET |
 | BOB-237 | Bug | Queued | high | WHAT: CM-GATE-LEDGER-RATCHET
 (§11.4.227(A)) FAILED the pre-build sweep during this session's batch-15
 commit attempt: unimplemented=414 exceeds the checked-in baseline=403 in
@@ -1201,7 +1185,7 @@ unbounded effort resolving an inherited universal-corpus debt
 mid-session.  DISCOVERY CHANNEL (§11.4.238): found by boba's own
 pre-build sweep (scripts/pre_build_verification.sh, invariant 38/57)
 during a routine session commit — the automated gate itself is the
-discoverer, exactly as §11.4.238 requires. |
+discoverer, exactly as §11.4.238 requires. | UNSET | UNSET |
 | BOB-242 | Task | Queued | — | BOB-223 closed the incentive inversion
 where writing a §11.4.18-mandated docs/scripts/&lt;name&gt;.md companion
 doc tripped invariant 16 while the mandate requiring the doc to exist
@@ -1223,7 +1207,7 @@ lines from the GATE-DEBT REGISTER in scripts/pre_build_verification.sh.
 Duplicate-of/originating-from: BOB-223, BOB-151. Also recommend adding
 two rows to constitution/scripts/gates/gate_ledger_deferrals.tsv (the
 constitution submodule's own canonical §11.4.227(A) deferral ledger)
-once this new item's ID is known. |
+once this new item's ID is known. | UNSET | UNSET |
 | BOB-246 | Bug | In progress | Critical | Discovered 2026-09-25 by a
 subagent implementing 003-zero-shortcomings-audit Task 1, independently
 reproduced in isolation. scripts/commit-push-all.sh's argument parser
@@ -1258,7 +1242,7 @@ itself a §11.4.201(1) false-negative-class defect. (3) Audit and fix
 tasks.md's own Step 5 example ordering across every task (flags before
 the message, matching the working pattern used successfully elsewhere
 this session) so the plan itself does not keep tripping this bug for
-every future task implementer. |
+every future task implementer. | UNSET | UNSET |
 | BOB-247 | Task | Queued | Important | **Reported-Via:** §11.4.202
 reporting directive `task` on 2026-09-26T08:51:37Z **Reported-By:**
 AI  **What (the report, verbatim):** Found by the final whole-branch
@@ -1274,7 +1258,7 @@ detected.  **Acceptance criteria:** standing-check (or a sibling
 recurring mode) periodically re-runs verify-closure over a risk-ordered
 sample of closed items and records any mismatch as a finding without
 blocking; a test reintroduces a fixed defect in a temp DB and proves it
-is flagged. |
+is flagged. | UNSET | UNSET |
 | BOB-248 | Task | Queued | Minor | **Reported-Via:** §11.4.202
 reporting directive `task` on 2026-09-26T08:52:13Z **Reported-By:**
 AI  **What (the report, verbatim):** Deferred by ruling: FR-011
@@ -1292,7 +1276,7 @@ scripts/zero_shortcomings_audit.sh;
 specs/003-zero-shortcomings-audit  **Reproduction / context:** See final
 review of feature 003.  **Acceptance criteria:** Each listed follow-up
 is either implemented with a RED-first test or closed with an
-evidence-backed reason. |
+evidence-backed reason. | UNSET | UNSET |
 | BOB-250 | Task | Queued | Minor | **Reported-Via:** §11.4.202
 reporting directive `task` on 2026-09-26T13:50:14Z **Reported-By:**
 AI  **What (the report, verbatim):** Filed at the operator's request
@@ -1322,7 +1306,7 @@ a real content change, a missing twin and a charset-fragment file and
 rewrites 0 twins after a fresh checkout, or closed with an
 evidence-backed reason; an independent review approves the combined
 change; the full pre-build sweep stays at no new failures with
-CM-BASH-UNIT-TESTS-EXECUTED passing. |
+CM-BASH-UNIT-TESTS-EXECUTED passing. | UNSET | UNSET |
 | BOB-251 | Bug | Queued | Important | **Reported-Via:** §11.4.202
 reporting directive `bug` on 2026-09-26T15:11:04Z **Reported-By:**
 AI  **What (the report, verbatim):** Found while pushing the BOB-249
@@ -1351,6 +1335,8 @@ failing worktree add (shim or read-only temp dir) and asserts the
 message is printed and the exit status is non-zero, and a control
 asserts a healthy environment still passes; the hook cleans up any
 partially created worktree registration (git worktree prune).</td>
+<td>UNSET</td>
+<td>UNSET</td>
 </tr>
 </tbody>
 </table>

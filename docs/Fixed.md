@@ -1,7 +1,7 @@
 # Fixed — Closed Workable Items
 
-**Revision:** 69
-**Last modified:** 2026-09-27T15:10:53Z
+**Revision:** 70
+**Last modified:** 2026-11-20T12:55:46Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Closed items only. Open items live in [`Issues.md`](Issues.md).
 
@@ -3756,4 +3756,63 @@ Root cause of the writer is identified with captured evidence (bisect the bash s
 Discovered by a full 58-invariant pre_build_verification.sh sweep (2026-09-25) run during BOB-223 closure verification: invariant 56 (CM-GITIGNORE-SWALLOW-GUARD, §11.4.201(6), BOB-212) reports 4 first-party source files silently ignored: .specify/extensions/superspec/scripts/e2e-agent-claude.sh, .specify/extensions/superspec/scripts/e2e-smoke.sh, .specify/extensions/superspec/scripts/validate-extension-metadata.py, .specify/extensions/superspec/scripts/validate-release-archive.py -- all blocked by the broad .gitignore:218 rule ''.specify/extensions/superspec/''. Unrelated to BOB-223''s own scope; a genuinely new finding, not previously tracked. Remedy per the gate''s own remediation text: either rename/relocate the files so no .gitignore rule matches them, or add an explicit ! negation for them in .gitignore, then re-run the guard. Investigate first per §11.4.6/§11.4.124 whether the broad .specify/extensions/superspec/ ignore rule was intentional (e.g. to exclude a vendored/generated subtree) before narrowing it, since a careless negation could re-expose something the rule was deliberately protecting.
 
 DUPLICATE-OF: BOB-244 (§11.4.214). Filed first (2026-09-25 12:41) for the same 4 superspec files that BOB-244 (minted 2026-09-25 17:12) closed as Fixed with evidence in docs/qa/BOB-244 (byte-identical to the tracked superspec submodule, check_gitignore_swallow.sh exclusion added). Re-verified 2026-09-26/27: the guard passes and all 4 files are correctly ignored. Linked and reopened per §11.4.214 (canonical chain head = BOB-244, terminal Fixed).
+
+## BOB-068 — RD2-00: unattributed, unreviewed Auto-commit mechanism pushing to main
+
+**Status:** Fixed (→ Fixed.md)
+**Type:** Bug
+**Evidence:** tests/pre_build/test_check_cm_healthcheck_covers_served_ports.sh
+**Severity:** High
+
+RD2-00: unattributed, unreviewed Auto-commit mechanism pushing to main
+
+[BOB-136 adoption audit 2026-08-21 -> In progress] Work landed but acceptance NOT met. a7e55f9 completed the Phase-1 investigation (no daemon; shared-checkout race confirmed) and 0972cbc added commit-push-all.sh --scope + challenge, described in its own message as an 'Interim tooling remedy for BOB-068 while the §11.4.179 architectural fix (task #67 proposal) is designed'. 35e53db is a DRAFT PROPOSAL only. The §11.4.179 clone-isolation fix is not landed, so the item stays open.
+
+## BOB-078 — RD2-11: Once identified, wire Auto-commit mechanism through §11.4.234 dedicated commit/push script OR retire it
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** tests/pre_build/test_bob152_vendored_exclude_scope.sh
+**Severity:** High
+
+[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-11, P0] Once identified (RD2-10): either wire it through a real §11.4.234 dedicated commit/push script (with the hook-validation stages this project already has via .claude/settings.json PreToolUse guard, extended to a real pre-commit content check) or shut it down if it serves no purpose. Priority: P0. Blocked on RD2-10.
+
+## BOB-162 — Two new guards exist but no seam invokes them — plus the brownfield adoption decision the commit guard needs
+
+**Status:** Completed (→ Fixed.md)
+**Type:** Task
+**Evidence:** scripts/pre_build/cm_unattributed_commit.baseline
+**Severity:** Medium
+**Created-By:** BOB-106/BOB-107 remediation, residual
+
+**Reported-Via:** §11.4.202 reporting directive `task` on 2026-08-21T19:35:02Z
+**Reported-By:** BOB-106/BOB-107 remediation, residual
+
+**What (the report, verbatim):**
+The TESTS for both guards are now executed: pre-build invariant 30's glob was extended from tests/unit + tests/pre_build to also cover tests/hooks. MEASURED before/after: the glob expanded to 27 suites with 0 under tests/hooks while 3 existed there; it now expands to 30 with 3 under tests/hooks. All three pass.
+
+But the GUARDS themselves are still invoked by nothing.
+
+check-brief-inputs.sh is honestly conductor-run rather than automatic: a brief's required-input list lives in free-form prose that the Agent tool's structured input does not expose, so an automatic prompt-scraping gate would itself be an unproven pattern-match. Its seam is the dispatch procedure, and that is a documentation + habit change, not a hook.
+
+unattributed-commit-guard.sh is different and is why this item exists. Run against real history it names 14 violating commits since the last tag (and 21 bare Auto-commit subjects exist across all refs). Wiring it into the pre-build or commit seam AS-IS would therefore refuse every commit immediately, on pre-existing debt nobody can fix in the moment.
+
+That is precisely the 11.4.224(E) brownfield-adoption shape, and 11.4.66/11.4.122 put the choice with the operator, not with an agent inventing a ratchet. The options, stated so the decision is a decision and not a default:
+  (a) immediate hard floor -- the seam refuses until all 14 are attributed;
+  (b) one-time monotone-decrease ratchet (the 11.4.135 pattern) -- snapshot 14 as the baseline, the count may fall and may never rise, so day one is green and the disease cannot spread;
+  (c) changed-commits-only -- gate only commits created from now on, with a scheduled deadline for the historical 14;
+  (d) report-only for a stated period, then escalate.
+
+Recommendation, with the reasoning rather than just the pick: (b). It is the pattern this constitution already uses for exactly this situation, it makes the debt visible and bounded immediately, and it cannot be satisfied by deleting the guard's name (11.4.227 closes that gaming channel). But it is the operator's call and this item is not closed until that answer is recorded.
+
+Honest boundary (11.4.6): this item does NOT claim the 14 commits are harmful in themselves -- it claims their ATTRIBUTION is absent and that nothing currently prevents the 15th.
+
+**Affected scope / file-scope manifest:**
+scripts/hooks/unattributed-commit-guard.sh; scripts/hooks/check-brief-inputs.sh; scripts/pre_build_verification.sh; scripts/commit-push-all.sh
+
+**Reproduction / context:**
+Both guards run correctly by hand and are covered by passing tests (9/9 and 15/15, each proven non-bluff against a no-op stub). Neither is invoked by scripts/pre_build_verification.sh or scripts/commit-push-all.sh, so neither exerts standing detection pressure (11.4.226: a guard with no execution seam is not coverage; registration is not coverage).
+
+**Acceptance criteria:**
+Each guard is invoked by a named seam, OR carries a registered deferral pointing at this item. For unattributed-commit-guard.sh specifically, the operator has answered the adoption question below and the answer is recorded as consumer DATA -- never an invented ratchet.
 

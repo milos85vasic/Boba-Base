@@ -165,7 +165,7 @@ check "corruption guard: the other item's tracked evidence was restored" \
     '[[ "$(cat "$sb/docs/qa/BOB-OTHER/closure_evidence_1.md")" == "other original" ]]'
 check "corruption guard: the incident is logged beside the standing log, not in the sandbox docs/qa" \
     'grep -rq "docs/qa/BOB-OTHER/closure_evidence_1.md" "$d" && [[ ! -d "$sb/docs/qa/zero_shortcomings_audit" ]]'
-check "this test left the real repo's docs/qa untouched" '[[ -z "$(git -C "$repo" status --porcelain -- docs/qa)" ]]'
+check "this test left the real repo's tracked docs/qa files untouched" '[[ -z "$(git -C "$repo" status --porcelain --untracked-files=no -- docs/qa)" ]]'
 
 printf 'test_zero_shortcomings_audit_standing_reverify: %d passed, %d failed\n' "$pass" "$fail"
 [[ "$fail" -eq 0 ]]

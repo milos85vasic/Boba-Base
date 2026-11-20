@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.11" />
+  <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Issues</title>
   <style>
-    /* Default styles provided by pandoc.
-    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-    */
     html {
       color: #1a1a1a;
       background-color: #fdfdfd;
@@ -41,6 +38,7 @@
       body {
         background-color: transparent;
         color: black;
+        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -90,7 +88,6 @@
       color: #606060;
     }
     code {
-      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,13 +151,10 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
+    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: 1.5em;}
-    div.column{flex: auto;}
-    @media screen {
-    div.columns{gap: min(4vw, 1.5em);}
-    div.column{overflow-x: auto;}
-    }
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -171,12 +165,18 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
+  <meta name="x-export-source-sha256" content="a70bea3a862d5724b56a84e8a59fbaba7f2dbd558d384f20b2e80adfc3d1ed36">
+  <meta name="dcterms.modified" content="2026-09-27T15:18:07Z">
 </head>
 <body>
+<header id="title-block-header">
+<h1 class="title">Issues</h1>
+</header>
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 135 <strong>Last modified:</strong>
-2026-09-27T15:10:53Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 137 <strong>Last modified:</strong>
+2026-11-20T12:55:46Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -293,22 +293,6 @@ Create tracked workable items (BOB-064..067) for the four Lava-porting
 findings, citing implementing commits as evidence, closed as
 Implemented.</p>
 <h2
-id="bob-068-rd2-00-unattributed-unreviewed-auto-commit-mechanism-pushing-to-main">BOB-068
-— RD2-00: unattributed, unreviewed Auto-commit mechanism pushing to
-main</h2>
-<p><strong>Status:</strong> In progress <strong>Type:</strong> Bug
-<strong>Severity:</strong> High</p>
-<p>RD2-00: unattributed, unreviewed Auto-commit mechanism pushing to
-main</p>
-<p>[BOB-136 adoption audit 2026-08-21 -&gt; In progress] Work landed but
-acceptance NOT met. a7e55f9 completed the Phase-1 investigation (no
-daemon; shared-checkout race confirmed) and 0972cbc added
-commit-push-all.sh –scope + challenge, described in its own message as
-an ‘Interim tooling remedy for BOB-068 while the §11.4.179 architectural
-fix (task #67 proposal) is designed’. 35e53db is a DRAFT PROPOSAL only.
-The §11.4.179 clone-isolation fix is not landed, so the item stays
-open.</p>
-<h2
 id="bob-069-rd2-40-11.4.238-qa-discovery-channel-ledger-ongoing-coverage-escape-backfill">BOB-069
 — RD2-40: §11.4.238 QA-discovery-channel ledger — ongoing
 coverage-escape backfill</h2>
@@ -340,18 +324,6 @@ challenge finds flood=2 hits, malformed=0, exhaust=0 —
 malformed-request-flood and resource-exhaustion-under-attack are not
 covered. 258b7db filed the 6 followups (BOB-109..114). Partial, not
 complete.</p>
-<h2
-id="bob-078-rd2-11-once-identified-wire-auto-commit-mechanism-through-11.4.234-dedicated-commitpush-script-or-retire-it">BOB-078
-— RD2-11: Once identified, wire Auto-commit mechanism through §11.4.234
-dedicated commit/push script OR retire it</h2>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
-<strong>Severity:</strong> High</p>
-<p>[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-11, P0] Once
-identified (RD2-10): either wire it through a real §11.4.234 dedicated
-commit/push script (with the hook-validation stages this project already
-has via .claude/settings.json PreToolUse guard, extended to a real
-pre-commit content check) or shut it down if it serves no purpose.
-Priority: P0. Blocked on RD2-10.</p>
 <h2
 id="bob-080-rd2-13-retroactive-fable-xhigh-code-review-of-the-substantive-auto-commit-diffs">BOB-080
 — RD2-13: Retroactive Fable-xhigh code review of the substantive
@@ -657,72 +629,9 @@ reversible via uninstall.sh), and the root system.slice watchdog which
 is written but needs one <code>su</code>. UNTESTED AGAINST A REAL FORCED
 LOGOUT: survival is inferred from cgroup topology, not observed, and it
 does NOT hold against a whole-slice sweep or KillUserProcesses=yes. ##
-BOB-162 — Two new guards exist but no seam invokes them — plus the
-brownfield adoption decision the commit guard needs</p>
-<p><strong>Status:</strong> Queued <strong>Type:</strong> Task
-<strong>Severity:</strong> Medium <strong>Created-By:</strong>
-BOB-106/BOB-107 remediation, residual</p>
-<p><strong>Reported-Via:</strong> §11.4.202 reporting directive
-<code>task</code> on 2026-08-21T19:35:02Z <strong>Reported-By:</strong>
-BOB-106/BOB-107 remediation, residual</p>
-<p><strong>What (the report, verbatim):</strong> The TESTS for both
-guards are now executed: pre-build invariant 30’s glob was extended from
-tests/unit + tests/pre_build to also cover tests/hooks. MEASURED
-before/after: the glob expanded to 27 suites with 0 under tests/hooks
-while 3 existed there; it now expands to 30 with 3 under tests/hooks.
-All three pass.</p>
-<p>But the GUARDS themselves are still invoked by nothing.</p>
-<p>check-brief-inputs.sh is honestly conductor-run rather than
-automatic: a brief’s required-input list lives in free-form prose that
-the Agent tool’s structured input does not expose, so an automatic
-prompt-scraping gate would itself be an unproven pattern-match. Its seam
-is the dispatch procedure, and that is a documentation + habit change,
-not a hook.</p>
-<p>unattributed-commit-guard.sh is different and is why this item
-exists. Run against real history it names 14 violating commits since the
-last tag (and 21 bare Auto-commit subjects exist across all refs).
-Wiring it into the pre-build or commit seam AS-IS would therefore refuse
-every commit immediately, on pre-existing debt nobody can fix in the
-moment.</p>
-<p>That is precisely the 11.4.224(E) brownfield-adoption shape, and
-11.4.66/11.4.122 put the choice with the operator, not with an agent
-inventing a ratchet. The options, stated so the decision is a decision
-and not a default: (a) immediate hard floor – the seam refuses until all
-14 are attributed; (b) one-time monotone-decrease ratchet (the 11.4.135
-pattern) – snapshot 14 as the baseline, the count may fall and may never
-rise, so day one is green and the disease cannot spread; (c)
-changed-commits-only – gate only commits created from now on, with a
-scheduled deadline for the historical 14; (d) report-only for a stated
-period, then escalate.</p>
-<p>Recommendation, with the reasoning rather than just the pick: (b). It
-is the pattern this constitution already uses for exactly this
-situation, it makes the debt visible and bounded immediately, and it
-cannot be satisfied by deleting the guard’s name (11.4.227 closes that
-gaming channel). But it is the operator’s call and this item is not
-closed until that answer is recorded.</p>
-<p>Honest boundary (11.4.6): this item does NOT claim the 14 commits are
-harmful in themselves – it claims their ATTRIBUTION is absent and that
-nothing currently prevents the 15th.</p>
-<p><strong>Affected scope / file-scope manifest:</strong>
-scripts/hooks/unattributed-commit-guard.sh;
-scripts/hooks/check-brief-inputs.sh; scripts/pre_build_verification.sh;
-scripts/commit-push-all.sh</p>
-<p><strong>Reproduction / context:</strong> Both guards run correctly by
-hand and are covered by passing tests (9/9 and 15/15, each proven
-non-bluff against a no-op stub). Neither is invoked by
-scripts/pre_build_verification.sh or scripts/commit-push-all.sh, so
-neither exerts standing detection pressure (11.4.226: a guard with no
-execution seam is not coverage; registration is not coverage).</p>
-<p><strong>Acceptance criteria:</strong> Each guard is invoked by a
-named seam, OR carries a registered deferral pointing at this item. For
-unattributed-commit-guard.sh specifically, the operator has answered the
-adoption question below and the answer is recorded as consumer DATA –
-never an invented ratchet.</p>
-<h2
-id="bob-170-capture-one-quiescent-green-run-of-the-scaling-growth-gate-which-has-never-executed-under-its-own-loadavg0.75cpu-precondition-and-has-no-scheduled-window-that-would-make-it">BOB-170
-— Capture one quiescent GREEN run of the scaling growth gate, which has
-never executed under its own loadavg&lt;=0.75/cpu precondition and has
-no scheduled window that would make it</h2>
+BOB-170 — Capture one quiescent GREEN run of the scaling growth gate,
+which has never executed under its own loadavg&lt;=0.75/cpu precondition
+and has no scheduled window that would make it</p>
 <p><strong>Status:</strong> Queued <strong>Type:</strong> Task
 <strong>Severity:</strong> Medium <strong>Created-By:</strong> Claude
 <strong>Assigned-To:</strong> Claude</p>

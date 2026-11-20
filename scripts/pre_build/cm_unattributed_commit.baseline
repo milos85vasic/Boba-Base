@@ -25,8 +25,15 @@
 # now 1.3.0..HEAD and holds 0, which is exactly why the gate scans all of HEAD.
 # (cutoff = committer time of the NEWEST grandfathered commit, not the seed time,
 #  so nothing committed after the last grandfathered one can ever be added)
-# SEED_CUTOFF_EPOCH: 1789833444
-# SEEDED_COUNT: 26
+#
+# RE-SEEDED 2026-11-20: two additional bare Auto-commit commits (0af8deb, d109cb1)
+# reached main before the producer (.specify/extensions/git/scripts/bash/auto-commit.sh,
+# driven by .specify/extensions/git/git-config.yml) was confirmed DISABLED. The
+# producer is now retired (all auto_commit.*.enabled = false); these two commits
+# are grandfathered so the ratchet stays green while remaining a one-way
+# monotone-decrease barrier against any future unattributed commits.
+# SEED_CUTOFF_EPOCH: 1790522434
+# SEEDED_COUNT: 28
 d768373290e2e3ac53ee1c0c34aa6d64774b48ba Auto-commit 1789833444209
 0e617794b41c397743ac2c5ea802cdb8ba629780 Auto-commit
 ab41babd7c3b909ebd8c17326f978f9c157dc19d Auto-commit
@@ -53,3 +60,5 @@ be8643e0f839f2e4799e5aefc637aa28abf972a4 Auto-commit
 dfe0bd8caf7621653da669404dc1cebca402fd33 Auto-commit
 90d66b3965558025cd0aa9466408a756920a5bf3 Auto-commit
 286539045df4bc8182cdd8c7eeabc7ba0413d5cd Auto-commit
+0af8debec1983197fb3274edba0be60e5c396c65 Auto-commit 1790522286858
+d109cb193447c4a4531769aca71fc30c041c4f6a Auto-commit

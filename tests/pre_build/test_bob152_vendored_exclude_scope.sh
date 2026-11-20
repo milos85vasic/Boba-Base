@@ -131,7 +131,9 @@ run_gate() {
     # run_gate <gate-basename> <env-var-name> <exclude-value-or-empty> <root> [extra-args...]
     local _gate="$1" _envvar="$2" _exclude="$3" _root="$4"; shift 4
     if [[ -n "${_exclude}" ]]; then
-        env "${_envvar}=${_exclude}" bash "${GATES_DIR}/${_gate}" --root "${_root}" --quiet "$@" 2>&1
+        # The constitution gate_env_override.sh helper honours verdict-affecting
+        # ambient overrides only under HELIX_TEST_MODE=1 (§11.4.276 round 8).
+        env HELIX_TEST_MODE=1 "${_envvar}=${_exclude}" bash "${GATES_DIR}/${_gate}" --root "${_root}" --quiet "$@" 2>&1
     else
         env -u "${_envvar}" bash "${GATES_DIR}/${_gate}" --root "${_root}" --quiet "$@" 2>&1
     fi
@@ -190,7 +192,7 @@ _failed_labels=""
 check_pair "killpg" "cm_killpg_pgid_guard.sh" "KILLPG_GUARD_EXCLUDE" write_killpg_needle "bob152_needle.py" \
     || { overall_fail=1; _failed_labels="${_failed_labels} killpg"; }
 
-check_pair "oracle" "cm_oracle_strategy_named_and_independent.sh" "ORACLE_GUARD_EXCLUDE" write_oracle_needle "bob152_needle_test.py" --glob '*test*.py' \
+check_pair "oracle" "cm_oracle_strategy_named_and_independent.sh" "ORACLE_GUARD_EXCLUDE" write_oracle_needle "bob152_needle_test.py" --glob '*test*.py' --strict \
     || { overall_fail=1; _failed_labels="${_failed_labels} oracle"; }
 
 check_pair "mock_pid" "cm_test_mock_pid_explicit_int.sh" "MOCK_PID_GUARD_EXCLUDE" write_mock_pid_needle "bob152_needle_test.py" \

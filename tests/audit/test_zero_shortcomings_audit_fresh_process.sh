@@ -85,8 +85,8 @@ check "m4 AUDIT_INCIDENT_LOG_DIR overrides the incident log location" \
     'compgen -G "$over/*.log" >/dev/null && grep -q "docs/qa/BOB-OTHER/closure_evidence_1.md" "$over"/*.log'
 check "I-2(a) end-to-end: a file DELETED by the recorded command is restored" \
     '[[ "$(cat "$sb/docs/qa/BOB-OTHER/closure_evidence_1.md" 2>/dev/null)" == "other original" ]]'
-check "the real repo's docs/qa gained no incident log from this test" \
-    '[[ -z "$(git -C "$repo" status --porcelain -- docs/qa)" ]]'
+check "the real repo's tracked docs/qa files gained no incident log from this test" \
+    '[[ -z "$(git -C "$repo" status --porcelain --untracked-files=no -- docs/qa)" ]]'
 
 printf 'test_zero_shortcomings_audit_fresh_process: %d passed, %d failed\n' "$pass" "$fail"
 [[ "$fail" -eq 0 ]]

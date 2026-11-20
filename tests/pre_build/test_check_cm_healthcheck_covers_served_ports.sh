@@ -277,7 +277,7 @@ run_arm "golden-TRUE T7 a missing input file FAILs, never skips" 1 \
 # The delegator hands PYTHON_BIN to the engine as the FIRST candidate but the
 # engine still falls back to python3/python (correct behaviour), so this arm
 # must starve the candidate list at the engine boundary to test the property.
-B_OUT="$(HEALTHCHECK_PORTS_PYTHON="/nonexistent/python" bash "$ENGINE" \
+B_OUT="$(HELIX_TEST_MODE=1 HEALTHCHECK_PORTS_PYTHON="/nonexistent/python" bash "$ENGINE" \
         --compose "$TMPD/f3_compose.yml" --manifest "$TMPD/f3_manifest.yml" 2>&1)"; B_RC=$?
 if [[ "$B_RC" -eq 1 ]] && printf '%s' "$B_OUT" | grep -qF 'BLIND gate'; then
     echo "PASS: golden-TRUE T8 Property B: no PyYAML is FAIL-because-blind (rc=1)"
