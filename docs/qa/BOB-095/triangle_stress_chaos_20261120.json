@@ -1,0 +1,52 @@
+{
+  "item": "BOB-095",
+  "captured_at": "2026-11-20T19:17:57Z",
+  "feature_class": "stress",
+  "purpose": "triangle_sse_hooks_scheduler_stress_chaos",
+  "command": "cd qBitTorrent-go && GOMAXPROCS=2 nice -n 19 go test -tags=integration -race -count=1 ./tests/integration/ -run StressChaos -v -timeout 120s",
+  "components_under_test": [
+    "internal/service/sse_broker.go",
+    "internal/api/hooks.go",
+    "internal/api/scheduler_api.go"
+  ],
+  "scenarios": [
+    {
+      "name": "SSEBroadcastSustainedLoad",
+      "result": "PASS",
+      "detail": "200 publishes × 20 subscribers; p50=11.53µs, p95=23.35µs, p99=37.71µs"
+    },
+    {
+      "name": "SchedulerTickContention",
+      "result": "PASS",
+      "detail": "10 ticks × 20 schedules → 200 publishes in 4.11ms; slow-client drop path exercised"
+    },
+    {
+      "name": "HookRegistrationRace",
+      "result": "PASS",
+      "detail": "concurrent register/unregister against running scheduler"
+    },
+    {
+      "name": "SSEClientDisconnectMidBroadcast",
+      "result": "PASS",
+      "detail": "victim received 21 events before broker closed channel; no panic on unsubscribe"
+    },
+    {
+      "name": "SchedulerTickDuringShutdown",
+      "result": "PASS",
+      "detail": "clean drain: 50 events received before shutdown"
+    },
+    {
+      "name": "HookPanicIsolation",
+      "result": "PASS",
+      "detail": "panicking hook does not kill broker or scheduler"
+    }
+  ],
+  "resource_limits": {
+    "GOMAXPROCS": 2,
+    "nice": 19,
+    "race_detector": true,
+    "timeout_seconds": 120
+  },
+  "verdict": "PASS",
+  "summary": "6/6 scenarios PASS; race detector clean; covers the full SSEBroker + HookStore + ScheduleStore triangle requested by the item."
+}

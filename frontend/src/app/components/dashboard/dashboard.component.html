@@ -32,7 +32,11 @@
                   [disabled]="bridgeChecking()"
                   [title]="'Retry probe'"
                   aria-label="Retry WebUI Bridge probe"
-                  (click)="retryBridgeProbe($event)">↻</button>
+                  (click)="retryBridgeProbe($event)">
+            <svg class="glyph-retry" aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+              <path d="M12 4V1L8 5l4 4V6a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8Z"/>
+            </svg>
+          </button>
         </span>
       </a>
     </div>

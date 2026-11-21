@@ -2,14 +2,21 @@
   <button class="theme-toggle" type="button" (click)="toggleMode()"
           [attr.aria-label]="mode() === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
           [title]="mode() === 'dark' ? 'Light mode' : 'Dark mode'">
-    {{ mode() === 'dark' ? '☀' : '☾' }}
+    <svg *ngIf="mode() === 'dark'" class="glyph-sun" aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+      <path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 3V20m0-20v2M1 12H3m18 0h2M4.22 4.22 5.64 5.64m12.72 12.72 1.42 1.42M4.22 19.78 5.64 18.36M18.36 5.64l1.42-1.42"/>
+    </svg>
+    <svg *ngIf="mode() !== 'dark'" class="glyph-moon" aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/>
+    </svg>
   </button>
   <button class="palette-dropdown" type="button" (click)="toggleOpen()"
           [attr.aria-expanded]="open()"
           [attr.aria-haspopup]="true">
     <span class="current-name">{{ palette().name }}</span>
     <span class="current-mode">({{ mode() }})</span>
-    <span class="caret">▾</span>
+    <svg class="caret" aria-hidden="true" viewBox="0 0 24 24" width="10" height="10" fill="currentColor">
+      <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
   </button>
   <ul class="palette-menu" *ngIf="open()" role="menu">
     <li *ngFor="let p of availablePalettes; trackBy: trackByPalette"

@@ -251,21 +251,41 @@ residue: a mutation harness once wrote a 20/40/60 ladder with a
 as evidence (via `7b45113`). §11.4.84's mutation-residue lesson, applied
 at the evidence layer.
 
-## Owed: one quiescent run
+## Quiescent GREEN run captured (BOB-170, 2026-11-20)
 
-The two timing-derived tests have **never executed under their own
-precondition**. The ceiling is `loadavg/nproc <= 0.75` (6.0 on this
-8-core host); every run recorded during this work sat at 9.2-40. The
-skip is loud and legitimate, but nothing currently ensures the gate ever
-runs — a §11.4.226 unexecuted-standing-guard.
+The two timing-derived tests were executed under their own precondition:
 
-**Tracked as BOB-170**: capture one quiescent GREEN run of
-`test_dedup_growth_does_not_regress_past_quadratic` and
-`test_dedup_latency_distribution_at_operating_size`, which would also
-regenerate the two absent artifacts above and close the honest gap
-recorded next to `MAX_GROWTH_EXPONENT` in the source. When that run
-lands, these tables need re-transcribing — and the checker above is
-what will catch it if they are not.
+| Metric | Admission load/cpu | Result | Budget |
+|---|---|---|---|
+| `test_dedup_growth_does_not_regress_past_quadratic` | 0.333 | span exponent 1.8622 | <= 2.10 |
+| `test_dedup_latency_distribution_at_operating_size` | 0.369 | p99 132.262 ms | < 2000 ms |
+
+Evidence files:
+
+- `docs/qa/BOB-170/quiescent_green_run_20261120.json`
+- `docs/qa/BOB-109/dedup_cost_scaling.json`
+- `docs/qa/BOB-109/dedup_latency_distribution.json`
+
+### Freshness contract (§11.4.226)
+
+A quiescent verdict must be refreshed before it becomes an inferred
+forever-green. Re-run the two tests above when any of the following
+occurs:
+
+1. `download-proxy/src/merge_service/deduplicator.py` changes.
+2. `tests/scaling/test_scaling_envelope.py` changes.
+3. The host-safety thresholds (`_require_quiescent_host`,
+   `_require_host_headroom`) change.
+4. Ninety days have elapsed since the last quiescent PASS artifact.
+
+The command is:
+
+```bash
+.venv/bin/python -m pytest \
+  tests/scaling/test_scaling_envelope.py::TestDedupCostScaling::test_dedup_growth_does_not_regress_past_quadratic \
+  tests/scaling/test_scaling_envelope.py::TestDedupCostScaling::test_dedup_latency_distribution_at_operating_size \
+  -v --import-mode=importlib
+```
 
 ## Why the gate reads a span exponent, not per-step
 

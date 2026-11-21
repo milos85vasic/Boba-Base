@@ -1,0 +1,28 @@
+{
+  "item": "BOB-184",
+  "captured_at": "2026-11-20T23:55:01Z",
+  "feature_class": "accessibility",
+  "purpose": "icon_glyph_non_text_contrast",
+  "controls": [
+    ".bridge-retry",
+    ".theme-toggle",
+    ".caret"
+  ],
+  "change": "Replaced non-BMP Unicode glyphs with inline SVG elements using fill=currentColor so the foreground colour is resolved by axe-core and the Python contrast oracle can measure it against the composited backdrop.",
+  "files_changed": [
+    "frontend/src/app/components/theme-picker/theme-picker.component.html",
+    "frontend/src/app/components/theme-picker/theme-picker.component.scss",
+    "frontend/src/app/components/dashboard/dashboard.component.html",
+    "frontend/src/app/components/dashboard/dashboard.component.scss",
+    "docs/qa/BOB-164/axe_contrast_scan.py"
+  ],
+  "scan_command": "cd frontend && npx ng build --output-path=/tmp/dist_bob184_v2 --configuration production && cd .. && .venv/bin/python docs/qa/BOB-164/axe_contrast_scan.py --dist /tmp/dist_bob184_v2/browser --all-palettes --out /tmp/scan_bob184_v2.json",
+  "scan_result": {
+    "colour_contrast_violations": 0,
+    "blocking_incomplete_nodes": 0,
+    "fenced_glyph_unmeasured_nodes": 0,
+    "themes_tested": 16,
+    "verdict": "PASS"
+  },
+  "verdict": "PASS"
+}

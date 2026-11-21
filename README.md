@@ -25,8 +25,8 @@
 </p>
 
 <p align="center">
-  <img alt="tests"          src="https://img.shields.io/badge/python%20tests-6393%20collected-blue">
-  <img alt="vitest"         src="https://img.shields.io/badge/frontend%20tests-2743%20collected-blue">
+  <img alt="tests"          src="https://img.shields.io/badge/python%20tests-6394%20collected-blue">
+  <img alt="vitest"         src="https://img.shields.io/badge/frontend%20tests-N%2FA%20%28vitest%20list%20--run%20produced%20no%20parseable%20test%20lines%29-lightgrey">
   <img alt="plugins"        src="https://img.shields.io/badge/plugins-43-blue">
   <img alt="merge"          src="https://img.shields.io/badge/merge_service-FastAPI%20%3A7187-orange">
   <img alt="ci"             src="https://img.shields.io/badge/ci-manual%20%28.%2Fci.sh%2C%20no%20auto--trigger%29-success">

@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.11" />
+  <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>scaling</title>
   <style>
-    /* Default styles provided by pandoc.
-    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-    */
     html {
       color: #1a1a1a;
       background-color: #fdfdfd;
@@ -41,6 +38,7 @@
       body {
         background-color: transparent;
         color: black;
+        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -90,7 +88,6 @@
       color: #606060;
     }
     code {
-      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -154,13 +151,10 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
+    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: 1.5em;}
-    div.column{flex: auto;}
-    @media screen {
-    div.columns{gap: min(4vw, 1.5em);}
-    div.column{overflow-x: auto;}
-    }
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -171,6 +165,7 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
     /* CSS for syntax highlighting */
     html { -webkit-text-size-adjust: 100%; }
     pre > code.sourceCode { white-space: pre; position: relative; }
@@ -237,6 +232,8 @@
     code span.vs { color: #4070a0; } /* VerbatimString */
     code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
+  <meta name="x-export-source-sha256" content="f2a72a6c8ce0178b7ba53328875ed89643749e8eda979bd85968d89e16fa247f">
+  <meta name="dcterms.modified" content="2026-08-22T00:48:45Z">
 </head>
 <body>
 <header id="title-block-header">
@@ -602,20 +599,65 @@ mutation harness once wrote a 20/40/60 ladder with a 443,190 ms p99 into
 <code>healthz_scale_out_curve.json</code>, and it was committed as
 evidence (via <code>7b45113</code>). §11.4.84’s mutation-residue lesson,
 applied at the evidence layer.</p>
-<h2 id="owed-one-quiescent-run">Owed: one quiescent run</h2>
-<p>The two timing-derived tests have <strong>never executed under their
-own precondition</strong>. The ceiling is
-<code>loadavg/nproc &lt;= 0.75</code> (6.0 on this 8-core host); every
-run recorded during this work sat at 9.2-40. The skip is loud and
-legitimate, but nothing currently ensures the gate ever runs — a
-§11.4.226 unexecuted-standing-guard.</p>
-<p><strong>Tracked as BOB-170</strong>: capture one quiescent GREEN run
-of <code>test_dedup_growth_does_not_regress_past_quadratic</code> and
-<code>test_dedup_latency_distribution_at_operating_size</code>, which
-would also regenerate the two absent artifacts above and close the
-honest gap recorded next to <code>MAX_GROWTH_EXPONENT</code> in the
-source. When that run lands, these tables need re-transcribing — and the
-checker above is what will catch it if they are not.</p>
+<h2 id="quiescent-green-run-captured-bob-170-2026-11-20">Quiescent GREEN
+run captured (BOB-170, 2026-11-20)</h2>
+<p>The two timing-derived tests were executed under their own
+precondition:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Admission load/cpu</th>
+<th>Result</th>
+<th>Budget</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>test_dedup_growth_does_not_regress_past_quadratic</code></td>
+<td>0.333</td>
+<td>span exponent 1.8622</td>
+<td>&lt;= 2.10</td>
+</tr>
+<tr>
+<td><code>test_dedup_latency_distribution_at_operating_size</code></td>
+<td>0.369</td>
+<td>p99 132.262 ms</td>
+<td>&lt; 2000 ms</td>
+</tr>
+</tbody>
+</table>
+<p>Evidence files:</p>
+<ul>
+<li><code>docs/qa/BOB-170/quiescent_green_run_20261120.json</code></li>
+<li><code>docs/qa/BOB-109/dedup_cost_scaling.json</code></li>
+<li><code>docs/qa/BOB-109/dedup_latency_distribution.json</code></li>
+</ul>
+<h3 id="freshness-contract-11.4.226">Freshness contract (§11.4.226)</h3>
+<p>A quiescent verdict must be refreshed before it becomes an inferred
+forever-green. Re-run the two tests above when any of the following
+occurs:</p>
+<ol type="1">
+<li><code>download-proxy/src/merge_service/deduplicator.py</code>
+changes.</li>
+<li><code>tests/scaling/test_scaling_envelope.py</code> changes.</li>
+<li>The host-safety thresholds (<code>_require_quiescent_host</code>,
+<code>_require_host_headroom</code>) change.</li>
+<li>Ninety days have elapsed since the last quiescent PASS
+artifact.</li>
+</ol>
+<p>The command is:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">.venv/bin/python</span> <span class="at">-m</span> pytest <span class="dt">\</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  tests/scaling/test_scaling_envelope.py::TestDedupCostScaling::test_dedup_growth_does_not_regress_past_quadratic <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  tests/scaling/test_scaling_envelope.py::TestDedupCostScaling::test_dedup_latency_distribution_at_operating_size <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-v</span> <span class="at">--import-mode</span><span class="op">=</span>importlib</span></code></pre></div>
 <h2 id="why-the-gate-reads-a-span-exponent-not-per-step">Why the gate
 reads a span exponent, not per-step</h2>
 <p>Per-step exponents are noise-dominated on a host shared with other
@@ -874,8 +916,8 @@ closes in a <code>finally</code>; a session-scoped finaliser fails the
 run if a pool leaks.</p></li>
 </ul>
 <h2 id="running-it">Running it</h2>
-<div class="sourceCode" id="cb3"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/scaling/ <span class="at">-v</span> <span class="at">--import-mode</span><span class="op">=</span>importlib <span class="at">-p</span> no:schemathesis</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">python3</span> <span class="at">-m</span> pytest tests/scaling/ <span class="at">-v</span> <span class="at">--import-mode</span><span class="op">=</span>importlib <span class="at">-p</span> no:schemathesis</span></code></pre></div>
 <p><code>-p no:schemathesis</code> is required on this host for an
 unrelated pre-existing reason: the plugin fails to import
 (<code>No module named 'rpds.rpds'</code>) and takes the whole pytest
@@ -886,13 +928,13 @@ session down with it.</p>
 timeouts this suite relies on do not apply (a
 <code>--strict-config</code> run also needs the addopts’
 <code>--timeout</code> to have a provider):</p>
-<div class="sourceCode" id="cb4"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">PYTEST_DISABLE_PLUGIN_AUTOLOAD</span><span class="op">=</span>1 <span class="ex">python3</span> <span class="at">-m</span> pytest tests/scaling/ <span class="at">-v</span> <span class="dt">\</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--import-mode</span><span class="op">=</span>importlib <span class="at">-p</span> timeout <span class="at">-p</span> randomly</span></code></pre></div>
-<p>Under <code>nice</code>/<code>ionice</code> on a shared host:</p>
 <div class="sourceCode" id="cb5"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nice</span> <span class="at">-n</span> 19 ionice <span class="at">-c</span> 3 python3 <span class="at">-m</span> pytest tests/scaling/ <span class="at">-q</span> <span class="dt">\</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--import-mode</span><span class="op">=</span>importlib <span class="at">-p</span> no:schemathesis</span></code></pre></div>
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="va">PYTEST_DISABLE_PLUGIN_AUTOLOAD</span><span class="op">=</span>1 <span class="ex">python3</span> <span class="at">-m</span> pytest tests/scaling/ <span class="at">-v</span> <span class="dt">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--import-mode</span><span class="op">=</span>importlib <span class="at">-p</span> timeout <span class="at">-p</span> randomly</span></code></pre></div>
+<p>Under <code>nice</code>/<code>ionice</code> on a shared host:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nice</span> <span class="at">-n</span> 19 ionice <span class="at">-c</span> 3 python3 <span class="at">-m</span> pytest tests/scaling/ <span class="at">-q</span> <span class="dt">\</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">--import-mode</span><span class="op">=</span>importlib <span class="at">-p</span> no:schemathesis</span></code></pre></div>
 <p>Mutation/experiment runs MUST set
 <code>BOBA_SCALING_MUTATION=1</code> <strong>and</strong> redirect
 <code>EVIDENCE_DIR</code> to a scratch path; with the flag set and no

@@ -1,0 +1,45 @@
+{
+  "item": "BOB-170",
+  "captured_at": "2026-11-20T19:18:11Z",
+  "feature_class": "scaling",
+  "purpose": "quiescent_green_run",
+  "command": ".venv/bin/python -m pytest tests/scaling/test_scaling_envelope.py::TestDedupCostScaling::test_dedup_growth_does_not_regress_past_quadratic tests/scaling/test_scaling_envelope.py::TestDedupCostScaling::test_dedup_latency_distribution_at_operating_size -v --import-mode=importlib",
+  "host_safety_at_admission": {
+    "cpu_count": 16,
+    "loadavg_1m": 5.33,
+    "load_per_cpu": 0.333,
+    "load_per_cpu_ceiling": 0.75,
+    "mem_used_pct": 54.31,
+    "mem_used_pct_ceiling": 60,
+    "thread_headroom": 120531,
+    "thread_headroom_floor": 2048
+  },
+  "dedup_cost_scaling": {
+    "artifact": "docs/qa/BOB-109/dedup_cost_scaling.json",
+    "span_from_n": 100,
+    "span_to_n": 800,
+    "span_exponent": 1.8622,
+    "max_growth_exponent_allowed": 2.1,
+    "verdict": "PASS"
+  },
+  "dedup_latency_distribution": {
+    "artifact": "docs/qa/BOB-109/dedup_latency_distribution.json",
+    "n_results": 200,
+    "iterations": 100,
+    "p99_ms": 132.262,
+    "budget_p99_ms": 2000.0,
+    "verdict": "PASS"
+  },
+  "freshness_contract": {
+    "rationale": "§11.4.226 unexecuted-standing-guard: a quiescent verdict must be refreshed before it becomes an inferred forever-green.",
+    "re_run_trigger": [
+      "any modification to download-proxy/src/merge_service/deduplicator.py",
+      "any modification to tests/scaling/test_scaling_envelope.py",
+      "any modification to the host concurrency or memory safety thresholds in _require_quiescent_host() / _require_host_headroom()",
+      "elapsed time >= 90 days since the last quiescent PASS artifact"
+    ],
+    "re_run_command": ".venv/bin/python -m pytest tests/scaling/test_scaling_envelope.py::TestDedupCostScaling::test_dedup_growth_does_not_regress_past_quadratic tests/scaling/test_scaling_envelope.py::TestDedupCostScaling::test_dedup_latency_distribution_at_operating_size -v --import-mode=importlib",
+    "stale_if": "any of the re-run triggers occur and no fresh quiescent PASS artifact exists"
+  },
+  "verdict": "PASS"
+}

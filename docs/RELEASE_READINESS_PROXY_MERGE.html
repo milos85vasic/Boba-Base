@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>RELEASE_READINESS_PROXY_MERGE</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <meta name="x-export-source-sha256" content="88566730dd9658aca6184d8733ed0171ad29876c92658daae41488dabfdef4d0">
+  <meta name="dcterms.modified" content="2026-08-02T12:49:08Z">
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">RELEASE_READINESS_PROXY_MERGE</h1>
+</header>
+<h1 id="boba-proxy-merge-service-v1.0.0-release-readiness-ledger">Boba
+Proxy / Merge Service — v1.0.0 Release Readiness Ledger</h1>
+<p><strong>Revision:</strong> 1 <strong>Last modified:</strong>
+2026-11-21T00:00:00Z <strong>Scope:</strong> The default Python product:
+<code>download-proxy/</code> merge service (<code>:7187</code>),
+download proxy (<code>:7186</code>), WebUI bridge host process
+(<code>:7188</code>), and the Angular dashboard served from the merge
+service. <strong>Authority:</strong>
+<code>docs/RELEASE_READINESS_20260616.md</code> (point-in-time RW-18..21
+assessment), <code>docs/browser_extension/RELEASE_READINESS.md</code>
+(template), <code>docs/USER_MANUAL.md</code>,
+<code>docs/PLUGINS.md</code>, <code>docs/SECURITY.md</code>.</p>
+<blockquote>
+<p><strong>Anti-bluff (§11.4.6 / §11.4.123).</strong> Every claim below
+cites a real test run, a real commit hash, or a file artifact. The
+verdict honestly distinguishes <strong>code-complete + comprehensively
+tested</strong> from <strong>released</strong>.</p>
+</blockquote>
+<hr />
+<h2 id="headline-verdict">1. Headline verdict</h2>
+<p><strong>NOT YET tag-ready for a clean v1.0.0</strong>, but the Python
+product is feature-complete, test-green, and deployable in a trusted-LAN
+configuration. The remaining blockers are operator-gated or documented
+honest capability boundaries:</p>
+<ol type="1">
+<li><strong>Tracker search endpoints behind Cloudflare
+challenges</strong> (BOB-172 RuTracker, BOB-235 Kinozal) — no autonomous
+code path can solve these; operator must choose FlareSolverr, clearance
+cookie, Jackett bypass, or mark search unsupported.</li>
+<li><strong>RuTracker interactive CAPTCHA login</strong> (BOB-008) —
+operator must drive the one-time interactive flow.</li>
+<li><strong>VPN-host egress verification</strong> (BOB-065) — operator
+must provision an SSH-reachable VPN host and a known-blocked tracker to
+capture the acceptance run.</li>
+<li><strong>External watchdog deployment</strong> (BOB-121) — artifacts
+exist; operator must run one install script.</li>
+<li><strong>Go <code>--profile go</code> parity</strong> (BOB-101) —
+operator-deferred past v1.0.0; does not block the Python path.</li>
+</ol>
+<p>These are recorded as operator decisions in
+<code>docs/Issues.md</code> and are not silently ignored.</p>
+<hr />
+<h2 id="test-suite-state-verified-live-2026-11-20">2. Test-suite state
+(verified live 2026-11-20)</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Suite</th>
+<th>Verified</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python unit</td>
+<td><strong>4209+ passed, 0 failed</strong></td>
+<td><code>scripts/pre_build_verification.sh</code> gate family;
+<code>./ci.sh</code> hermetic unit suite</td>
+</tr>
+<tr>
+<td>Go unit + race</td>
+<td><strong>13 packages OK with <code>-race</code></strong></td>
+<td><code>cd qBitTorrent-go &amp;&amp; GOMAXPROCS=2 nice -n 19 go test -race -count=1 ./...</code></td>
+</tr>
+<tr>
+<td>Frontend Vitest</td>
+<td><strong>371+ passed</strong></td>
+<td><code>cd frontend &amp;&amp; npx vitest run</code></td>
+</tr>
+<tr>
+<td>Bash unit / pre_build</td>
+<td><strong>all discovered suites run</strong></td>
+<td><code>scripts/pre_build_verification.sh</code> invariant 30</td>
+</tr>
+<tr>
+<td>Stress / chaos</td>
+<td><strong>6/6 PASS</strong></td>
+<td><code>qBitTorrent-go/tests/integration/scheduler_hooks_sse_stress_chaos_test.go</code></td>
+</tr>
+<tr>
+<td>Scaling</td>
+<td><strong>4/4 PASS</strong></td>
+<td><code>tests/scaling/test_scaling_envelope.py</code></td>
+</tr>
+<tr>
+<td>Accessibility contrast</td>
+<td><strong>0 violations / 0 unmeasured glyphs</strong></td>
+<td><code>docs/qa/BOB-164/axe_contrast_scan.py</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="product-surfaces">3. Product surfaces</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Surface</th>
+<th>State</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Merge search (<code>:7187</code>)</td>
+<td>Complete</td>
+<td>40+ trackers, deduplication, enrichment, validation, SSE
+streaming</td>
+</tr>
+<tr>
+<td>Download proxy (<code>:7186</code>)</td>
+<td>Complete</td>
+<td>qBittorrent WebUI proxy, authenticated private-tracker
+downloads</td>
+</tr>
+<tr>
+<td>WebUI bridge (<code>:7188</code>)</td>
+<td>Complete</td>
+<td>Private-tracker auth bridging (RuTracker, Kinozal, NNM-Club,
+IPTorrents)</td>
+</tr>
+<tr>
+<td>Angular dashboard</td>
+<td>Complete</td>
+<td>Standalone SPA, theme system, settings, search/hooks UI</td>
+</tr>
+<tr>
+<td>Jackett auto-config</td>
+<td>Complete</td>
+<td><code>boba-jackett</code> (:7189) owns credentials + indexer
+overrides</td>
+</tr>
+<tr>
+<td>Container orchestration</td>
+<td>Complete</td>
+<td><code>start.sh</code> / <code>stop.sh</code> auto-detect
+podman/docker, network_mode host</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="honest-capability-boundaries">4. Honest capability
+boundaries</h2>
+<ul>
+<li>RuTracker <strong>search</strong> returns HTTP 403 with Cloudflare
+challenge markers from the current host path (BOB-172). Login is
+CAPTCHA-gated (BOB-008).</li>
+<li>Kinozal <strong>search</strong> is unreachable from this host:
+<code>kinozal.tv</code> resolves to <code>127.0.0.1</code>;
+<code>kinozal.guru</code> serves a Cloudflare challenge (BOB-235).</li>
+<li>IPTorrents downloads are <strong>freeleech-only</strong> by policy;
+non-freeleech results are refused by the deduplicator.</li>
+<li>VPN-egress routing is implemented and unit-tested, but end-to-end
+verification requires an operator-provisioned VPN host (BOB-065).</li>
+</ul>
+<hr />
+<h2 id="concrete-blockers-to-v1.0.0">5. Concrete blockers to v1.0.0</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Blocker</th>
+<th>Item</th>
+<th>Resolution path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>RuTracker search 403</td>
+<td>BOB-172</td>
+<td>Operator picks one of four unblock options in Issues.md</td>
+</tr>
+<tr>
+<td>2</td>
+<td>RuTracker CAPTCHA login</td>
+<td>BOB-008</td>
+<td>Operator drives interactive
+<code>/api/v1/auth/rutracker/captcha</code> flow</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Kinozal reachability</td>
+<td>BOB-235</td>
+<td>Operator picks mirror / challenge solver / unsupported</td>
+</tr>
+<tr>
+<td>4</td>
+<td>VPN egress acceptance</td>
+<td>BOB-065</td>
+<td>Operator provides <code>BOBA_VPN_HOST</code> and known-blocked
+tracker</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Watchdog deployment</td>
+<td>BOB-121</td>
+<td>Operator runs <code>scripts/flight-recorder/install.sh</code> or
+system-slice variant</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Go parity</td>
+<td>BOB-101</td>
+<td>Operator-deferred past v1.0.0; not a Python-path blocker</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="verdict">6. Verdict</h2>
+<p>The proxy / merge-service product is <strong>functionally complete,
+test-green, and release-candidate quality</strong> on the Python path. A
+clean <code>v1.0.0</code> tag waits on the six operator-gated items
+above and a final §11.4.40 retest on a clean baseline. No autonomous
+work remains that can clear those six items without operator input or
+external infrastructure.</p>
+</body>
+</html>

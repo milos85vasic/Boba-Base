@@ -34,6 +34,9 @@
 .theme-toggle {
   min-width: 32px;
   font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .palette-dropdown {
@@ -43,7 +46,14 @@
 
   .current-name { font-weight: 600; }
   .current-mode { color: var(--color-text-secondary); font-size: 12px; }
-  .caret { font-size: 10px; opacity: 0.7; }
+  .caret {
+    width: 10px;
+    height: 10px;
+    opacity: 0.7;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 .palette-menu {

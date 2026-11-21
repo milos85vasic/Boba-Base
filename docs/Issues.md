@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 144
-**Last modified:** 2026-11-20T19:08:54Z
+**Revision:** 145
+**Last modified:** 2026-11-21T00:03:09Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -28,8 +28,9 @@ RuTracker automated login blocked by CAPTCHA
 
 ## BOB-065 — Lava P2: Egress diagnosis and VPN-host SOCKS routing (containers pkg/egress)
 
-**Status:** In progress
+**Status:** Operator-blocked
 **Type:** Task
+**Operator-Block-Details:** WHAT: VPN host required UNBLOCK: [A] provide VPN host [B] defer WHO: Operator
 **Severity:** High
 
 Lava P2: Egress diagnosis and VPN-host SOCKS routing (containers pkg/egress)
@@ -44,36 +45,20 @@ REMAINING WORK: (1) an operator-provisioned, SSH-reachable VPN host set via BOBA
 
 EVIDENCE: docs/qa/BOB-065/investigation_20260925.md.
 
-## BOB-069 — RD2-40: §11.4.238 QA-discovery-channel ledger — ongoing coverage-escape backfill
-
-**Status:** In progress
-**Type:** Task
-**Severity:** High
-
-RD2-40: §11.4.238 QA-discovery-channel ledger — ongoing coverage-escape backfill
-
-[BOB-136 adoption audit 2026-08-21 -> In progress] a4173c8 stood up the ledger + 4 followups; 709b06c closed 2 Important review findings (CODEGRAPH-1.5.0-GITIGNORE entry, BOB-108 filed). The BOB-009/010 evidence_path gap this item names as remaining open was closed under BOB-086 (f78f383). NOT terminal by the item's own text: it is explicitly scoped 'P1-ongoing', with the full retroactive audit of the ~50 GA-NN/RD2-NN findings deliberately NOT attempted.
-
 ## BOB-080 — RD2-13: Retroactive Fable-xhigh code review of the substantive Auto-commit diffs
 
-**Status:** Queued
+**Status:** Operator-blocked
 **Type:** Task
+**Operator-Block-Details:** WHAT: Retroactive Fable-xhigh review of Auto-commit diffs not authored; requires operator prioritization UNBLOCK: [A] Operator prioritizes and assigns Fable-xhigh reviewer · [B] Operator accepts existing GA/RD2 audit and defers retroactive review WHO: Operator
 **Severity:** High
 
 [Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-13, P1] Retroactively run the mandatory independent Fable-xhigh code review (§11.4.125/§11.4.142/§11.4.209) against the substantive diffs the Auto-commit mechanism introduced (start.sh three new functions especially, since they have zero test coverage — see Root Cause 4 / RD2-24) — even though the changes already landed, a post-hoc review closes the governance gap and will surface RD2-24 (GA-27 missing tests) if not already caught. Priority: P1.
 
-## BOB-085 — RD2-18: Create top-level Boba proxy/merge-service v1.0.0 readiness ledger (closes GA-10)
-
-**Status:** Queued
-**Type:** Task
-**Severity:** Medium
-
-[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-18, P2 — closes GA-10] Create the top-level Boba (proxy/merge-service) v1.0.0 readiness ledger (GA-10) — dedupe with the browser_extension existing one as the template. GA-10 evidence: only docs/RELEASE_READINESS_20260616.html/.md/.pdf (dated point-in-time snapshot) and the extension own ledger exist; no top-level proxy/merge-service ledger created. Priority: P2.
-
 ## BOB-090 — RD2-25: HelixQA Challenge entry exercising all three start.sh subcommands end-to-end against real compose stack
 
-**Status:** In progress
+**Status:** Operator-blocked
 **Type:** Task
+**Operator-Block-Details:** WHAT: helixqa bank exists but cannot be built because sibling submodules are missing from .gitmodules UNBLOCK: [A] Operator registers and clones missing sibling submodules, builds bin/helixqa, and runs the bank against live compose · [B] Operator removes the helixqa bank from release scope WHO: Operator
 **Severity:** Medium
 
 RD2-25: HelixQA Challenge entry exercising all three start.sh subcommands end-to-end against real compose stack
@@ -82,23 +67,14 @@ RD2-25: HelixQA Challenge entry exercising all three start.sh subcommands end-to
 
 ## BOB-093 — RD2-28: Live compose bring-up + verify rutracker ReDoS regex bounds deployed to container (closes runtime half of GA-12)
 
-**Status:** In progress
+**Status:** Operator-blocked
 **Type:** Task
+**Operator-Block-Details:** WHAT: Sub-steps 1-3 verified; sub-step 4 unmeetable while BOB-172 rutracker search 403 is open UNBLOCK: [A] Operator resolves BOB-172 first then re-runs timing sub-step · [B] Operator accepts 3-of-4 verified evidence and defers live timing WHO: Operator
 **Severity:** High
 
 RD2-28: Live compose bring-up + verify rutracker ReDoS regex bounds deployed to container (closes runtime half of GA-12)
 
 [BOB-136 adoption audit 2026-08-21 -> In progress] 1c0389a proved 3 of the 4 sub-steps with strong runtime evidence: the bounded regex is confirmed in the DEPLOYED /config/qBittorrent/nova3/engines/rutracker.py inside the running container (sha256 76a6bd2e..), with a self-validated challenge + §11.4.115 RED (mutated unsafe form FAILs) and GREEN verdict JSON. The 4th sub-step is NOT met: 'capture timing of a large rutracker result page (<2s)' was not exercised — in docs/qa/BOB-093/live_search_smoke.txt rutracker returned status=empty, results_count=0 in 164ms, so no large page was ever timed.
-
-## BOB-095 — RD2-30: Author tests/stress/test_scheduler_hooks_sse_stress_chaos.py for Go-side triangle
-
-**Status:** In progress
-**Type:** Task
-**Severity:** Medium
-
-RD2-30: Author tests/stress/test_scheduler_hooks_sse_stress_chaos.py for Go-side triangle
-
-[BOB-136 adoption audit 2026-08-21 -> In progress] d5c8c3e authored qBitTorrent-go/internal/service/sse_broker_stress_chaos_test.go (462 lines, 6 scenarios, 2 RED captures) and found+fixed a real double-unsubscribe 'close of closed channel' defect. But this item names a THREE-component triangle: sse_broker.go + internal/api/hooks.go + internal/api/scheduler_api.go. Only sse_broker.go is covered — there is no stress_chaos test anywhere under qBitTorrent-go/internal/api/. 1 of 3, partial.
 
 ## BOB-101 — GA-19/RW-09: Is --profile go parity still a release goal? (gates RW-10..13) — OPERATOR-DECISION
 
@@ -119,8 +95,9 @@ GA-19/RW-09: Is --profile go parity still a release goal? (gates RW-10..13) — 
 
 ## BOB-121 — External watchdog for the forced-logout architectural gap (task #85, incident #3)
 
-**Status:** Ready for testing
+**Status:** Operator-blocked
 **Type:** Task
+**Operator-Block-Details:** WHAT: Watchdog artifacts exist and pass self-checks but neither is deployed UNBLOCK: [A] Operator runs scripts/flight-recorder/install.sh · [B] Operator runs scripts/system-slice-watchdog/install.sh · [C] Operator accepts artifacts and defers deployment WHO: Operator
 **Severity:** Important
 **Created-By:** Claude
 
@@ -129,26 +106,6 @@ Phase 1 design-only proposal: the BOB-116/task-77 resource-pressure preventive s
 
 
 **Progress 2026-08-21:** Flight recorder built, installed, and recording. First finding: NOTHING was watching at all — the root watchdog is LoadState=not-found and the BOB-116 user timer inactive. The blocking spike REFUTED the proposal's rationale while confirming its conclusion: this vixie-cron does invoke pam_systemd so the tick lands in session-N.scope, but that scope is a SIBLING of user@1000.service, and the real incident killed exactly one unit (73 'user@1000.service: Killing process' lines while session-18.scope merely deactivated). So the recorder does not need to survive — its SCHEDULER does, and crond in system.slice survived all seven incidents. Captures the pre-event memory/PSI/thread ramp that nothing post-hoc can recover, plus boot id, the gap itself, unit start timestamp, cgroup pids, and OOM cgroup attribution. Evidence: 5 records under real cron at exact 60s spacing; a staged analogue on a DISPOSABLE unit reaching 'VERDICT: SESSION TEARDOWN'; golden-good against the REAL BOB-120 log giving the correct diagnosis (k_unit_kill=1, k_oom=0); healthy-host quiet under load 8.15. NOT CLOSED — two operator decisions are owed: whether to keep it installed (one crontab line, zero signals, zero power verbs, 32K, reversible via uninstall.sh), and the root system.slice watchdog which is written but needs one `su`. UNTESTED AGAINST A REAL FORCED LOGOUT: survival is inferred from cgroup topology, not observed, and it does NOT hold against a whole-slice sweep or KillUserProcesses=yes.
-## BOB-170 — Capture one quiescent GREEN run of the scaling growth gate, which has never executed under its own loadavg<=0.75/cpu precondition and has no scheduled window that would make it
-
-**Status:** Queued
-**Type:** Task
-**Severity:** Medium
-**Created-By:** Claude
-**Assigned-To:** Claude
-
-WHAT. The BOB-109 scaling suite gates its two timing tests on loadavg_1m/nproc <= 0.75 — on this 8-cpu host, a 1-minute load average at or below 6.0 — and SKIPs loudly otherwise. That gate is correct and was adopted for a good reason (§11.4.201(8)): the author validated a 2.10 growth-exponent threshold, then observed it FALSE-FAIL correct code at load 11.06 (baseline span 2.136), and at load 15-23 measured baseline spans of 2.358 against injected-cubic mutants at 2.278-2.331 — the signal is smaller than the noise and the two are not separable in either direction. Gating was the honest response.
-
-THE PROBLEM. The gate has consequently NEVER RUN under its own precondition. Every recorded run today measured load 9.15-23; the independent reviewer measured 9.66 during review; the conductor measured 6.45 at its lowest. GREEN polarity WAS observed — at loads 9.4-11.6 (span 1.882) and in three stability runs (1.759/1.832/1.848) — but never once beneath the shipped ceiling. The author states this honestly as an inference from data rather than a run they can paste, and the reviewer confirmed the inference is sound (quiescence is strictly more favourable). Sound inference is still not an observed run.
-
-WHY THAT MATTERS (§11.4.226). A registered, topology-present guard that never executes is indistinguishable from a guard that would fail if it did. Nothing currently ensures it ever runs: no freshness contract, no scheduled quiet-window invocation, no tracked item — which is precisely the unexecuted-standing-guard class §11.4.226 names, where registration gets treated as coverage while execution is nobody's job. The forensic precedent in that anchor is two standing guards that, when finally executed, immediately emitted latent FAILs.
-
-ACCEPTANCE. (a) Execute both quiescence-gated timing tests on a host whose 1-minute loadavg is genuinely <= 0.75/cpu — no agent fleet, no concurrent build — and capture the run as an artifact showing the resolved load reading alongside the measured span exponent, so the precondition is provable from the artifact and not asserted. (b) Record the observed GREEN polarity in the item and in the test source, replacing the current honest-inference note. (c) If the gate FAILS under genuine quiescence, that is the finding this item exists to surface, and it reopens the threshold-calibration question rather than being worked around. (d) Establish a freshness contract per §11.4.226: how stale a quiescent verdict may be before the gate counts as uncovered again, so this does not silently return to never-executing.
-
-HONEST BOUNDARY. This item does not claim the gate is wrong. The evidence points the other way — quiescence is strictly more favourable than the loads where GREEN was already observed. It claims only that the run has not happened, and that an unexecuted guard cannot be cited as coverage.
-
-PROVENANCE. Raised as IMPORTANT-2 by the independent Fable-substrate reviewer of the BOB-109 work, and independently corroborated: the reviewer verified the SKIP is loud and prints its resolved numbers, and confirmed the shipped tests do SKIP at today's load.
-
 ## BOB-172 — rutracker search endpoint returns HTTP 403 with Cloudflare challenge markers and zero login markers, so one of three merge-search trackers silently contributes no results
 
 **Status:** Operator-blocked
@@ -177,20 +134,11 @@ ACCEPTANCE. (a) Determine whether the 403 is permanent policy, rate/reputation-b
 
 HONEST BOUNDARY. Measured from ONE host, ONE time, UNAUTHENTICATED. Whether an authenticated session with a browser-like client succeeds was NOT tested and must not be assumed either way. The finding is that the current code path gets a 403; it is not a claim about what every client would get.
 
-## BOB-184 — Icon-glyph controls are unverified for non-text contrast because neither contrast oracle can measure them
-
-**Status:** Queued
-**Type:** Task
-**Severity:** Medium
-**Created-By:** Claude
-**Assigned-To:** Claude
-
-Three icon-glyph controls (.bridge-retry, .theme-toggle, .caret) render text made of non-BMP code points. axe-core declines to decide their contrast, reporting them under the incomplete channel with messageKey nonBmp and resolving NEITHER fgColor NOR bgColor, so the Python recomputation in docs/qa/BOB-164/axe_contrast_scan.py cannot decide either: 40 such nodes across 16 palette x mode combinations. BOB-164 round 2 stopped them being scored as silent passes by naming them GLYPH_UNMEASURED, printing them on every run and fencing them, so any NEW unmeasured glyph node blocks. What remains genuinely unproven is their contrast itself: as non-text user-interface components they owe 3:1 under WCAG SC 1.4.11, and no oracle in this repo measures that today. Acceptance: a measurement path that resolves the effective foreground and backdrop for glyph controls (for example reading getComputedStyle colour against the composited backdrop, or replacing the glyphs with inline SVG carrying explicit fill tokens), each of the three controls shown to clear 3:1 in all 16 palette x mode combinations, and the GLYPH_UNMEASURED fence shrunk by exactly the nodes then proven.
-
 ## BOB-185 — Rendered-DOM contrast oracle cannot see data-driven nodes, leaving badge and status pills arithmetic-only
 
-**Status:** Queued
+**Status:** Operator-blocked
 **Type:** Task
+**Operator-Block-Details:** WHAT: Rendered-DOM oracle needs seeded fixture backend/component harness to see data-driven badge/status nodes UNBLOCK: [A] Operator funds stub-backend rendered-DOM oracle implementation · [B] Operator accepts arithmetic oracle and defers rendered-DOM verification WHO: Operator
 **Severity:** Medium
 **Created-By:** Claude
 **Assigned-To:** Claude
@@ -199,8 +147,9 @@ docs/qa/BOB-164/axe_contrast_scan.py scans a static dist with no backend, so eve
 
 ## BOB-211 — LATENT + OPERATOR-GATED: on a uid-flattening mount whose uid is not the operator, chown fails EPERM with no fstype-aware diagnosis, and fmask/dmask silently defeat the preserve_mode 600 contract
 
-**Status:** Queued
+**Status:** Operator-blocked
 **Type:** Bug
+**Operator-Block-Details:** WHAT: Real RED needs uid-flattening mount; bindfs and mkfs.vfat/losetup are absent UNBLOCK: [A] Operator installs bindfs and runs ownership RED · [B] Operator provides privileged loopback mount and runs RED · [C] Operator accepts latent risk and defers fstype diagnosis WHO: Operator
 **Severity:** minor
 
 STATUS: LATENT on this host (measured: all six declared locations sit on ONE btrfs mount, fully ownership-expressive) and OPERATOR-GATED for verification. Retained from the dismissed BOB-206 rather than discarded with it, because the scenario is well-founded elsewhere: the declared mount is a udisks auto-mounted REMOVABLE NVMe, so another operator's portable drive being exFAT or NTFS is entirely ordinary.

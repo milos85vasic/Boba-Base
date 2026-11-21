@@ -289,15 +289,13 @@ NON_TEXT_FLOOR = 3.0
 # from the exit code — and fenced, so a node that is NOT one of these
 # known icon controls still BLOCKS rather than joining the quiet pile.
 #
-# Each entry is an icon-glyph control carrying its own `aria-label`, i.e.
-# decorative iconography rather than prose.  They remain unverified under
-# SC 1.4.11 (3:1 for non-text UI components), which this oracle cannot
-# decide — tracked as BOB-184, not claimed clean.
-UNMEASURED_GLYPH_SELECTORS = {
-    ".bridge-retry",   # <button aria-label="Retry WebUI Bridge probe">, icon glyph
-    ".theme-toggle",   # <button aria-label="Switch to ..."> sun/moon glyph
-    ".caret",          # <span class="caret">-> disclosure triangle, decorative
-}
+# BOB-184 (2026-11-20): the three previously-fenced icon controls
+# (.bridge-retry, .theme-toggle, .caret) were replaced with inline SVG
+# carrying `fill="currentColor"`, so axe now resolves their foreground
+# colour and they are measured as ordinary contrast nodes.  The fence is
+# kept empty as a ratchet: any NEW non-BMP icon glyph must be explicitly
+# admitted here or proven measurable.
+UNMEASURED_GLYPH_SELECTORS: set[str] = set()
 
 
 def _adjudicate_incomplete(entry: dict[str, Any]) -> str:

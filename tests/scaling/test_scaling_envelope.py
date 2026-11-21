@@ -517,18 +517,17 @@ class TestDedupCostScaling:
     # this host — its crossover lies beyond the tested range. This is a
     # stated blind spot, not a claim of completeness.
     #
-    # HONEST GAP (§11.4.6) — carried here, not only in the doc, because
-    # this is where the number is chosen: the GREEN polarity of this
-    # gate was observed at loadavg 9.4-11.6 (span 1.882) and in three
-    # stability runs (1.759 / 1.832 / 1.848), all under 2.10. It has
-    # NOT been observed under the quiescence precondition below
-    # (loadavg/cpu <= 0.75), because this host never got that quiet
-    # while the gate was authored and sibling agents' load is not ours
-    # to clear. Quiescence is strictly more favourable than the
-    # conditions those passes were measured under, so passing there
-    # follows from the data — but it is an inference, not a captured
-    # run. A tracked item owes one quiescent GREEN run (§11.4.226
-    # unexecuted-standing-guard).
+    # QUIESCENT GREEN RUN CAPTURED (BOB-170, 2026-11-20): the gate was
+    # admitted at load_per_cpu 0.333 on a 16-cpu host and emitted
+    # span_exponent 1.8622 (below the 2.10 ceiling); the paired latency
+    # distribution was admitted at load_per_cpu 0.369 and emitted p99
+    # 132.262 ms (below the 2000 ms budget). Evidence:
+    #   docs/qa/BOB-170/quiescent_green_run_20261120.json
+    #   docs/qa/BOB-109/dedup_cost_scaling.json
+    #   docs/qa/BOB-109/dedup_latency_distribution.json
+    # Freshness contract (§11.4.226): re-run when any of the listed
+    # source/threshold files changes, or after 90 days without a fresh
+    # quiescent PASS artifact; see docs/testing/scaling.md.
     MAX_GROWTH_EXPONENT = 2.10
 
     def _time_merge(self, results: list) -> tuple[float, list]:

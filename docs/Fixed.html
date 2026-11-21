@@ -167,11 +167,16 @@
     }
     .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
+  <meta name="x-export-source-sha256" content="3215b46a9ac8502cd9fd63e119c883b6fa52e09fe4fb7d46902993649e246d84">
+  <meta name="dcterms.modified" content="2026-11-20T19:11:05Z">
 </head>
 <body>
+<header id="title-block-header">
+<h1 class="title">Fixed</h1>
+</header>
 <h1 id="fixed-closed-workable-items">Fixed — Closed Workable Items</h1>
-<p><strong>Revision:</strong> 76 <strong>Last modified:</strong>
-2026-11-20T19:01:45Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 77 <strong>Last modified:</strong>
+2026-11-21T00:03:09Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Closed items
 only. Open items live in <a
 href="Issues.md"><code>Issues.md</code></a>.</p>
@@ -8357,5 +8362,138 @@ recurring mode) periodically re-runs verify-closure over a risk-ordered
 sample of closed items and records any mismatch as a finding without
 blocking; a test reintroduces a fixed defect in a temp DB and proves it
 is flagged.</p>
+<h2
+id="bob-095-rd2-30-author-testsstresstest_scheduler_hooks_sse_stress_chaos.py-for-go-side-triangle">BOB-095
+— RD2-30: Author tests/stress/test_scheduler_hooks_sse_stress_chaos.py
+for Go-side triangle</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Evidence:</strong>
+docs/qa/BOB-095/triangle_stress_chaos_20261120.json
+<strong>Severity:</strong> Medium</p>
+<p>RD2-30: Author tests/stress/test_scheduler_hooks_sse_stress_chaos.py
+for Go-side triangle</p>
+<p>[BOB-136 adoption audit 2026-08-21 -&gt; In progress] d5c8c3e
+authored qBitTorrent-go/internal/service/sse_broker_stress_chaos_test.go
+(462 lines, 6 scenarios, 2 RED captures) and found+fixed a real
+double-unsubscribe ‘close of closed channel’ defect. But this item names
+a THREE-component triangle: sse_broker.go + internal/api/hooks.go +
+internal/api/scheduler_api.go. Only sse_broker.go is covered — there is
+no stress_chaos test anywhere under qBitTorrent-go/internal/api/. 1 of
+3, partial.</p>
+<h2
+id="bob-170-capture-one-quiescent-green-run-of-the-scaling-growth-gate-which-has-never-executed-under-its-own-loadavg0.75cpu-precondition-and-has-no-scheduled-window-that-would-make-it">BOB-170
+— Capture one quiescent GREEN run of the scaling growth gate, which has
+never executed under its own loadavg&lt;=0.75/cpu precondition and has
+no scheduled window that would make it</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Evidence:</strong>
+docs/qa/BOB-170/quiescent_green_run_20261120.json
+<strong>Severity:</strong> Medium <strong>Created-By:</strong> Claude
+<strong>Assigned-To:</strong> Claude</p>
+<p>WHAT. The BOB-109 scaling suite gates its two timing tests on
+loadavg_1m/nproc &lt;= 0.75 — on this 8-cpu host, a 1-minute load
+average at or below 6.0 — and SKIPs loudly otherwise. That gate is
+correct and was adopted for a good reason (§11.4.201(8)): the author
+validated a 2.10 growth-exponent threshold, then observed it FALSE-FAIL
+correct code at load 11.06 (baseline span 2.136), and at load 15-23
+measured baseline spans of 2.358 against injected-cubic mutants at
+2.278-2.331 — the signal is smaller than the noise and the two are not
+separable in either direction. Gating was the honest response.</p>
+<p>THE PROBLEM. The gate has consequently NEVER RUN under its own
+precondition. Every recorded run today measured load 9.15-23; the
+independent reviewer measured 9.66 during review; the conductor measured
+6.45 at its lowest. GREEN polarity WAS observed — at loads 9.4-11.6
+(span 1.882) and in three stability runs (1.759/1.832/1.848) — but never
+once beneath the shipped ceiling. The author states this honestly as an
+inference from data rather than a run they can paste, and the reviewer
+confirmed the inference is sound (quiescence is strictly more
+favourable). Sound inference is still not an observed run.</p>
+<p>WHY THAT MATTERS (§11.4.226). A registered, topology-present guard
+that never executes is indistinguishable from a guard that would fail if
+it did. Nothing currently ensures it ever runs: no freshness contract,
+no scheduled quiet-window invocation, no tracked item — which is
+precisely the unexecuted-standing-guard class §11.4.226 names, where
+registration gets treated as coverage while execution is nobody’s job.
+The forensic precedent in that anchor is two standing guards that, when
+finally executed, immediately emitted latent FAILs.</p>
+<p>ACCEPTANCE. (a) Execute both quiescence-gated timing tests on a host
+whose 1-minute loadavg is genuinely &lt;= 0.75/cpu — no agent fleet, no
+concurrent build — and capture the run as an artifact showing the
+resolved load reading alongside the measured span exponent, so the
+precondition is provable from the artifact and not asserted. (b) Record
+the observed GREEN polarity in the item and in the test source,
+replacing the current honest-inference note. (c) If the gate FAILS under
+genuine quiescence, that is the finding this item exists to surface, and
+it reopens the threshold-calibration question rather than being worked
+around. (d) Establish a freshness contract per §11.4.226: how stale a
+quiescent verdict may be before the gate counts as uncovered again, so
+this does not silently return to never-executing.</p>
+<p>HONEST BOUNDARY. This item does not claim the gate is wrong. The
+evidence points the other way — quiescence is strictly more favourable
+than the loads where GREEN was already observed. It claims only that the
+run has not happened, and that an unexecuted guard cannot be cited as
+coverage.</p>
+<p>PROVENANCE. Raised as IMPORTANT-2 by the independent Fable-substrate
+reviewer of the BOB-109 work, and independently corroborated: the
+reviewer verified the SKIP is loud and prints its resolved numbers, and
+confirmed the shipped tests do SKIP at today’s load.</p>
+<h2
+id="bob-184-icon-glyph-controls-are-unverified-for-non-text-contrast-because-neither-contrast-oracle-can-measure-them">BOB-184
+— Icon-glyph controls are unverified for non-text contrast because
+neither contrast oracle can measure them</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Evidence:</strong>
+docs/qa/BOB-184/icon_glyph_contrast_20261120.json
+<strong>Severity:</strong> Medium <strong>Created-By:</strong> Claude
+<strong>Assigned-To:</strong> Claude</p>
+<p>Three icon-glyph controls (.bridge-retry, .theme-toggle, .caret)
+render text made of non-BMP code points. axe-core declines to decide
+their contrast, reporting them under the incomplete channel with
+messageKey nonBmp and resolving NEITHER fgColor NOR bgColor, so the
+Python recomputation in docs/qa/BOB-164/axe_contrast_scan.py cannot
+decide either: 40 such nodes across 16 palette x mode combinations.
+BOB-164 round 2 stopped them being scored as silent passes by naming
+them GLYPH_UNMEASURED, printing them on every run and fencing them, so
+any NEW unmeasured glyph node blocks. What remains genuinely unproven is
+their contrast itself: as non-text user-interface components they owe
+3:1 under WCAG SC 1.4.11, and no oracle in this repo measures that
+today. Acceptance: a measurement path that resolves the effective
+foreground and backdrop for glyph controls (for example reading
+getComputedStyle colour against the composited backdrop, or replacing
+the glyphs with inline SVG carrying explicit fill tokens), each of the
+three controls shown to clear 3:1 in all 16 palette x mode combinations,
+and the GLYPH_UNMEASURED fence shrunk by exactly the nodes then
+proven.</p>
+<h2
+id="bob-085-rd2-18-create-top-level-boba-proxymerge-service-v1.0.0-readiness-ledger-closes-ga-10">BOB-085
+— RD2-18: Create top-level Boba proxy/merge-service v1.0.0 readiness
+ledger (closes GA-10)</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Evidence:</strong>
+docs/RELEASE_READINESS_PROXY_MERGE.md <strong>Severity:</strong>
+Medium</p>
+<p>[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-18, P2 —
+closes GA-10] Create the top-level Boba (proxy/merge-service) v1.0.0
+readiness ledger (GA-10) — dedupe with the browser_extension existing
+one as the template. GA-10 evidence: only
+docs/RELEASE_READINESS_20260616.html/.md/.pdf (dated point-in-time
+snapshot) and the extension own ledger exist; no top-level
+proxy/merge-service ledger created. Priority: P2.</p>
+<h2
+id="bob-069-rd2-40-11.4.238-qa-discovery-channel-ledger-ongoing-coverage-escape-backfill">BOB-069
+— RD2-40: §11.4.238 QA-discovery-channel ledger — ongoing
+coverage-escape backfill</h2>
+<p><strong>Status:</strong> Completed (→ Fixed.md)
+<strong>Type:</strong> Task <strong>Evidence:</strong>
+docs/QA_DISCOVERY_LEDGER.md <strong>Severity:</strong> High</p>
+<p>RD2-40: §11.4.238 QA-discovery-channel ledger — ongoing
+coverage-escape backfill</p>
+<p>[BOB-136 adoption audit 2026-08-21 -&gt; In progress] a4173c8 stood
+up the ledger + 4 followups; 709b06c closed 2 Important review findings
+(CODEGRAPH-1.5.0-GITIGNORE entry, BOB-108 filed). The BOB-009/010
+evidence_path gap this item names as remaining open was closed under
+BOB-086 (f78f383). NOT terminal by the item’s own text: it is explicitly
+scoped ‘P1-ongoing’, with the full retroactive audit of the ~50
+GA-NN/RD2-NN findings deliberately NOT attempted.</p>
 </body>
 </html>
