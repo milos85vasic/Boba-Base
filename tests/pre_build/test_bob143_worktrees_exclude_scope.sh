@@ -218,7 +218,7 @@ check_suite_path() {
     : > "${_empty_excl}"
 
     local _baseline _base_missing
-    _baseline="$(COVENANT_PROPAGATION_EXCLUSIONS="${_empty_excl}" bash "${SUITE}" gates --root "${_root}" 2>&1)"
+    _baseline="$(COVENANT_PROPAGATION_EXCLUSIONS="${_empty_excl}" TMPDIR="${FIX}" bash "${SUITE}" gates --root "${_root}" 2>&1)"
     _base_missing="$(_anchor230_missing_count "${_baseline}")"
     if [[ -z "${_base_missing}" ]]; then
         echo "${_baseline}" | tail -40
@@ -231,7 +231,7 @@ check_suite_path() {
     echo "baseline (empty exclusions file): anchor 230 row reports 2 MISSING/DUPLICATED (probe + control) — instrument PROVEN seeing both locations"
 
     local _fixed _fx_missing
-    _fixed="$(COVENANT_PROPAGATION_EXCLUSIONS="${EXCL_FILE}" bash "${SUITE}" gates --root "${_root}" 2>&1)"
+    _fixed="$(COVENANT_PROPAGATION_EXCLUSIONS="${EXCL_FILE}" TMPDIR="${FIX}" bash "${SUITE}" gates --root "${_root}" 2>&1)"
     _fx_missing="$(_anchor230_missing_count "${_fixed}")"
 
     if [[ -n "${_fx_missing}" && "${_fx_missing}" -eq 1 ]]; then

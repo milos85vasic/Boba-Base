@@ -1,7 +1,7 @@
 # Issues — Open Workable Items
 
-**Revision:** 145
-**Last modified:** 2026-11-21T00:03:09Z
+**Revision:** 148
+**Last modified:** 2026-11-23T16:37:43Z
 **Ticket prefix:** `BOB` (operator-mandated, 2026-06-06)
 **Scope:** Open/active items only. Closed items migrate to [`Fixed.md`](Fixed.md).
 
@@ -174,4 +174,13 @@ DISCOVERY CHANNEL (§11.4.238): retained residual from the BOB-206 verification 
 **Created-By:** Claude
 
 Live kinozal credential test reports authenticated=False, status='empty', error='' (found 2026-09-23). ROOT CAUSES (docs/qa/BOB-235/investigation_20260923.md): (A) operator/environment: kinozal.tv publishes A record 127.0.0.1 (host, container, DoH Cloudflare+Google all agree; rutracker.org resolves normally as control), KINOZAL_MIRRORS is empty so search.py falls back to kinozal.tv; the live mirror kinozal.guru answers every non-browser client with a Cloudflare 403 'Just a moment' challenge (login POST, curl, aiohttp, operator cookies with two user-agents; no cf_clearance cookie; KINOZAL_COOKIES is loaded into the container but no code reads it). (B) code defect FIXED under TDD (RED 2 failed/1 passed, GREEN 19 passed): _search_kinozal's except branch only logged and stashed no diagnostic, so the chip read empty with error=None; it now stashes error_type + 'Kinozal request failed: <msg>'. Needs ./start.sh --reload-python to be live. Credential validity is UNKNOWN (no request ever reached a login endpoint) - do not rotate credentials on this evidence. Operator-Block-Details: WHAT: choose (1) reachable domain - set KINOZAL_MIRRORS=https://kinozal.guru + ./start.sh --recreate, or change the roster primary in trackers.py; (2) how to pass the Cloudflare challenge - FlareSolverr (not deployed), cf_clearance cookie + code that actually reads KINOZAL_COOKIES, Jackett's kinozal indexer, or mark kinozal operator-blocked; (3) optionally re-export a kinozal-only cookie file. WHY: every agent-reachable path was exhausted - DNS, mirrors, login POST, cookies, env propagation all measured. UNBLOCK CONDITION: the live test authenticates or the operator marks kinozal unsupported. WHO: repository operator.
+
+## BOB-RECURSIVESUBMODULE — Constitution recursive submodule init blocked by stale claude_toolkit gitlinks
+
+**Status:** Operator-blocked
+**Type:** Task
+**Operator-Block-Details:** WHAT: Recursive submodule update fails on stale claude_toolkit gitlinks WHY: Fixing requires git commits and pushes to shared upstream repos vasic-digital/claude_toolkit and HelixDevelopment/HelixConstitution, not authorized in this session. UNBLOCK: [A] Operator authorizes and performs upstream claude_toolkit fix, bumps HelixConstitution pointer, then bumps boba constitution pointer · [B] Operator accepts current state: constitution at 6d93ccd1, direct submodules initialized, post_update_hook.sh propagated, recursive init deferred WHO: Operator
+**Severity:** critical
+
+After updating constitution to 6d93ccd1, recursive submodule init fails because claude_toolkit tree carries stale gitlinks for submodules/challenges, submodules/containers, and submodules/superspec while its .gitmodules only declares submodules/go and submodules/ccusage (flat own-org deps per claude_toolkit AGENTS.md). Direct constitution submodules are initialized and post_update_hook.sh propagated changes successfully.
 

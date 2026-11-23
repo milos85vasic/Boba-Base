@@ -1,5 +1,71 @@
 # Continue — Project Status Snapshot
 
+**Revision:** 34
+**Last modified:** 2026-11-23T17:45:00Z
+
+## REVISION 34 — Constitution update + pre-build/CI convergence (in-flight)
+
+### Current work (this session)
+- Updated `constitution` submodule pointer from `a4f21958` to upstream latest
+  `6d93ccd19e1c2fe0e1a97ece22b49e962ef3005e` and ran
+  `bash constitution/scripts/post_update_hook.sh --project-root /home/milosvasic/Projects/boba`;
+  hook completed (upstream sync check ATTENTION, non-fatal; Jev bootstrap ok already-wired).
+- Initialized all valid direct constitution submodules and the valid nested submodules
+  inside `claude_toolkit` (`submodules/go`, `submodules/ccusage`).
+- Recorded the recursive-submodule obstacle as operator-blocked workable item
+  **BOB-RECURSIVESUBMODULE**: `git submodule update --init --recursive` fails because
+  `claude_toolkit` tree carries stale gitlinks for `submodules/challenges`,
+  `submodules/containers`, and `submodules/superspec` while its `.gitmodules` only
+  declares `submodules/go` and `submodules/ccusage` (flat own-org deps per
+  `claude_toolkit` AGENTS.md). Upstream fix requires commits/pushes to
+  `vasic-digital/claude_toolkit` and `HelixDevelopment/HelixConstitution`, not
+  authorized in this session.
+- Regenerated workable-items Markdown + HTML/PDF/DOCX exports after adding
+  BOB-RECURSIVESUBMODULE.
+- Carried forward from revision 33: BOB-143 temp-dir fix, docs-chain state reset,
+  `helix-deps.yaml` superspec path addition.
+
+### Pending
+- Verify the fresh pre-build run (`/tmp/pre_build_run13.log`) reaches `0 failed`.
+- Verify `./ci.sh` full pipeline (`/tmp/ci_run_full.log`) reaches `0 FAIL`.
+- Commit the constitution pointer + BOB-143 fix + regenerated exports + this
+  CONTINUATION update via the scoped commit wrapper.
+
+### Verification evidence will be pasted below once the background runs finish.
+
+---
+
+**Revision:** 33
+**Last modified:** 2026-11-23T17:20:00Z
+
+## REVISION 33 — Pre-build / CI convergence pass (in-flight)
+
+### Current work (this session)
+- Fixed `tests/pre_build/test_bob143_worktrees_exclude_scope.sh` harness
+  fragility: the `covenant_propagation_suite.sh` carrier-reuse temp file was
+  created under the shared agent temp dir and could be cleaned while the suite
+  still needed it, causing the suite path to hang/trip the `CM-BASH-UNIT-
+  TESTS-EXECUTED` timeout. The test now sets `TMPDIR="${FIX}"` around the
+  suite calls so the carrier file lives in the test's own private `mktemp -d`
+  and is removed only by the test's own EXIT trap.
+- Reset the `docs_chain` state file (`.docs_chain/state.json`) and re-ran
+  `docs_chain sync --all` to clear `CM-DOCS-CHAIN-ENGINE-VERIFY` drift on
+  `codegraph-status` and `features-status` export twins.
+- Re-running `scripts/pre_build_verification.sh` and `./ci.sh` full pipeline
+  in the background.
+
+### Pending
+- Verify the current pre-build run reaches `0 failed`.
+- Verify `./ci.sh` full pipeline reaches `0 FAIL`.
+- Commit the BOB-143 fix + regenerated Status exports + this CONTINUATION
+  update (using the scoped commit wrapper).
+- Pull the constitution submodule forward to its latest upstream tip and
+  recursively init/update its dependencies; re-run post-pull validation.
+
+### Verification evidence will be pasted below once the background runs finish.
+
+---
+
 **Revision:** 32
 **Last modified:** 2026-11-20T12:00:00Z
 

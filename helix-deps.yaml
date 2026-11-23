@@ -51,6 +51,7 @@ deps:
     ref: c20ac6c1ba069cc9a72dacb8044b7b193d3dde81
     why: "Third-party Spec Kit extension — tracked checkout used as a reference for spec-kit integration patterns"
     layout: grouped
+    path: superspec
     third_party: true
     licence: MIT
 

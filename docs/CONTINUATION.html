@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.11" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>CONTINUATION</title>
   <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
     html {
       color: #1a1a1a;
       background-color: #fdfdfd;
@@ -38,7 +41,6 @@
       body {
         background-color: transparent;
         color: black;
-        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -88,6 +90,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -151,10 +154,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -165,10 +171,9 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
-  <meta name="x-export-source-sha256" content="290337024bc4cb2cd4894bfa0d8d4f4848600e271abaf3e9d515f0774d5b127a">
-  <meta name="dcterms.modified" content="2026-11-20T11:01:33Z">
+  <meta name="x-export-source-sha256" content="2ea9a300eb92916322e8f2f040a99203a0c68cb85663b51aade35d7562677d67">
+  <meta name="dcterms.modified" content="2026-11-20T11:03:55Z">
 </head>
 <body>
 <header id="title-block-header">
@@ -176,6 +181,92 @@
 </header>
 <h1 id="continue-project-status-snapshot">Continue — Project Status
 Snapshot</h1>
+<p><strong>Revision:</strong> 34 <strong>Last modified:</strong>
+2026-11-23T17:45:00Z</p>
+<h2
+id="revision-34-constitution-update-pre-buildci-convergence-in-flight">REVISION
+34 — Constitution update + pre-build/CI convergence (in-flight)</h2>
+<h3 id="current-work-this-session">Current work (this session)</h3>
+<ul>
+<li>Updated <code>constitution</code> submodule pointer from
+<code>a4f21958</code> to upstream latest
+<code>6d93ccd19e1c2fe0e1a97ece22b49e962ef3005e</code> and ran
+<code>bash constitution/scripts/post_update_hook.sh --project-root /home/milosvasic/Projects/boba</code>;
+hook completed (upstream sync check ATTENTION, non-fatal; Jev bootstrap
+ok already-wired).</li>
+<li>Initialized all valid direct constitution submodules and the valid
+nested submodules inside <code>claude_toolkit</code>
+(<code>submodules/go</code>, <code>submodules/ccusage</code>).</li>
+<li>Recorded the recursive-submodule obstacle as operator-blocked
+workable item <strong>BOB-RECURSIVESUBMODULE</strong>:
+<code>git submodule update --init --recursive</code> fails because
+<code>claude_toolkit</code> tree carries stale gitlinks for
+<code>submodules/challenges</code>, <code>submodules/containers</code>,
+and <code>submodules/superspec</code> while its <code>.gitmodules</code>
+only declares <code>submodules/go</code> and
+<code>submodules/ccusage</code> (flat own-org deps per
+<code>claude_toolkit</code> AGENTS.md). Upstream fix requires
+commits/pushes to <code>vasic-digital/claude_toolkit</code> and
+<code>HelixDevelopment/HelixConstitution</code>, not authorized in this
+session.</li>
+<li>Regenerated workable-items Markdown + HTML/PDF/DOCX exports after
+adding BOB-RECURSIVESUBMODULE.</li>
+<li>Carried forward from revision 33: BOB-143 temp-dir fix, docs-chain
+state reset, <code>helix-deps.yaml</code> superspec path addition.</li>
+</ul>
+<h3 id="pending">Pending</h3>
+<ul>
+<li>Verify the fresh pre-build run
+(<code>/tmp/pre_build_run13.log</code>) reaches
+<code>0 failed</code>.</li>
+<li>Verify <code>./ci.sh</code> full pipeline
+(<code>/tmp/ci_run_full.log</code>) reaches <code>0 FAIL</code>.</li>
+<li>Commit the constitution pointer + BOB-143 fix + regenerated exports
++ this CONTINUATION update via the scoped commit wrapper.</li>
+</ul>
+<h3
+id="verification-evidence-will-be-pasted-below-once-the-background-runs-finish.">Verification
+evidence will be pasted below once the background runs finish.</h3>
+<hr />
+<p><strong>Revision:</strong> 33 <strong>Last modified:</strong>
+2026-11-23T17:20:00Z</p>
+<h2 id="revision-33-pre-build-ci-convergence-pass-in-flight">REVISION 33
+— Pre-build / CI convergence pass (in-flight)</h2>
+<h3 id="current-work-this-session-1">Current work (this session)</h3>
+<ul>
+<li>Fixed
+<code>tests/pre_build/test_bob143_worktrees_exclude_scope.sh</code>
+harness fragility: the <code>covenant_propagation_suite.sh</code>
+carrier-reuse temp file was created under the shared agent temp dir and
+could be cleaned while the suite still needed it, causing the suite path
+to hang/trip the <code>CM-BASH-UNIT- TESTS-EXECUTED</code> timeout. The
+test now sets <code>TMPDIR="${FIX}"</code> around the suite calls so the
+carrier file lives in the test’s own private <code>mktemp -d</code> and
+is removed only by the test’s own EXIT trap.</li>
+<li>Reset the <code>docs_chain</code> state file
+(<code>.docs_chain/state.json</code>) and re-ran
+<code>docs_chain sync --all</code> to clear
+<code>CM-DOCS-CHAIN-ENGINE-VERIFY</code> drift on
+<code>codegraph-status</code> and <code>features-status</code> export
+twins.</li>
+<li>Re-running <code>scripts/pre_build_verification.sh</code> and
+<code>./ci.sh</code> full pipeline in the background.</li>
+</ul>
+<h3 id="pending-1">Pending</h3>
+<ul>
+<li>Verify the current pre-build run reaches <code>0 failed</code>.</li>
+<li>Verify <code>./ci.sh</code> full pipeline reaches
+<code>0 FAIL</code>.</li>
+<li>Commit the BOB-143 fix + regenerated Status exports + this
+CONTINUATION update (using the scoped commit wrapper).</li>
+<li>Pull the constitution submodule forward to its latest upstream tip
+and recursively init/update its dependencies; re-run post-pull
+validation.</li>
+</ul>
+<h3
+id="verification-evidence-will-be-pasted-below-once-the-background-runs-finish.-1">Verification
+evidence will be pasted below once the background runs finish.</h3>
+<hr />
 <p><strong>Revision:</strong> 32 <strong>Last modified:</strong>
 2026-11-20T12:00:00Z</p>
 <h2 id="revision-32-production-ready-gap-sweep-committed">REVISION 32 —

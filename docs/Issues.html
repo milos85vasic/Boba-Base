@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
+  <meta name="generator" content="pandoc 3.11" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>Issues</title>
   <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
     html {
       color: #1a1a1a;
       background-color: #fdfdfd;
@@ -38,7 +41,6 @@
       body {
         background-color: transparent;
         color: black;
-        font-size: 12pt;
       }
       p, h2, h3 {
         orphans: 3;
@@ -88,6 +90,7 @@
       color: #606060;
     }
     code {
+      white-space: pre-wrap;
       font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
       font-size: 85%;
       margin: 0;
@@ -151,10 +154,13 @@
     #TOC a:not(:hover) {
       text-decoration: none;
     }
-    code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     /* The extra [class] is a hack that increases specificity enough to
        override a similar rule in reveal.js */
@@ -165,18 +171,17 @@
       margin: 0 0.8em 0.2em -1.6em;
       vertical-align: middle;
     }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
-  <meta name="x-export-source-sha256" content="21439247014b8857b6833e3692cf6b2556b0bc4164ae7f613734c2bae6230cad">
-  <meta name="dcterms.modified" content="2026-11-20T19:11:05Z">
+  <meta name="x-export-source-sha256" content="c31b5a336588174dfb974ec86e23d70ab1597bcdeba4f2369258a37bda097f56">
+  <meta name="dcterms.modified" content="2026-11-21T00:05:13Z">
 </head>
 <body>
 <header id="title-block-header">
 <h1 class="title">Issues</h1>
 </header>
 <h1 id="issues-open-workable-items">Issues — Open Workable Items</h1>
-<p><strong>Revision:</strong> 145 <strong>Last modified:</strong>
-2026-11-21T00:03:09Z <strong>Ticket prefix:</strong> <code>BOB</code>
+<p><strong>Revision:</strong> 148 <strong>Last modified:</strong>
+2026-11-23T16:37:43Z <strong>Ticket prefix:</strong> <code>BOB</code>
 (operator-mandated, 2026-06-06) <strong>Scope:</strong> Open/active
 items only. Closed items migrate to <a
 href="Fixed.md"><code>Fixed.md</code></a>.</p>
@@ -635,5 +640,26 @@ file. WHY: every agent-reachable path was exhausted - DNS, mirrors,
 login POST, cookies, env propagation all measured. UNBLOCK CONDITION:
 the live test authenticates or the operator marks kinozal unsupported.
 WHO: repository operator.</p>
+<h2
+id="bob-recursivesubmodule-constitution-recursive-submodule-init-blocked-by-stale-claude_toolkit-gitlinks">BOB-RECURSIVESUBMODULE
+— Constitution recursive submodule init blocked by stale claude_toolkit
+gitlinks</h2>
+<p><strong>Status:</strong> Operator-blocked <strong>Type:</strong> Task
+<strong>Operator-Block-Details:</strong> WHAT: Recursive submodule
+update fails on stale claude_toolkit gitlinks WHY: Fixing requires git
+commits and pushes to shared upstream repos vasic-digital/claude_toolkit
+and HelixDevelopment/HelixConstitution, not authorized in this session.
+UNBLOCK: [A] Operator authorizes and performs upstream claude_toolkit
+fix, bumps HelixConstitution pointer, then bumps boba constitution
+pointer · [B] Operator accepts current state: constitution at 6d93ccd1,
+direct submodules initialized, post_update_hook.sh propagated, recursive
+init deferred WHO: Operator <strong>Severity:</strong> critical</p>
+<p>After updating constitution to 6d93ccd1, recursive submodule init
+fails because claude_toolkit tree carries stale gitlinks for
+submodules/challenges, submodules/containers, and submodules/superspec
+while its .gitmodules only declares submodules/go and submodules/ccusage
+(flat own-org deps per claude_toolkit AGENTS.md). Direct constitution
+submodules are initialized and post_update_hook.sh propagated changes
+successfully.</p>
 </body>
 </html>
