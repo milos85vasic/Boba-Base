@@ -1,0 +1,85 @@
+# Differential SQLite Dump — docs/workable_items.db
+# §11.4.226 evidence-class-at-closure / §11.4.95 SSoT / §11.4.115(F) machine-written evidence
+# §11.4.209 review IMPORTANT-2 remedy — task tracker #79
+#
+# Commit:    4c9c70053a0e0cf532bb71cc795de2c46ec4b215
+# Parent:    47ca574c8f1753f9a322ec80e09eefcb316e4a92
+# Generated: 2026-11-23T17:10:41Z
+# Tool:      sqlite3 3.50.6
+#
+## Row counts (table: before -> after)
+doc_segments                    252 -> 253         [CHANGED]
+firebase_metadata                 0 -> 0           [same]
+item_history                    612 -> 617         [CHANGED]
+items                           250 -> 251         [CHANGED]
+logic_groups                      0 -> 0           [same]
+meta                              4 -> 4           [same]
+obsolete_details                  3 -> 3           [same]
+operator_block_details           12 -> 13          [CHANGED]
+repro_gate_exemptions             0 -> 0           [same]
+sqlite_sequence                   3 -> 3           [same]
+test_diary                       18 -> 18          [same]
+#
+## meta table (full content)
+### before
+schema_version|8|2026-06-16 08:12:32
+last_sync_direction|md-to-db|2026-08-21 18:39:28
+last_sync_timestamp|2026-08-21 18:39:28|2026-06-16 08:12:32
+integrity_hash||2026-06-16 08:12:32
+### after
+schema_version|8|2026-06-16 08:12:32
+last_sync_direction|md-to-db|2026-08-21 18:39:28
+last_sync_timestamp|2026-08-21 18:39:28|2026-06-16 08:12:32
+integrity_hash||2026-06-16 08:12:32
+#
+## Full logical .dump unified diff (before -> after)
+#
+--- /home/milosvasic/.cache/claude-tmp/tmp.j6zRMsvRFT/before.sql	2026-11-23 18:10:41.348996170 +0100
++++ /home/milosvasic/.cache/claude-tmp/tmp.j6zRMsvRFT/after.sql	2026-11-23 18:10:41.359996178 +0100
+@@ -636,6 +636,11 @@
+ INSERT INTO item_history VALUES(611,'BOB-211','Updated','AI','2026-11-20','operator-blocked','Real RED needs uid-flattening mount; bindfs and mkfs.vfat/losetup are absent','2026-11-20 23:58:07',NULL,'UNKNOWN');
+ INSERT INTO item_history VALUES(612,'BOB-080','Updated','AI','2026-11-20','operator-blocked','Retroactive Fable-xhigh review of Auto-commit diffs not authored; requires operator prioritization','2026-11-20 23:58:07',NULL,'UNKNOWN');
+ INSERT INTO item_history VALUES(613,'BOB-185','Updated','AI','2026-11-20','operator-blocked','Rendered-DOM oracle needs seeded fixture backend/component harness to see data-driven badge/status nodes','2026-11-20 23:58:07',NULL,'UNKNOWN');
++INSERT INTO item_history VALUES(614,'BOB-RECURSIVESUBMODULE','Opened','User','2026-11-23',NULL,NULL,'2026-11-23 16:33:51',NULL,'UNKNOWN');
++INSERT INTO item_history VALUES(615,'BOB-RECURSIVESUBMODULE','Updated','AI','2026-11-23','operator-blocked','Upstream fix requires git commits and pushes to shared repos vasic-digital/claude_toolkit and HelixDevelopment/HelixConstitution, not authorized in this session. Direct constitution submodules are initialized and post_update_hook.sh ran successfully.','2026-11-23 16:36:23',NULL,'UNKNOWN');
++INSERT INTO item_history VALUES(616,'BOB-RECURSIVESUBMODULE','Updated','AI','2026-11-23',NULL,NULL,'2026-11-23 16:36:45',NULL,'UNKNOWN');
++INSERT INTO item_history VALUES(617,'BOB-RECURSIVESUBMODULE','Updated','AI','2026-11-23','operator-blocked','WHAT: Recursive  fails on stale claude_toolkit gitlinks (challenges, containers, superspec) that lack .gitmodules entries. WHY: Fixing requires git commits and pushes to shared upstream repos vasic-digital/claude_toolkit and HelixDevelopment/HelixConstitution, not authorized in this session. UNBLOCK: [A] Operator authorizes and performs upstream claude_toolkit fix, bumps HelixConstitution pointer, then bumps boba constitution pointer · [B] Operator accepts current state: constitution at 6d93ccd1, direct submodules initialized, post_update_hook.sh propagated, recursive init deferred. WHO: Operator','2026-11-23 16:36:50',NULL,'UNKNOWN');
++INSERT INTO item_history VALUES(618,'BOB-RECURSIVESUBMODULE','Updated','AI','2026-11-23','operator-blocked','Recursive submodule update fails on stale claude_toolkit gitlinks','2026-11-23 16:37:39',NULL,'UNKNOWN');
+ CREATE TABLE operator_block_details (
+     atm_id                       TEXT PRIMARY KEY,
+     what                         TEXT NOT NULL,
+@@ -655,6 +660,7 @@
+ INSERT INTO operator_block_details VALUES('BOB-211','Real RED needs uid-flattening mount; bindfs and mkfs.vfat/losetup are absent','(not enumerated)','[A] Operator installs bindfs and runs ownership RED · [B] Operator provides privileged loopback mount and runs RED · [C] Operator accepts latent risk and defers fstype diagnosis','Operator');
+ INSERT INTO operator_block_details VALUES('BOB-080','Retroactive Fable-xhigh review of Auto-commit diffs not authored; requires operator prioritization','(not enumerated)','[A] Operator prioritizes and assigns Fable-xhigh reviewer · [B] Operator accepts existing GA/RD2 audit and defers retroactive review','Operator');
+ INSERT INTO operator_block_details VALUES('BOB-185','Rendered-DOM oracle needs seeded fixture backend/component harness to see data-driven badge/status nodes','(not enumerated)','[A] Operator funds stub-backend rendered-DOM oracle implementation · [B] Operator accepts arithmetic oracle and defers rendered-DOM verification','Operator');
++INSERT INTO operator_block_details VALUES('BOB-RECURSIVESUBMODULE','Recursive submodule update fails on stale claude_toolkit gitlinks','Fixing requires git commits and pushes to shared upstream repos vasic-digital/claude_toolkit and HelixDevelopment/HelixConstitution, not authorized in this session.','[A] Operator authorizes and performs upstream claude_toolkit fix, bumps HelixConstitution pointer, then bumps boba constitution pointer · [B] Operator accepts current state: constitution at 6d93ccd1, direct submodules initialized, post_update_hook.sh propagated, recursive init deferred','Operator');
+ CREATE TABLE firebase_metadata (
+     atm_id                 TEXT PRIMARY KEY,
+     firebase_issue_ids     TEXT,           -- JSON array
+@@ -1034,6 +1040,7 @@
+ INSERT INTO items VALUES('BOB-184','Task','Completed (→ Fixed.md)','Medium','Icon-glyph controls are unverified for non-text contrast because neither contrast oracle can measure them','Three icon-glyph controls (.bridge-retry, .theme-toggle, .caret) render text made of non-BMP code points. axe-core declines to decide their contrast, reporting them under the incomplete channel with messageKey nonBmp and resolving NEITHER fgColor NOR bgColor, so the Python recomputation in docs/qa/BOB-164/axe_contrast_scan.py cannot decide either: 40 such nodes across 16 palette x mode combinations. BOB-164 round 2 stopped them being scored as silent passes by naming them GLYPH_UNMEASURED, printing them on every run and fencing them, so any NEW unmeasured glyph node blocks. What remains genuinely unproven is their contrast itself: as non-text user-interface components they owe 3:1 under WCAG SC 1.4.11, and no oracle in this repo measures that today. Acceptance: a measurement path that resolves the effective foreground and backdrop for glyph controls (for example reading getComputedStyle colour against the composited backdrop, or replacing the glyphs with inline SVG carrying explicit fill tokens), each of the three controls shown to clear 3:1 in all 16 palette x mode combinations, and the GLYPH_UNMEASURED fence shrunk by exactly the nodes then proven.',NULL,NULL,NULL,'Claude','Claude','Fixed',unistr('## BOB-184 — Icon-glyph controls are unverified for non-text contrast because neither contrast oracle can measure them\u000a\u000a**Status:** Completed (→ Fixed.md)\u000a**Type:** Task\u000a**Evidence:** docs/qa/BOB-184/icon_glyph_contrast_20261120.json\u000a**Severity:** Medium\u000a**Created-By:** Claude\u000a**Assigned-To:** Claude\u000a\u000aThree icon-glyph controls (.bridge-retry, .theme-toggle, .caret) render text made of non-BMP code points. axe-core declines to decide their contrast, reporting them under the incomplete channel with messageKey nonBmp and resolving NEITHER fgColor NOR bgColor, so the Python recomputation in docs/qa/BOB-164/axe_contrast_scan.py cannot decide either: 40 such nodes across 16 palette x mode combinations. BOB-164 round 2 stopped them being scored as silent passes by naming them GLYPH_UNMEASURED, printing them on every run and fencing them, so any NEW unmeasured glyph node blocks. What remains genuinely unproven is their contrast itself: as non-text user-interface components they owe 3:1 under WCAG SC 1.4.11, and no oracle in this repo measures that today. Acceptance: a measurement path that resolves the effective foreground and backdrop for glyph controls (for example reading getComputedStyle colour against the composited backdrop, or replacing the glyphs with inline SVG carrying explicit fill tokens), each of the three controls shown to clear 3:1 in all 16 palette x mode combinations, and the GLYPH_UNMEASURED fence shrunk by exactly the nodes then proven.\u000a\u000a'),'section',NULL,NULL,NULL,'2026-08-25 18:13:56','2026-11-20 23:56:14',NULL,NULL,NULL,NULL,NULL,'UNSET',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'UNSET',NULL,NULL,NULL,NULL);
+ INSERT INTO items VALUES('BOB-085','Task','Completed (→ Fixed.md)','Medium','RD2-18: Create top-level Boba proxy/merge-service v1.0.0 readiness ledger (closes GA-10)','RD2-18: Create top-level Boba proxy/merge-service v1.0.0 readiness ledger (closes GA-10)',NULL,NULL,NULL,'','','Fixed',unistr('## BOB-085 — RD2-18: Create top-level Boba proxy/merge-service v1.0.0 readiness ledger (closes GA-10)\u000a\u000a**Status:** Completed (→ Fixed.md)\u000a**Type:** Task\u000a**Evidence:** docs/RELEASE_READINESS_PROXY_MERGE.md\u000a**Severity:** Medium\u000a\u000a[Backfill from GOVERNANCE_AUDIT_2026-08-08_ROUND2.md RD2-18, P2 — closes GA-10] Create the top-level Boba (proxy/merge-service) v1.0.0 readiness ledger (GA-10) — dedupe with the browser_extension existing one as the template. GA-10 evidence: only docs/RELEASE_READINESS_20260616.html/.md/.pdf (dated point-in-time snapshot) and the extension own ledger exist; no top-level proxy/merge-service ledger created. Priority: P2.\u000a\u000a'),'section',NULL,NULL,NULL,'2026-08-21 18:39:28','2026-11-20 23:57:23',NULL,NULL,NULL,NULL,NULL,'UNSET',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'UNSET',NULL,NULL,NULL,NULL);
+ INSERT INTO items VALUES('BOB-069','Task','Completed (→ Fixed.md)','High','RD2-40: §11.4.238 QA-discovery-channel ledger — ongoing coverage-escape backfill','RD2-40: §11.4.238 QA-discovery-channel ledger — ongoing coverage-escape backfill',NULL,NULL,NULL,'','','Fixed',unistr('## BOB-069 — RD2-40: §11.4.238 QA-discovery-channel ledger — ongoing coverage-escape backfill\u000a\u000a**Status:** Completed (→ Fixed.md)\u000a**Type:** Task\u000a**Evidence:** docs/QA_DISCOVERY_LEDGER.md\u000a**Severity:** High\u000a\u000aRD2-40: §11.4.238 QA-discovery-channel ledger — ongoing coverage-escape backfill\u000a\u000a[BOB-136 adoption audit 2026-08-21 -> In progress] a4173c8 stood up the ledger + 4 followups; 709b06c closed 2 Important review findings (CODEGRAPH-1.5.0-GITIGNORE entry, BOB-108 filed). The BOB-009/010 evidence_path gap this item names as remaining open was closed under BOB-086 (f78f383). NOT terminal by the item''s own text: it is explicitly scoped ''P1-ongoing'', with the full retroactive audit of the ~50 GA-NN/RD2-NN findings deliberately NOT attempted.\u000a\u000a'),'section',NULL,NULL,NULL,'2026-08-21 18:39:28','2026-11-20 23:57:29',NULL,NULL,NULL,NULL,NULL,'UNSET',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'UNSET',NULL,NULL,NULL,NULL);
++INSERT INTO items VALUES('BOB-RECURSIVESUBMODULE','Task','Operator-blocked','critical','Constitution recursive submodule init blocked by stale claude_toolkit gitlinks','After updating constitution to 6d93ccd1, recursive submodule init fails because claude_toolkit tree carries stale gitlinks for submodules/challenges, submodules/containers, and submodules/superspec while its .gitmodules only declares submodules/go and submodules/ccusage (flat own-org deps per claude_toolkit AGENTS.md). Direct constitution submodules are initialized and post_update_hook.sh propagated changes successfully.',NULL,NULL,NULL,'','','Issues',unistr('## BOB-RECURSIVESUBMODULE — Constitution recursive submodule init blocked by stale claude_toolkit gitlinks\u000a\u000a**Status:** Operator-blocked\u000a**Type:** Task\u000a**Operator-Block-Details:** WHAT: Recursive submodule update fails on stale claude_toolkit gitlinks WHY: Fixing requires git commits and pushes to shared upstream repos vasic-digital/claude_toolkit and HelixDevelopment/HelixConstitution, not authorized in this session. UNBLOCK: [A] Operator authorizes and performs upstream claude_toolkit fix, bumps HelixConstitution pointer, then bumps boba constitution pointer · [B] Operator accepts current state: constitution at 6d93ccd1, direct submodules initialized, post_update_hook.sh propagated, recursive init deferred WHO: Operator\u000a**Severity:** critical\u000a\u000aAfter updating constitution to 6d93ccd1, recursive submodule init fails because claude_toolkit tree carries stale gitlinks for submodules/challenges, submodules/containers, and submodules/superspec while its .gitmodules only declares submodules/go and submodules/ccusage (flat own-org deps per claude_toolkit AGENTS.md). Direct constitution submodules are initialized and post_update_hook.sh propagated changes successfully.\u000a\u000a'),'section',NULL,NULL,NULL,'2026-11-23 16:33:51','2026-11-23 16:37:39',NULL,NULL,NULL,NULL,NULL,'UNSET',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'UNSET',NULL,NULL,NULL,NULL);
+ CREATE TABLE IF NOT EXISTS "doc_segments" (
+     id          INTEGER PRIMARY KEY AUTOINCREMENT,
+     document    TEXT NOT NULL CHECK (document IN ('Issues', 'Fixed')),
+@@ -1296,6 +1303,7 @@
+ INSERT INTO doc_segments VALUES(1799,'Fixed',238,'item','BOB-184','section',NULL);
+ INSERT INTO doc_segments VALUES(1800,'Fixed',239,'item','BOB-085','section',NULL);
+ INSERT INTO doc_segments VALUES(1801,'Fixed',240,'item','BOB-069','section',NULL);
++INSERT INTO doc_segments VALUES(1802,'Issues',127,'item','BOB-RECURSIVESUBMODULE','section',NULL);
+ CREATE TABLE IF NOT EXISTS "obsolete_details" (
+     atm_id                  TEXT PRIMARY KEY,
+     since                   TEXT NOT NULL,
+@@ -1320,8 +1328,8 @@
+     frozen_at       TEXT NOT NULL,
+     PRIMARY KEY (atm_id, representation)
+ );
+-INSERT INTO sqlite_sequence VALUES('item_history',613);
+-INSERT INTO sqlite_sequence VALUES('doc_segments',1801);
++INSERT INTO sqlite_sequence VALUES('item_history',618);
++INSERT INTO sqlite_sequence VALUES('doc_segments',1802);
+ INSERT INTO sqlite_sequence VALUES('test_diary',18);
+ CREATE VIEW test_diary_summary AS
+ SELECT
