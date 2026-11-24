@@ -12,7 +12,10 @@ import os
 import pytest
 
 from tests.fixtures.live_search import _file_lock as _live_search_lock
-from tests.integration.conftest import _wait_for_idle
+from tests.integration.conftest import (
+    _merge_api_token_session,
+    _wait_for_idle,
+)
 
 
 @pytest.fixture(autouse=True)

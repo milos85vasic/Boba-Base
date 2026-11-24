@@ -26,10 +26,28 @@ import pytest
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import sync_playwright
 
+from tests.integration.merge_api_auth import (
+    TOKEN_HEADER,
+    assert_token_usable,
+    resolve_api_token,
+)
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 PALETTE_TS = REPO_ROOT / "frontend" / "src" / "app" / "models" / "palette.model.ts"
 
 DASHBOARD_URL = os.environ.get("MERGE_SERVICE_URL", "http://localhost:7187/")
+_API_TOKEN, _API_TOKEN_SOURCE = resolve_api_token()
+
+
+def _api_headers(content_type: bool = False) -> dict[str, str]:
+    """Return headers that include the armed BOBA_API_TOKEN when present."""
+    headers: dict[str, str] = {}
+    if _API_TOKEN:
+        headers[TOKEN_HEADER] = _API_TOKEN
+    if content_type:
+        headers["Content-Type"] = "application/json"
+    return headers
+
 
 REQUIRED_CSS_VARS = (
     "--color-accent",
@@ -100,6 +118,8 @@ def _read_local_storage(page, key: str) -> str | None:
 
 
 def test_theme_switching_applies_tokens_and_persists(palettes: dict[str, dict[str, dict[str, str]]]) -> None:
+    assert_token_usable(DASHBOARD_URL.rstrip("/"), _API_TOKEN, _API_TOKEN_SOURCE)
+
     # Quick availability probe — we want a loud failure if the merge
     # service is down, not a silent skip.
     import json as _json
@@ -112,7 +132,7 @@ def test_theme_switching_applies_tokens_and_persists(palettes: dict[str, dict[st
     _put = urllib.request.Request(
         f"{DASHBOARD_URL.rstrip('/')}/api/v1/theme",
         data=_json.dumps({"paletteId": "darcula", "mode": "dark"}).encode(),
-        headers={"Content-Type": "application/json"},
+        headers=_api_headers(content_type=True),
         method="PUT",
     )
     with urllib.request.urlopen(_put, timeout=10) as r:

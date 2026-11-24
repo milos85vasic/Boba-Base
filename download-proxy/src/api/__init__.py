@@ -345,10 +345,41 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(scheduler_router, prefix="/api/v1/schedules")
 
 
+def _inject_api_token_into_index(html: bytes) -> bytes:
+    """Insert the armed BOBA_API_TOKEN into the served index.html.
+
+    The dashboard reads the token from this meta tag so its own API calls
+    (fetch and HttpClient) can present ``X-Boba-Token`` to the merge
+    service's mutating endpoints. When the token is unset the HTML is
+    returned unchanged, preserving the historical open-by-default contract.
+    The token value is never logged here.
+    """
+    token = os.getenv("BOBA_API_TOKEN", "").strip()
+    if not token:
+        return html
+    head = b"<head>"
+    idx = html.lower().find(head)
+    if idx < 0:
+        return html
+    meta = b'<meta name="boba-api-token" content="' + token.encode() + b'">'
+    insert_at = idx + len(head)
+    return html[:insert_at] + meta + html[insert_at:]
+
+
 def _serve_index_html():  # type: ignore[no-untyped-def]
     if _angular_available:
-        return FileResponse(
-            _angular_index_path,
+        try:
+            with open(_angular_index_path, "rb") as fh:
+                body = _inject_api_token_into_index(fh.read())
+        except OSError:
+            return {
+                "message": "Merge Search API",
+                "version": "1.3.0",
+                "dashboard": "not found",
+            }
+        return Response(
+            content=body,
+            media_type="text/html",
             headers={
                 "Cache-Control": "no-cache, no-store, must-revalidate",
                 "Pragma": "no-cache",

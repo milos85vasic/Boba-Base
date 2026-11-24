@@ -1,4 +1,4 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import {
   DEFAULT_PALETTE_ID,
   Palette,
@@ -9,6 +9,7 @@ import {
   TOKEN_CSS_VAR,
   findPalette,
 } from '../models/palette.model';
+import { ApiTokenService } from './api-token.service';
 
 /**
  * localStorage shape for the persisted theme choice.
@@ -60,6 +61,7 @@ export class ThemeService {
     return this._mode() === 'dark' ? p.dark : p.light;
   });
 
+  private readonly apiToken = inject(ApiTokenService);
   private readonly documentRef: Document | null;
   private readonly storageRef: Storage | null;
   private readonly mediaQuery: MediaQueryList | null;
@@ -350,10 +352,15 @@ export class ThemeService {
       paletteId: this._palette().id,
       mode: this._mode(),
     });
+    const headers: Record<string, string> = { 'content-type': 'application/json' };
+    const token = this.apiToken.token();
+    if (token) {
+      headers['X-Boba-Token'] = token;
+    }
     try {
       fetch(THEME_ENDPOINT, {
         method: 'PUT',
-        headers: { 'content-type': 'application/json' },
+        headers,
         body,
         credentials: 'omit',
       })

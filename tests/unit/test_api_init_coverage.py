@@ -181,15 +181,30 @@ class TestServeIndexHtml:
             assert isinstance(result, dict)
             assert result["dashboard"] == "not found"
 
-    def test_serve_with_angular(self):
-        """_serve_index_html returns FileResponse when Angular is available."""
+    def test_serve_with_angular_no_token(self, tmp_path):
+        """When BOBA_API_TOKEN is unset the index.html is served unchanged."""
         from api import _serve_index_html
 
-        with patch("api._angular_available", True):
-            with patch("api._angular_index_path", "/fake/index.html"):
-                with patch("api.FileResponse") as mock_fr:
-                    result = _serve_index_html()
-                    mock_fr.assert_called_once()
+        index = tmp_path / "index.html"
+        index.write_text("<!doctype html><html><head></head><body></body></html>")
+        with patch("api._angular_available", True), patch("api._angular_index_path", str(index)):
+            with patch.dict(os.environ, {}, clear=True):
+                result = _serve_index_html()
+                assert result.status_code == 200
+                assert b"boba-api-token" not in result.body
+
+    def test_serve_with_angular_injects_token(self, tmp_path):
+        """When BOBA_API_TOKEN is set the meta tag is injected into index.html."""
+        from api import _serve_index_html
+
+        index = tmp_path / "index.html"
+        index.write_text("<!doctype html><html><head></head><body></body></html>")
+        with patch("api._angular_available", True), patch("api._angular_index_path", str(index)):
+            with patch.dict(os.environ, {"BOBA_API_TOKEN": "secret-token"}):
+                result = _serve_index_html()
+                assert result.status_code == 200
+                assert b'<meta name="boba-api-token" content="secret-token">' in result.body
+                assert result.headers["Cache-Control"] == "no-cache, no-store, must-revalidate"
 
 
 class TestGlobalExceptionHandler:

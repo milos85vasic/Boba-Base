@@ -292,7 +292,11 @@ else
     section "PHASE 4: Integration Tests"
 
     step "pytest — integration tests"
-    if "$PYTHON" -m pytest "$SCRIPT_DIR/tests/integration/" -v --import-mode=importlib --tb=short --timeout=120 2>&1 | tail -3; then
+    # requires_credentials tests exercise real private-tracker logins against
+    # live sites; they are operator-gated by valid .env credentials and can
+    # fail for reasons outside the product (expired cookies, bot protection,
+    # ISP DNS blocks). They are NOT part of the deterministic CI gate.
+    if "$PYTHON" -m pytest "$SCRIPT_DIR/tests/integration/" -v --import-mode=importlib --tb=short --timeout=120 -m "not requires_credentials" 2>&1 | tail -3; then
         pass "Integration tests"
     else
         fail "Integration tests"

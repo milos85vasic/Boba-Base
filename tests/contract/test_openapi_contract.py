@@ -37,6 +37,9 @@ REQUIRED_OPERATIONS: set[str] = {
     "GET /api/v1/search/{search_id}",
     "POST /api/v1/download",
     "POST /api/v1/magnet",
+    "GET /api/v1/theme",
+    "PUT /api/v1/theme",
+    "GET /api/v1/theme/stream",
 }
 
 

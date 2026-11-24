@@ -20,11 +20,18 @@ from __future__ import annotations
 
 import os
 import time
+from unittest.mock import patch
+from urllib.parse import urlsplit
 
 import pytest
 import requests
 
 from tests.fixtures.live_search import _file_lock as _live_search_lock
+from tests.integration.merge_api_auth import (
+    TOKEN_HEADER,
+    assert_token_usable,
+    resolve_api_token,
+)
 
 
 _WAIT_FOR_IDLE_MAX: float = float(os.environ.get("WAIT_FOR_IDLE_MAX_SECONDS", "180.0"))
@@ -128,3 +135,40 @@ def pytest_collection_modifyitems(config, items):
         fixtures = getattr(item, "fixturenames", ())
         if "browser" in fixtures or "page" in fixtures or "context" in fixtures:
             item.add_marker(skip_marker)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _merge_api_token_session():
+    """Make plain ``requests`` calls carry BOBA_API_TOKEN to the merge service.
+
+    Integration tests historically used bare ``requests.get/post`` against the
+    live merge service. When the service runs with ``BOBA_API_TOKEN`` armed,
+    those calls receive HTTP 401. Rather than editing every call site, this
+    session-scoped autouse fixture patches ``requests.Session.request`` to add
+    ``X-Boba-Token`` ONLY for URLs that target the merge-service base URL.
+    Calls to other hosts (qBittorrent proxy, tracker sites) are untouched.
+    """
+    base_url = os.environ.get("MERGE_SERVICE_URL", "http://localhost:7187").rstrip("/")
+    token, source = resolve_api_token()
+    assert_token_usable(base_url, token, source)
+    if not token:
+        yield
+        return
+
+    parts = urlsplit(base_url)
+    origin = f"{parts.scheme}://{parts.netloc}"
+    original_request = requests.Session.request
+
+    def _patched_request(self, method, url, *args, **kwargs):
+        target = url.decode() if isinstance(url, bytes) else url
+        if isinstance(target, str) and (
+            target.startswith(origin) or (target.startswith("/") and origin.startswith("http://localhost"))
+        ):
+            headers = dict(kwargs.get("headers") or {})
+            if TOKEN_HEADER not in headers:
+                headers[TOKEN_HEADER] = token
+            kwargs["headers"] = headers
+        return original_request(self, method, url, *args, **kwargs)
+
+    with patch.object(requests.Session, "request", _patched_request):
+        yield

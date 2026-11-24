@@ -37,7 +37,25 @@ import pytest
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import sync_playwright
 
+from tests.integration.merge_api_auth import (
+    TOKEN_HEADER,
+    assert_token_usable,
+    resolve_api_token,
+)
+
 DASHBOARD_URL = os.environ.get("MERGE_SERVICE_URL", "http://localhost:7187").rstrip("/")
+_API_TOKEN, _API_TOKEN_SOURCE = resolve_api_token()
+
+
+def _api_headers(content_type: bool = False) -> dict[str, str]:
+    """Return headers that include the armed BOBA_API_TOKEN when present."""
+    headers: dict[str, str] = {}
+    if _API_TOKEN:
+        headers[TOKEN_HEADER] = _API_TOKEN
+    if content_type:
+        headers["Content-Type"] = "application/json"
+    return headers
+
 
 # Nord + Gruvbox dark bg-primary values from the catalogue — these
 # must match frontend/src/app/models/palette.model.ts exactly.
@@ -68,6 +86,7 @@ def _preflight() -> None:
 
 @pytest.fixture(scope="module", autouse=True)
 def _check_environment() -> None:
+    assert_token_usable(DASHBOARD_URL, _API_TOKEN, _API_TOKEN_SOURCE)
     _preflight()
 
 
@@ -140,7 +159,7 @@ def test_dashboard_theme_switch_nord_then_gruvbox() -> None:
     req = urllib.request.Request(
         f"{DASHBOARD_URL}/api/v1/theme",
         data=json.dumps({"paletteId": "nord", "mode": "dark"}).encode(),
-        headers={"Content-Type": "application/json"},
+        headers=_api_headers(content_type=True),
         method="PUT",
     )
     with urllib.request.urlopen(req, timeout=10) as r:
